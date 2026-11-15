@@ -233,6 +233,11 @@ visitante (`visitante1`, `visitante2`, `visitante3`). `torcidas` fixa uma torcid
 setor (os ids estão em `cenario3d/js/jogo.js`, procure por
 `"clubeId": "<clube>"`).
 
+As GRADES DOS ESCANTEIOS nascem sozinhas (uma por canto, pela linha mais
+curta de chão perto do canto, fora dos setores das torcidas). Confira na
+briga de teste se nenhuma ficou num lugar estranho; `gradesCanto: false`
+no `jogo` desliga.
+
 ## Os acessos: por onde o público entra
 
 Não ponha boca de vomitório por padrão. Olhe, em cada arquibancada, por

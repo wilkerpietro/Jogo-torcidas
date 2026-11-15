@@ -698,6 +698,34 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
                     tunel('portao_visitante', 'TÚNEL VISITANTE', 'visitante', j.tunelVisitante == null ? meio(j.visitante) : j.tunelVisitante)];
   const grades = [vd, va].map((ang, i) => { const a = pt(ang, 0.04), b = pt(ang, 0.96);
     return { id: 'div_v' + (i + 1), rot: 'DIVISÓRIA', de: a, ate: b, modulos: Math.max(3, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / 28)), espessura: 10 }; });
+  /* AS GRADES DOS ESCANTEIOS (dono, 15/11/2026, com fotos do Castelão: "a cada escanteio de estádio deve ter uma grade
+     limitadora também [...] pra limitar a passagem. Isso deve servir pra deixar a cena das brigas um pouco mais lenta. Em
+     casos de arquibancadas que não são conectadas umas com as outras, a grade fica no chão entre uma arquibancada e outra").
+     Uma grade por canto, do campo pra fora, atravessando TODO o chão andável naquela direção (lance, corredor, piso, reta):
+     assim não sobra por onde contornar. Em volta da direção do canto (±12 graus) fica a linha mais CURTA: numa arquibancada
+     contínua ela corta o lance; entre duas arquibancadas separadas ela cai no vão, no chão. Não nasce dentro de setor de
+     torcida nem do curral da visitante. `jogo.gradesCanto: false` desliga. */
+  if (j.gradesCanto !== false) {
+    const c = lim.dentro, q2 = Math.SQRT1_2, pc = c.forma === 'elipse' ? [c.a * q2, c.b * q2] : [c.a - (c.r || 0) * (1 - q2), c.b - (c.r || 0) * (1 - q2)];
+    const rMax = Math.max(raioDe(0, lim.fora), raioDe(90, lim.fora), raioDe(45, lim.fora)) + 45;
+    const dentroDe = (ang, [d, a], m) => { const x = ((ang - (d - m)) % 360 + 360) % 360; return x <= (a - d) + 2 * m; };
+    const ocupado = ang => dentroDe(ang, [vd, va], (j.folgaPM || 7) + 2) || ['mandante1', 'mandante2', 'mandante3'].some(k => j[k] && dentroDe(ang, j[k], 1.5));
+    /* o chão andável ao longo de uma direção: de onde começa até onde acaba */
+    const chaoEm = ang => { const cx = Math.cos(ang * RAD), sy = Math.sin(ang * RAD); let r0 = null, r1 = null;
+      for (let r = 20; r <= rMax; r += 0.5) if (andavel(ficha, cx * r, sy * r)) { if (r0 == null) r0 = r; r1 = r; }
+      return r0 == null ? null : [r0, r1]; };
+    [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach(([sx, sy], k) => {
+      const base = Math.atan2(sy * pc[1], sx * pc[0]) / RAD; let melhor = null;
+      for (const larg of [12, 26]) { for (let da = -larg; da <= larg; da += 1) { const ang = base + da; if (ocupado(ang)) continue;
+          const ch = chaoEm(ang); if (!ch || ch[1] - ch[0] < 1.5) continue;
+          const nota = (ch[1] - ch[0]) * (1 + 0.02 * Math.abs(da)); if (!melhor || nota < melhor.nota) melhor = { ang, ch, nota }; }
+        if (melhor) break; }
+      if (!melhor) return;
+      const cx = Math.cos(melhor.ang * RAD), sn = Math.sin(melhor.ang * RAD), a = paraPx(cx * (melhor.ch[0] - 0.4), sn * (melhor.ch[0] - 0.4)), b = paraPx(cx * (melhor.ch[1] + 0.4), sn * (melhor.ch[1] + 0.4));
+      grades.push({ id: 'canto_' + (k + 1), rot: 'GRADE DO ESCANTEIO', de: { x: Math.round(a[0]), y: Math.round(a[1]) }, ate: { x: Math.round(b[0]), y: Math.round(b[1]) },
+        modulos: Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 28)), espessura: 10 });
+    });
+  }
   const folga = j.folgaPM || 7;
   const pmPostos = [pt(vd - folga, 0.35), pt(vd - folga, 0.7), pt(va + folga, 0.35), pt(va + folga, 0.7)];
   /* a torcida que tem lugar certo no estádio (`jogo.torcidas`: id da torcida → o setor dela) */

@@ -14227,6 +14227,38 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Garra do
   Tigre sem erro de página. Fotos fora do repositório.
 
+## Grade em cada escanteio, em todos os estádios (dono, 15/11/2026)
+
+- O dono, com duas fotos do Castelão e uma do modelo do Novelli Júnior:
+  "A cada escanteio de estádio deve ter uma grade limitadora também
+  [...] pra limitar a passagem. Isso deve servir pra deixar a cena das
+  brigas um pouco mais lenta. Em casos de arquibancadas que não são
+  conectadas umas com as outras, a grade fica no chão entre uma
+  arquibancada e outra."
+- **Feito no gerador** (`marcadores`): quatro grades novas por estádio
+  (`canto_1` a `canto_4`), na mesma lista das divisórias da visitante. O
+  jogo já tratava qualquer grade como barreira que o bonde derruba
+  (`vidaGrade`); não mexi no jogo.
+- **Onde cai cada uma**: em volta da direção do canto (±12 graus), na
+  linha mais curta de chão andável. Numa arquibancada contínua ela corta
+  o lance inteiro, do campo ao fundo (todos os anéis); entre duas
+  arquibancadas separadas ela cai no vão, no chão, da cerca ao muro. A
+  grade cobre TODO o chão naquela direção (o teste é o `andavel`), pra
+  não sobrar por onde contornar.
+- **Não nasce** dentro do setor de uma torcida da casa nem do curral da
+  visitante (com a folga da PM); nesse caso procura até ±26 graus.
+  `jogo.gradesCanto: false` desliga num estádio.
+- **Conferido**: os 43 estádios assados de novo, todos com as quatro
+  grades, o chão um só e nenhum marcador fora. Brigas no Novelli Júnior,
+  no Castelão, no Maião e no Jorjão sem erro de página.
+- **Efeito na briga**: no Castelão, aos 36 segundos do teste, o bonde da
+  casa ainda não tinha derrubado a grade (antes já havia briga). É o
+  efeito pedido. NÃO medi quanto tempo a briga leva a mais em cada
+  estádio; se ficar lenta demais, o ajuste é a resistência da grade
+  (`vidaGrade`) ou tirar a grade de um canto.
+- **Aproximação**: no estádio de verdade a grade do canto fica num
+  lugar certo; a minha escolhe a linha mais curta perto do canto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

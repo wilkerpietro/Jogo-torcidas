@@ -200,6 +200,62 @@ window.__ESTADIOS = {
      },
      "modulos": 17,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1864,
+      "y": 737
+     },
+     "ate": {
+      "x": 2249,
+      "y": 402
+     },
+     "modulos": 18,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1156,
+      "y": 776
+     },
+     "ate": {
+      "x": 731,
+      "y": 499
+     },
+     "modulos": 18,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1156,
+      "y": 1272
+     },
+     "ate": {
+      "x": 731,
+      "y": 1549
+     },
+     "modulos": 18,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1864,
+      "y": 1311
+     },
+     "ate": {
+      "x": 2249,
+      "y": 1646
+     },
+     "modulos": 18,
+     "espessura": 10
     }
    ]
   }
@@ -400,6 +456,62 @@ window.__ESTADIOS = {
       "y": 1281
      },
      "modulos": 14,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2340,
+      "y": 634
+     },
+     "ate": {
+      "x": 2682,
+      "y": 468
+     },
+     "modulos": 14,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 795,
+      "y": 581
+     },
+     "ate": {
+      "x": 643,
+      "y": 490
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 732,
+      "y": 1414
+     },
+     "ate": {
+      "x": 573,
+      "y": 1492
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2340,
+      "y": 1414
+     },
+     "ate": {
+      "x": 2499,
+      "y": 1492
+     },
+     "modulos": 6,
      "espessura": 10
     }
    ],
@@ -606,6 +718,62 @@ window.__ESTADIOS = {
      },
      "modulos": 10,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2198,
+      "y": 557
+     },
+     "ate": {
+      "x": 2443,
+      "y": 384
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 840,
+      "y": 585
+     },
+     "ate": {
+      "x": 585,
+      "y": 425
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 840,
+      "y": 1463
+     },
+     "ate": {
+      "x": 585,
+      "y": 1623
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2120,
+      "y": 1535
+     },
+     "ate": {
+      "x": 2356,
+      "y": 1742
+     },
+     "modulos": 11,
+     "espessura": 10
     }
    ]
   }
@@ -808,6 +976,62 @@ window.__ESTADIOS = {
      },
      "modulos": 16,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1887,
+      "y": 784
+     },
+     "ate": {
+      "x": 2287,
+      "y": 510
+     },
+     "modulos": 17,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1185,
+      "y": 784
+     },
+     "ate": {
+      "x": 785,
+      "y": 510
+     },
+     "modulos": 17,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1081,
+      "y": 1158
+     },
+     "ate": {
+      "x": 629,
+      "y": 1291
+     },
+     "modulos": 17,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1887,
+      "y": 1264
+     },
+     "ate": {
+      "x": 2287,
+      "y": 1538
+     },
+     "modulos": 17,
+     "espessura": 10
     }
    ]
   }
@@ -1006,6 +1230,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 525,
       "y": 1561
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2253,
+      "y": 612
+     },
+     "ate": {
+      "x": 2532,
+      "y": 452
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 917,
+      "y": 543
+     },
+     "ate": {
+      "x": 652,
+      "y": 337
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 917,
+      "y": 1505
+     },
+     "ate": {
+      "x": 652,
+      "y": 1711
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2253,
+      "y": 1436
+     },
+     "ate": {
+      "x": 2532,
+      "y": 1596
      },
      "modulos": 11,
      "espessura": 10
@@ -1210,6 +1490,62 @@ window.__ESTADIOS = {
      },
      "modulos": 8,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1849,
+      "y": 687
+     },
+     "ate": {
+      "x": 2085,
+      "y": 434
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1050,
+      "y": 695
+     },
+     "ate": {
+      "x": 889,
+      "y": 587
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1050,
+      "y": 1353
+     },
+     "ate": {
+      "x": 889,
+      "y": 1461
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2022,
+      "y": 1353
+     },
+     "ate": {
+      "x": 2183,
+      "y": 1461
+     },
+     "modulos": 7,
+     "espessura": 10
     }
    ]
   }
@@ -1410,6 +1746,62 @@ window.__ESTADIOS = {
       "y": 1299
      },
      "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2156,
+      "y": 697
+     },
+     "ate": {
+      "x": 2474,
+      "y": 529
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 916,
+      "y": 697
+     },
+     "ate": {
+      "x": 698,
+      "y": 582
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 916,
+      "y": 1351
+     },
+     "ate": {
+      "x": 648,
+      "y": 1493
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2156,
+      "y": 1351
+     },
+     "ate": {
+      "x": 2424,
+      "y": 1493
+     },
+     "modulos": 11,
      "espessura": 10
     }
    ],
@@ -1616,6 +2008,62 @@ window.__ESTADIOS = {
      },
      "modulos": 17,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1839,
+      "y": 675
+     },
+     "ate": {
+      "x": 2192,
+      "y": 268
+     },
+     "modulos": 19,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1037,
+      "y": 687
+     },
+     "ate": {
+      "x": 667,
+      "y": 437
+     },
+     "modulos": 16,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1037,
+      "y": 1361
+     },
+     "ate": {
+      "x": 667,
+      "y": 1611
+     },
+     "modulos": 16,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2035,
+      "y": 1361
+     },
+     "ate": {
+      "x": 2405,
+      "y": 1611
+     },
+     "modulos": 16,
+     "espessura": 10
     }
    ]
   }
@@ -1817,6 +2265,62 @@ window.__ESTADIOS = {
      },
      "modulos": 12,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1804,
+      "y": 666
+     },
+     "ate": {
+      "x": 2024,
+      "y": 373
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1107,
+      "y": 743
+     },
+     "ate": {
+      "x": 796,
+      "y": 540
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1107,
+      "y": 1305
+     },
+     "ate": {
+      "x": 796,
+      "y": 1508
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1965,
+      "y": 1305
+     },
+     "ate": {
+      "x": 2276,
+      "y": 1508
+     },
+     "modulos": 13,
+     "espessura": 10
     }
    ]
   }
@@ -2015,6 +2519,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 2468,
       "y": 648
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2204,
+      "y": 579
+     },
+     "ate": {
+      "x": 2412,
+      "y": 441
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 868,
+      "y": 579
+     },
+     "ate": {
+      "x": 660,
+      "y": 441
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 868,
+      "y": 1469
+     },
+     "ate": {
+      "x": 660,
+      "y": 1607
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2204,
+      "y": 1469
+     },
+     "ate": {
+      "x": 2412,
+      "y": 1607
      },
      "modulos": 9,
      "espessura": 10
@@ -2222,6 +2782,62 @@ window.__ESTADIOS = {
      },
      "modulos": 5,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2173,
+      "y": 551
+     },
+     "ate": {
+      "x": 2295,
+      "y": 460
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 886,
+      "y": 559
+     },
+     "ate": {
+      "x": 740,
+      "y": 454
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 858,
+      "y": 1393
+     },
+     "ate": {
+      "x": 686,
+      "y": 1487
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2189,
+      "y": 1426
+     },
+     "ate": {
+      "x": 2337,
+      "y": 1517
+     },
+     "modulos": 6,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -2423,6 +3039,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 2252,
       "y": 504
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2425,
+      "y": 873
+     },
+     "ate": {
+      "x": 2555,
+      "y": 851
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 752,
+      "y": 681
+     },
+     "ate": {
+      "x": 627,
+      "y": 626
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 752,
+      "y": 1367
+     },
+     "ate": {
+      "x": 613,
+      "y": 1428
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2320,
+      "y": 1367
+     },
+     "ate": {
+      "x": 2459,
+      "y": 1428
      },
      "modulos": 5,
      "espessura": 10
@@ -2630,6 +3302,62 @@ window.__ESTADIOS = {
      },
      "modulos": 4,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2268,
+      "y": 582
+     },
+     "ate": {
+      "x": 2385,
+      "y": 511
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 730,
+      "y": 880
+     },
+     "ate": {
+      "x": 600,
+      "y": 857
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 804,
+      "y": 1466
+     },
+     "ate": {
+      "x": 687,
+      "y": 1537
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2268,
+      "y": 1466
+     },
+     "ate": {
+      "x": 2385,
+      "y": 1537
+     },
+     "modulos": 5,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -2833,6 +3561,62 @@ window.__ESTADIOS = {
       "y": 1305
      },
      "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2206,
+      "y": 570
+     },
+     "ate": {
+      "x": 2387,
+      "y": 447
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 866,
+      "y": 570
+     },
+     "ate": {
+      "x": 685,
+      "y": 447
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 860,
+      "y": 1449
+     },
+     "ate": {
+      "x": 665,
+      "y": 1571
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2206,
+      "y": 1478
+     },
+     "ate": {
+      "x": 2387,
+      "y": 1601
+     },
+     "modulos": 8,
      "espessura": 10
     }
    ],
@@ -3038,6 +3822,62 @@ window.__ESTADIOS = {
      },
      "modulos": 6,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2214,
+      "y": 576
+     },
+     "ate": {
+      "x": 2362,
+      "y": 478
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 858,
+      "y": 576
+     },
+     "ate": {
+      "x": 710,
+      "y": 478
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 922,
+      "y": 1478
+     },
+     "ate": {
+      "x": 818,
+      "y": 1554
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2129,
+      "y": 1478
+     },
+     "ate": {
+      "x": 2231,
+      "y": 1557
+     },
+     "modulos": 5,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -3242,6 +4082,62 @@ window.__ESTADIOS = {
      },
      "modulos": 6,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2299,
+      "y": 555
+     },
+     "ate": {
+      "x": 2338,
+      "y": 532
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 773,
+      "y": 555
+     },
+     "ate": {
+      "x": 618,
+      "y": 460
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 773,
+      "y": 1493
+     },
+     "ate": {
+      "x": 618,
+      "y": 1588
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2299,
+      "y": 1493
+     },
+     "ate": {
+      "x": 2338,
+      "y": 1516
+     },
+     "modulos": 2,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -3445,6 +4341,62 @@ window.__ESTADIOS = {
       "y": 1581
      },
      "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2268,
+      "y": 550
+     },
+     "ate": {
+      "x": 2503,
+      "y": 399
+     },
+     "modulos": 10,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 754,
+      "y": 537
+     },
+     "ate": {
+      "x": 652,
+      "y": 474
+     },
+     "modulos": 4,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1032,
+      "y": 1492
+     },
+     "ate": {
+      "x": 818,
+      "y": 1691
+     },
+     "modulos": 10,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2263,
+      "y": 1459
+     },
+     "ate": {
+      "x": 2440,
+      "y": 1565
+     },
+     "modulos": 7,
      "espessura": 10
     }
    ],
@@ -3651,6 +4603,62 @@ window.__ESTADIOS = {
      },
      "modulos": 6,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2183,
+      "y": 522
+     },
+     "ate": {
+      "x": 2252,
+      "y": 469
+     },
+     "modulos": 3,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 898,
+      "y": 511
+     },
+     "ate": {
+      "x": 847,
+      "y": 470
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 863,
+      "y": 1492
+     },
+     "ate": {
+      "x": 824,
+      "y": 1519
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2185,
+      "y": 1426
+     },
+     "ate": {
+      "x": 2401,
+      "y": 1560
+     },
+     "modulos": 9,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -3855,6 +4863,62 @@ window.__ESTADIOS = {
       "y": 753
      },
      "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2270,
+      "y": 707
+     },
+     "ate": {
+      "x": 2414,
+      "y": 645
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 777,
+      "y": 727
+     },
+     "ate": {
+      "x": 631,
+      "y": 670
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 777,
+      "y": 1321
+     },
+     "ate": {
+      "x": 631,
+      "y": 1378
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2270,
+      "y": 1341
+     },
+     "ate": {
+      "x": 2414,
+      "y": 1403
+     },
+     "modulos": 6,
      "espessura": 10
     }
    ],
@@ -4061,6 +5125,62 @@ window.__ESTADIOS = {
      },
      "modulos": 6,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2228,
+      "y": 664
+     },
+     "ate": {
+      "x": 2415,
+      "y": 566
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 844,
+      "y": 664
+     },
+     "ate": {
+      "x": 686,
+      "y": 581
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 844,
+      "y": 1384
+     },
+     "ate": {
+      "x": 686,
+      "y": 1467
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2210,
+      "y": 1405
+     },
+     "ate": {
+      "x": 2324,
+      "y": 1470
+     },
+     "modulos": 5,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -4264,6 +5384,62 @@ window.__ESTADIOS = {
       "y": 455
      },
      "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2110,
+      "y": 556
+     },
+     "ate": {
+      "x": 2281,
+      "y": 418
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 897,
+      "y": 557
+     },
+     "ate": {
+      "x": 752,
+      "y": 451
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 862,
+      "y": 1481
+     },
+     "ate": {
+      "x": 633,
+      "y": 1637
+     },
+     "modulos": 10,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2210,
+      "y": 1481
+     },
+     "ate": {
+      "x": 2439,
+      "y": 1637
+     },
+     "modulos": 10,
      "espessura": 10
     }
    ],
@@ -4469,6 +5645,62 @@ window.__ESTADIOS = {
      },
      "modulos": 5,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2437,
+      "y": 644
+     },
+     "ate": {
+      "x": 2680,
+      "y": 541
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 483,
+      "y": 934
+     },
+     "ate": {
+      "x": 423,
+      "y": 929
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 573,
+      "y": 1335
+     },
+     "ate": {
+      "x": 516,
+      "y": 1353
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2437,
+      "y": 1404
+     },
+     "ate": {
+      "x": 2680,
+      "y": 1507
+     },
+     "modulos": 9,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -4670,6 +5902,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 713,
       "y": 1691
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2149,
+      "y": 615
+     },
+     "ate": {
+      "x": 2436,
+      "y": 424
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 923,
+      "y": 615
+     },
+     "ate": {
+      "x": 636,
+      "y": 424
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1107,
+      "y": 1464
+     },
+     "ate": {
+      "x": 810,
+      "y": 1768
+     },
+     "modulos": 15,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2149,
+      "y": 1433
+     },
+     "ate": {
+      "x": 2436,
+      "y": 1624
      },
      "modulos": 12,
      "espessura": 10
@@ -4877,6 +6165,62 @@ window.__ESTADIOS = {
      },
      "modulos": 11,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2328,
+      "y": 677
+     },
+     "ate": {
+      "x": 2630,
+      "y": 545
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 799,
+      "y": 533
+     },
+     "ate": {
+      "x": 586,
+      "y": 392
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 829,
+      "y": 1531
+     },
+     "ate": {
+      "x": 618,
+      "y": 1683
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2328,
+      "y": 1371
+     },
+     "ate": {
+      "x": 2630,
+      "y": 1503
+     },
+     "modulos": 12,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -5079,6 +6423,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 1317,
       "y": 1902
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2150,
+      "y": 661
+     },
+     "ate": {
+      "x": 2462,
+      "y": 476
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 922,
+      "y": 661
+     },
+     "ate": {
+      "x": 885,
+      "y": 639
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 922,
+      "y": 1387
+     },
+     "ate": {
+      "x": 885,
+      "y": 1409
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2150,
+      "y": 1387
+     },
+     "ate": {
+      "x": 2462,
+      "y": 1572
      },
      "modulos": 13,
      "espessura": 10
@@ -5286,6 +6686,62 @@ window.__ESTADIOS = {
      },
      "modulos": 5,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2274,
+      "y": 686
+     },
+     "ate": {
+      "x": 2330,
+      "y": 660
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 964,
+      "y": 567
+     },
+     "ate": {
+      "x": 899,
+      "y": 516
+     },
+     "modulos": 3,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 833,
+      "y": 1408
+     },
+     "ate": {
+      "x": 708,
+      "y": 1475
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2274,
+      "y": 1362
+     },
+     "ate": {
+      "x": 2330,
+      "y": 1388
+     },
+     "modulos": 2,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -5489,6 +6945,62 @@ window.__ESTADIOS = {
       "y": 1643
      },
      "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2251,
+      "y": 706
+     },
+     "ate": {
+      "x": 2417,
+      "y": 631
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 821,
+      "y": 706
+     },
+     "ate": {
+      "x": 655,
+      "y": 631
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 821,
+      "y": 1342
+     },
+     "ate": {
+      "x": 655,
+      "y": 1417
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2251,
+      "y": 1342
+     },
+     "ate": {
+      "x": 2417,
+      "y": 1417
+     },
+     "modulos": 7,
      "espessura": 10
     }
    ],
@@ -5694,6 +7206,62 @@ window.__ESTADIOS = {
      },
      "modulos": 3,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2127,
+      "y": 749
+     },
+     "ate": {
+      "x": 2188,
+      "y": 721
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 983,
+      "y": 705
+     },
+     "ate": {
+      "x": 762,
+      "y": 578
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 974,
+      "y": 1335
+     },
+     "ate": {
+      "x": 895,
+      "y": 1379
+     },
+     "modulos": 3,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2044,
+      "y": 1379
+     },
+     "ate": {
+      "x": 2133,
+      "y": 1441
+     },
+     "modulos": 4,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -5897,6 +7465,62 @@ window.__ESTADIOS = {
       "y": 1800
      },
      "modulos": 16,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1924,
+      "y": 625
+     },
+     "ate": {
+      "x": 2255,
+      "y": 283
+     },
+     "modulos": 17,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 978,
+      "y": 650
+     },
+     "ate": {
+      "x": 678,
+      "y": 449
+     },
+     "modulos": 13,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 954,
+      "y": 1168
+     },
+     "ate": {
+      "x": 641,
+      "y": 1244
+     },
+     "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1924,
+      "y": 1423
+     },
+     "ate": {
+      "x": 2255,
+      "y": 1765
+     },
+     "modulos": 17,
      "espessura": 10
     }
    ],
@@ -6103,6 +7727,62 @@ window.__ESTADIOS = {
      },
      "modulos": 9,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2352,
+      "y": 519
+     },
+     "ate": {
+      "x": 2487,
+      "y": 435
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 679,
+      "y": 534
+     },
+     "ate": {
+      "x": 553,
+      "y": 462
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 718,
+      "y": 1511
+     },
+     "ate": {
+      "x": 496,
+      "y": 1643
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2400,
+      "y": 1670
+     },
+     "ate": {
+      "x": 2522,
+      "y": 1761
+     },
+     "modulos": 5,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -6305,6 +7985,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 286,
       "y": 758
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2329,
+      "y": 635
+     },
+     "ate": {
+      "x": 2643,
+      "y": 481
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 588,
+      "y": 956
+     },
+     "ate": {
+      "x": 339,
+      "y": 938
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 743,
+      "y": 1413
+     },
+     "ate": {
+      "x": 449,
+      "y": 1557
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2329,
+      "y": 1413
+     },
+     "ate": {
+      "x": 2623,
+      "y": 1557
      },
      "modulos": 12,
      "espessura": 10
@@ -6512,6 +8248,62 @@ window.__ESTADIOS = {
      },
      "modulos": 6,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2193,
+      "y": 639
+     },
+     "ate": {
+      "x": 2351,
+      "y": 547
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 879,
+      "y": 639
+     },
+     "ate": {
+      "x": 756,
+      "y": 567
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1001,
+      "y": 1495
+     },
+     "ate": {
+      "x": 976,
+      "y": 1517
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2071,
+      "y": 1495
+     },
+     "ate": {
+      "x": 2096,
+      "y": 1517
+     },
+     "modulos": 2,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -6715,6 +8507,62 @@ window.__ESTADIOS = {
       "y": 1651
      },
      "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2276,
+      "y": 594
+     },
+     "ate": {
+      "x": 2303,
+      "y": 579
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 796,
+      "y": 594
+     },
+     "ate": {
+      "x": 769,
+      "y": 579
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 806,
+      "y": 1519
+     },
+     "ate": {
+      "x": 775,
+      "y": 1540
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2276,
+      "y": 1454
+     },
+     "ate": {
+      "x": 2303,
+      "y": 1469
+     },
+     "modulos": 2,
      "espessura": 10
     }
    ],
@@ -6920,6 +8768,62 @@ window.__ESTADIOS = {
      },
      "modulos": 7,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2355,
+      "y": 564
+     },
+     "ate": {
+      "x": 2560,
+      "y": 448
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 678,
+      "y": 599
+     },
+     "ate": {
+      "x": 627,
+      "y": 574
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 735,
+      "y": 1493
+     },
+     "ate": {
+      "x": 681,
+      "y": 1524
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2394,
+      "y": 1449
+     },
+     "ate": {
+      "x": 2445,
+      "y": 1474
+     },
+     "modulos": 2,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -7124,6 +9028,62 @@ window.__ESTADIOS = {
      },
      "modulos": 9,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2209,
+      "y": 754
+     },
+     "ate": {
+      "x": 2265,
+      "y": 731
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 863,
+      "y": 754
+     },
+     "ate": {
+      "x": 807,
+      "y": 731
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 863,
+      "y": 1294
+     },
+     "ate": {
+      "x": 807,
+      "y": 1317
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2209,
+      "y": 1294
+     },
+     "ate": {
+      "x": 2265,
+      "y": 1317
+     },
+     "modulos": 2,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -7325,6 +9285,62 @@ window.__ESTADIOS = {
      "ate": {
       "x": 409,
       "y": 1264
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2379,
+      "y": 573
+     },
+     "ate": {
+      "x": 2421,
+      "y": 551
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 685,
+      "y": 588
+     },
+     "ate": {
+      "x": 474,
+      "y": 480
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 693,
+      "y": 1475
+     },
+     "ate": {
+      "x": 461,
+      "y": 1598
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2379,
+      "y": 1475
+     },
+     "ate": {
+      "x": 2611,
+      "y": 1598
      },
      "modulos": 9,
      "espessura": 10
@@ -7532,6 +9548,62 @@ window.__ESTADIOS = {
      },
      "modulos": 7,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2143,
+      "y": 571
+     },
+     "ate": {
+      "x": 2261,
+      "y": 482
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 929,
+      "y": 571
+     },
+     "ate": {
+      "x": 811,
+      "y": 482
+     },
+     "modulos": 5,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 769,
+      "y": 1378
+     },
+     "ate": {
+      "x": 570,
+      "y": 1470
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2292,
+      "y": 1389
+     },
+     "ate": {
+      "x": 2490,
+      "y": 1484
+     },
+     "modulos": 8,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -7735,6 +9807,62 @@ window.__ESTADIOS = {
       "y": 1305
      },
      "modulos": 11,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2344,
+      "y": 528
+     },
+     "ate": {
+      "x": 2568,
+      "y": 391
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 823,
+      "y": 515
+     },
+     "ate": {
+      "x": 604,
+      "y": 358
+     },
+     "modulos": 10,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 720,
+      "y": 1505
+     },
+     "ate": {
+      "x": 694,
+      "y": 1521
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2352,
+      "y": 1505
+     },
+     "ate": {
+      "x": 2378,
+      "y": 1521
+     },
+     "modulos": 2,
      "espessura": 10
     }
    ],
@@ -7940,6 +10068,62 @@ window.__ESTADIOS = {
      },
      "modulos": 10,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1982,
+      "y": 686
+     },
+     "ate": {
+      "x": 2248,
+      "y": 484
+     },
+     "modulos": 12,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 964,
+      "y": 767
+     },
+     "ate": {
+      "x": 725,
+      "y": 660
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 964,
+      "y": 1281
+     },
+     "ate": {
+      "x": 725,
+      "y": 1388
+     },
+     "modulos": 9,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2108,
+      "y": 1281
+     },
+     "ate": {
+      "x": 2383,
+      "y": 1404
+     },
+     "modulos": 11,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -8143,6 +10327,62 @@ window.__ESTADIOS = {
       "y": 811
      },
      "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2189,
+      "y": 672
+     },
+     "ate": {
+      "x": 2247,
+      "y": 640
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 883,
+      "y": 672
+     },
+     "ate": {
+      "x": 825,
+      "y": 640
+     },
+     "modulos": 2,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 744,
+      "y": 1212
+     },
+     "ate": {
+      "x": 558,
+      "y": 1256
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2300,
+      "y": 1292
+     },
+     "ate": {
+      "x": 2531,
+      "y": 1374
+     },
+     "modulos": 9,
      "espessura": 10
     }
    ],
@@ -8348,6 +10588,62 @@ window.__ESTADIOS = {
      },
      "modulos": 7,
      "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2447,
+      "y": 582
+     },
+     "ate": {
+      "x": 2645,
+      "y": 486
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 625,
+      "y": 582
+     },
+     "ate": {
+      "x": 486,
+      "y": 515
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 625,
+      "y": 1466
+     },
+     "ate": {
+      "x": 486,
+      "y": 1533
+     },
+     "modulos": 6,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2405,
+      "y": 1503
+     },
+     "ate": {
+      "x": 2604,
+      "y": 1613
+     },
+     "modulos": 8,
+     "espessura": 10
     }
    ],
    "setorDaTorcida": {
@@ -8551,6 +10847,62 @@ window.__ESTADIOS = {
       "y": 1310
      },
      "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2213,
+      "y": 615
+     },
+     "ate": {
+      "x": 2376,
+      "y": 517
+     },
+     "modulos": 7,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 914,
+      "y": 587
+     },
+     "ate": {
+      "x": 814,
+      "y": 516
+     },
+     "modulos": 4,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 930,
+      "y": 1466
+     },
+     "ate": {
+      "x": 840,
+      "y": 1532
+     },
+     "modulos": 4,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2158,
+      "y": 1461
+     },
+     "ate": {
+      "x": 2258,
+      "y": 1532
+     },
+     "modulos": 4,
      "espessura": 10
     }
    ],
@@ -8757,6 +11109,62 @@ window.__ESTADIOS = {
       "y": 1278
      },
      "modulos": 10,
+     "espessura": 10
+    },
+    {
+     "id": "canto_1",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2245,
+      "y": 590
+     },
+     "ate": {
+      "x": 2326,
+      "y": 541
+     },
+     "modulos": 3,
+     "espessura": 10
+    },
+    {
+     "id": "canto_2",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 827,
+      "y": 590
+     },
+     "ate": {
+      "x": 746,
+      "y": 541
+     },
+     "modulos": 3,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 827,
+      "y": 1458
+     },
+     "ate": {
+      "x": 629,
+      "y": 1579
+     },
+     "modulos": 8,
+     "espessura": 10
+    },
+    {
+     "id": "canto_4",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 2245,
+      "y": 1458
+     },
+     "ate": {
+      "x": 2394,
+      "y": 1549
+     },
+     "modulos": 6,
      "espessura": 10
     }
    ],
