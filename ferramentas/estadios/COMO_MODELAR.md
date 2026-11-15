@@ -173,7 +173,9 @@ anteriores"): nunca um trecho só de 0 a 360 em contorno curvo; a largura
 das colunas sai do raio no meio do trecho, e onde o raio é maior a cadeira
 estica. Cortar em blocos de largura igual (12 a 15 m, medidos no meio do
 lance), `corredor: 0`, `escadaNaBorda: true` (a escada de concreto liso em
-cada divisa, sem `corEscada`) e a boca com `vomitorios.em: [0.5]`. Mosaico
+cada divisa, sem `corEscada`) e a boca com `vomitorios.em: [0.5]` SÓ EM
+BLOCO ALTERNADO (a regra dos dois andares: no lance de cima, uma boca a cada
+duas escadas, a um quarto da altura; boca em todo bloco é demais). Mosaico
 de dois tons parecidos (se o contraste for grande, vira chuvisco e as
 fileiras somem). Telhado escuro por cima das cadeiras: a parte de fora das
 cadeiras com `opaca: true` e o resto transparente, com `vazado` baixo.

@@ -105,13 +105,14 @@ export default {
       trechos: [
         { de: OESTE[0], ate: OESTE[1], cor: '#2b2f34', cor2: '#34393f', padrao: 'mosaico', mistura: 0.3, corredor: 0 },
         { de: OESTE[1], ate: OESTE[0] + 360, tipo: 'vazio' }] },
-    /* O LANCE DE CIMA, em blocos de uns 14 m com a escada de concreto entre eles e uma boca vermelha perto da frente de cada
-       bloco; no meio do lado oeste, a tribuna de imprensa */
+    /* O LANCE DE CIMA, em blocos de uns 14 m com a escada de concreto entre eles; as bocas vermelhas pela regra dos dois
+       andares (dono, 15/11/2026: "Veja a regra dos vomitórios que apliquei nos demais estádios, vc colocou muitos na
+       superior"): a um quarto da altura, em escadas alternadas (uma a cada dois blocos). No meio do lado oeste, a tribuna */
     { dentro: DV, fora: F, h: [13.5, 29], fileiras: 26, corredorFrente: 1.5, corMureta: '#d9d6cc',
       trechos: [
         ...BLOCOS(82, 98, DV, F, 14).map(([de, ate]) => ({ de, ate, cor: '#3d4147', cor2: '#4c5158', padrao: 'mosaico', mistura: 0.4, corredor: 0, escadaNaBorda: true, vomitorios: false })),
-        ...BLOCOS(98, 442, DV, F, 14).map(([de, ate]) => ({ de, ate, ...CADEIRA, corredor: 0, escadaNaBorda: true,
-          vomitorios: { f: 0.18, em: [0.5], larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }))] },
+        ...BLOCOS(98, 442, DV, F, 14).map(([de, ate], k) => ({ de, ate, ...CADEIRA, corredor: 0, escadaNaBorda: true,
+          vomitorios: k % 2 ? false : { f: 0.25, em: [0.5], larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }))] },
     /* o corredor do alto, debaixo do anel de concreto */
     { dentro: F, fora: TOPO, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 29, cor: '#cfc9bb' }] }
   ],
