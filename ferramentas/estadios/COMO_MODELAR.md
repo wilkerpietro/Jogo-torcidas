@@ -149,6 +149,18 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+MURO DE TRÁS ENVIESADO (a arquibancada que afina, o Jorjão): não faça em
+degraus nem em fatias (sai serrilhado). O `fora` do trecho é uma "reta":
+um círculo de 700 m de raio que passa pelas duas pontas do muro, com o
+centro do lado do campo (`LINHA_RETA` na ficha do Jorjão), e o trecho leva
+`normal: true`. Canto em leque entre duas funduras: um trecho só, com
+`normal: true` e `fora` em elipse centrada no canto (`a` = raio do canto +
+fundura de um lado, `b` = raio + fundura do outro).
+
+COMPARE COM A FOTO DO DONO do mesmo ângulo: ponha na ficha uma `vista` no
+lugar da câmera da foto e olhe as duas juntas antes de entregar. Conte os
+blocos na foto duas vezes antes de mudar o que já estava certo.
+
 ARQUIBANCADA QUE DOBRA NA PONTA (o Novelli Júnior): não faça a ponta como
 bloco solto. A dobra é um trecho de canto emendado no lance (contorno
 próprio com `b - r` igual ao fim do lance reto, `r` de 2 m, o `fora` com o

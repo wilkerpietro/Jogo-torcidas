@@ -14259,6 +14259,53 @@ também".
 - **Aproximação**: no estádio de verdade a grade do canto fica num
   lugar certo; a minha escolhe a linha mais curta perto do canto.
 
+## Jorge Ismael de Biasi refeito: o U contínuo e os muros enviesados (dono, 15/11/2026)
+
+- O dono, com uma aérea e o mapa de setores: "A arquibancada atrás do
+  gol e a lateral norte (da visão da imagem) não está coerente com a
+  realidade, refaça até ficar coerente."
+- **O que estava errado**: as duas arquibancadas de trás dos gols saíam
+  em três degraus grandes de fundura (no estádio o muro de trás é uma
+  reta enviesada), os cantos não emendavam direito e a de trás do gol do
+  noroeste estava de cadeira palha (na foto é degrau de cimento claro,
+  sem cadeira).
+- **Três tentativas**: (1) troquei a comprida pra três blocos, lendo mal
+  a foto: errado, ela tem mesmo cinco (escuro, palha, escuro, palha,
+  escuro); voltei. (2) A rampa em fatias finas: o muro saía serrilhado,
+  como contrafortes. (3) A que ficou: o fundo de cada uma é um contorno
+  LISO (um círculo de 700 m de raio que passa pelas duas pontas do muro,
+  ou seja, praticamente uma reta) e `normal: true` deixa as fileiras
+  paralelas ao gol, acabando nessa linha; cada canto é um leque só, até
+  uma elipse centrada no canto.
+- **Revisão do dono em cima do modelo** (com uma linha desenhada): "Deixe
+  a altura da arquibancada lateral norte da altura de como a curva
+  entrega, sem reduzir. A arquibancada oeste também reduz igual a leste.
+  A cor da arquibancada leste é preta. Acho que o reflexo das imagens
+  que mandei deu a impressão de que era mais claro." Feito:
+  - o U tem a MESMA fundura (22 m) na comprida, nos dois cantos e no
+    começo das duas de trás dos gols: a curva não afina pra chegar na
+    comprida (eu tinha a comprida com 14 m, do satélite, e os cantos
+    afinando de 25 e 20 m até ela);
+  - a de trás do gol do sudeste (a "oeste" da imagem, cadeira palha)
+    afina de 22 m até 4 m na coberta, como a linha do dono (eu tinha 25
+    a 17 m);
+  - a de trás do gol do noroeste (a "leste" da imagem) é de cadeira
+    PRETA, de 22 m a 7 m (eu tinha lido cimento claro na foto: era
+    reflexo).
+  Li "altura" como o tamanho da arquibancada na imagem de cima (a
+  fundura); como a altura do degrau acompanha a fundura, o topo também
+  ficou no mesmo nível na comprida e nos cantos.
+- **Setores (mapa do dono)**: a visitante no setor cinza, atrás do gol
+  do noroeste, com o canto; a casa no amarelo. A Garra do Tigre no meio
+  da comprida continua escolha minha (o mapa não diz).
+- **Gerador**: o chão andável de anel `andarReto` passou a aceitar fundo
+  em elipse (só a beira de dentro precisa ser retângulo de canto
+  redondo). Nenhum outro estádio usava essa combinação.
+- **Como conferi**: a ficha tem uma `vista` do mesmo lugar da aérea do
+  dono; pus a foto e o modelo um em cima do outro até baterem.
+- **Testado**: chão um só, nenhum marcador fora; briga como Garra do
+  Tigre sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

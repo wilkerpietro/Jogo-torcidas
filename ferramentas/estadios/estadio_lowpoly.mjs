@@ -154,7 +154,8 @@ export function andavel(ficha, u, v) {
     if (anel.andarReto) {
       let achou = false;
       for (const t of anel.trechos) { if (t.tipo === 'vazio') continue;
-        const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora; if (cd.forma === 'elipse' || cf.forma === 'elipse') continue;
+        /* (o fundo pode ser elipse — o muro enviesado do Jorjão —; só a beira de dentro tem de ser retângulo de canto redondo) */
+        const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora; if (cd.forma === 'elipse') continue;
         const cx = Math.max(-(cd.a - cd.r), Math.min(cd.a - cd.r, u)), cy = Math.max(-(cd.b - cd.r), Math.min(cd.b - cd.r, v)), dd = Math.hypot(u - cx, v - cy);
         if (dd < cd.r - 0.3) continue;
         const fx = cx + (u - cx) / dd * cd.r, fy = cy + (v - cy) / dd * cd.r;
