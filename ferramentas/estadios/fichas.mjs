@@ -581,3 +581,4 @@ FICHAS[willieDavids.id] = willieDavids;
 import caninde from './fichas/estadio-caninde.mjs'; FICHAS[caninde.id] = caninde;
 import allianzParque from './fichas/estadio-allianz-parque.mjs'; FICHAS[allianzParque.id] = allianzParque;
 import vilaBelmiro from './fichas/estadio-vila-belmiro.mjs'; FICHAS[vilaBelmiro.id] = vilaBelmiro;
+import moisesLucarelli from './fichas/estadio-moises-lucarelli.mjs'; FICHAS[moisesLucarelli.id] = moisesLucarelli;

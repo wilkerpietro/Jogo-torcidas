@@ -13576,6 +13576,34 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Torcida
   Jovem sem erro de página. Fotos fora do repositório.
 
+## Moisés Lucarelli lowpoly (Ponte Preta) (dono, 15/11/2026)
+
+- Terceiro da ordem de São Paulo.
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): bacia oval branca e larga, com o campo de nordeste a
+  sudoeste. Entre o gramado e a arquibancada sobra uma faixa de asfalto,
+  estreita nas laterais e larga nos dois fundos (um anel de `passagem`).
+  - A coberta (noroeste, em cima no quadro): o lance mais fundo, com a
+    frente descoberta e o telhado escuro por cima; no canto norte, o
+    telhado claro que acompanha a curva.
+  - O fundo nordeste: a arquibancada passa por cima do prédio da
+    entrada, entre as duas torres brancas, com o placar no meio.
+  - O sudeste: a arquibancada descoberta de degrau claro com as escadas
+    amarelas, que faz a volta nos dois cantos.
+  - O fundo sudoeste NÃO tem arquibancada (terraço e muro baixo); o
+    degrau recomeça no canto oeste e emenda na coberta.
+- **Um engano evitado**: a primeira leitura punha a entrada das torres
+  no fundo sudoeste. As fotos tiradas de fora mostram a coberta à
+  direita de quem entra, o que só fecha com a entrada no nordeste.
+- **Os acessos**: nem o satélite nem as fotos mostram boca; ficou sem.
+- **As torcidas (escolhas minhas, sem fonte)**: a Jovem Ponte no meio da
+  arquibancada do sudeste; a visitante no canto oeste.
+- **Aproximações**: as funduras (16 m no anel, 22 m na coberta); as
+  alturas; uma foto antiga mostra PONTE PRETA pintado no degrau do
+  sudeste, mas o satélite atual não mostra, então não pus.
+- **Testado**: chão um só, nenhum marcador fora; briga como Jovem Ponte
+  sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
