@@ -89,6 +89,12 @@ formam um chão só; uma fresta isola o lance).
   `blocoFileiras`). O número real de fileiras sai da fundura (0,9 m cada).
 - `corredorFrente`: o corredor vazio entre a primeira fileira e o
   alambrado (2,4 m; 0 desliga).
+- `normal: true` (também vale no trecho): a escada sai perpendicular à beira
+  de dentro e vai reta até o fundo. Use quando a arquibancada é mais funda
+  num lugar que no outro sem ser em degraus (as fileiras acompanham a beira
+  do campo e o fundo corta as fileiras): no anel `reto` comum a escada sai
+  torta. Confira no satélite quantas escadas há e onde; se o espaçamento
+  não for regular, faça um trecho por vão, com `escadaNaBorda: true`.
 
 **Trecho** (`tipo` ausente = arquibancada):
 

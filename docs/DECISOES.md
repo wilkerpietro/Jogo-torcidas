@@ -13436,6 +13436,29 @@ também".
   cena `estadio-willie-davids`; chão um só, nenhum marcador fora; sem
   erro de página.
 
+## Willie Davids: as escadas do degrau, como no satélite (dono, 15/11/2026)
+
+- O dono: "As listras de escadaria entre os blocos de arquibancada do
+  Willie Davids ficou esquisito e infiel à realidade."
+- **O que estava errado** (comparando com o satélite): as escadas saíam
+  grossas (1,5 m, creme), poucas (sete no lado leste, onde há onze) e
+  tortas, fechando pra fora. No estádio elas são finas, amarelo-claras,
+  de 16,5 em 16,5 m, retas no meio do lado e abrindo pra fora nas pontas.
+- **A causa**: as fileiras acompanham a beira de dentro e o fundo corta
+  as fileiras (24 m no meio, 9 m nas curvas). No anel `reto` a escada
+  liga o ponto de dentro ao ponto "correspondente" do fundo; com o fundo
+  não concêntrico, esse ponto escorrega e a escada entorta.
+- **Gerador: `normal: true`** (anel ou trecho). A escada sai
+  perpendicular à beira de dentro e vai reta até o fundo, seja qual for
+  o desenho do fundo. Dois trechos vizinhos dividem a mesma linha de
+  divisa, mesmo com fundos diferentes. Usar sempre que a arquibancada
+  for mais funda num lado que no outro sem ser em degraus.
+- **Na ficha**: cada escada do degrau de cimento foi posta onde o
+  satélite mostra (dez no lado leste, quatro em cada curva); cada vão é
+  um trecho com a escada na divisa; `celula: 1` deixa a escada com 1 m.
+- **Testado**: briga no estádio; chão um só, nenhum marcador fora; sem
+  erro de página. Os outros estádios não mudam (ninguém usa `normal`).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -18,7 +18,7 @@
      norte à direita): degrau de cimento cinza com as escadas claras.
    · EMBAIXO, atrás do lado leste, o prédio das cabines e a escadaria da
      entrada. Em volta, o aterro gramado e os pátios de terra. */
-const CIM = '#9a9c9c', CIM2 = '#8e9090', ESCADA = '#e3e0bc';
+const CIM = '#9a9c9c', CIM2 = '#8e9090', ESCADA = '#ddd69a';
 const VIN = '#8e3b34', VIN2 = '#7e332d', AM = '#d9b23a', AZE = '#2a3558';
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
@@ -27,7 +27,16 @@ const I = { a: 94, b: 50, r: 50 }, F = { a: 103, b: 74, r: 74 }, RUA = { a: 111,
 const F_COB = { a: 103, b: 84, r: 84 };
 /* o trecho coberto, pela beira de dentro: de u = 68 (ponta norte) a u = -60 (ponta sul) */
 const N0 = A(68, 43.9), S0 = A(-60, 47.4);
-const DEGRAU = { cor: CIM, cor2: CIM2, padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corredor: 17, corEscada: ESCADA, vomitorios: false };
+/* AS ESCADAS do degrau de cimento, uma a uma, onde o satélite mostra (dono, 15/11/2026: as listras tinham ficado grossas,
+   poucas e tortas): finas (1 m), amarelo-claras, de 16,5 em 16,5 m no lado leste e mais espaçadas nas curvas; saem
+   perpendiculares à beira de dentro e abrem pra fora. Cada vão entre duas escadas é um trecho com a escada na divisa. */
+const noLado = u => A(u, -(Math.abs(u) <= 44 ? 50 : Math.sqrt(2500 - (Math.abs(u) - 44) ** 2)));       /* escada do lado leste, pelo u */
+const naCurva = (lado, v) => A(lado * (44 + Math.sqrt(2500 - v * v)), v);                              /* escada de uma curva, pelo v */
+const ESCADAS = [naCurva(-1, 38), naCurva(-1, 15), naCurva(-1, -21), naCurva(-1, -32.5),
+  ...[-67.5, -50.8, -35, -18.3, -1.7, 15, 31.7, 48.3, 64.2, 78.3].map(noLado),
+  naCurva(1, -25), naCurva(1, -6), naCurva(1, 13), naCurva(1, 30)].map(a => (a > S0 ? a - 360 : a));
+const DEGRAU = { cor: CIM, cor2: CIM2, padrao: 'mosaico', mistura: 0.4, semCadeiras: true, celula: 1, corredor: 0, escadaNaBorda: true, corEscada: ESCADA, vomitorios: false };
+const VAOS = [S0 - 360, ...ESCADAS, N0].map((de, i, l) => i < l.length - 1 ? { de, ate: l[i + 1], ...DEGRAU } : null).filter(Boolean);
 const COB = (de, ate, cor, cor2, mistura) => ({ de, ate, fora: F_COB, cor, cor2, padrao: 'mosaico', mistura, corredor: 13, corEscada: '#d9d6cc', vomitorios: false, paredeAtras: true, corFachada: '#d9d6cc' });
 /* o telhado em leque: nove panos entre o arco de fora (um círculo de 118 m com o centro em (2, -10)) e o de dentro */
 const fora = t => { const a = (136 - t * 94.2) * RAD; return [2 + 118 * Math.cos(a), -10 + 118 * Math.sin(a)]; };
@@ -43,10 +52,10 @@ export default {
   corMureta: '#d9d6cc',
   aneis: [
     /* O ANEL, um só; a altura acompanha a fundura */
-    { dentro: I, fora: F, reto: true, h: [1.5, 11], inclinacao: 0.42, fileiras: 26,
+    { dentro: I, fora: F, reto: true, normal: true, h: [1.5, 11], inclinacao: 0.42, fileiras: 26,
       trechos: [
-        /* da ponta norte da coberta, pela curva norte, pelo lado leste e pela curva sul, até a ponta sul da coberta */
-        { de: S0 - 360, ate: N0, ...DEGRAU },
+        /* da ponta sul da coberta, pela curva sul, pelo lado leste e pela curva norte, até a ponta norte da coberta */
+        ...VAOS,
         /* a coberta (do norte pro sul): azul-marinho, vinho, amarelo, vinho */
         COB(N0, 46, AZE, '#232c4a', 0.3), COB(46, 62, VIN, VIN2, 0.3), COB(62, 120, AM, VIN, 0.14), COB(120, S0, VIN, VIN2, 0.3)
       ] },

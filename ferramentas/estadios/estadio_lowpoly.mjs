@@ -109,10 +109,23 @@ export function colunasDe(ficha, anel, t) {
   const prof = Math.max(1, raioDe(meio, cf) - raioDe(meio, cd)), arco = vao * RAD * (raioDe(meio, cd) + raioDe(meio, cf)) / 2;
   const G = medidasDe(ficha, anel, t, arco, prof), n = G.n;
   const reto = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
-  const pos = reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+  /* `normal: true` (anel ou trecho, com a beira de dentro em retângulo de canto redondo): a escada sai PERPENDICULAR à beira de
+     dentro e vai reta até o fundo, seja qual for o desenho do fundo. É o caso da arquibancada cujas fileiras acompanham a
+     beira do campo e cujo fundo corta as fileiras (mais funda no meio, rasa nas pontas: o Willie Davids; dono, 15/11/2026:
+     "as listras de escadaria entre os blocos ficou esquisito e infiel à realidade" — no anel reto de fundo não concêntrico a
+     escada saía torta). Dois trechos vizinhos dividem a mesma linha de divisa, mesmo com fundos diferentes. */
+  const normal = !!def(t.normal, anel.normal, false) && cd.forma !== 'elipse', memo = new Map();
+  const peloNormal = ang => { let q = memo.get(ang); if (q) return q;
+    const pm = paramDe(ang, cd), a = pontoPor(pm, cd), nx = pm.tipo === 'h' ? 0 : pm.tipo === 'v' ? pm.sx : pm.sx * Math.cos(pm.phi), ny = pm.tipo === 'h' ? pm.sy : pm.tipo === 'v' ? 0 : pm.sy * Math.sin(pm.phi);
+    const fora = s => { const x = a[0] + nx * s, y = a[1] + ny * s; return Math.hypot(x, y) - raioDe(Math.atan2(y, x) / RAD, cf); };
+    let s0 = 0, s1 = 4; while (fora(s1) < 0 && s1 < 400) s1 *= 2;
+    for (let k = 0; k < 40; k++) { const m = (s0 + s1) / 2; if (fora(m) < 0) s0 = m; else s1 = m; }
+    q = [a, [a[0] + nx * s1, a[1] + ny * s1]]; if (memo.size < 20000) memo.set(ang, q); return q; };
+  const pos = normal ? (ang, f) => { const [a, b] = peloNormal(ang); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+            : reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
                    : (ang, f) => { const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); return ponto(ang, r0 + (r1 - r0) * f); };
   const angs = [];
-  if (reto) { /* colunas de largura igual, medidas pela beira de dentro */
+  if (reto || normal) { /* colunas de largura igual, medidas pela beira de dentro */
     const MS = Math.max(180, n * 4), ac = [0]; let ant = pos(t.de, 0);
     for (let j = 1; j <= MS; j++) { const q = pos(t.de + vao * j / MS, 0); ac.push(ac[j - 1] + Math.hypot(q[0] - ant[0], q[1] - ant[1])); ant = q; }
     for (let i = 0, j = 0; i <= n; i++) { const alvo = ac[MS] * i / n; while (j < MS - 1 && ac[j + 1] < alvo) j++;
