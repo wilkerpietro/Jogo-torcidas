@@ -253,6 +253,13 @@ trecho `passagem` no mesmo ângulo fecha o chão.
   recente. Foto de dentro costuma ser antiga.
 - Rua enviesada atrás de um lado dá laje em trapézio e fundo em degraus:
   não endireite.
+- "Telhado no satélite não é arquibancada" vale também ao contrário (o
+  Anacleto Campanella): mancha lisa e inclinada, de cor de chapa, encostada
+  no alambrado, pode ser a própria arquibancada tubular. Arquibancadas
+  tubulares são planos retos e separados: use `retas`, uma por lance, cada
+  uma no seu ângulo. Na dúvida, mostre ao dono as duas leituras.
+- Se um lado sai cortado no satélite baixado, baixe de novo com o centro
+  deslocado antes de medir.
 
 - O meio do campo: ache o círculo central no satélite antes de medir (um
   erro de 6 m ali entorta os dois fundos).

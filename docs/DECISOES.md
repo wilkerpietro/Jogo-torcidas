@@ -13816,6 +13816,34 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Comando Azul
   sem erro de página. Fotos fora do repositório.
 
+## Anacleto Campanella: três arquibancadas no sul, não três telhados (dono, 15/11/2026)
+
+- O dono: "Essa parte esquerda [...] fez 3 coberturas mas na verdade
+  você interpretou errado, são 3 arquibancadas diferentes mesmo, atrás
+  do gol." E, com uma foto das arquibancadas tubulares: "Veja bem o
+  formato."
+- **O erro**: li as três manchas azuladas do satélite como telhados de
+  zinco em cima de uma arquibancada só de cimento. São três
+  arquibancadas separadas, de chapa azul desbotada e enferrujada, cada
+  uma um plano inclinado.
+- **Como ficou** (medido num satélite novo, baixado mais ao sul, porque
+  o primeiro cortava o fundo):
+  - a primeira, atrás do gol do sul: em leque, acompanhando a curva,
+    13 m de fundo (um segundo anel, só nesse trecho);
+  - a segunda, reta, na diagonal do canto sudeste (36 m por 12 m);
+  - a terceira, reta, no começo do lado leste (37 m por 14 m).
+  As duas retas são `retas` da ficha. Na frente das três passa a
+  calçada ao pé do alambrado; entre elas ficam os vãos.
+- **Lição (anotada no guia)**: a regra "telhado no satélite não é
+  arquibancada" vale também ao contrário. Mancha lisa e inclinada, de
+  cor de chapa, encostada no alambrado e sem pilar nem sombra de beiral,
+  pode ser a própria arquibancada (tubular, de chapa). Na dúvida,
+  mostrar ao dono as duas leituras em vez de escolher uma.
+- A visitante fica na primeira (atrás do gol do sul): continua sendo
+  escolha minha, sem fonte.
+- **Testado**: chão um só, nenhum marcador fora; briga como Comando Azul
+  sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

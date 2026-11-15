@@ -12,10 +12,10 @@
    · À DIREITA (norte), a ARQUIBANCADA AZUL: funda e alta, descoberta, em
      dois blocos de cadeira azul-escura, só na metade oeste do fundo; na
      outra metade ficam os prédios do clube.
-   · À ESQUERDA (sul), a arquibancada do fundo sul: os degraus de cimento
-     na frente e, por cima do fundo dela, os telhados de zinco azulado e
-     enferrujado, que seguem pelo canto sudeste; por fora, o muro alto de
-     listras azuis e brancas.
+   · À ESQUERDA (sul), TRÊS arquibancadas separadas, de chapa azul
+     desbotada: uma atrás do gol, uma na diagonal do canto sudeste e uma no
+     começo do lado leste; na frente delas, a calçada ao pé do alambrado;
+     por fora, o muro alto azul.
    · EMBAIXO (leste), NÃO há arquibancada: só o alambrado, o banco de
      reservas de teto azul, o pátio e o terreno de grama.
    OS ACESSOS: nenhuma boca de vomitório aparece; ficou sem. */
@@ -25,9 +25,9 @@ const CIM = '#93938d', CIM2 = '#878782', AM = '#d8c46a';
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
 /* a beira do gramado oval; o fundo da coberta e do fundo sul; o fundo da arquibancada azul; a calçada do lado leste */
-const I = { a: 83, b: 46.7, r: 38 }, F = { a: 102, b: 65.7, r: 57 }, F_NORTE = { a: 107, b: 70.7, r: 62 }, F_LESTE = { a: 86.5, b: 50.2, r: 41.5 };
+const I = { a: 83, b: 46.7, r: 38 }, F = { a: 102, b: 65.7, r: 57 }, F_NORTE = { a: 107, b: 70.7, r: 62 };
 /* as pontas: a coberta vai de 29 a 151 graus; o fundo sul segue até o canto sudeste; a azul fica de -1 a 29 */
-const COB_N = 29, COB_S = 151, SUL_FIM = A(-35, -46.7);
+const COB_N = 29, COB_S = 151;
 /* a coberta: cada vão entre duas escadas amarelas (pelo u de cada escada) */
 const ESCADAS = [COB_N, ...[52, 13, -13, -50, -70].map(u => A(u, 46.7)), COB_S];
 const COBERTA = ESCADAS.slice(0, -1).map((de, i) => ({ de, ate: ESCADAS[i + 1], cor: AZ, cor2: AZ2, padrao: 'mosaico', mistura: 0.3, corredor: 0, escadaNaBorda: i > 0, corEscada: AM, vomitorios: false, paredeAtras: true, corFachada: '#2b4d9b' }));
@@ -38,7 +38,12 @@ const naBeira = (s, d) => { if (s < 25.9) { const f = (51 + s / 38 / RAD) * RAD;
   const f = (90 + (s - 115.9) / 38 / RAD) * RAD; return [-45 + (38 + d) * Math.cos(f), 8.7 + (38 + d) * Math.sin(f)]; };
 const GOMOS = Array.from({ length: 30 }, (_, i) => { const s0 = i * 141.8 / 30 + 0.35, s1 = (i + 1) * 141.8 / 30 - 0.35;
   return { y: 14 + (i % 2) * 0.2, h: 0.6, cor: i % 2 ? '#cbc4b4' : '#d9d2c2', pontos: [naBeira(s0, 6.2), naBeira(s1, 6.2), naBeira(s1, 20), naBeira(s0, 20)] }; });
-const ZINCO = (pontos, cor) => ({ y: 12.5, h: 0.4, cor, pontos });
+/* AS TRÊS ARQUIBANCADAS DO SUL (dono, 15/11/2026: "você interpretou errado, são 3 arquibancadas diferentes mesmo, atrás do
+   gol"; "veja bem o formato"): três lances separados, de chapa azul desbotada e enferrujada, cada um um plano inclinado.
+   A primeira, atrás do gol (em leque, acompanhando a curva); a segunda, reta, na diagonal do canto sudeste; a terceira,
+   reta, no começo do lado leste. Eu tinha lido as três como telhados em cima de uma arquibancada só. */
+const ZINCO = { cor: '#86a3b8', cor2: '#b59f86', padrao: 'mosaico', mistura: 0.22, semCadeiras: true, corEscada: '#9fb4c4', vomitorios: false, corMureta: '#6f8798' };
+const D_SUL = { a: 87.5, b: 51.2, r: 42.5 }, F_SUL = { a: 100.5, b: 64.2, r: 55.5 };
 
 export default {
   id: 'estadio-anacleto-campanella', nome: 'Anacleto Campanella', clubes: ['sao-caetano'], norte: 346.7, vazado: 0.42, folga: 22,
@@ -54,18 +59,19 @@ export default {
         { de: 15, ate: COB_N, fora: F_NORTE, h: [1.5, 13.5], cor: AZE, cor2: AZE2, padrao: 'mosaico', mistura: 0.35, corredor: 0, escadaNaBorda: true, corEscada: '#e3e1d6', vomitorios: false, paredeAtras: true, corFachada: '#2b4d9b' },
         /* a COBERTA (oeste, em cima) */
         ...COBERTA,
-        /* o FUNDO SUL (à esquerda) e o canto sudeste: os degraus de cimento, com os telhados de zinco por cima do fundo */
-        { de: COB_S, ate: SUL_FIM, cor: CIM, cor2: CIM2, padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corredor: 22, corEscada: '#b9b6ad', vomitorios: false, paredeAtras: true, corFachada: '#2b4d9b', parapeito: 3 },
-        /* o lado leste (embaixo): só a calçada ao pé do alambrado */
-        { de: SUL_FIM, ate: 359, tipo: 'passagem', cor: '#9a978e', fora: F_LESTE }
-      ] }
+        /* do fim da coberta até o fundo norte, pelo sul e pelo leste: só a calçada ao pé do alambrado */
+        { de: COB_S, ate: 359, tipo: 'passagem', cor: '#9a978e', fora: D_SUL }
+      ] },
+    /* A ARQUIBANCADA DE TRÁS DO GOL DO SUL (a primeira das três): em leque, atrás da calçada */
+    { dentro: D_SUL, fora: F_SUL, reto: true, h: [2, 9.5], fileiras: 16, corredorFrente: 0,
+      trechos: [{ de: 154, ate: 180.7, ...ZINCO, corredor: 0, paredeAtras: true, corFachada: '#2b4d9b', parapeito: 2.5 }] }
   ],
-  /* os gomos da coberta e os telhados de zinco do fundo sul e do canto sudeste */
-  telhados: [
-    ...GOMOS,
-    ZINCO([[-100, 43], [-88, 43], [-87, 20], [-86.5, -2], [-101, -2]], '#7f93a3'),
-    ZINCO([[-100, -13], [-86, -9], [-72, -41], [-83, -49]], '#7b8c98'),
-    ZINCO([[-71, -44], [-36, -54], [-38, -68], [-71, -58]], '#8795a0')
+  /* os gomos da coberta */
+  telhados: GOMOS,
+  /* a segunda e a terceira arquibancadas do sul: retas, separadas, cada uma virada pro campo no seu ângulo */
+  retas: [
+    { u: -81.9, v: -26.1, ang: 209.1, comp: 36, prof: 11.8, h: [2, 8.5], fileiras: 14, ...ZINCO, corredor: 0, corredorFrente: 0, parapeito: 2.5, corFachada: '#2b4d9b', corLado: '#5f7486' },
+    { u: -52.3, v: -48.7, ang: 254.2, comp: 36.7, prof: 13.7, h: [2, 9.5], fileiras: 16, ...ZINCO, corredor: 0, corredorFrente: 0, parapeito: 2.5, corFachada: '#2b4d9b', corLado: '#5f7486' }
   ],
   fachada: { cor: '#2b4d9b' },
   refletores: [[-42, 74, 32], [44, 74, 32], [-40, -58, 32], [40, -58, 32]],
@@ -90,9 +96,9 @@ export default {
     /* à direita (norte): a rua em curva e as casas */
     { tipo: 'rua', de: [118, 73], ate: [118, -76], larg: 9 }, { tipo: 'arvores', u: 112, v: 40, w: 6, d: 40, n: 6 }
   ],
-  /* (escolhas minhas, sem fonte: não achei mapa de setores) a Comando Azul na arquibancada azul do norte e a visitante no
-     fundo sul; os outros bondes da casa na coberta */
-  jogo: { mandante1: [2, 26], mandante2: [75, 105], mandante3: [112, 140], visitante: [163, 197], tunelMandante: 14, tunelVisitante: 180, folgaPM: 5,
-          fracao: { mandante1: 0.55, mandante2: 0.4, mandante3: 0.4, visitante1: 0.3, visitante2: 0.35, visitante3: 0.25 },
+  /* (escolhas minhas, sem fonte: não achei mapa de setores) a Comando Azul na arquibancada azul do norte e a visitante na
+     arquibancada de trás do gol do sul; os outros bondes da casa na coberta */
+  jogo: { mandante1: [2, 26], mandante2: [75, 105], mandante3: [112, 140], visitante: [161, 176.5], tunelMandante: 14, tunelVisitante: 168, folgaPM: 4,
+          fracao: { mandante1: 0.55, mandante2: 0.4, mandante3: 0.4, visitante1: 0.62, visitante2: 0.7, visitante3: 0.55 },
           torcidas: { comando_azul: 'mandante1' } }
 };
