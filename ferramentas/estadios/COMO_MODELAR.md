@@ -33,6 +33,9 @@ pra quem vai escrever uma ficha nova a partir de fotos.
 - Medidas em **metros**. O campo fica sempre deitado: `u` ao longo do
   comprimento (direita da imagem), `v` atravessado (pra cima da imagem).
   O campo tem 105 × 68, centrado em (0, 0).
+- Trecho que CRUZA O ZERO (atrás do gol da direita): o `de` tem de ser
+  negativo (`-22` a `23`, não `338` a `23`), senão sai um triângulo
+  atravessando o campo.
 - **Ângulos** em graus, anti-horário a partir de `+u`: 0 = atrás do gol
   da direita, 90 = lateral de cima, 180 = atrás do gol da esquerda, 270 =
   lateral de baixo. Um trecho vai de `de` até `ate` (`ate` > `de`; `de`

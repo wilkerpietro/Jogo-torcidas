@@ -26,7 +26,7 @@ const COBERTA = [[42, 22, AZ, '#2a478c'], [22, 1, VD, '#2a7d4f'], [1, -19.5, VD,
   CAD(A(u0, 51), A(u1, 51), cor, cor2, { dentro: W_D, fora: W_F, h: [2, 10], corredor: 0, escadaNaBorda: u0 < 42, paredeAtras: true, corFachada: '#e3e1da' }));
 
 export default {
-  id: 'estadio-maiao', nome: 'Maião', clubes: ['mirassol', 'ituano'], norte: 0, vazado: 0.4, folga: 22,
+  id: 'estadio-maiao', nome: 'Maião', clubes: ['mirassol'], norte: 0, vazado: 0.4, folga: 22,
   corEscada: '#f1ead0',
   /* a vista de perto da fachada */
   vista: [175, 28, -45, 92, 6, 0],
@@ -68,9 +68,8 @@ export default {
     { tipo: 'casas', u: -112, v: -6, nu: 1, nv: 11, passo: 15 }, { tipo: 'casas', u: 4, v: -76, nu: 11, nv: 1, passo: 15 },
     { tipo: 'arvores', u: 104, v: -50, w: 8, d: 30, n: 6 }
   ],
-  /* (escolhas minhas, sem fonte: não achei mapa de setores) a Fúria do Leão (e a Galoucura do Ituano, enquanto o Ituano manda
-     aqui) no meio da amarela do leste e a visitante na curva nova do norte; os outros bondes da casa na curva sul e na coberta */
+  /* (escolhas minhas, sem fonte: não achei mapa de setores) a Fúria do Leão no meio da amarela do leste e a visitante na curva nova do norte; os outros bondes da casa na curva sul e na coberta */
   jogo: { mandante1: [255, 285], mandante2: [165, 195], mandante3: [75, 105], visitante: [-22, 12], tunelMandante: 270, tunelVisitante: -5, folgaPM: 4,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
-          torcidas: { furia_do_leao: 'mandante1', galoucura_do_ituano: 'mandante1' } }
+          torcidas: { furia_do_leao: 'mandante1' } }
 };

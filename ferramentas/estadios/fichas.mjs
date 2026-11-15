@@ -592,3 +592,4 @@ import nabiAbiChedid from './fichas/estadio-nabi-abi-chedid.mjs'; FICHAS[nabiAbi
 import santaCruz from './fichas/estadio-santa-cruz.mjs'; FICHAS[santaCruz.id] = santaCruz;
 import alfredoDeCastilho from './fichas/estadio-alfredo-de-castilho.mjs'; FICHAS[alfredoDeCastilho.id] = alfredoDeCastilho;
 import maiao from './fichas/estadio-maiao.mjs'; FICHAS[maiao.id] = maiao;
+import novelliJunior from './fichas/estadio-novelli-junior.mjs'; FICHAS[novelliJunior.id] = novelliJunior;

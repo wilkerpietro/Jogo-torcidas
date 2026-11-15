@@ -14091,6 +14091,45 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Fúria do
   Leão sem erro de página. Fotos fora do repositório.
 
+## Novelli Júnior lowpoly (Ituano); o Ituano passa a mandar nele (dono, 15/11/2026)
+
+- O dono, depois de revisar o Maião: "Estádio do Ituano."
+- **O Ituano sai do Maião e manda no Novelli Júnior**, em Itu. Entra o
+  estádio `novelli-junior` (Interior de SP, bairro Itu); o Maião fica só
+  com o Mirassol (a ficha dele também). Mudou em `times.js`,
+  `estadios.js`, `torcidas.js` (Galoucura do Ituano), `cidades.js`, no
+  pacote `cenario3d/js/jogo.js`, nas fontes e nos dois importadores.
+  **Lotação: 18.560**, o número que eu lembro, não de planilha do dono.
+  O estádio não está desenhado na planta assada da praça.
+- **Achei um mapa de setores** (de um site de ingressos, num jogo contra
+  o Palmeiras): Arquibancada Ituano atrás de um gol, Arquibancada
+  Visitante atrás do outro, a coberta dividida em Coberta Ituano e
+  Coberta Visitante, e a Central do lado oposto. Qual gol é qual saiu do
+  desenho do mapa (a arquibancada Ituano é a maior).
+- **Como é** (satélite e fotos; o meio do campo saiu dos dois gols):
+  quatro arquibancadas retas de cadeira vermelha, separadas nos cantos,
+  em volta de um gramado oval. No quadro a coberta fica em cima.
+  - A coberta (oeste): 147 m por 13,5 m, debaixo do telhado cinza, com o
+    prédio atrás.
+  - A Arquibancada Ituano (norte): 73 m por 26 m, com o escudo em
+    cadeira preta no meio e uma asa de cadeira branca em cada ponta.
+  - A Arquibancada Visitante (sul): igual, com 16 m de fundo.
+  - A Central (leste), em dois lances: o de baixo (10 m), o corredor e o
+    de cima, com o ITUANO em cadeira escura.
+- **Na ficha**: uma família de contornos concêntricos (`C(k)`: a linha
+  da frente e as de k metros pra trás); as quatro asas são `retas`. Um
+  tropeço: trecho cujo ângulo cruza o zero precisa do `de` negativo,
+  senão o gerador desenha um triângulo atravessando o campo.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (pelo mapa)**: a Galoucura do Ituano na Arquibancada
+  Ituano e a visitante na Arquibancada Visitante.
+- **Aproximações**: o escudo virou um retângulo de cadeira preta; as
+  cores das cadeiras debaixo do telhado (de fotos sem data); as asas não
+  entram como setor do jogo; as torres dos refletores do lado da coberta
+  (pela sombra); as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Galoucura do
+  Ituano sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
