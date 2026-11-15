@@ -28,8 +28,12 @@
    · A CADEIRA, nos dois lances: mosaico de cinza claro com cinza mais
      escuro, bem misturado. As bocas do lance de baixo são LARANJA, no meio
      do lance; as do de cima, VERMELHAS, perto da frente.
-   · No meio do lado oeste do lance de cima, o bloco escuro da tribuna de
-     imprensa.
+   · A TRIBUNA (setores 201 a 203 do mapa) fica no meio da faixa de
+     camarotes do oeste, entre os C201-C218 e os C219-C236; o lance de
+     cima é todo da mesma cadeira. (Eu tinha posto dois lotes de cadeira
+     escura no meio do lance de cima do oeste, como tribuna de imprensa,
+     por uma leitura de foto; o mapa não tem isso. Dono, 15/11/2026: "Não
+     entendi esses dois lotes de cadeiras escuras no meio".)
    · A margem verde larga entre o campo e o muro, mais larga atrás dos gols;
      os bancos de teto de vidro do lado oeste.
    · O TELHADO (satélite): por fora, o anel de concreto com as placas
@@ -112,11 +116,10 @@ export default {
         { de: OESTE[1], ate: OESTE[0] + 360, tipo: 'vazio' }] },
     /* O LANCE DE CIMA, em blocos de uns 15 m com a escada de concreto entre eles; as bocas vermelhas em escadas alternadas
        (dono, 15/11/2026: "Veja a regra dos vomitórios que apliquei nos demais estádios, vc colocou muitos na superior"), em
-       cima da escada, a meia altura (a foto do dono). No meio do lado oeste, a tribuna de imprensa */
+       cima da escada, a meia altura (a foto do dono). Sem tribuna aqui: ela fica na faixa de camarotes (201 a 203 no mapa) */
     { dentro: DV, fora: F, h: [13.5, 29], fileiras: 26, corredorFrente: 1.5, corMureta: '#d9d6cc',
       trechos: [
-        ...BLOCOS(82, 98, DV, F, 30).map(x => PAR(x, DV, F, { cor: '#3d4147', cor2: '#4c5158', padrao: 'mosaico', mistura: 0.4, vomitorios: false })),
-        ...BLOCOS(98, 442, DV, F, 30).map(x => PAR(x, DV, F, { ...CADEIRA,
+        ...BLOCOS(90, 450, DV, F, 30).map(x => PAR(x, DV, F, { ...CADEIRA,
           vomitorios: { f: 0.42, cada: 1, larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }))] },
     /* o corredor do alto, debaixo do anel de concreto */
     { dentro: F, fora: TOPO, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 29, cor: '#cfc9bb' }] }
