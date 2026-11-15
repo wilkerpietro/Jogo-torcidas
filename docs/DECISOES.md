@@ -14490,6 +14490,15 @@ O dono: "Vamos pro do Mamoré", com quatro fotos de drone.
 - **O que ficou em dúvida**: o último bloco do fundo norte, colado na lateral leste, é amarelo-claro no satélite e verde nas fotos; ficou verde mais claro.
 - **Conferido**: os arquivos de dados abrem; chão único, nenhum marcador fora, briga do Mamoré rodando sem erro de página.
 
+## O Estádio Regional vira o Zama Maciel, da URT (dono, 15/11/2026)
+
+O dono: "Tudo certo, vamos pro da URT agora" (o último dos três que dividiam o Estádio Regional).
+
+- **Os dados**: com o Athletic e o Mamoré fora, o Estádio Regional (um nome genérico do protótipo, em Patos de Minas) ficaria só com a URT. Em vez de criar outro e deixar o Regional vazio, ele virou o Zama Maciel (`zama-maciel`, Interior de Minas, bairro Patos de Minas I, 5.000 lugares; o laudo dos bombeiros fala em 5.198 liberados e 4.353 pela PM, e os sites de futebol em 5 mil): em `dados/estadios.js`, `times.js`, `torcidas.js` (a Poeira Azul), `cidades.js`, nas cópias de `cenario3d/dados/` e do pacote, nas fontes, no `importar_planilha.py` e no `importar_estadios.py` (o Regional na lista TIRAR, o Zama Maciel na NOVOS). A tabela de gênero dos nomes (`dados/genero.js` e a cópia do pacote) ganhou o Joaquim Portugal, o Bernardo Rubinger de Queiroz e o Zama Maciel, no masculino, e perdeu o Estadio Regional.
+- **A ficha** (`fichas/estadio-zama-maciel.mjs`), só pelo satélite (a busca de fotos não trouxe nada e o dono não mandou fotos deste): estádio pequeno no meio de um quarteirão do centro; no oeste, a arquibancada coberta do lado sul, a tribuna de fileiras claras na frente do prédio de telhado escuro e a coberta do lado norte (o laudo fala no portão da arquibancada coberta e no da tribuna); no leste, a lateral comprida descoberta, de cimento avermelhado, com o muro branco atrás; no sul, a arquibancadinha de trás do gol com as letras pintadas no degrau; no norte, só o muro, a grade e as árvores.
+- **O que é estimado ou escolha minha**: as cores, as alturas e o número de degraus (sem foto); as letras do fundo sul (no satélite parecem TUF; li URT de cabeça pra baixo); a Poeira Azul na lateral descoberta do leste e a visitante na arquibancadinha do sul.
+- **Conferido**: os arquivos de dados abrem; chão único, nenhum marcador fora, briga da URT rodando sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

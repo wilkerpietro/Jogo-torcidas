@@ -601,3 +601,4 @@ import independencia from './fichas/estadio-independencia.mjs'; FICHAS[independe
 import arenaMrv from './fichas/estadio-arena-mrv.mjs'; FICHAS[arenaMrv.id] = arenaMrv;
 import joaquimPortugal from './fichas/estadio-joaquim-portugal.mjs'; FICHAS[joaquimPortugal.id] = joaquimPortugal;
 import bernardoRubinger from './fichas/estadio-bernardo-rubinger-de-queiroz.mjs'; FICHAS[bernardoRubinger.id] = bernardoRubinger;
+import zamaMaciel from './fichas/estadio-zama-maciel.mjs'; FICHAS[zamaMaciel.id] = zamaMaciel;

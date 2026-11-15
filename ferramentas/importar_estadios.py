@@ -92,6 +92,8 @@ NOVOS = [
     {'nome': 'Joaquim Portugal', 'mapa': 'interior-de-minas', 'bairro': 'São João del-Rei II'},
     # o Mamoré sai do Estádio Regional e manda no Bernardo Rubinger de Queiroz, em Patos de Minas.
     {'nome': 'Bernardo Rubinger de Queiroz', 'mapa': 'interior-de-minas', 'bairro': 'Patos de Minas II'},
+    # o Estádio Regional (nome genérico do protótipo, em Patos de Minas) vira o Zama Maciel, o da URT.
+    {'nome': 'Zama Maciel', 'mapa': 'interior-de-minas', 'bairro': 'Patos de Minas I'},
 ]
 
 
@@ -171,7 +173,8 @@ def main():
     # (14/11/2026: o Passo d'Areia volta — o São José manda nele de novo —, e entram o
     # Colosso da Lagoa e a Boca do Lobo, na lista NOVOS.)
     # (15/11/2026: o Canindé volta — a Portuguesa manda nele de novo, e o Morumbi fica só com o São Paulo.)
-    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira'}
+    # (15/11/2026: sai o Estadio Regional — o nome genérico vira o Zama Maciel, na lista NOVOS.)
+    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira', 'estadio-regional'}
     legado_e_novos = [e for e in estadios if identificador(e['nome']) not in TIRAR] + \
         [{'nome': n['nome'], 'mapaNovo': n['mapa'], 'bairroEstadio': n['bairro']} for n in NOVOS]
     for e in sorted(legado_e_novos, key=lambda x: x['nome']):
