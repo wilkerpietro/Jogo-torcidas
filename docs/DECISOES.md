@@ -13171,6 +13171,56 @@ também".
 - **Fila do Paraná** (aguardando o dono): Couto Pereira (Coritiba),
   Estádio do Café (Londrina) e Germano Krüger (Operário e Maringá).
 
+## Couto Pereira lowpoly (Coritiba) e a regra dos acessos (dono, 15/11/2026)
+
+- O dono pediu o Couto Pereira e corrigiu um vício meu: "Tenha mais
+  atenção aos vomitórios, tem algumas arquibancadas que não são
+  exatamente quadrados, são acessados pela parte de cima, como o
+  Barradão, por exemplo." Eu vinha espalhando boca quadrada no meio de
+  toda arquibancada, por padrão.
+- **Regra nova, pra todo estádio**: antes de modelar, olhar em cada
+  arquibancada POR ONDE O PÚBLICO ENTRA. São quatro casos:
+  1. boca no meio do lance (o túnel que sai de baixo): `vomitorios`;
+  2. corredor na frente, ao pé do lance: `corredorFrente`;
+  3. acesso por cima (galeria ou passarela atrás do último degrau): um
+     piso `passagem` com `alt`, encostado no fundo do lance, e
+     `vomitorios: false`;
+  4. acesso pela ponta (escada lateral): nada no meio do lance.
+  Sem prova na foto ou no satélite, não põe boca.
+- **Couto Pereira** (a Mauá do CFC em cima, pro letreiro sair de pé; a
+  social coberta embaixo; a curva do sudeste à esquerda e a do noroeste,
+  a da avenida, à direita). O gramado é oval. Não há boca quadrada:
+  - as duas curvas têm TRÊS LANCES de cadeira branca (com as divisas
+    verdes) separados por DUAS GALERIAS; o público entra pelas
+    galerias, por cima de cada lance, e as caixas de escada abrem no
+    piso delas (os quadrados escuros do satélite); as pontas coladas na
+    social são de cadeira escura; a marquise verde cobre o alto do
+    lance de cima;
+  - em cima, a Mauá: o lance de baixo em blocos verdes e brancos, a
+    galeria, e o lance de cima com o CFC em cadeira branca no meio; o
+    telhado escuro de treliça por cima das fileiras de trás; uma torre
+    de refletor em cada ponta, com o refletor no alto dela;
+  - embaixo, a social: o lance de baixo descoberto e o de cima debaixo
+    do telhado claro, os dois de cadeira escura.
+- **Como foi feito**: cinco `aneis` encostados (lance, galeria, lance,
+  galeria, lance). A galeria é um anel só de trechos `passagem` com
+  `alt`. As caixas de escada são `blocos` baixos e escuros em cima do
+  piso. A marquise das curvas é um `telhados` com os pontos do arco
+  calculados na ficha.
+- **O que é aproximado**: a posição e o número das caixas de escada
+  (no satélite aparecem quatro ou cinco por curva; pus oito na galeria
+  de cima e seis na de baixo, somando as duas curvas); o satélite é
+  inclinado, então a fundura de cada lance (8, 6 e 10 m) é estimativa.
+- **Setores**: sem fonte. Escolha minha: a Império Alviverde e a
+  Dragões Alviverdes no lance de cima da Mauá, a visitante no lance de
+  cima da curva do sudeste.
+- **Testado**: briga 60 × 56 jogando de Império Alviverde; chão um só
+  (lances e galerias ligados), nenhum marcador fora; sem erro de página.
+- **Estádios já feitos**: os anteriores têm bocas postas por padrão em
+  vários lances; ficam como estão até o dono apontar qual rever.
+- **Fila do Paraná** (aguardando o dono): Estádio do Café (Londrina) e
+  Germano Krüger (Operário e Maringá).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

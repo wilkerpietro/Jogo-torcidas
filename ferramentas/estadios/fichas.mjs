@@ -548,3 +548,5 @@ import vilaCapanema from './fichas/estadio-vila-capanema.mjs';
 FICHAS[vilaCapanema.id] = vilaCapanema;
 import arenaDaBaixada from './fichas/estadio-arena-da-baixada.mjs';
 FICHAS[arenaDaBaixada.id] = arenaDaBaixada;
+import coutoPereira from './fichas/estadio-couto-pereira.mjs';
+FICHAS[coutoPereira.id] = coutoPereira;

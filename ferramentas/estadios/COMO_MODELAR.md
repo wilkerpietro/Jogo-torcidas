@@ -187,6 +187,25 @@ visitante (`visitante1`, `visitante2`, `visitante3`). `torcidas` fixa uma torcid
 setor (os ids estão em `cenario3d/js/jogo.js`, procure por
 `"clubeId": "<clube>"`).
 
+## Os acessos: por onde o público entra
+
+Não ponha boca de vomitório por padrão. Olhe, em cada arquibancada, por
+onde se entra (o satélite mostra os quadrados escuros; as fotos de dentro
+mostram os túneis):
+
+1. **Boca no meio do lance** (o túnel que sai de baixo da arquibancada):
+   `vomitorios: { f, em: [..] }`, nos lugares que a foto mostra.
+2. **Corredor na frente**, ao pé do lance: `corredorFrente`.
+3. **Por cima** (galeria ou passarela atrás do último degrau, como no
+   Couto Pereira e no Barradão): um anel só de trechos
+   `{ tipo: 'passagem', alt }` encostado no fundo do lance, e
+   `vomitorios: false` no lance. Lance, galeria, lance, galeria, lance são
+   cinco `aneis` encostados; as caixas de escada da galeria são `blocos`
+   baixos e escuros em cima do piso.
+4. **Pela ponta** (escada lateral): nada no meio do lance.
+
+Sem prova na foto ou no satélite, `vomitorios: false`.
+
 ## O que conferir antes de entregar
 
 - O meio do campo: ache o círculo central no satélite antes de medir (um
