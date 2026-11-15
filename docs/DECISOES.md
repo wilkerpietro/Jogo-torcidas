@@ -13368,6 +13368,36 @@ também".
   Estádio do Café e Germano Krüger. Fica aberto o Willie Davids, se o
   dono quiser o modelo dele.
 
+## A regra dos dois andares nos estádios antigos; Castelão sem boca na frente (dono, 15/11/2026)
+
+- Perguntei três coisas e o dono respondeu a ordem: "2, depois 3,
+  depois 1" — (2) tirar as bocas da frente do Castelão, (3) aplicar a
+  regra dos dois andares nos estádios já feitos, (1) modelar o Willie
+  Davids.
+- **Castelão**: o lance de baixo ficou sem boca nenhuma (saíram as
+  poucas que eu tinha deixado na frente). Fica o corredor do alambrado.
+- **Maracanã**: o lance de baixo sem boca, com o anel de circulação
+  atrás (4 m); as bocas do lance de cima a um quarto da altura.
+- **Morumbi**: o lance de baixo sem boca (entra-se pelo anel do meio,
+  que já existia atrás dele); no lance de cima, os acessos são só as
+  caixas de concreto que já estavam lá (saíram as bocas da frente).
+- **Neo Química Arena**: o lance de baixo sem boca, com o anel de
+  circulação atrás (3,5 m); as bocas das duas arquibancadas altas (leste
+  e oeste) a um quarto da altura.
+- **Arena do Grêmio**: o lance de baixo (e a Geral) sem boca, com o anel
+  de circulação atrás (3,5 m); as bocas do lance de cima a um terço da
+  altura.
+- **Beira-Rio: não mexi.** As bocas do lance de baixo dele (no meio do
+  lance, uma a cada duas divisas) foram acertadas pelo dono com foto
+  ("veja mais ou menos o espaçamento na imagem"), e a regra dos cortes
+  é "normalmente": foto do próprio estádio manda. Se ele quiser igual
+  aos outros, é `vomitorios: false` no lance de baixo.
+- **Ordem dos anéis**: o lance de baixo tem de vir antes do anel de
+  circulação na lista (os setores e o túnel saem do primeiro anel).
+- **Testado**: briga nos cinco (Castelão, Maracanã, Morumbi, Neo
+  Química, Arena do Grêmio); chão um só, nenhum marcador fora; sem erro
+  de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

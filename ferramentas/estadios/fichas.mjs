@@ -30,10 +30,10 @@ export const FICHAS = {
     aneis: [
       /* o lance de baixo: entra-se por CIMA, pelo anel de circulação atrás da última fileira (dono, 15/11/2026, com o corte
          da parte central: "normalmente as arquibancadas inferiores de estádios de dois andares são acessadas pelo topo do
-         setor"). Do pedido antigo dele ficam o corredor do alambrado e poucas bocas de serviço na frente (uma a cada quatro
-         escadas) */
+         setor"). Sem boca nenhuma (dono, 15/11/2026: tirar também as poucas que tinham ficado na frente); do pedido antigo
+         dele fica o corredor do alambrado */
       { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 80, b: 62, r: 46 }, h: [1.2, 11], fileiras: 12,
-        trechos: [{ de: 0, ate: 360, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: { cada: 4 } }] },
+        trechos: [{ de: 0, ate: 360, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false }] },
       /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes */
       { dentro: { a: 80, b: 62, r: 46 }, fora: { a: 84, b: 66, r: 50 }, h: [11.1, 11.1], fileiras: 2, corredorFrente: 0,
         trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 11.1, cor: '#b3b1a8' }] },
@@ -186,10 +186,14 @@ export const FICHAS = {
     campo: { corMargem: '#4c9656' },
     corMureta: '#dcd9cf',
     aneis: [
-      { dentro: E(76, 52), fora: E(100, 76), h: [1.2, 10], fileiras: 18,
-        trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AM, MAR_AM, MAR_AZ, MAR_AZ2], mistura: 0.9, corredor: 17 }] },
+      /* (dois andares: o lance de baixo sem boca, acessado pelo anel de circulação atrás dele; as bocas no lance de cima —
+         a regra dos cortes, dono, 15/11/2026) */
+      { dentro: E(76, 52), fora: E(96, 72), h: [1.2, 10], fileiras: 18,
+        trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AM, MAR_AM, MAR_AZ, MAR_AZ2], mistura: 0.9, corredor: 17, vomitorios: false }] },
+      { dentro: E(96, 72), fora: E(100, 76), h: [10.1, 10.1], fileiras: 2, corredorFrente: 0,
+        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 10.1, cor: '#d9d6cc' }] },
       { dentro: E(100, 76), fora: E(130, 108), h: [12, 30], fileiras: 24,
-        trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AZ2, MAR_AZ, MAR_BG, MAR_BG], mistura: 0.9, corredor: 21 }] },
+        trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AZ2, MAR_AZ, MAR_BG, MAR_BG], mistura: 0.9, corredor: 21, vomitorios: { f: 0.25, cada: 2 } }] },
       { dentro: E(130, 108), fora: E(148, 128), trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 30, cor: '#ecebe5' }] }
     ],
     coberturasAnel: [{ fora: E(152, 132), dentro: E(80, 61), h: 42, cai: 7, n: 72, cor: '#f6f5f0', cor2: '#eeede7', corNervura: '#d3d3cc',
@@ -228,8 +232,10 @@ export const FICHAS = {
       ondas: [{ u: 60, amp: 2.6, v: 24, larg: 2.7, cor: '#f1efe8' }, { u: 63.4, amp: 2.6, v: 24, larg: 2.7, cor: '#c8363a' }, { u: 66.8, amp: 2.6, v: 24, larg: 2.7, cor: '#4a4c50' }] },
     corMureta: '#d6d2c6',
     aneis: [
+      /* (o lance de baixo sem boca: entra-se pelo anel do meio, atrás dele; no de cima, os acessos são as caixas de concreto
+         — a regra dos cortes, dono, 15/11/2026) */
       { dentro: { a: 93, b: 57, r: 57 }, fora: { a: 101, b: 65, r: 65 }, h: [1.5, 5.5], fileiras: 8,
-        trechos: [{ de: 0, ate: 360, cor: MOR_V, cor2: MOR_V2, padrao: 'mosaico', mistura: 0.3, corredor: 15 }] },
+        trechos: [{ de: 0, ate: 360, cor: MOR_V, cor2: MOR_V2, padrao: 'mosaico', mistura: 0.3, corredor: 15, vomitorios: false }] },
       { dentro: { a: 101, b: 65, r: 65 }, fora: { a: 105, b: 69, r: 69 }, h: [6.6, 7.6], fileiras: 2, corredorFrente: 0, vomitorios: false, semCadeiras: true, passoFileira: 2,
         trechos: [
           { de: -58, ate: 58, cor: '#55585c', corredor: 0 },
@@ -238,7 +244,7 @@ export const FICHAS = {
           { de: 238, ate: 302, cor: '#55585c', corredor: 0, cobertura: { h: 10.5, larg: 7, avanco: 0.5, cai: 0.8, cor: '#2f58b8', cor2: '#2a4fa6', listras: true, trelica: false, pilares: false, opaca: true } }
         ] },
       { dentro: { a: 105, b: 69, r: 69 }, fora: { a: 124, b: 92, r: 90 }, h: [9, 27], fileiras: 26,
-        trechos: [{ de: 0, ate: 360, cor: MOR_V, cor2: MOR_V2, padrao: 'mosaico', mistura: 0.3, corredor: 19, parapeito: 2, bocas: { cada: 15, f: 0.22, w: 4.5, d: 5 } }] }
+        trechos: [{ de: 0, ate: 360, cor: MOR_V, cor2: MOR_V2, padrao: 'mosaico', mistura: 0.3, corredor: 19, parapeito: 2, vomitorios: false, bocas: { cada: 15, f: 0.22, w: 4.5, d: 5 } }] }
     ],
     fachada: { cor: '#d2cec2' },
     porticos: [{ ang: 38, larg: 46, h: 46 }, { ang: 142, larg: 46, h: 46 }, { ang: 218, larg: 46, h: 46 }, { ang: 322, larg: 46, h: 46 }],
@@ -268,17 +274,21 @@ export const FICHAS = {
     campo: { corMargem: '#4c9656' },
     corMureta: '#2e3033',
     aneis: [
-      { dentro: { a: 58, b: 39.5, r: 3 }, fora: { a: 81, b: 62.5, r: 26 }, reto: true, h: [1, 10.5], fileiras: 16,
+      /* (o lance de baixo sem boca, acessado pelo anel de circulação atrás dele; as bocas nos dois lances de cima — a regra
+         dos cortes, dono, 15/11/2026) */
+      { dentro: { a: 58, b: 39.5, r: 3 }, fora: { a: 77.5, b: 59, r: 22.5 }, reto: true, h: [1, 10.5], fileiras: 16, vomitorios: false,
         trechos: [
           { de: -33, ate: 33, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.14, corredor: 13 },
           { de: 33, ate: 147, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 13 },
           { de: 147, ate: 213, cor: '#c4c2ba', cor2: '#b6b4ac', padrao: 'mosaico', mistura: 0.5, corredor: 13, semCadeiras: true },
           { de: 213, ate: 327, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 13, faixaTopo: { n: 2, cor: '#2e3033' } }
-        ] }
+        ] },
+      { dentro: { a: 77.5, b: 59, r: 22.5 }, fora: { a: 81, b: 62.5, r: 26 }, reto: true, h: [10.6, 10.6], fileiras: 2, corredorFrente: 0,
+        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 10.6, cor: '#cfcec8' }] }
     ],
     retas: [
-      { u: 0, v: 62.5, ang: 90, comp: 130, prof: 38, h: [13, 35], base: 9, fileiras: 24, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, corFachada: '#e9e9e5' },
-      { u: 0, v: -62.5, ang: 270, comp: 130, prof: 38, h: [15, 35], base: 9, fileiras: 22, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, faixaBase: { n: 3, cor: '#2e3033' }, corFachada: '#e9e9e5' }
+      { u: 0, v: 62.5, ang: 90, comp: 130, prof: 38, h: [13, 35], base: 9, fileiras: 24, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, vomitorios: { f: 0.25, cada: 2 }, corFachada: '#e9e9e5' },
+      { u: 0, v: -62.5, ang: 270, comp: 130, prof: 38, h: [15, 35], base: 9, fileiras: 22, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, vomitorios: { f: 0.25, cada: 2 }, faixaBase: { n: 3, cor: '#2e3033' }, corFachada: '#e9e9e5' }
     ],
     fachada: { cor: '#e4e4e0' },
     blocos: [
@@ -375,16 +385,20 @@ export const FICHAS = {
     campo: { corMargem: '#3f78c0' },
     corMureta: '#1f2f66',
     aneis: [
-      { dentro: { a: 58.5, b: 40, r: 5 }, fora: { a: 81, b: 62.5, r: 27 }, reto: true, h: [1, 9.5], fileiras: 22,
+      /* (o lance de baixo sem boca, acessado pelo anel de circulação atrás dele; as bocas no lance de cima — a regra dos
+         cortes, dono, 15/11/2026) */
+      { dentro: { a: 58.5, b: 40, r: 5 }, fora: { a: 77.5, b: 59, r: 23.5 }, reto: true, h: [1, 9.5], fileiras: 22, vomitorios: false,
         trechos: [
           { de: -150, ate: 150, cor: GRE_A, cor2: GRE_A2, padrao: 'mosaico', mistura: 0.35, corredor: 13 },
           /* a Geral: degrau de concreto, sem cadeira, as escadas amarelas */
           { de: 150, ate: 210, cor: '#cfc8b6', cor2: '#c2bba9', padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corredor: 9, corEscada: AMARELO }
         ] },
+      { dentro: { a: 77.5, b: 59, r: 23.5 }, fora: { a: 81, b: 62.5, r: 27 }, reto: true, h: [9.6, 9.6], fileiras: 2, corredorFrente: 0,
+        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 9.6, cor: '#b9b7ad' }] },
       { dentro: { a: 81, b: 62.5, r: 27 }, fora: { a: 87, b: 68.5, r: 33 }, reto: true, h: [11, 13.5], fileiras: 5, corredorFrente: 1.2, vomitorios: false, corMureta: '#f2f2ee',
         trechos: [{ de: 0, ate: 360, cor: '#27408f', cor2: GRE_A2, padrao: 'mosaico', mistura: 0.3, corredor: 13 }] },
       { dentro: { a: 87, b: 68.5, r: 33 }, fora: { a: 110, b: 91.5, r: 56 }, reto: true, h: [16, 32], fileiras: 24, corredorFrente: 2, corMureta: '#1f2f66',
-        trechos: [{ de: 0, ate: 360, cor: GRE_A, cor2: GRE_A2, padrao: 'mosaico', mistura: 0.35, corredor: 14, parapeito: 2 }] }
+        trechos: [{ de: 0, ate: 360, cor: GRE_A, cor2: GRE_A2, padrao: 'mosaico', mistura: 0.35, corredor: 14, parapeito: 2, vomitorios: { f: 0.3, cada: 2 } }] }
     ],
     coberturasAnel: [{ fora: { a: 126, b: 107, r: 72 }, dentro: { a: 63, b: 44.5, r: 12 }, h: 45, cai: 5, n: 64, cor: '#f3f3ef', cor2: '#ebebe6', corNervura: '#d6d6d0',
       bordaFora: { larg: 3, cor: '#dcdcd6' }, bordaDentro: { larg: 9, cor: '#8fb0c6' } }],
