@@ -66,6 +66,8 @@ CLUBE_TROCADO = {
 # estádio deles modelado.
 # 15/11/2026, o dono pediu o Jayme Cintra: o Paulista de Jundiaí sai do Nabi Abi
 # Chedid (que fica só com o Bragantino) e manda no Jayme Cintra.
+# 15/11/2026, o dono: "fazer o do Noroeste separado" — o Noroeste sai do Santa Cruz
+# (que fica só com o Botafogo-SP) e manda no Alfredo de Castilho, em Bauru.
 # 15/11/2026, o dono pediu o Canindé na vez de São Paulo: a Portuguesa sai do
 # Morumbi e volta a mandar no Canindé.
 # 15/11/2026, o dono: "separe o estádio do Maringá também" — o Maringá sai do
@@ -78,7 +80,7 @@ ESTADIO_CORRIGIDO = {
  'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
  'athletic':'Estadio Regional','mamore':'Estadio Regional','urt':'Estadio Regional',
  'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Jorge Ismael de Biasi','xv-de-piracicaba':'Jorge Ismael de Biasi',
- 'noroeste':'Santa Cruz','ituano':'Maião','iguatu':'Arena Romeirão','maringa':'Willie Davids',
+ 'noroeste':'Alfredo de Castilho','ituano':'Maião','iguatu':'Arena Romeirão','maringa':'Willie Davids',
  'caxias':'Estadio Centenario','ypiranga-rs':'Colosso da Lagoa','pelotas':'Boca do Lobo',
  'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
  'treze':'Amigão','sousa':'Almeidão','sergipe':'Batistão','madureira':'Moca Bonita',

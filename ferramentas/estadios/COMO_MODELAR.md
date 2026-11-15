@@ -146,6 +146,10 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+O TAMANHO DO QUADRO sai do `fora` do ÚLTIMO anel: o anel maior (o que vai
+mais longe do centro) tem de ser o último da lista, senão a foto corta a
+arquibancada e os marcadores caem fora (o Alfredo de Castilho).
+
 ### `retas`: bloco reto de cadeiras fora de anel
 
 `{ u, v, ang, comp, prof, h: [h0, h1], base, ...pintura do trecho }`:

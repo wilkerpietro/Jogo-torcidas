@@ -14020,6 +14020,44 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Fiel Força
   Tricolor sem erro de página. Fotos fora do repositório.
 
+## Alfredo de Castilho lowpoly (Noroeste); o Noroeste passa a mandar nele (dono, 15/11/2026)
+
+- O dono: "fazer o do Noroeste separado" e, depois de revisar o Santa
+  Cruz, "Comece o estádio do Noroeste."
+- **O Noroeste sai do Santa Cruz e manda no Alfredo de Castilho**, em
+  Bauru (como a Portuguesa no Canindé). Entra o estádio
+  `alfredo-de-castilho` (Interior de SP, bairro Bauru); o Santa Cruz
+  fica só com o Botafogo-SP. Mudou em `times.js`, `estadios.js`,
+  `torcidas.js` (Sangue Rubro), `cidades.js`, no pacote
+  `cenario3d/js/jogo.js`, nas fontes e nos dois importadores.
+  **Lotação: 18.866**, o número que eu lembro, não de planilha do dono.
+  O estádio não está desenhado na planta assada da praça.
+- Procurei o mapa de setores e NÃO achei.
+- **Como é** (satélite e fotos; o meio do campo saiu dos dois gols): o
+  campo corre de noroeste a sudeste; no quadro as cobertas de teto
+  vermelho ficam em cima.
+  - A ferradura de degrau: do canto norte, pelo fundo noroeste, pelo
+    lado sudoeste e pelo fundo sudeste; 17 m de fundo numa ponta, 21 na
+    outra e 29 no meio do lado, onde o telhado cinza cobre o fundo do
+    degrau. As onze escadas claras onde o satélite mostra.
+  - O nordeste: três cobertas baixas de teto vermelho, de cadeira
+    vermelha, com a torre das cabines entre elas.
+  - O NORUSCA escrito em branco na grama atrás dos dois gols.
+- **Na ficha**: a ferradura é o último anel (`limites` tira o tamanho do
+  quadro do último anel; com as cobertas por último a foto cortava o
+  telhado) com `normal` e `inclinacao`; as cobertas são um anel `reto`
+  com `andarReto`; uma `passagem` em volta da grama liga tudo.
+- **Época**: o satélite mostra o degrau cinza; fotos de dentro mostram
+  ele avermelhado, e uma foto antiga mostra cadeira vermelha. Fiquei com
+  o cinza do satélite.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Sangue Rubro debaixo do
+  telhado, no meio da ferradura, e a visitante no fundo sudeste.
+- **Aproximações**: as cobertas do nordeste (fundura, cadeiras); as
+  torres dos refletores; as alturas; o entorno.
+- **Testado**: chão um só, nenhum marcador fora; briga como Sangue Rubro
+  sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

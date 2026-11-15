@@ -81,6 +81,7 @@ NOVOS = [
     {'nome': 'Boca do Lobo', 'mapa': 'interior-do-rs', 'bairro': 'Pelotas II'},
     {'nome': 'Willie Davids', 'mapa': 'interior-do-pr', 'bairro': 'Maringá I'},
     {'nome': 'Jayme Cintra', 'mapa': 'regiao-de-campinas', 'bairro': 'Jundiaí'},
+    {'nome': 'Alfredo de Castilho', 'mapa': 'interior-de-sp', 'bairro': 'Bauru'},
 ]
 
 

@@ -3967,11 +3967,12 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 4,
    "estadios": [
     "Maião",
     "Santa Cruz",
-    "Jorge Ismael de Biasi"
+    "Jorge Ismael de Biasi",
+    "Alfredo de Castilho"
    ],
    "rodovias": [
     "Rodovia Sudeste 1",

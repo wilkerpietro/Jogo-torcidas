@@ -3,6 +3,7 @@
    Fonte: legado/unity/data.js (prototipo antigo). */
 TO.dados.estadios = [
   {"id": "albertao", "nome": "Albertão", "mapa": "maranhao", "bairro": "Teresina I", "capacidade": 44200, "mandantes": ["river"]},
+  {"id": "alfredo-de-castilho", "nome": "Alfredo de Castilho", "mapa": "interior-de-sp", "bairro": "Bauru", "capacidade": 18866, "mandantes": ["noroeste"]},
   {"id": "alfredo-jaconi", "nome": "Alfredo Jaconi", "mapa": "interior-do-rs", "bairro": "Caxias do Sul I", "capacidade": 19924, "mandantes": ["juventude"]},
   {"id": "allianz-parque", "nome": "Allianz Parque", "mapa": "sao-paulo", "bairro": "Barra Funda", "capacidade": 43713, "mandantes": ["palmeiras"]},
   {"id": "almeidao", "nome": "Almeidão", "mapa": "paraiba", "bairro": "Mandacaru - JP", "capacidade": 25770, "mandantes": ["botafogo-pb", "sousa"]},
@@ -72,7 +73,7 @@ TO.dados.estadios = [
   {"id": "presidente-vargas", "nome": "Presidente Vargas", "mapa": "fortaleza", "bairro": "Monte Castelo", "capacidade": 20268, "mandantes": ["ferroviario", "floresta"]},
   {"id": "raulino-de-oliveira", "nome": "Raulino de Oliveira", "mapa": "suburbio-carioca", "bairro": "Volta Redonda", "capacidade": 18230, "mandantes": ["volta-redonda", "goytacaz", "americano"]},
   {"id": "rei-pele", "nome": "Rei Pelé", "mapa": "alagoas", "bairro": "Farol", "capacidade": 19105, "mandantes": ["crb", "csa"]},
-  {"id": "santa-cruz", "nome": "Santa Cruz", "mapa": "interior-de-sp", "bairro": "Ribeirão Preto I", "capacidade": 29292, "mandantes": ["botafogo-sp", "noroeste"]},
+  {"id": "santa-cruz", "nome": "Santa Cruz", "mapa": "interior-de-sp", "bairro": "Ribeirão Preto I", "capacidade": 29292, "mandantes": ["botafogo-sp"]},
   {"id": "sao-januario", "nome": "Sao Januário", "mapa": "rio-de-janeiro", "bairro": "São Januário", "capacidade": 21880, "mandantes": ["vasco"]},
   {"id": "serejao", "nome": "Serejão", "mapa": "brasilia", "bairro": "Taguatinga", "capacidade": 27000, "mandantes": ["brasiliense"]},
   {"id": "serra-dourada", "nome": "Serra Dourada", "mapa": "goiania", "bairro": "Jardim Goiás", "capacidade": 50049, "mandantes": ["goias", "vila-nova"]},
