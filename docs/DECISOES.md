@@ -13945,6 +13945,43 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Raça
   Tricolor sem erro de página. Fotos fora do repositório.
 
+## Nabi Abi Chedid lowpoly (Bragantino): o estádio antigo, que foi demolido (dono, 15/11/2026)
+
+- O dono, depois de revisar o Jayme Cintra: "Ok, vamos pro Nabi Abi
+  Chedid."
+- **O estádio foi demolido.** O satélite atual do Google mostra o
+  canteiro de obra do estádio novo. O modelo é o estádio ANTIGO, medido
+  num satélite mais velho (Bing, zoom 19, 0,275 m por pixel, com ele de
+  pé) e conferido com um da Esri e com as fotos. A medida é mais grossa
+  que a dos outros estádios. Fica pro dono decidir se o jogo quer o
+  antigo (como está) ou o novo, quando houver imagem dele.
+- Procurei o mapa de setores e NÃO achei.
+- **Como é**: retangular, apertado entre duas ruas, quatro lados
+  diferentes. No quadro a coberta fica em cima.
+  - A coberta (sudoeste): reta, 118 m por 19 m, de cadeira clara, toda
+    debaixo do telhado cinza; na ponta noroeste, descoberto, o bloco de
+    cadeira azul, que faz o canto em leque.
+  - Atrás do gol do noroeste: a arquibancada listrada de preto e branco
+    (14 faixas de 5 m, da frente ao fundo).
+  - Atrás do gol do sudeste: a arquibancada verde, alta e recuada, com
+    as escadas amarelas e o muro branco; na frente, o pátio de concreto.
+  - O nordeste: só um degrau baixo e estreito, debaixo das lonas
+    vermelhas dos anúncios.
+- **Época**: o satélite do Bing mostra a listrada em preto e branco; uma
+  aérea mais recente mostra as faixas em cinza e branco. Fiquei com o
+  preto e branco do satélite que mediu.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Guerreiros do Leão na
+  listrada e a visitante na verde.
+- **Ferramenta**: `tiles2.py` (no scratchpad) baixa satélite da Esri, do
+  Bing e do arquivo histórico; anotado no guia que, se o do Google
+  mostrar obra ou demolição, vale procurar nos outros.
+- **Aproximações**: as cores das cadeiras debaixo do telhado; o bloco
+  azul reto e o leque (no satélite é um bloco só, enviesado); a fundura
+  da verde (9 a 10 m); as torres dos refletores; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Guerreiros
+  do Leão sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
