@@ -149,6 +149,13 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+ARENA COBERTA: A ABERTURA DO TELHADO NÃO É A BEIRA DA ARQUIBANCADA (o
+Mineirão; dono, 15/11/2026: "ele não é tão oval assim como você desenhou").
+Por fora oval não quer dizer lance de baixo oval: procurar o mapa de
+setores antes de desenhar. Lance de baixo retangular dentro de um oval = os
+anéis da frente em retângulo de canto redondo (`reto`) e a parte de trás de
+`normal: true` até o oval, com os cantos sem boca.
+
 BOCA COLORIDA E NERVURA GROSSA (o Mineirão): `vomitorios: { cor, corParapeito }`
 pinta a boca de acesso (as laranja do lance de baixo e as vermelhas do de
 cima); `coberturasAnel[].larguraNervura` (em graus, de cada lado) engrossa a

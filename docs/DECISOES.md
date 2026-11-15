@@ -14421,6 +14421,15 @@ O dono: "Vamos pra Minas Gerais, começando pelo Mineirão", e mandou quatro fot
 - **O que não achei**: mapa de setores desenhado (a busca de imagens falhou; os setores vieram de texto). A planta dos lances debaixo do telhado é estimada pelas fotos e pela beira que aparece na abertura.
 - **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página.
 
+## Mineirão: o lance de baixo não é oval (dono, 15/11/2026)
+
+O dono mandou o mapa de setores do Mineirão: "Observe no mapa do mineirão que ele não é tão oval assim como você desenhou".
+
+- **Onde eu tinha errado**: tomei a borda do gramado que aparece pela abertura do telhado como a beira da arquibancada e fiz os dois lances ovais. Pelo mapa, por fora o estádio é oval, mas o LANCE DE BAIXO (setores 101 a 146) é um retângulo de cantos redondos colado no campo; só o LANCE DE CIMA (301 a 344) acompanha o oval. Os camarotes (C201 a C274) ficam só nas duas laterais.
+- **Como ficou**: a frente do lance de baixo e o corredor de concreto em retângulos de canto redondo paralelos (`reto: true`); a parte de trás do lance de baixo vai da beira retangular até o oval (`normal: true`, `inclinacao`), funda no meio dos quatro lados e quase nada nos cantos, onde não tem boca; a faixa escura dos camarotes só nas laterais, e atrás dos gols o muro de concreto no lugar dela; o lance de cima continua oval.
+- **Os setores pelo mapa**: Laranja no fundo norte (portão F), Roxo na lateral oeste (portões A e B), Amarelo no fundo sul (portão C), o leste (portões D e E) é o Vermelho. A visitante foi pra ponta norte da lateral oeste, no lance de cima (Roxo Superior, portão A); a Máfia Azul na parte de trás do lance de baixo do fundo sul (Amarelo).
+- **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
