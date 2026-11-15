@@ -123,6 +123,10 @@ formam um chão só; uma fresta isola o lance).
   lance); `cada: 2` = uma a cada duas escadas. Com `em: [0, 0.5, 1]` as bocas
   caem em lugares certos do trecho (fração do comprimento; 0 e 1 fazem meia
   boca na divisa, que fecha com a meia boca do trecho vizinho).
+  A boca só nasce se o trecho tem corredor na frente: num anel com
+  `corredorFrente: 0` não sai nenhuma. Faixa de cima encostada num corredor
+  (o Canindé) leva `corredorFrente: 1.2` e `f: 0.04`: a caixa fica na
+  frente da faixa, dando no corredor.
 - `h`, `dentro`, `fora`: valem só pro trecho (um setor mais fundo ou mais
   alto que os vizinhos). Com `fora` diferente num anel `reto`, ponha
   `reto: false` no trecho.

@@ -64,6 +64,8 @@ CLUBE_TROCADO = {
 # 14/11/2026, o dono: o São José volta pro Passo d'Areia, o Ypiranga/RS vai
 # pro Colosso da Lagoa e o Pelotas pra Boca do Lobo — os três ganharam o
 # estádio deles modelado.
+# 15/11/2026, o dono pediu o Canindé na vez de São Paulo: a Portuguesa sai do
+# Morumbi e volta a mandar no Canindé.
 # 15/11/2026, o dono: "separe o estádio do Maringá também" — o Maringá sai do
 # Germano Krüger (que fica só com o Operário) e manda no Willie Davids.
 ESTADIO_CORRIGIDO = {
@@ -79,7 +81,7 @@ ESTADIO_CORRIGIDO = {
  'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
  'treze':'Amigão','sousa':'Almeidão','sergipe':'Batistão','madureira':'Moca Bonita',
  'goytacaz':'Raulino de Oliveira','americano':'Raulino de Oliveira',
- 'portuguesa':'Morumbi','sao-jose':"Passo d'Areia",
+ 'portuguesa':'Canindé','sao-jose':"Passo d'Areia",
 }
 
 

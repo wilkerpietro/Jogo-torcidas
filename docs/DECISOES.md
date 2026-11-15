@@ -13459,6 +13459,60 @@ também".
 - **Testado**: briga no estádio; chão um só, nenhum marcador fora; sem
   erro de página. Os outros estádios não mudam (ninguém usa `normal`).
 
+## Canindé lowpoly (Portuguesa); a Portuguesa volta a mandar no Canindé (dono, 15/11/2026)
+
+- O dono: "Vamos pro próximo estado, São Paulo, estádio do Canindé."
+- **A Portuguesa sai do Morumbi e volta pro Canindé.** Em 03/10/2026 o
+  Canindé tinha saído dos dados (a Portuguesa mandava no Morumbi). Como
+  o dono pediu o estádio modelado, vale o que foi feito com o Passo
+  d'Areia e com o Willie Davids: o estádio volta e o clube manda nele.
+  Mudou em `times.js` (estádio e lotação), `estadios.js` (entra
+  `caninde`, bairro Canindé, mapa `sao-paulo`; o Morumbi fica só com o
+  São Paulo), `torcidas.js` (Leões da Fabulosa), `cidades.js` (lista de
+  estádios de São Paulo), no pacote `cenario3d/js/jogo.js`, nas fontes e
+  nos dois importadores. **Lotação: 21.004** (o número oficial que eu
+  conheço; não saiu de planilha do dono). O estádio não está desenhado
+  na planta assada de São Paulo: a rota vai até o centro do bairro.
+- **Como é o estádio** (satélite e fotos; o meio do campo saiu do
+  círculo central): uma bacia oval baixa, pintada de vermelho e verde
+  com as escadas amarelas, e um lance alto só no oeste.
+  - O anel de baixo: degrau de cimento vermelho atrás dos dois gols (11
+    m, da mureta ao muro de fora), verde nos dois cantos do oeste, e
+    cadeira em blocos na frente da coberta.
+  - No oeste, atrás do anel: o corredor amarelo e o lance alto em duas
+    faixas, com outro corredor no meio. A de cima tem o LUSA nas
+    cadeiras (L verde no vermelho, U vermelho no verde, S verde no
+    vermelho, A vermelho no verde) e mais um bloco vermelho. O telhado é
+    de concreto dobrado, em 13 panos. O lance passa do telhado nas duas
+    pontas: degrau verde na ponta sul, cadeira vermelha na ponta norte.
+    É uma meia-lua: 29 m de fundo no meio, 13 m nas pontas, e mais baixo
+    nas pontas (`inclinacao`).
+  - No leste o anel recua. Na frente fica uma meia-lua de cadeiras que
+    desce até o campo; atrás dela o corredor amarelo, que nas duas
+    pontas encosta na mureta; atrás do corredor a faixa de degrau
+    pintado (verde, vermelho no meio, verde), que emenda no vermelho de
+    trás dos gols.
+  - As quatro torres de concreto dos refletores: duas atrás da coberta,
+    duas no pátio do leste. A Marginal Tietê passa do lado nordeste.
+- **Os acessos** (conferidos no satélite antes de desenhar): as bocas
+  são as caixas de concreto na FRENTE das faixas de cima, dando nos
+  corredores amarelos. Foram postas uma a uma onde o satélite e as fotos
+  mostram: quatro na faixa do leste, cinco na faixa de baixo da coberta,
+  quatro na faixa do LUSA, uma no canto sudoeste. O anel de baixo, a
+  meia-lua de cadeiras e os fundos dos gols não têm boca.
+- **Lição pro gerador (anotada no guia)**: a boca só nasce se o trecho
+  tem corredor na frente (`corredorFrente` maior que zero). Faixa de
+  cima encostada num corredor leva `corredorFrente: 1.2`.
+- **Onde ficam as torcidas (escolha minha, sem fonte)**: a Leões da
+  Fabulosa no meio da faixa de degrau do leste; a visitante atrás do gol
+  do norte, do lado da Marginal.
+- **Aproximações**: as alturas (as fotos não dão medida); a divisão das
+  duas faixas do lance alto (10 m e 17 m); o lugar do placar no canto
+  nordeste; o entorno (ginásio, tenda, galpões e pátios em caixas).
+- **Testado**: chão um só, nenhum marcador fora; briga de 60 contra 47
+  como Leões da Fabulosa sem erro de página. As fotos de referência
+  ficaram fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

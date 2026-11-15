@@ -8463,11 +8463,12 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 4,
    "estadios": [
     "Morumbi",
     "Neo Quimica Arena",
-    "Allianz Parque"
+    "Allianz Parque",
+    "Canindé"
    ],
    "rodovias": [
     "Rodovia Sudeste 2"

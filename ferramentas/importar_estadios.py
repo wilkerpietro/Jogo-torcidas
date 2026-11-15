@@ -158,7 +158,8 @@ def main():
     # Passo d'Areia — o São José na Arena do Grêmio.)
     # (14/11/2026: o Passo d'Areia volta — o São José manda nele de novo —, e entram o
     # Colosso da Lagoa e a Boca do Lobo, na lista NOVOS.)
-    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira', 'caninde'}
+    # (15/11/2026: o Canindé volta — a Portuguesa manda nele de novo, e o Morumbi fica só com o São Paulo.)
+    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira'}
     legado_e_novos = [e for e in estadios if identificador(e['nome']) not in TIRAR] + \
         [{'nome': n['nome'], 'mapaNovo': n['mapa'], 'bairroEstadio': n['bairro']} for n in NOVOS]
     for e in sorted(legado_e_novos, key=lambda x: x['nome']):
