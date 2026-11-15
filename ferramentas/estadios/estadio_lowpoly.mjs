@@ -26,8 +26,16 @@
 const RAD = Math.PI / 180;
 const CONCRETO = '#b4b2a9', CONCRETO_ESC = '#8d8b84';
 
+/* O CONTORNO MEDIDO PONTO A PONTO (`forma: 'raios'`; dono, 15/11/2026, o Mineirão: "observe detalhadamente a imagem do mapa
+   pra planta da arquibancada vista de cima ser extremamente fiel ao mapa"): `raios` é a lista dos raios, em metros, medidos
+   do meio do campo em ângulos iguais a partir de 0 (120 raios = um a cada 3 graus); entre dois, interpola. `a` e `b` (o raio em
+   0 e em 90 graus, mais ou menos) só servem pras câmeras de conferência. Conta como contorno curvo, como a elipse: as
+   colunas saem do meio do campo (nada de `reto` nem de `normal`). */
+const curva = c => c.forma === 'elipse' || c.forma === 'raios';
 /* o raio do contorno na direção `ang` (graus) */
 export function raioDe(ang, c) {
+  if (c.forma === 'raios') { const n = c.raios.length, p = (((ang % 360) + 360) % 360) / 360 * n, i = Math.floor(p), f = p - i;
+    return c.raios[i % n] * (1 - f) + c.raios[(i + 1) % n] * f; }
   const dx = Math.cos(ang * RAD), dy = Math.sin(ang * RAD);
   if (c.forma === 'elipse') {
     /* a elipse pode estar FORA DO CENTRO (`cu`, `cv`): é o que faz a arquibancada mais funda de um lado que do outro (o Arruda) */
@@ -110,13 +118,13 @@ export function colunasDe(ficha, anel, t) {
   const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, meio = (t.de + t.ate) / 2;
   const prof = Math.max(1, raioDe(meio, cf) - raioDe(meio, cd)), arco = vao * RAD * (raioDe(meio, cd) + raioDe(meio, cf)) / 2;
   const G = medidasDe(ficha, anel, t, arco, prof), n = G.n;
-  const reto = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+  const reto = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
   /* `normal: true` (anel ou trecho, com a beira de dentro em retângulo de canto redondo): a escada sai PERPENDICULAR à beira de
      dentro e vai reta até o fundo, seja qual for o desenho do fundo. É o caso da arquibancada cujas fileiras acompanham a
      beira do campo e cujo fundo corta as fileiras (mais funda no meio, rasa nas pontas: o Willie Davids; dono, 15/11/2026:
      "as listras de escadaria entre os blocos ficou esquisito e infiel à realidade" — no anel reto de fundo não concêntrico a
      escada saía torta). Dois trechos vizinhos dividem a mesma linha de divisa, mesmo com fundos diferentes. */
-  const normal = !!def(t.normal, anel.normal, false) && cd.forma !== 'elipse', memo = new Map();
+  const normal = !!def(t.normal, anel.normal, false) && !curva(cd), memo = new Map();
   const peloNormal = ang => { let q = memo.get(ang); if (q) return q;
     const pm = paramDe(ang, cd), a = pontoPor(pm, cd), nx = pm.tipo === 'h' ? 0 : pm.tipo === 'v' ? pm.sx : pm.sx * Math.cos(pm.phi), ny = pm.tipo === 'h' ? pm.sy : pm.tipo === 'v' ? 0 : pm.sy * Math.sin(pm.phi);
     const fora = s => { const x = a[0] + nx * s, y = a[1] + ny * s; return Math.hypot(x, y) - raioDe(Math.atan2(y, x) / RAD, cf); };
@@ -161,7 +169,7 @@ export function andavel(ficha, u, v) {
       let achou = false;
       for (const t of anel.trechos) { if (t.tipo === 'vazio') continue;
         /* (o fundo pode ser elipse — o muro enviesado do Jorjão —; só a beira de dentro tem de ser retângulo de canto redondo) */
-        const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora; if (cd.forma === 'elipse') continue;
+        const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora; if (curva(cd)) continue;
         const cx = Math.max(-(cd.a - cd.r), Math.min(cd.a - cd.r, u)), cy = Math.max(-(cd.b - cd.r), Math.min(cd.b - cd.r, v)), dd = Math.hypot(u - cx, v - cy);
         if (dd < cd.r - 0.3) continue;
         const fx = cx + (u - cx) / dd * cd.r, fy = cy + (v - cy) / dd * cd.r;
@@ -253,7 +261,7 @@ export function construir(THREE, ficha) {
   cena.add(M.malha());
 
   /* ---- os anéis de arquibancada ---- */
-  const A = Malha(), R = Malha(), Ro = Malha(), Pm = Malha();
+  const A = Malha(), R = Malha(), Ro = Malha(), Pm = Malha(), R0 = R;
   /* a cor de cada cadeira de um trecho de n × N cadeiras */
   const pintorDe = (t, G, rnd) => {
     const n = G.n, N = G.N, kf = N / G.Nold;
@@ -334,7 +342,7 @@ export function construir(THREE, ficha) {
         for (let i = 0; i < n; i++) {
           const a0 = t.de + vao * i / n, a1 = t.de + vao * (i + 1) / n;
           /* (no anel reto a passagem segue a mesma régua das vizinhas — pelo lado, não pelo raio — pra emendar nelas sem sobra) */
-          const retoP = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+          const retoP = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
           const p = (ang, c, h) => { const q = retoP ? pontoPor(paramDe(ang, cd), c) : ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
           A.quad(p(a0, cd), p(a0, cf), p(a1, cf), p(a1, cd), t.cor || CONCRETO);
           /* (a laje alta — a galeria de cima — ganha a parede de fora) */
@@ -409,6 +417,9 @@ export function construir(THREE, ficha) {
   });
   /* ---- a cobertura em ANEL inteiro (Maracanã): de um contorno de fora até a boca de dentro, em gomos ---- */
   for (const cb of ficha.coberturasAnel || []) {
+    /* `opaca: true`: o pedaço de fora da arquibancada sai inteiro na vista de cima, como o anel de placas solares do Mineirão
+       fora das cadeiras (a regra do Beira-Rio: em cima das cadeiras a cobertura sai transparente; fora delas, inteira) */
+    const R = cb.opaca ? Ro : R0;
     const n = cb.n || 60, hf = cb.h, hd = cb.h - (cb.cai || 0), prof = raioDe(0, cb.fora) - raioDe(0, cb.dentro);
     const pt = (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return P(q[0], q[1], hd + (hf - hd) * f + (dh || 0)); };
     const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
@@ -501,7 +512,7 @@ export function construir(THREE, ficha) {
       const h1 = incl != null ? h0 + incl * G.prof : (t.h || anel.h)[1], fund = G.fundura, topo = ang => incl != null ? h0 + (h1 - h0) * fund(ang) / G.prof : h1;
       const passo = Math.max(1, Math.round(3 / G.larguraCel)), ix = []; for (let i = 0; i < G.n; i += passo) ix.push(i); ix.push(G.n);
       return { pos: G.pos, angs: ix.map(i => G.angs[i]), h0, prof: G.prof, alt: (ang, f) => h0 + (topo(ang) - h0) * Math.max(0, (f - G.fc) / Math.max(0.05, 1 - G.fc)), chao: false }; };
-    const piso = (anel, t) => { const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, retoP = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+    const piso = (anel, t) => { const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, retoP = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
       const em = (ang, c) => retoP ? pontoPor(paramDe(ang, cd), c) : ponto(ang, raioDe(ang, c)), pos = (ang, f) => entre(em(ang, cd), em(ang, cf), f);
       const n = Math.max(2, Math.ceil(vao / 2)), m = t.de + vao / 2, a = pos(m, 0), b = pos(m, 1);
       return { pos, angs: Array.from({ length: n + 1 }, (_, i) => t.de + vao * i / n), h0: 0, prof: Math.max(1, Math.hypot(b[0] - a[0], b[1] - a[1])), alt: () => 0, chao: true }; };
@@ -712,7 +723,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
      contínua ela corta o lance; entre duas arquibancadas separadas ela cai no vão, no chão. Não nasce dentro de setor de
      torcida nem do curral da visitante. `jogo.gradesCanto: false` desliga. */
   if (j.gradesCanto !== false) {
-    const c = lim.dentro, q2 = Math.SQRT1_2, pc = c.forma === 'elipse' ? [c.a * q2, c.b * q2] : [c.a - (c.r || 0) * (1 - q2), c.b - (c.r || 0) * (1 - q2)];
+    const c = lim.dentro, q2 = Math.SQRT1_2, pc = curva(c) ? [c.a * q2, c.b * q2] : [c.a - (c.r || 0) * (1 - q2), c.b - (c.r || 0) * (1 - q2)];
     const rMax = Math.max(raioDe(0, lim.fora), raioDe(90, lim.fora), raioDe(45, lim.fora)) + 45;
     const dentroDe = (ang, [d, a], m) => { const x = ((ang - (d - m)) % 360 + 360) % 360; return x <= (a - d) + 2 * m; };
     const ocupado = ang => dentroDe(ang, [vd, va], (j.folgaPM || 7) + 2) || ['mandante1', 'mandante2', 'mandante3'].some(k => j[k] && dentroDe(ang, j[k], 1.5));

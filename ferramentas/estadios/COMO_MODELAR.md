@@ -149,6 +149,35 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+PLANTA TIRADA DO MAPA DE SETORES, RAIO A RAIO (o Mineirão; dono,
+15/11/2026: "observe detalhadamente a imagem do mapa pra planta da
+arquibancada vista de cima ser extremamente fiel ao mapa"). Quando nem
+elipse nem retângulo de canto redondo servem, o contorno pode ser uma
+tabela: `{ forma: 'raios', raios: [...120 valores...], a, b }`, o raio a
+partir do meio do campo de 3 em 3 graus (0 = +u, anti-horário). Como medir:
+1) girar e escalar o mapa pelo retângulo do campo (105 x 68) com o
+`quadro.sh` (no mapa do Mineirão: 4,25 px/m no recorte ampliado 3x);
+2) conferir o giro no satélite de área maior (ruas, prédios vizinhos);
+3) raio a raio, anotar onde começa e acaba cada cor e cada linha preta
+(onde a linha some na cor do setor, varrer linha por linha com limiar
+próprio); 4) desenhar as tabelas por cima do mapa e conferir canto a canto
+ANTES de assar; 5) assar e pôr a vista de cima na mesma escala, com as
+mesmas linhas, embaixo do mapa. Contorno `raios` é curvo: as colunas saem
+do meio do campo. Faixa que só existe num lado (camarotes): o contorno de
+dentro dela é igual ao de fora no resto da volta, e o trecho ali é
+`vazio`.
+
+LANCE QUE DÁ A VOLTA INTEIRA (o Mineirão; dono, 15/11/2026: "Falta as
+cadeiras na superior e as escadas. Veja as regras que apliquei nos
+anteriores"): nunca um trecho só de 0 a 360 em contorno curvo; a largura
+das colunas sai do raio no meio do trecho, e onde o raio é maior a cadeira
+estica. Cortar em blocos de largura igual (12 a 15 m, medidos no meio do
+lance), `corredor: 0`, `escadaNaBorda: true` (a escada de concreto liso em
+cada divisa, sem `corEscada`) e a boca com `vomitorios.em: [0.5]`. Mosaico
+de dois tons parecidos (se o contraste for grande, vira chuvisco e as
+fileiras somem). Telhado escuro por cima das cadeiras: a parte de fora das
+cadeiras com `opaca: true` e o resto transparente, com `vazado` baixo.
+
 ARENA COBERTA: A ABERTURA DO TELHADO NÃO É A BEIRA DA ARQUIBANCADA (o
 Mineirão; dono, 15/11/2026: "ele não é tão oval assim como você desenhou").
 Por fora oval não quer dizer lance de baixo oval: procurar o mapa de
