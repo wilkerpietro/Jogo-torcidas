@@ -13257,6 +13257,45 @@ também".
 - **Testado**: briga no Castelão e na Arena da Baixada; chão um só nos
   dois, nenhum marcador fora; sem erro de página.
 
+## Estádio do Café lowpoly (Londrina) (dono, 15/11/2026)
+
+- O dono pediu o Estádio do Café depois da regra dos acessos. Feito sem
+  agente. Fotos de referência (satélite de alta resolução, aéreas de
+  várias épocas e de dentro) fora do repositório. Não achei mapa de
+  setores.
+- **Medida**: o meio do campo saiu dos dois gols; o campo é norte-sul,
+  inclinado 4° no satélite.
+- **Os acessos** (a regra nova, olhada primeiro): o estádio é enterrado
+  no morro. Não há boca de vomitório: entra-se por cima, pelo corredor
+  largo que dá a volta no alto da ferradura, no nível da rua, e
+  desce-se pelas escadas; no meio do lance passa outro corredor.
+- **Estádio do Café** (o norte à direita, o oeste em cima):
+  - a ferradura de degrau de cimento em volta da pista de terra, do fim
+    da coberta (nordeste) pela curva norte e pelo lado leste inteiro até
+    a ponta sudeste; dois lances com o corredor no meio e o corredor do
+    alto, onde ficam os barracões dos bares; o lado leste é mais fundo
+    (46 m) que a curva norte (40 m);
+  - em cima, a coberta: o lance reto de cadeira em blocos vermelhos e
+    azuis (xadrez de duas fileiras de blocos), debaixo do telhado cinza
+    em arco; as fileiras da frente descobertas; duas torres de refletor
+    atrás;
+  - a ponta sul aberta, com o prédio da entrada e o placar;
+  - a faixa de grama entre a pista e a arquibancada, com os bancos de
+    reserva (os túneis brancos) do lado da coberta.
+- **Cor da ferradura**: as fotos antigas mostram o degrau pintado de
+  azul; o satélite e as aéreas mais novas mostram o cimento cru e
+  escurecido. Segui as mais novas.
+- **Por fora**: como é enterrado, a parede de fora foi pintada de verde
+  pra ler como barranco (não há fachada de verdade).
+- **Setores**: sem fonte. Escolha minha: a Falange Azul no meio do lado
+  leste, a visitante na ponta sudeste da ferradura (os dois ficaram
+  vizinhos; o dono muda se for outro lugar).
+- **Testado**: briga 60 × 56 jogando de Falange Azul; chão um só
+  (lances e corredores ligados), nenhum marcador fora; sem erro de
+  página.
+- **Fila do Paraná** (aguardando o dono): Germano Krüger (Operário e
+  Maringá), o último.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
