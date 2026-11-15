@@ -98,7 +98,7 @@ export default {
   ],
   /* (escolhas minhas, sem fonte: não achei mapa de setores) a Comando Azul na arquibancada azul do norte e a visitante na
      arquibancada de trás do gol do sul; os outros bondes da casa na coberta */
-  jogo: { mandante1: [2, 26], mandante2: [75, 105], mandante3: [112, 140], visitante: [161, 176.5], tunelMandante: 14, tunelVisitante: 168, folgaPM: 4,
+  jogo: { mandante1: [2, 26], mandante2: [75, 105], mandante3: [112, 140], visitante: [160.5, 175], tunelMandante: 14, tunelVisitante: 168, folgaPM: 3.5,
           fracao: { mandante1: 0.55, mandante2: 0.4, mandante3: 0.4, visitante1: 0.62, visitante2: 0.7, visitante3: 0.55 },
           torcidas: { comando_azul: 'mandante1' } }
 };

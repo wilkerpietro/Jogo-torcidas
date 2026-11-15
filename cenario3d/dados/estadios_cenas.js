@@ -6770,30 +6770,30 @@ window.__ESTADIOS = {
      ]
     },
     "visitante1": {
-     "x": 551,
-     "y": 828,
+     "x": 555,
+     "y": 811,
      "len": 130,
      "dir": [
       0.98,
-      0.2
+      0.21
      ]
     },
     "visitante2": {
-     "x": 573,
-     "y": 755,
+     "x": 577,
+     "y": 743,
      "len": 130,
      "dir": [
       0.96,
-      0.27
+      0.28
      ]
     },
     "visitante3": {
-     "x": 542,
-     "y": 904,
+     "x": 543,
+     "y": 881,
      "len": 130,
      "dir": [
       0.99,
-      0.12
+      0.14
      ]
     }
    },
@@ -6828,24 +6828,24 @@ window.__ESTADIOS = {
      "rot": "VISITANTE 1º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 433,
-     "y": 805
+     "x": 437,
+     "y": 785
     },
     {
      "id": "visitante2",
      "rot": "VISITANTE 2º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 440,
-     "y": 718
+     "x": 445,
+     "y": 705
     },
     {
      "id": "visitante3",
      "rot": "VISITANTE 3º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 437,
-     "y": 891
+     "x": 438,
+     "y": 866
     }
    ],
    "entradas": [
@@ -6885,11 +6885,11 @@ window.__ESTADIOS = {
     },
     {
      "x": 477,
-     "y": 1033
+     "y": 996
     },
     {
      "x": 404,
-     "y": 1034
+     "y": 994
     }
    ],
    "grades": [
@@ -6897,12 +6897,12 @@ window.__ESTADIOS = {
      "id": "div_v1",
      "rot": "DIVISÓRIA",
      "de": {
-      "x": 598,
-      "y": 701
+      "x": 602,
+      "y": 693
      },
      "ate": {
-      "x": 415,
-      "y": 638
+      "x": 420,
+      "y": 629
      },
      "modulos": 7,
      "espessura": 10
@@ -6912,11 +6912,11 @@ window.__ESTADIOS = {
      "rot": "DIVISÓRIA",
      "de": {
       "x": 542,
-      "y": 963
+      "y": 937
      },
      "ate": {
       "x": 350,
-      "y": 951
+      "y": 920
      },
      "modulos": 7,
      "espessura": 10
