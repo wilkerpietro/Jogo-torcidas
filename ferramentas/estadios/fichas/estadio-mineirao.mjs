@@ -65,13 +65,18 @@ const DV = R([104.9, 105, 104.7, 104.3, 103.8, 102.9, 102, 101, 99.7, 98, 96.6, 
 const F = R([132.3, 132.3, 132.2, 131.8, 131.4, 130.6, 129.8, 128.8, 127.7, 126.3, 124.7, 123.1, 121.4, 119.7, 118, 116.4, 114.8, 113.2, 111.6, 110.2, 108.9, 107.7, 106.6, 105.7, 104.9, 104.2, 103.6, 103.2, 103, 102.9, 102.8, 102.8, 103, 103.4, 103.8, 104.3, 105, 105.8, 106.6, 107.6, 108.6, 109.8, 111.2, 112.7, 114.4, 116, 117.6, 119.3, 121, 122.6, 124.2, 125.6, 126.9, 128.1, 129, 129.9, 130.6, 131, 131.4, 131.6, 131.8, 131.8, 131.6, 131.2, 130.8, 130.2, 129.4, 128.4, 127.2, 125.7, 124, 122.4, 120.9, 119.2, 117.5, 115.9, 114.4, 112.8, 111.2, 109.8, 108.6, 107.5, 106.5, 105.7, 105, 104.4, 103.8, 103.4, 103.1, 103, 103, 103, 103.2, 103.4, 103.8, 104.4, 105, 105.9, 106.8, 107.8, 109, 110.2, 111.5, 113, 114.5, 116.1, 117.8, 119.6, 121.3, 122.9, 124.4, 125.9, 127.2, 128.4, 129.4, 130.2, 130.9, 131.5, 131.9, 132.2]);
 const TOPO = R(F.raios.map(r => r + 4));
 /* OS BLOCOS DE CADEIRAS (as regras do dono, 14/11/2026: cadeira uma a uma; a escada é a faixa de concreto liso entre dois blocos):
-   cada lance é cortado em blocos de largura igual, medida no meio do lance, com uma escada em cada divisa. (Um trecho só dando a
-   volta inteira esticava as cadeiras atrás dos gols, onde o raio é maior.) */
+   cada lance é cortado em PARES de blocos de largura igual, medida no meio do lance (um trecho só dando a volta inteira esticava
+   as cadeiras atrás dos gols, onde o raio é maior). Cada par tem uma escada na divisa e outra no meio, e a boca fica EM CIMA da
+   escada do meio, a meia altura do lance: uma boca a cada duas escadas (dono, 15/11/2026, com a foto do lance de cima: "você
+   gerou muitas escadas entre os blocos [...] observe o padrão correto de como o vomitório fica no meio da altura das cadeiras e
+   da escada"). `PAR` devolve o trecho com o `corredor` na metade do par, pra escada do meio cair no meio. */
 const RAD = Math.PI / 180;
 const rEm = (c, a) => { const n = c.raios.length, p = (((a % 360) + 360) % 360) / 360 * n, i = Math.floor(p), f = p - i; return c.raios[i % n] * (1 - f) + c.raios[(i + 1) % n] * f; };
 const BLOCOS = (de, ate, c0, c1, alvo) => { const out = []; let a = de;
   while (a < ate - 0.01) { const passo = alvo / ((rEm(c0, a) + rEm(c1, a)) / 2 * RAD); let b = a + passo; if (ate - b < passo * 0.5) b = ate; out.push([a, b]); a = b; }
   return out; };
+const PAR = ([de, ate], c0, c1, mais) => { const m = (de + ate) / 2, larg = (ate - de) * RAD * (rEm(c0, m) + rEm(c1, m)) / 2;
+  return { de, ate, corredor: larg * 0.52, escadaNaBorda: true, ...mais }; };
 /* onde ficam as faixas de camarotes e as quatro passagens dos cantos */
 const OESTE = [33, 147], LESTE = [222, 318], CANTOS = [38, 142, 214, 326], PASSO = 2.2;
 /* o telhado: a abertura, a divisa da membrana com o anel de concreto, a beira de fora dos pórticos */
@@ -88,8 +93,8 @@ export default {
     /* O LANCE DE BAIXO, com as bocas laranja no meio do lance; nos quatro cantos, a passagem diagonal */
     { dentro: I, fora: CA, h: [2.6, 10], fileiras: 22,
       trechos: [[CANTOS[3] + PASSO - 360, CANTOS[0] - PASSO], [CANTOS[0] + PASSO, CANTOS[1] - PASSO], [CANTOS[1] + PASSO, CANTOS[2] - PASSO], [CANTOS[2] + PASSO, CANTOS[3] - PASSO]]
-        .flatMap(([de, ate], k) => [...BLOCOS(de, ate, I, CA, 12).map(([d, a], b) => ({ de: d, ate: a, ...CADEIRA, corredor: 0, escadaNaBorda: true,
-          vomitorios: b % 2 ? false : { f: 0.45, em: [0.5], larg: 4.5, fundo: 4.5, cor: LARANJA, corParapeito: LARANJA } })),
+        .flatMap(([de, ate], k) => [...BLOCOS(de, ate, I, CA, 24).map(x => PAR(x, I, CA, { ...CADEIRA,
+          vomitorios: { f: 0.3, cada: 1, larg: 3.4, fundo: 6.5, cor: LARANJA, corParapeito: LARANJA } })),
           { de: ate, ate: CANTOS[k] + PASSO, tipo: 'passagem', alt: 0.3, cor: '#a9a59a' }].filter(t => t.ate > t.de)) },
     /* A FRENTE DAS FAIXAS DE CAMAROTES: no oeste, os camarotes abertos (cadeira atrás de vidro, em cima do muro laranja, com o
        corredor na frente); no leste, a faixa vermelha de vidro escuro. Fora das laterais, nada (a faixa tem largura zero) */
@@ -105,14 +110,14 @@ export default {
       trechos: [
         { de: OESTE[0], ate: OESTE[1], cor: '#2b2f34', cor2: '#34393f', padrao: 'mosaico', mistura: 0.3, corredor: 0 },
         { de: OESTE[1], ate: OESTE[0] + 360, tipo: 'vazio' }] },
-    /* O LANCE DE CIMA, em blocos de uns 14 m com a escada de concreto entre eles; as bocas vermelhas pela regra dos dois
-       andares (dono, 15/11/2026: "Veja a regra dos vomitórios que apliquei nos demais estádios, vc colocou muitos na
-       superior"): a um quarto da altura, em escadas alternadas (uma a cada dois blocos). No meio do lado oeste, a tribuna */
+    /* O LANCE DE CIMA, em blocos de uns 15 m com a escada de concreto entre eles; as bocas vermelhas em escadas alternadas
+       (dono, 15/11/2026: "Veja a regra dos vomitórios que apliquei nos demais estádios, vc colocou muitos na superior"), em
+       cima da escada, a meia altura (a foto do dono). No meio do lado oeste, a tribuna de imprensa */
     { dentro: DV, fora: F, h: [13.5, 29], fileiras: 26, corredorFrente: 1.5, corMureta: '#d9d6cc',
       trechos: [
-        ...BLOCOS(82, 98, DV, F, 14).map(([de, ate]) => ({ de, ate, cor: '#3d4147', cor2: '#4c5158', padrao: 'mosaico', mistura: 0.4, corredor: 0, escadaNaBorda: true, vomitorios: false })),
-        ...BLOCOS(98, 442, DV, F, 14).map(([de, ate], k) => ({ de, ate, ...CADEIRA, corredor: 0, escadaNaBorda: true,
-          vomitorios: k % 2 ? false : { f: 0.25, em: [0.5], larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }))] },
+        ...BLOCOS(82, 98, DV, F, 30).map(x => PAR(x, DV, F, { cor: '#3d4147', cor2: '#4c5158', padrao: 'mosaico', mistura: 0.4, vomitorios: false })),
+        ...BLOCOS(98, 442, DV, F, 30).map(x => PAR(x, DV, F, { ...CADEIRA,
+          vomitorios: { f: 0.42, cada: 1, larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }))] },
     /* o corredor do alto, debaixo do anel de concreto */
     { dentro: F, fora: TOPO, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 29, cor: '#cfc9bb' }] }
   ],
@@ -121,9 +126,9 @@ export default {
        por cima delas (a regra do Beira-Rio, dono, 14/11/2026) */
     { fora: BEIRA, dentro: TOPO, h: 33, cai: 0.2, n: 88, cor: '#4b5564', cor2: '#465060', corNervura: '#d6d1c4', larguraNervura: 0.5, opaca: true,
       bordaFora: { larg: 1.2, cor: '#d6d1c4' } },
-    { fora: TOPO, dentro: DIVISA, h: 32.8, cai: 0.8, n: 88, cor: '#4b5564', cor2: '#465060', corNervura: '#d6d1c4', larguraNervura: 0.5 },
+    { fora: TOPO, dentro: DIVISA, h: 32.8, cai: 0.8, n: 88, cor: '#4b5564', cor2: '#465060', nervuras: false },
     /* a membrana branca, do anel até a abertura */
-    { fora: DIVISA, dentro: ABERTURA, h: 32, cai: 3.5, n: 88, cor: '#f3f1ea', cor2: '#eeece4', corNervura: '#dcd9cf',
+    { fora: DIVISA, dentro: ABERTURA, h: 32, cai: 3.5, n: 88, cor: '#f3f1ea', cor2: '#eeece4', nervuras: false,
       bordaDentro: { larg: 1.6, cor: '#b9bcbe' } }
   ],
   /* os pórticos de concreto, inclinados, em volta da fachada */

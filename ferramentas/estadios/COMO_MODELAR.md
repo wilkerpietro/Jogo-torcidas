@@ -172,10 +172,13 @@ cadeiras na superior e as escadas. Veja as regras que apliquei nos
 anteriores"): nunca um trecho só de 0 a 360 em contorno curvo; a largura
 das colunas sai do raio no meio do trecho, e onde o raio é maior a cadeira
 estica. Cortar em blocos de largura igual (12 a 15 m, medidos no meio do
-lance), `corredor: 0`, `escadaNaBorda: true` (a escada de concreto liso em
-cada divisa, sem `corEscada`) e a boca com `vomitorios.em: [0.5]` SÓ EM
-BLOCO ALTERNADO (a regra dos dois andares: no lance de cima, uma boca a cada
-duas escadas, a um quarto da altura; boca em todo bloco é demais). Mosaico
+lance), em PARES de blocos: `escadaNaBorda: true` (a escada de concreto
+liso na divisa, sem `corEscada`) e `corredor` igual a 52% da largura do par
+(a escada do meio), com `vomitorios: { cada: 1, f }`: a boca fica EM CIMA da
+escada do meio, uma boca a cada duas escadas (dono, 15/11/2026, com foto do
+Mineirão: a boca fica "no meio da altura das cadeiras e da escada"). Boca
+no meio do bloco de cadeiras está errado. Telhado transparente por cima das
+cadeiras sem `nervuras` (de cima elas parecem escadas a mais). Mosaico
 de dois tons parecidos (se o contraste for grande, vira chuvisco e as
 fileiras somem). Telhado escuro por cima das cadeiras: a parte de fora das
 cadeiras com `opaca: true` e o resto transparente, com `vazado` baixo.
