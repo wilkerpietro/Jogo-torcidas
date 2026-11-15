@@ -13546,6 +13546,36 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga de 60 contra 51
   como Mancha Verde sem erro de página. Fotos fora do repositório.
 
+## Vila Belmiro lowpoly (Santos) (dono, 15/11/2026)
+
+- Segundo da ordem de São Paulo ("Vá fazendo a sua ordem de um por um").
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): estádio de bairro, retangular, preto e branco, com o campo
+  de nordeste a sudoeste. No quadro a coberta fica em cima.
+  - A coberta (noroeste): um lance só de cadeira preta, com o SFC em
+    branco na metade sudoeste; no meio, a laje clara da tribuna por cima
+    do fundo do lance.
+  - A curva do placar (nordeste): o lance baixo que faz a volta nos dois
+    cantos, cadeira preta e escadas amarelas, com o placar do escudo no
+    alto do meio.
+  - A arquibancada do sudeste, de dois lances: cadeira branca embaixo;
+    em cima, cadeira preta com o SANTOS F.C. em branco; por cima, o
+    andar dos camarotes e o telhado estreito.
+  - O fundo sudoeste: cadeira branca embaixo e o lance de cima debaixo
+    do telhado escuro.
+- **Os acessos**: as fotos não mostram boca de vomitório em nenhum
+  lance; ficou sem boca. As escadas amarelas descem até a frente.
+- **As torcidas**: a Torcida Jovem no meio da curva do placar e a Sangue
+  Jovem ao lado (duas fotos mostram as faixas ali; uma foto mais antiga
+  mostra a faixa da Jovem na arquibancada do sudeste). A visitante no
+  fundo sudoeste é escolha minha, sem fonte.
+- **Aproximações**: a arquibancada do sudeste é levemente torta em
+  relação ao campo (a rua atrás é enviesada) e saiu paralela; o canto
+  oeste virou piso; as funduras da curva (14 m) e do lance de cima do
+  fundo; as alturas; os prédios do clube em caixas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Torcida
+  Jovem sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
