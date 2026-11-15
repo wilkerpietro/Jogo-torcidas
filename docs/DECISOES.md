@@ -13724,6 +13724,17 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Fúria
   Independente sem erro de página. Fotos fora do repositório.
 
+## Brinco de Ouro: o tobogã verde e os setores das torcidas (dono, 15/11/2026)
+
+- O dono, na revisão: "Deixe a arquibancada superior da cor das demais.
+  Fúria fica no gol sul e a visitante na gol norte."
+- O tobogã passou do cimento escurecido (a cor do satélite) pro mesmo
+  verde da curva norte, com as escadas claras.
+- A Fúria Independente foi do tobogã pra curva sul (atrás do gol sul) e
+  a visitante da curva sul pra curva norte (atrás do gol norte). Os
+  outros bondes da casa ficam no tobogã e na social.
+- Testado: briga como Fúria Independente sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

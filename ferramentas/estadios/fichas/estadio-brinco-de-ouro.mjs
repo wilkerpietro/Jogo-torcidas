@@ -2,7 +2,7 @@
    lado por lado e pelas fotos de referência (15/11/2026); o meio do campo
    foi tirado do círculo central. O campo é norte-sul; no quadro o OESTE (a
    coberta) fica em cima e o NORTE à direita. NÃO achei mapa de setores do
-   clube: os setores das torcidas são escolha minha.
+   clube; os setores das torcidas foram ditos pelo dono.
    Bacia oval verde, com o gramado largo em volta do campo, um anel baixo
    que dá a volta inteira e, só do lado leste, o TOBOGÃ por cima dele.
    · EM CIMA (oeste), a SOCIAL COBERTA: o trecho mais fundo do anel, com o
@@ -11,8 +11,9 @@
    · À ESQUERDA (sul), a curva de degrau verde-claro com as cinco escadas
      amarelo-claras (16 m de fundo).
    · À DIREITA (norte), a curva verde mais funda (20 m), em blocos.
-   · EMBAIXO (leste), o TOBOGÃ: o lance alto e íngreme em meia-lua, de
-     degrau de cimento escurecido, que nasce em cima do fundo do anel de
+   · EMBAIXO (leste), o TOBOGÃ: o lance alto e íngreme em meia-lua, do
+     mesmo verde das outras arquibancadas (dono, 15/11/2026: "Deixe a
+     arquibancada superior da cor das demais"), que nasce em cima do fundo do anel de
      baixo (que continua por baixo dele). Tem a caixa branca das cabines na
      frente, no meio, e quatro bocas de vomitório a meia altura, que o
      satélite mostra uma a uma.
@@ -20,7 +21,6 @@
    anel de baixo desce-se pelas escadas. */
 const VC = '#9fd0a3', VC2 = '#92c597';                  /* o degrau verde-claro da curva sul */
 const VD = '#62a877', VD2 = '#579c6c';                  /* o degrau verde da curva norte e da social */
-const TOB = '#4f6b55', TOB2 = '#465f4c';                /* o cimento escurecido do tobogã */
 const ESC = '#e6e0ae';
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
@@ -63,7 +63,7 @@ export default {
       ] },
     /* O TOBOGÃ */
     { dentro: T_FRENTE, fora: T_FUNDO, h: [9, 25], fileiras: 30, corredorFrente: 1.5, corMureta: '#c9cdc6',
-      trechos: [{ de: T0, ate: T1, cor: TOB, cor2: TOB2, padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corredor: 20, corEscada: '#aab39c', paredeAtras: true, corFachada: '#c9cdc6', parapeito: 1.6,
+      trechos: [{ de: T0, ate: T1, cor: VD, cor2: VD2, padrao: 'mosaico', mistura: 0.35, semCadeiras: true, corredor: 20, corEscada: ESC, paredeAtras: true, corFachada: '#c9cdc6', parapeito: 1.6,
                   vomitorios: { f: 0.45, larg: 4.5, fundo: 4.5, em: BOCAS } }] }
   ],
   telhados: PANOS,
@@ -91,9 +91,9 @@ export default {
     /* à direita (norte): a rua e as árvores */
     { tipo: 'arvores', u: 126, v: -20, w: 10, d: 60, n: 10 }, { tipo: 'rua', de: [142, 130], ate: [142, -130], larg: 10 }
   ],
-  /* (escolhas minhas, sem fonte: não achei mapa de setores) a Fúria Independente no meio do tobogã, a visitante na curva sul;
-     os outros bondes da casa na curva norte e na social */
-  jogo: { mandante1: [258, 284], mandante2: [-16, 16], mandante3: [74, 104], visitante: [163, 197], tunelMandante: 271, tunelVisitante: 180, folgaPM: 5,
-          fracao: { mandante1: 0.62, mandante2: 0.6, mandante3: 0.6, visitante1: 0.6, visitante2: 0.65, visitante3: 0.55 },
+  /* dono, 15/11/2026: "Fúria fica no gol sul e a visitante na gol norte". A Fúria Independente no meio da curva sul (à
+     esquerda) e a visitante no meio da curva norte (à direita); os outros bondes da casa no tobogã e na social */
+  jogo: { mandante1: [165, 195], mandante2: [258, 284], mandante3: [74, 104], visitante: [-17, 17], tunelMandante: 180, tunelVisitante: 0, folgaPM: 5,
+          fracao: { mandante1: 0.6, mandante2: 0.62, mandante3: 0.6, visitante1: 0.6, visitante2: 0.65, visitante3: 0.55 },
           torcidas: { furia_independente_do_guarani: 'mandante1' } }
 };
