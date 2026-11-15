@@ -262,6 +262,9 @@ trecho `passagem` no mesmo ângulo fecha o chão.
   no alambrado, pode ser a própria arquibancada tubular. Arquibancadas
   tubulares são planos retos e separados: use `retas`, uma por lance, cada
   uma no seu ângulo. Na dúvida, mostre ao dono as duas leituras.
+- Faixa escura na frente de um telhado alto pode ser a SOMBRA dele, não
+  cadeira preta (o Santa Cruz): veja pra onde caem as outras sombras e
+  confira numa foto de frente.
 - Se o satélite do Google mostra obra, entulho ou outro estádio (o Nabi Abi
   Chedid foi demolido), procure imagem mais velha no Bing e na Esri antes de
   medir, diga ao dono de que época é o modelo e deixe a escolha com ele.

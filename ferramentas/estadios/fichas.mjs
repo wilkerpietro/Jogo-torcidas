@@ -589,3 +589,4 @@ import brunoDaniel from './fichas/estadio-bruno-daniel.mjs'; FICHAS[brunoDaniel.
 import primeiroDeMaio from './fichas/estadio-primeiro-de-maio.mjs'; FICHAS[primeiroDeMaio.id] = primeiroDeMaio;
 import jaymeCintra from './fichas/estadio-jayme-cintra.mjs'; FICHAS[jaymeCintra.id] = jaymeCintra;
 import nabiAbiChedid from './fichas/estadio-nabi-abi-chedid.mjs'; FICHAS[nabiAbiChedid.id] = nabiAbiChedid;
+import santaCruz from './fichas/estadio-santa-cruz.mjs'; FICHAS[santaCruz.id] = santaCruz;

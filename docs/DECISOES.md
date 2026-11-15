@@ -13982,6 +13982,44 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Guerreiros
   do Leão sem erro de página. Fotos fora do repositório.
 
+## Santa Cruz lowpoly (Botafogo-SP) (dono, 15/11/2026)
+
+- O dono, depois de revisar o Nabi Abi Chedid: "Vamos fazer agora o
+  Santa Cruz, fazer o do Noroeste separado, depois Maião, e depois o do
+  Ituano." Um por vez, com revisão: este é só o Santa Cruz. O Noroeste
+  continua nos dados como mandante do Santa Cruz até o estádio dele ser
+  feito (aí os dados são separados, como no Canindé e no Jayme Cintra);
+  o mesmo vale pro Ituano no Maião.
+- Procurei o mapa de setores e NÃO achei.
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): bacia oval grande (duas elipses: 90 por 61 m por dentro,
+  119 por 100 m por fora, mais funda no norte que no sul), com a pista
+  de asfalto em volta do gramado. No quadro o oeste fica em cima.
+  - A arquibancada nova (leste): cadeira em mosaico vermelho e branco,
+    do canto sudeste ao nordeste; no meio, um segundo anel com as
+    cadeiras vermelhas e os camarotes debaixo do telhado branco em
+    arco, que passa pra trás por cima do prédio.
+  - A coberta velha (oeste): o telhado marrom em leque de 13 panos por
+    cima do fundo; a frente descoberta.
+  - A curva sul de cimento claro e a curva norte de cimento escurecido,
+    com a cabine de teto cinza no canto.
+  - As 21 escadas amarelo-claras postas uma a uma.
+- **Um engano evitado**: no satélite o meio da arquibancada nova parece
+  de cadeira preta. É a sombra do telhado (o sol vem do leste); as fotos
+  de frente mostram o mosaico vermelho e branco ali também.
+- **Época**: as fotos antigas mostram a bacia pintada em faixas
+  vermelhas, brancas e pretas com o escudo; o satélite e a aérea recente
+  mostram as curvas no cimento. Modelei o estado atual.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Fiel Força Tricolor na
+  curva sul e a visitante na curva norte.
+- **Aproximações**: o que há debaixo do telhado marrom; a divisão entre
+  o lance de baixo e o andar de cima da nova; o prédio da nova em caixa;
+  as barracas de teto vermelho ao pé do alambrado; as torres dos
+  refletores; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Fiel Força
+  Tricolor sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
