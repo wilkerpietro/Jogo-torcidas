@@ -13785,6 +13785,37 @@ também".
   depois o Jayme Cintra (o do Paulista de Jundiaí, que hoje manda no
   Nabi Abi Chedid nos dados).
 
+## Anacleto Campanella lowpoly (São Caetano) (dono, 15/11/2026)
+
+- O dono: "Vamos pro Anacleto Campanella."
+- Procurei o mapa de setores e NÃO achei. As fotos misturam épocas: as
+  antigas mostram arquibancadas tubulares (vermelha no sul, amarela no
+  leste) e um prédio no lado leste que o satélite e uma aérea recente
+  não mostram mais. Modelei o estado atual.
+- **Como é** (o meio do campo saiu do círculo central): oval, com
+  arquibancada em três lados. No quadro o oeste fica em cima e o norte
+  à direita.
+  - A coberta (oeste): cadeira azul com as escadas amarelas onde o
+    satélite mostra, e o telhado de concreto em 30 gomos claros que
+    acompanha o oval e dobra nas pontas; a frente fica descoberta.
+  - A arquibancada azul (norte): funda (24 m) e alta, descoberta, em
+    dois blocos de cadeira azul-escura, só na metade oeste do fundo; na
+    outra metade, os prédios do clube.
+  - O fundo sul e o canto sudeste: degraus de cimento na frente e os
+    três telhados de zinco azulado por cima do fundo; por fora o muro
+    azul (na foto ele é listrado de azul e branco; saiu liso).
+  - O leste: sem arquibancada (calçada, banco de reservas de teto azul,
+    pátio e terreno de grama).
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Comando Azul na
+  arquibancada azul do norte e a visitante no fundo sul.
+- **Aproximações**: o fundo sul sai do quadro do satélite baixado (a
+  fundura dele, 19 m, é estimada); não dá pra ver o que há debaixo dos
+  telhados de zinco; o oval real fica 2,5 m deslocado pro leste e saiu
+  centrado; as torres dos refletores; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Comando Azul
+  sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
