@@ -132,6 +132,10 @@ export function colunasDe(ficha, anel, t) {
       angs.push(t.de + vao * (j + (ac[j + 1] > ac[j] ? (alvo - ac[j]) / (ac[j + 1] - ac[j]) : 0)) / MS); }
   } else for (let i = 0; i <= n; i++) angs.push(t.de + vao * i / n);
   G.pos = pos; G.angs = angs;
+  /* a fundura de verdade NESTE ângulo: da beira de dentro ao fundo, pelo caminho que a coluna faz (dono, 15/11/2026, o Barão de
+     Serra Negra: "tem um desnível na arquibancada lateral que não tem sentido, deve ser reto" — a altura saía da fundura medida
+     do centro do campo, que numa arquibancada reta cresce pras pontas, e o topo fazia barriga) */
+  G.fundura = ang => { const a = pos(ang, 0), b = pos(ang, 1); return Math.max(1, Math.hypot(b[0] - a[0], b[1] - a[1])); };
   G.angEm = ci => { const j = Math.min(n - 1, Math.max(0, Math.floor(ci))); return angs[j] + (angs[j + 1] - angs[j]) * (ci - j); };
   return G;
 }
@@ -344,8 +348,7 @@ export function construir(THREE, ficha) {
          fixa do trecho (`h`). Com ela, onde a arquibancada é mais funda ela também é mais alta, de forma contínua. */
       const incl = def(t.inclinacao, anel.inclinacao);
       const h1 = incl != null ? h0 + incl * prof : (t.h || anel.h)[1];
-      const fundura = ang => Math.max(1, raioDe(ang, cf) - raioDe(ang, cd));
-      const hEm = incl != null ? (ang, h) => h <= h0 ? h : h0 + (h - h0) * fundura(ang) / prof : (ang, h) => h;
+      const hEm = incl != null ? (ang, h) => h <= h0 ? h : h0 + (h - h0) * G.fundura(ang) / prof : (ang, h) => h;
       desenharLance(t, G, h0, h1, (ci, f, h) => { const a = G.angEm(ci); return p(a, f, hEm(a, h)); }, pintorDe(t, G, rnd));
       for (let i = 0; i < n; i++) {
         const a0 = angs[i], a1 = angs[i + 1];
@@ -493,7 +496,7 @@ export function construir(THREE, ficha) {
     };
     /* a régua de um lance e a de um piso: onde cai cada ponto e a altura do degrau ali */
     const lance = (anel, t) => { const G = colunasDe(ficha, anel, t), cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, h0 = (t.h || anel.h)[0], incl = def(t.inclinacao, anel.inclinacao);
-      const h1 = incl != null ? h0 + incl * G.prof : (t.h || anel.h)[1], fund = ang => Math.max(1, raioDe(ang, cf) - raioDe(ang, cd)), topo = ang => incl != null ? h0 + (h1 - h0) * fund(ang) / G.prof : h1;
+      const h1 = incl != null ? h0 + incl * G.prof : (t.h || anel.h)[1], fund = G.fundura, topo = ang => incl != null ? h0 + (h1 - h0) * fund(ang) / G.prof : h1;
       const passo = Math.max(1, Math.round(3 / G.larguraCel)), ix = []; for (let i = 0; i < G.n; i += passo) ix.push(i); ix.push(G.n);
       return { pos: G.pos, angs: ix.map(i => G.angs[i]), h0, prof: G.prof, alt: (ang, f) => h0 + (topo(ang) - h0) * Math.max(0, (f - G.fc) / Math.max(0.05, 1 - G.fc)), chao: false }; };
     const piso = (anel, t) => { const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, retoP = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';

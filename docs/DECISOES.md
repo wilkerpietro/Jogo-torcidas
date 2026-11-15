@@ -14401,6 +14401,14 @@ O dono mandou duas fotos aéreas: "No barão de Serra negra tem um desnível nos
 - **O que ficou de fora**: as fotos são de uma pintura antiga (listras grená, escudo no painel do sudeste). No satélite de hoje o degrau é todo claro e o escudo está no canto sudoeste, com um letreiro que não consegui ler. Ficou claro, sem escudo e sem letreiro.
 - **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página; as grades dos escanteios do sul continuam no lugar.
 
+## Arquibancada reta com o topo reto: a altura sai da fundura de verdade (dono, 15/11/2026)
+
+O dono marcou com uma linha verde o topo da arquibancada do leste do Barão de Serra Negra: "Tem um desnível na arquibancada lateral que não tem sentido, deve ser reto igual a linha verde que desenhei orienta".
+
+- **A causa**: com `inclinacao`, a altura de cada ponto saía da fundura medida do CENTRO DO CAMPO (a diferença dos raios do fundo e da beira naquele ângulo). Numa arquibancada reta essa medida cresce do meio pras pontas (20,5 m no meio do lado, 26,8 m a 40 m do meio), então o topo afundava no meio e subia nas pontas: a barriga que o dono marcou.
+- **A correção (no gerador, `estadio_lowpoly.mjs`)**: `colunasDe` passou a dar `G.fundura(ang)`, a distância da beira de dentro ao fundo pelo caminho que a coluna faz (perpendicular no anel `normal`, ponto a ponto no `reto`, radial no resto). A altura do lance, o parapeito, a parede de trás e o muro usam essa medida. Arquibancada de fundura constante fica com o topo reto.
+- **Quem mudou**: os dez estádios que usam `inclinacao` foram assados de novo e conferidos lado a lado (antes e depois): Barão de Serra Negra, Brinco de Ouro, Willie Davids, Jorge Ismael de Biasi, Alfredo de Castilho, Allianz Parque, Limeirão e Vila Belmiro mudaram pouco (os lados retos ficaram retos); Canindé e Santa Cruz saíram idênticos. Todos com chão único e nenhum marcador fora. O chão andável não depende da altura, então o jogo não muda.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

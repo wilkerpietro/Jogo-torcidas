@@ -149,6 +149,13 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+A ALTURA PELA FUNDURA (`inclinacao`) usa a fundura DE VERDADE de cada
+coluna, da beira de dentro ao fundo pelo caminho que a escada faz
+(`G.fundura`), e não a medida do centro do campo. Arquibancada reta de
+fundura constante sai com o topo reto (dono, 15/11/2026, o lado leste do
+Barão: "tem um desnível na arquibancada lateral que não tem sentido, deve
+ser reto"). Se o topo de um lado reto fizer barriga, o erro é de contorno.
+
 FRENTE CURVA COM MURO DE TRÁS RETO = SELA (o fundo sul do Barão de Serra
 Negra; dono, 15/11/2026: "tem um desnível nos dois lados da arquibancada
 atrás do gol que o satélite não captou bem"). O satélite não mostra altura.
