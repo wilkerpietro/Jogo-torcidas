@@ -13604,6 +13604,51 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Jovem Ponte
   sem erro de página. Fotos fora do repositório.
 
+## Vila Belmiro refeita pelo mapa de setores do clube (dono, 15/11/2026)
+
+- O dono mandou dois mapas de setores do Santos e disse: "Preste mais
+  atenção aos detalhes da Vila Belmiro pra ficar mais realista."
+- **O que estava errado na primeira versão** (conferido no mapa, no
+  satélite ampliado lado por lado e numa aérea recente):
+  - Pus um telhado escuro no fundo sudoeste. Não existe: o escuro do
+    satélite é a própria Arquibancada J. de Alencar, de degrau pintado de
+    preto, que fica por cima da Cadeira Coberta.
+  - A visitante estava no fundo sudoeste. No mapa ela fica na
+    Arquibancada Princesa Isabel, a ponta do canto oeste.
+  - A curva saiu de cadeira preta. É degrau de cimento (a Arquibancada
+    Tiradentes), com o canto norte pintado de preto, e o braço do lado
+    da Dom Pedro é mais comprido que o outro.
+  - O placar estava no alto da curva. Fica na frente dela, colado atrás
+    do gol.
+  - A Princesa Isabel era um lance só. São quatro setores: os blocos
+    descobertos que descem até o campo, o lance debaixo da laje (com a
+    faixa dos camarotes de baixo na frente), a Cadeira Social e a
+    arquibancada visitante com as escadas amarelas. A laje é um
+    trapézio, porque a rua de trás é enviesada.
+  - O fundo da J. de Alencar era reto. É em degraus (rua enviesada):
+    5 m na ponta oeste, 15 m na ponta sul.
+  - Os letreiros SFC e SANTOS F.C. vinham de fotos de 2012 e 2014 e não
+    aparecem no satélite nem na aérea recente: saíram. Entrou o FORÇA
+    pintado no degrau preto da J. de Alencar.
+  - A Torcida Jovem estava na curva. As fotos da faixa são debaixo da
+    torre do placar antigo, que fica atrás da J. de Alencar: ela e a
+    Sangue Jovem passaram pra lá.
+- **Na ficha**: cada lado tem a sua beira e a sua fundura (trechos com
+  `dentro` e `fora` próprios num anel `reto`); o lance de cima da Dom
+  Pedro tem as quatro bocas amarelas do satélite na frente; o fundo da
+  J. de Alencar são quatro trechos de fundura crescente.
+- **Lições (anotadas no guia)**: procurar o mapa de setores do clube
+  ANTES de desenhar (o nome do setor diz o que é: "cadeira coberta"
+  debaixo de uma arquibancada explica uma faixa escura que parece
+  telhado); ampliar o satélite lado por lado; letreiro de cadeira só
+  entra se aparecer no satélite ou em foto recente.
+- **Continua aproximado**: a Dom Pedro é levemente torta em relação ao
+  campo e saiu paralela; as alturas; o que há escrito além de FORÇA no
+  degrau preto; o setor visitante é pequeno (12 m por 10 m) e as grades
+  do jogo saem enviesadas nele.
+- **Testado**: chão um só, nenhum marcador fora; briga como Torcida
+  Jovem sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

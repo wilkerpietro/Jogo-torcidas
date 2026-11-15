@@ -229,6 +229,20 @@ terço da altura (`vomitorios: { f: 0.3, cada: 2 }`).
 
 ## O que conferir antes de entregar
 
+**Antes de desenhar** (a lição da Vila Belmiro, que precisou ser refeita):
+
+- Procure o MAPA DE SETORES do clube (busca de imagem: "<estádio> mapa de
+  setores ingressos"). O nome de cada setor diz o que ele é e quem fica
+  nele: "cadeira coberta" debaixo de uma "arquibancada" explica uma faixa
+  escura que no satélite parece telhado; "visitante" diz onde fica a
+  torcida de fora.
+- Amplie o satélite LADO POR LADO (recorte de cada lado a 200%) antes de
+  medir. Na vista inteira os setores pequenos, as escadas e as bocas somem.
+- Letreiro nas cadeiras só entra se aparecer no satélite ou numa foto
+  recente. Foto de dentro costuma ser antiga.
+- Rua enviesada atrás de um lado dá laje em trapézio e fundo em degraus:
+  não endireite.
+
 - O meio do campo: ache o círculo central no satélite antes de medir (um
   erro de 6 m ali entorta os dois fundos).
 - Se existir mapa de setores do clube, ele manda no desenho: diz onde há
