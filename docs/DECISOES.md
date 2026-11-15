@@ -13322,6 +13322,52 @@ também".
 - **Testado**: briga no estádio; chão um só, nenhum marcador fora; sem
   erro de página.
 
+## Germano Krüger lowpoly (Operário) e o Maringá no Willie Davids (dono, 15/11/2026)
+
+- O dono: "Faça o Germano Krüger e depois separe o estádio do Maringá
+  também." Feito sem agente. Fotos de referência (satélite de alta
+  resolução, aéreas e de dentro) fora do repositório. Não achei mapa de
+  setores.
+- **Os acessos** (olhados primeiro): não há boca de vomitório em lugar
+  nenhum. Nos degraus baixos entra-se por trás, no nível da rua; na
+  arquibancada do OFEC sobe-se pelas escadas amarelas, a partir da
+  passarela que fica na frente dela, em cima dos camarotes.
+- **Germano Krüger** (o norte à direita, o oeste em cima, pro OFEC sair
+  de pé): estádio pequeno, de um lance só em volta do gramado de cantos
+  redondos, mais a arquibancada alta:
+  - em cima (oeste), o lance baixo de cadeira preta com as escadas
+    amarelas, de ponta a ponta; atrás dele, na metade norte, a
+    arquibancada do OFEC, alta e íngreme, de cadeira preta com O F E C
+    em cadeira branca (uma letra por bloco, entre as escadas amarelas),
+    debaixo do telhado grande; na metade sul, o prédio branco dos
+    camarotes e o ginásio;
+  - à esquerda (sul), a curva de degrau de cimento, a mais funda (13 m);
+  - embaixo (leste) e à direita (norte), o degrau baixo e escuro; a
+    curva norte é a mais rasa (6 m), colada na avenida;
+  - as quatro torres de refletor fora das arquibancadas.
+- **Setores**: sem fonte. Escolha minha: a Trem Fantasma no degrau do
+  leste, a visitante na curva sul.
+- **O Maringá sai do Germano Krüger**: no jogo ele mandava em Ponta
+  Grossa (a regra antiga do clube sem estádio próprio). Agora manda no
+  **Willie Davids** (id `willie-davids`, Interior do PR, bairro
+  Maringá I, 21.600 lugares — número público, acerta-se se o dono tiver
+  outro). Mudou em `times.js`, `estadios.js`, `torcidas.js` (a Força
+  Maringaense), `cidades.js`, nas cópias de `cenario3d/dados`, no
+  pacote `jogo.js`, nas fontes (`torcidas_relacoes.json`,
+  `cidades_bairros.json`) e nos importadores (`ESTADIO_CORRIGIDO`,
+  `NOVOS`). O Germano Krüger fica só com o Operário.
+- **O que falta no Willie Davids**: ainda não tem modelo lowpoly (a
+  briga lá abre no estádio genérico) nem desenho na planta da cidade
+  (a rota vai pro centro do bairro), como os outros estádios novos.
+- **Testado**: briga 60 × 56 no Germano Krüger jogando de Trem Fantasma
+  (cena `estadio-germano-kruger`) e no estádio do Maringá jogando de
+  Força Maringaense (cena genérica); chão um só, nenhum marcador fora;
+  sem erro de página. `estadioDoClube('maringa')` devolve
+  `willie-davids`.
+- **Paraná fechado**: Vila Capanema, Arena da Baixada, Couto Pereira,
+  Estádio do Café e Germano Krüger. Fica aberto o Willie Davids, se o
+  dono quiser o modelo dele.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

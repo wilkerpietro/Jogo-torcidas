@@ -79,6 +79,7 @@ NOVOS = [
     {'nome': 'Raulino de Oliveira', 'mapa': 'suburbio-carioca', 'bairro': 'Volta Redonda'},
     {'nome': 'Colosso da Lagoa', 'mapa': 'interior-do-rs', 'bairro': 'Erechim'},
     {'nome': 'Boca do Lobo', 'mapa': 'interior-do-rs', 'bairro': 'Pelotas II'},
+    {'nome': 'Willie Davids', 'mapa': 'interior-do-pr', 'bairro': 'Maringá I'},
 ]
 
 

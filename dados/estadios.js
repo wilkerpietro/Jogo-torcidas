@@ -45,7 +45,7 @@ TO.dados.estadios = [
   {"id": "etelvino-mendonca", "nome": "Etelvino Mendonca", "mapa": "sergipe", "bairro": "Itabaiana I", "capacidade": 11224, "mandantes": ["itabaiana"]},
   {"id": "frasqueirao", "nome": "Frasqueirão", "mapa": "rio-grande-do-norte", "bairro": "Ponta Negra", "capacidade": 15082, "mandantes": ["abc"]},
   {"id": "fumeirao", "nome": "Fumeirão", "mapa": "alagoas", "bairro": "Arapiraca I", "capacidade": 15332, "mandantes": ["asa"]},
-  {"id": "germano-kruger", "nome": "Germano Kruger", "mapa": "interior-do-pr", "bairro": "Ponta Grossa I", "capacidade": 10632, "mandantes": ["operario-pr", "maringa"]},
+  {"id": "germano-kruger", "nome": "Germano Kruger", "mapa": "interior-do-pr", "bairro": "Ponta Grossa I", "capacidade": 10632, "mandantes": ["operario-pr"]},
   {"id": "giulite-coutinho", "nome": "Giulite Coutinho", "mapa": "suburbio-carioca", "bairro": "Nova Iguaçu", "capacidade": 13544, "mandantes": ["america"]},
   {"id": "heriberto-hulse", "nome": "Heriberto Hulse", "mapa": "interior-de-sc", "bairro": "Criciúma I", "capacidade": 19225, "mandantes": ["criciuma"]},
   {"id": "ilha-do-retiro", "nome": "Ilha do Retiro", "mapa": "recife", "bairro": "Ilha do Retiro", "capacidade": 26418, "mandantes": ["sport-recife"]},
@@ -76,5 +76,6 @@ TO.dados.estadios = [
   {"id": "serra-dourada", "nome": "Serra Dourada", "mapa": "goiania", "bairro": "Jardim Goiás", "capacidade": 50049, "mandantes": ["goias", "vila-nova"]},
   {"id": "ulrico-mursa", "nome": "Ulrico Mursa", "mapa": "santos", "bairro": "Morro do Pacheco", "capacidade": 7635, "mandantes": ["portuguesa-santista"]},
   {"id": "vila-belmiro", "nome": "Vila Belmiro", "mapa": "santos", "bairro": "Vila Belmiro", "capacidade": 16068, "mandantes": ["santos"]},
-  {"id": "vila-capanema", "nome": "Vila Capanema", "mapa": "curitiba", "bairro": "Vila Parolin", "capacidade": 17140, "mandantes": ["parana"]}
+  {"id": "vila-capanema", "nome": "Vila Capanema", "mapa": "curitiba", "bairro": "Vila Parolin", "capacidade": 17140, "mandantes": ["parana"]},
+  {"id": "willie-davids", "nome": "Willie Davids", "mapa": "interior-do-pr", "bairro": "Maringá I", "capacidade": 21600, "mandantes": ["maringa"]}
 ];

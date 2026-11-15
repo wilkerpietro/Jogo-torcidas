@@ -4554,10 +4554,11 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Germano Kruger",
-    "Estádio do Café"
+    "Estádio do Café",
+    "Willie Davids"
    ],
    "rodovias": [
     "Rodovia Sul 1",

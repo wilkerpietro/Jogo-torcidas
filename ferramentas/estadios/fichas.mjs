@@ -560,3 +560,5 @@ import coutoPereira from './fichas/estadio-couto-pereira.mjs';
 FICHAS[coutoPereira.id] = coutoPereira;
 import estadioDoCafe from './fichas/estadio-do-cafe.mjs';
 FICHAS[estadioDoCafe.id] = estadioDoCafe;
+import germanoKruger from './fichas/estadio-germano-kruger.mjs';
+FICHAS[germanoKruger.id] = germanoKruger;
