@@ -1,14 +1,19 @@
 /* MINEIRÃO (Cruzeiro e Atlético-MG, Belo Horizonte) — pelo satélite (o
-   telhado, a abertura e o entorno) e pelas quatro fotos de dentro que o
+   telhado, a abertura e o entorno) e pelas sete fotos (seis de dentro e uma aérea) que o
    dono mandou (15/11/2026). O campo corre quase norte-sul; no quadro o
    OESTE (o lado dos bancos e da tribuna) fica em cima e o NORTE à direita.
    Arena oval de dois lances, toda coberta:
-   · O LANCE DE BAIXO: raso e largo, de cadeira cinza bem clara, atrás de um
-     muro (o campo é rebaixado), com as bocas LARANJA no meio do lance.
+   · O LANCE DE BAIXO: raso e largo, atrás de um muro (o campo é
+     rebaixado), partido em dois por um CORREDOR largo de concreto: a parte
+     da frente e, atrás do corredor, a parte de trás, mais alta, em cima de
+     um muro LARANJA, com as bocas laranja dando no corredor.
+   · A CADEIRA, nos dois lances: mosaico de cinza claro com cinza mais
+     escuro, bem misturado.
    · A FAIXA ESCURA de vidro dos camarotes, entre os dois lances, dando a
      volta inteira.
-   · O LANCE DE CIMA: o grande, da mesma cadeira clara, com as escadas
-     escuras separando os blocos e as bocas VERMELHAS perto da frente.
+   · O LANCE DE CIMA: o grande, da mesma cadeira, com as escadas escuras
+     separando os blocos e as bocas VERMELHAS perto da frente; no meio do
+     lado oeste, o bloco escuro da tribuna de imprensa.
    · A margem verde larga entre o campo e o muro, mais larga atrás dos gols;
      os bancos de teto de vidro do lado oeste.
    · O TELHADO (satélite): por fora, o anel de concreto com as placas
@@ -23,10 +28,11 @@
    portão A (o canto noroeste). A Galoucura ficou no mesmo fundo sul quando
    o Atlético manda (escolha minha, sem fonte). */
 const E = (a, b) => ({ a, b, forma: 'elipse' });
-const CD = '#e3e6e8', CD2 = '#cdd2d6';                   /* a cadeira cinza bem clara */
+const CD = '#e8eaec', CD2 = '#a9b0b7';                   /* a cadeira: cinza claro e cinza mais escuro, em mosaico */
+const CADEIRA = { cor: CD, cor2: CD2, padrao: 'mosaico', mistura: 0.45 };
 const LARANJA = '#dd6a3c', VERMELHO = '#c8452f';         /* as bocas de baixo e as de cima */
 /* os contornos: a beira do lance de baixo, o fundo dele, a faixa dos camarotes, o lance de cima, o corredor do alto */
-const I = E(75, 50), L = E(96, 71), K = E(100, 75), F = E(128, 100), TOPO = E(140, 108);
+const I = E(75, 50), MEIO = E(85, 60), MEIO2 = E(88, 63), L = E(96, 71), K = E(100, 75), F = E(128, 100), TOPO = E(140, 108);
 /* o telhado: a abertura, a divisa da membrana com o anel de concreto, a beira de fora dos pórticos */
 const ABERTURA = E(85, 54), DIVISA = E(111, 79), BEIRA = E(141, 109);
 /* as tendas brancas das entradas, em volta da esplanada */
@@ -38,17 +44,25 @@ export default {
   campo: { corMargem: '#4f9353' },
   corMureta: '#d9d6cc',
   aneis: [
-    /* O LANCE DE BAIXO, atrás do muro, com as bocas laranja no meio do lance */
-    { dentro: I, fora: L, h: [2.6, 9.6], fileiras: 20,
-      trechos: [{ de: 0, ate: 360, cor: CD, cor2: CD2, padrao: 'mosaico', mistura: 0.35, corredor: 14, corEscada: '#b9bcbe',
-                  vomitorios: { f: 0.45, cada: 2, larg: 4.5, fundo: 4.5, cor: LARANJA, corParapeito: LARANJA } }] },
+    /* O LANCE DE BAIXO, a parte da frente, atrás do muro */
+    { dentro: I, fora: MEIO, h: [2.6, 6.2], fileiras: 10,
+      trechos: [{ de: 0, ate: 360, ...CADEIRA, corredor: 14, corEscada: '#b9bcbe', vomitorios: false }] },
+    /* o corredor largo de concreto que parte o lance de baixo */
+    { dentro: MEIO, fora: MEIO2, h: [6.3, 6.3], fileiras: 2, corredorFrente: 0,
+      trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 6.3, cor: '#cdc9be' }] },
+    /* O LANCE DE BAIXO, a parte de trás: em cima do muro laranja, com as bocas laranja dando no corredor */
+    { dentro: MEIO2, fora: L, h: [7.8, 10.8], fileiras: 8, corredorFrente: 1.2, corMureta: LARANJA,
+      trechos: [{ de: 0, ate: 360, ...CADEIRA, corredor: 14, corEscada: '#b9bcbe',
+                  vomitorios: { f: 0, cada: 2, larg: 4.5, fundo: 3.4, cor: LARANJA, corParapeito: LARANJA } }] },
     /* A FAIXA ESCURA dos camarotes */
-    { dentro: L, fora: K, h: [10.6, 12.6], fileiras: 2, corredorFrente: 0, vomitorios: false, semCadeiras: true, passoFileira: 2, corMureta: '#3a3f45',
+    { dentro: L, fora: K, h: [11.6, 13.4], fileiras: 2, corredorFrente: 0, vomitorios: false, semCadeiras: true, passoFileira: 2, corMureta: '#3a3f45',
       trechos: [{ de: 0, ate: 360, cor: '#2b2f34', cor2: '#34393f', padrao: 'mosaico', mistura: 0.3, corredor: 0 }] },
-    /* O LANCE DE CIMA, com as escadas escuras e as bocas vermelhas perto da frente */
-    { dentro: K, fora: F, h: [14, 29], fileiras: 26, corredorFrente: 1.5, corMureta: '#d9d6cc',
-      trechos: [{ de: 0, ate: 360, cor: CD, cor2: CD2, padrao: 'mosaico', mistura: 0.35, corredor: 15, corEscada: '#5a5e63',
-                  vomitorios: { f: 0.18, cada: 1, larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }] },
+    /* O LANCE DE CIMA, com as escadas escuras e as bocas vermelhas perto da frente; no meio do lado oeste, a tribuna de imprensa */
+    { dentro: K, fora: F, h: [14.5, 29], fileiras: 26, corredorFrente: 1.5, corMureta: '#d9d6cc',
+      trechos: [
+        { de: 82, ate: 98, cor: '#3d4147', cor2: '#4c5158', padrao: 'mosaico', mistura: 0.4, corredor: 0, escadaNaBorda: true, corEscada: '#5a5e63', vomitorios: false },
+        { de: 98, ate: 442, ...CADEIRA, corredor: 15, escadaNaBorda: true, corEscada: '#5a5e63',
+          vomitorios: { f: 0.18, cada: 1, larg: 3.6, fundo: 3.2, cor: VERMELHO, corParapeito: VERMELHO } }] },
     /* o corredor do alto, debaixo do anel de concreto */
     { dentro: F, fora: TOPO, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 29, cor: '#cfc9bb' }] }
   ],
@@ -81,9 +95,9 @@ export default {
     /* em cima (oeste): a avenida */
     { tipo: 'rua', de: [-240, 146], ate: [10, 190], larg: 22 }
   ],
-  /* a Máfia Azul (e a Galoucura, quando o Atlético manda) no lance de baixo do fundo sul, o Amarelo; a visitante no lance de
+  /* a Máfia Azul (e a Galoucura, quando o Atlético manda) na parte da frente do lance de baixo do fundo sul, o Amarelo; a visitante no lance de
      cima do canto noroeste, o Roxo Superior; os outros bondes da casa no lado leste e no canto sudeste */
   jogo: { mandante1: [165, 195], mandante2: [255, 285], mandante3: [208, 232], visitante: [28, 52], tunelMandante: 180, tunelVisitante: 40, folgaPM: 5,
-          fracao: { mandante1: 0.2, mandante2: 0.2, mandante3: 0.2, visitante1: 0.72, visitante2: 0.8, visitante3: 0.64 },
+          fracao: { mandante1: 0.1, mandante2: 0.1, mandante3: 0.1, visitante1: 0.72, visitante2: 0.8, visitante3: 0.64 },
           torcidas: { mafia_azul: 'mandante1', galoucura: 'mandante1' } }
 };
