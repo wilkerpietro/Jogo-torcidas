@@ -89,7 +89,7 @@ const ABERTURA = E(85, 54), DIVISA = E(111, 79), BEIRA = E(141, 109);
 const TENDA = (u, v, giro) => ({ u, v, w: 20, d: 7, h: 4, cor: '#eeeeea', giro });
 
 export default {
-  id: 'estadio-mineirao', alambrado: false, muro: false, nome: 'Mineirão', clubes: ['cruzeiro', 'atletico-mineiro'], norte: 8, vazado: 0.2, folga: 30,
+  id: 'estadio-mineirao', alambrado: false, muro: false, nome: 'Mineirão', clubes: ['cruzeiro'], norte: 8, vazado: 0.2, folga: 30,
   chao: { cor: '#8f8a80', esplanada: E(172, 140), corEsplanada: '#bdb6a6' },
   campo: { corMargem: '#4f9353' },
   corMureta: '#d9d6cc',

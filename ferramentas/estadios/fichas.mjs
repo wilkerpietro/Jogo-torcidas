@@ -598,3 +598,4 @@ import limeirao from './fichas/estadio-limeirao.mjs'; FICHAS[limeirao.id] = lime
 import baraoDeSerraNegra from './fichas/estadio-barao-de-serra-negra.mjs'; FICHAS[baraoDeSerraNegra.id] = baraoDeSerraNegra;
 import mineirao from './fichas/estadio-mineirao.mjs'; FICHAS[mineirao.id] = mineirao;
 import independencia from './fichas/estadio-independencia.mjs'; FICHAS[independencia.id] = independencia;
+import arenaMrv from './fichas/estadio-arena-mrv.mjs'; FICHAS[arenaMrv.id] = arenaMrv;

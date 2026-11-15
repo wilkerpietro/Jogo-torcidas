@@ -671,10 +671,11 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Mineirao",
-    "Independencia"
+    "Independencia",
+    "Arena MRV"
    ],
    "rodovias": [
     "Rodovia Sudeste 1",

@@ -72,6 +72,7 @@ CLUBE_TROCADO = {
 # fica só com o Mirassol) e manda no Novelli Júnior, em Itu.
 # 15/11/2026, o dono: "faça o estádio do Novorizontino, depois Inter de Limeira e XV de Piracicaba" —
 # a Inter de Limeira sai do Jorge Ismael de Biasi e manda no Limeirão.
+# 15/11/2026, o dono: "A MRV arena já foi feita? Do Atlético Mineiro" — o Atlético sai do Mineirão e manda na Arena MRV.
 # 15/11/2026, o dono: "vamos pro estádio do XV" — o XV de Piracicaba sai do Jorge Ismael de Biasi
 # (que fica só com o Novorizontino) e manda no Barão de Serra Negra.
 # 15/11/2026, o dono pediu o Canindé na vez de São Paulo: a Portuguesa sai do
@@ -81,7 +82,7 @@ CLUBE_TROCADO = {
 ESTADIO_CORRIGIDO = {
  'sao-bernardo':'Estadio Primeiro de Maio','santo-andre':'Estadio Bruno Daniel','sao-caetano':'Estadio Anacleto Campanella',
  'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Mangueirao','tuna-luso':'Estádio do Souza',
- 'atletico-mineiro':'Mineirao','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
+ 'atletico-mineiro':'Arena MRV','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
  'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
  'athletic':'Estadio Regional','mamore':'Estadio Regional','urt':'Estadio Regional',
