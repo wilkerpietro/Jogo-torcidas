@@ -14500,6 +14500,15 @@ O dono: "Tudo certo, vamos pro da URT agora" (o último dos três que dividiam o
 - **Pelas fotos do dono** (quatro, depois da primeira versão: "Segue fotos do estádio"). Eu tinha errado o lado oeste: os telhados cinza que li como duas arquibancadas cobertas são os prédios brancos do clube, de dois andares e terraço, com a caixa das cabines em pilotis no meio (telhado cinza, beiral azul); ali não há arquibancada de público. A lateral leste é de degrau cinza-azulado (o avermelhado do satélite é antigo), com os painéis laranja e azul no alto do muro, e perto da ponta sul tem a tribuna coberta BAMBU & SABIÁ LOTEAMENTOS (cadeiras cinza embaixo, camarote de vidro de molduras laranja em cima, telhado azul de fachada laranja). O fundo sul tem arquibancada de verdade, mais funda que a faixa que eu tinha feito: é a da foto do jogo, com a Galoucura de visitante; atrás dela, os galpões de telhado curvo. O fundo norte segue sem arquibancada. A visitante ficou atrás do gol do sul (pela foto); a Poeira Azul no meio da lateral leste.
 - **Conferido**: os arquivos de dados abrem; chão único, nenhum marcador fora, briga da URT rodando sem erro de página.
 
+## São Januário lowpoly (Vasco); o Rio de Janeiro começa (dono, 15/11/2026)
+
+O dono: "Falta algum time do interior de MG? Se não, vamos pro RJ", "Iniciando com São Januário". Em Minas não faltava nenhum: os seis clubes mineiros do jogo (Atlético, Cruzeiro, América, Athletic, Mamoré e URT) têm estádio próprio modelado.
+
+- **De onde saiu**: só do satélite (a busca de fotos não trouxe nada do estádio e não achei mapa de setores; as notícias só falam do setor visitante do projeto novo).
+- **A ficha** (`fichas/estadio-sao-januario.mjs`): o oval da pista antiga com a margem de grama larga e a calçada de concreto; a arquibancada em U, aberta pro sul: no leste a arquibancada reta de degrau escuro com o VASCO pintado de fora a fora (`texto` no trecho), no norte a curva em dois anéis (o de dentro claro na metade de cima, azul-escuro na de baixo e a Cruz de Malta pintada atrás do gol, com o caractere ✠; o de fora de concreto escuro com as nervuras), no oeste a social coberta com a fachada antiga de telhado vermelho atrás; no sul só a pista, o prédio baixo e, atrás, o campo de treino, as quadras e o parque aquático.
+- **O que é escolha minha, sem fonte**: a cor das cadeiras da social (clara); a Força Jovem no meio da arquibancada do VASCO e a visitante na ponta sul dela, perto do lado aberto.
+- **Conferido**: chão único, nenhum marcador fora, briga do Vasco rodando sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
