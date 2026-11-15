@@ -54,7 +54,7 @@ const LEQUE = (lado, ku, kv) => { const x = [A(lado * 64, -33.5), A(lado * 56, -
   return CAD(x[0], x[1], ESC, ESC2, 0, { fora: { a: 8 + ku, b: 8 + kv, forma: 'elipse', cu: lado * 56, cv: -33.5 }, normal: true, celula: 0.3, escadaNaBorda: false, corredor: 0 }); };
 
 export default {
-  id: 'estadio-jorge-ismael-de-biasi', nome: 'Jorge Ismael de Biasi', clubes: ['novorizontino', 'xv-de-piracicaba'], norte: 315.6, vazado: 0.4, folga: 22,
+  id: 'estadio-jorge-ismael-de-biasi', nome: 'Jorge Ismael de Biasi', clubes: ['novorizontino'], norte: 315.6, vazado: 0.4, folga: 22,
   corEscada: LINHA,
   /* a vista da aérea do dono (do canto oeste, por cima da coberta), pra comparar com ela */
   vista: [96, 72, 116, -4, 0, -10],

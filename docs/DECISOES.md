@@ -14348,6 +14348,49 @@ também".
   erro de página. Os outros 43 estádios foram assados de novo depois da
   mudança do gerador feita pro Jorjão: todos com o chão um só.
 
+## Barão de Serra Negra lowpoly (XV de Piracicaba); o XV passa a mandar nele (dono, 15/11/2026)
+
+- O dono, depois de revisar o Limeirão: "Vamos pro estádio do XV."
+- **O XV de Piracicaba sai do Jorge Ismael de Biasi e manda no Barão de
+  Serra Negra.** Entra o estádio `barao-de-serra-negra` (Interior de SP,
+  bairro Piracicaba); o Jorjão fica só com o Novorizontino (a ficha
+  dele também). Mudou em `times.js`, `estadios.js`, `torcidas.js`
+  (Torcida Esquadrão), `cidades.js`, no pacote `cenario3d/js/jogo.js`,
+  nas fontes e nos dois importadores. **Lotação: 18.799**, o número que
+  eu lembro, não de planilha do dono. O estádio não está desenhado na
+  planta assada da praça. Com este, todo clube paulista do jogo manda
+  no próprio estádio.
+- Procurei o mapa de setores e NÃO achei.
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): oval, com a pista de terra em volta do gramado e a
+  arquibancada de fundura diferente em cada canto. No quadro a coberta
+  fica em cima.
+  - A coberta (oeste): 28 m de fundo, debaixo do telhado claro (mais
+    largo no meio, acompanhando a curva nas pontas); cadeira azul no
+    meio, cinza-azulada na ponta sul, preta na ponta norte.
+  - A curva norte: cadeira preta, afinando de 28 m até acabar no meio
+    do fundo; dali pra baixo, só piso (atrás ficam os ginásios).
+  - A arquibancada do leste: 20 m, branca, com o XV DE PIRACICABA em
+    preto; as duas torres dos refletores atrás.
+  - A curva sul: clara, mais funda no canto sudoeste (até 31 m).
+- **Na ficha**: um anel só com `normal` e `inclinacao`; o fundo é um
+  contorno por QUADRANTE (retângulos de canto redondo com raios
+  diferentes; os vizinhos têm a mesma meia largura ou o mesmo meio
+  comprimento, então se encontram nos eixos).
+- **Época**: o satélite mostra a arquibancada do leste no cimento; uma
+  foto recente mostra ela branca com o letreiro. As fotos antigas
+  mostram faixas vermelhas e cadeira azul-clara. Fiquei com o letreiro
+  da foto recente e o resto do satélite.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Torcida Esquadrão em
+  cima do letreiro e a visitante na curva norte.
+- **Aproximações**: o escudo pintado no degrau do canto sudoeste não foi
+  desenhado; as cores das cadeiras da coberta; o fundo norte como piso
+  (não sei se há degrau ali); as escadas regulares; os ginásios em
+  caixas; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Torcida
+  Esquadrão sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -84,6 +84,7 @@ NOVOS = [
     {'nome': 'Alfredo de Castilho', 'mapa': 'interior-de-sp', 'bairro': 'Bauru'},
     {'nome': 'Novelli Júnior', 'mapa': 'interior-de-sp', 'bairro': 'Itu'},
     {'nome': 'Limeirão', 'mapa': 'interior-de-sp', 'bairro': 'Limeira'},
+    {'nome': 'Barão de Serra Negra', 'mapa': 'interior-de-sp', 'bairro': 'Piracicaba'},
 ]
 
 

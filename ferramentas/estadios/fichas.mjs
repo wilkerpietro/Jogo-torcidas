@@ -595,3 +595,4 @@ import maiao from './fichas/estadio-maiao.mjs'; FICHAS[maiao.id] = maiao;
 import novelliJunior from './fichas/estadio-novelli-junior.mjs'; FICHAS[novelliJunior.id] = novelliJunior;
 import jorgeIsmael from './fichas/estadio-jorge-ismael-de-biasi.mjs'; FICHAS[jorgeIsmael.id] = jorgeIsmael;
 import limeirao from './fichas/estadio-limeirao.mjs'; FICHAS[limeirao.id] = limeirao;
+import baraoDeSerraNegra from './fichas/estadio-barao-de-serra-negra.mjs'; FICHAS[baraoDeSerraNegra.id] = baraoDeSerraNegra;

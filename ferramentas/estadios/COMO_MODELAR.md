@@ -149,6 +149,13 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+ESTÁDIO OVAL DE FUNDURA DIFERENTE EM CADA CANTO (o Barão de Serra Negra):
+um anel só com `normal: true` e, em cada trecho, o `fora` do QUADRANTE em
+que ele está: quatro retângulos de canto redondo (`a` do lado esquerdo ou
+direito, `b` de cima ou de baixo, `r` de cada canto). Vizinhos dividem o
+mesmo `a` ou o mesmo `b`, então emendam nos eixos. Corte os trechos em 0,
+90, 180 e 270.
+
 MURO DE TRÁS ENVIESADO (a arquibancada que afina, o Jorjão): não faça em
 degraus nem em fatias (sai serrilhado). O `fora` do trecho é uma "reta":
 um círculo de 700 m de raio que passa pelas duas pontas do muro, com o
