@@ -583,3 +583,4 @@ import allianzParque from './fichas/estadio-allianz-parque.mjs'; FICHAS[allianzP
 import vilaBelmiro from './fichas/estadio-vila-belmiro.mjs'; FICHAS[vilaBelmiro.id] = vilaBelmiro;
 import moisesLucarelli from './fichas/estadio-moises-lucarelli.mjs'; FICHAS[moisesLucarelli.id] = moisesLucarelli;
 import brincoDeOuro from './fichas/estadio-brinco-de-ouro.mjs'; FICHAS[brincoDeOuro.id] = brincoDeOuro;
+import ulricoMursa from './fichas/estadio-ulrico-mursa.mjs'; FICHAS[ulricoMursa.id] = ulricoMursa;

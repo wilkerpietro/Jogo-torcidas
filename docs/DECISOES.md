@@ -13735,6 +13735,42 @@ também".
   outros bondes da casa ficam no tobogã e na social.
 - Testado: briga como Fúria Independente sem erro de página.
 
+## Ulrico Mursa lowpoly (Portuguesa Santista) (dono, 15/11/2026)
+
+- O dono: "Vamos pro Ulrico Mursa."
+- Procurei o mapa de setores antes de desenhar e NÃO achei; li o
+  satélite e as fotos (uma das fotos baixadas era de outro estádio e
+  foi descartada).
+- **Como é** (o meio do campo saiu do círculo central): estádio pequeno,
+  retangular, rubro-verde, com arquibancada em três lados. No quadro a
+  social fica em cima e o fundo do estacionamento à direita.
+  - A social coberta (noroeste): cadeira em blocos vermelhos e verdes
+    com as escadas brancas, em cima do muro branco, debaixo do telhado
+    de telha escura (14 m de fundo); os bancos de reserva ao pé do muro;
+    o prédio do clube na ponta nordeste; os telhados e a escadaria de
+    trás.
+  - A arquibancada do sudeste: baixa, descoberta, de degrau pintado de
+    vermelho e de verde, com as cinco escadas brancas onde o satélite
+    mostra (7,5 m de fundo).
+  - Atrás do gol do sudoeste: a arquibancadinha vermelha de poucos
+    degraus (4 m).
+  - Atrás do gol do nordeste: sem arquibancada (muro, faixa de grama e
+    estacionamento).
+- **Na ficha**: uma calçada de `passagem` em volta do gramado liga os
+  três lados (chão um só); cada lado é um grupo de trechos com o seu
+  `fora` num anel `reto`.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Força Rubro Verde na
+  ponta sudoeste da arquibancada descoberta e a visitante na ponta
+  nordeste dela; os outros bondes da casa na social.
+- **Aproximações**: a ordem dos blocos vermelhos e verdes da social
+  (uma foto de frente só mostra os cinco do meio); as cores da
+  arquibancada do sudeste são as do satélite (desbotadas); as torres dos
+  refletores (só uma tem lugar certo, pela sombra); as alturas; o
+  entorno em caixas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Força Rubro
+  Verde sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
