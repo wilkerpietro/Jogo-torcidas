@@ -28,7 +28,7 @@ const NERVURAS = Array.from({ length: 20 }, (_, i) => -93 + i * 9.8).flatMap(u =
   : [{ u, v: 58.6, w: 1, d: 41, h: 0.25, y: 43, cor: NERV, cobertura: true }, { u, v: -57.9, w: 1, d: 40.6, h: 0.25, y: 43, cor: NERV, cobertura: true }]);
 
 export default {
-  id: 'estadio-arena-da-baixada', nome: 'Arena da Baixada', clubes: ['athletico'], norte: 113, vazado: 0.3, folga: 22,
+  id: 'estadio-arena-da-baixada', alambrado: false, muro: false, nome: 'Arena da Baixada', clubes: ['athletico'], norte: 113, vazado: 0.3, folga: 22,
   corEscada: '#dfe0df',
   chao: { cor: '#8d8981' },
   campo: { corMargem: '#3f8f4b' },

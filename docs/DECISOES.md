@@ -14155,6 +14155,44 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Galoucura do
   Ituano sem erro de página.
 
+## Alambrado em volta do campo e muro onde o chão acaba, em todos os estádios que não são arena (dono, 15/11/2026)
+
+- O dono: "Aprimore adicionando cerca de alambrado ao redor do campo
+  caso a arquibancada não seja colada no campo, no caso do Novelli
+  Júnior, do Maião e investigue os que você já fez. Faça um muro por de
+  trás da arquibancada também nesses estádios menores, pra mostrar pro
+  jogador uma limitação da área de briga."
+- **Feito no gerador, não ficha por ficha**: as duas peças nascem
+  sozinhas do desenho, então valem pros estádios já feitos e pros
+  próximos.
+  - **O alambrado** corre pela beira de dentro do primeiro anel. Onde
+    esse anel é chão (`passagem`), sai do chão: mureta baixa de
+    concreto, poste a cada 3 m, cano de cima e tela. Onde ele é
+    arquibancada a mais de 8 m da linha do campo (pista ou gramado largo
+    no meio: Maião, Brinco de Ouro, Estádio do Café), fica em cima da
+    mureta da frente.
+  - **O muro** fecha todo lugar onde o chão andável acaba sem parede: o
+    fundo e as pontas de cada lance, a beira de fora e as pontas de cada
+    piso, o fundo e os lados de cada `reta`. O teste é o mesmo do jogo
+    (`andavel`): se um metro adiante não se anda, tem muro (0,8 m de
+    grossura; 2,6 m de altura no chão, a do parapeito no lance).
+- **As arenas ficam de fora** (`alambrado: false, muro: false`):
+  Castelão, Maracanã, Morumbi, Neo Química Arena, Arena do Grêmio,
+  Beira-Rio, Arena da Baixada e Allianz Parque. Escolha minha: são as
+  que não têm alambrado de verdade e já têm fachada fechada.
+- **Varredura**: os 42 estádios foram assados de novo e olhados numa
+  folha; nenhum alambrado ou muro nasceu em lugar errado. Todos com o
+  chão um só e nenhum marcador fora.
+- **Achado no caminho**: o túnel da Força Rubro Verde no Ulrico Mursa
+  caía fora do chão desde que ela foi pra arquibancadinha de 4 m (o
+  túnel sem vomitório ficava a 90% da fundura). Agora, em arquibancada
+  com menos de 12 m andáveis, ele fica a 70%.
+- **Limites**: o alambrado e o muro são desenho; quem impede o boneco de
+  passar continua sendo a máscara do chão (que já era assim). Portão,
+  túnel e abertura de verdade não foram desenhados no muro.
+- **Testado**: brigas no Novelli Júnior, no Maião e no Ulrico Mursa sem
+  erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

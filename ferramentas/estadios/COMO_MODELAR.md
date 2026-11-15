@@ -159,6 +159,17 @@ O TAMANHO DO QUADRO sai do `fora` do ÚLTIMO anel: o anel maior (o que vai
 mais longe do centro) tem de ser o último da lista, senão a foto corta a
 arquibancada e os marcadores caem fora (o Alfredo de Castilho).
 
+### O alambrado e o muro (nascem sozinhos)
+
+- O **alambrado** corre pela beira de dentro do PRIMEIRO anel: do chão onde
+  o anel é `passagem`; em cima da mureta onde é arquibancada a mais de 8 m
+  da linha do campo. Pra ele sair em volta do gramado, o primeiro anel tem
+  de ser o piso entre o gramado e a arquibancada.
+- O **muro** fecha onde o chão andável acaba sem parede (fundo e pontas de
+  lance, beira e pontas de piso, fundo e lados de `reta`).
+- `alambrado: false`, `muro: false`: desligam (arenas).
+  `alambrado: { h, cor, corBase, limiar }`, `muro: { cor }`: ajustam.
+
 ### `retas`: bloco reto de cadeiras fora de anel
 
 `{ u, v, ang, comp, prof, h: [h0, h1], base, ...pintura do trecho }`:

@@ -23,7 +23,7 @@ export const FICHAS = {
      fica à esquerda da imagem. Anel oval fechado, dois lances, cobertura
      branca em volta toda, fachada escura com os 60 pilares brancos inclinados. */
   'estadio-castelao': {
-    id: 'estadio-castelao', nome: 'Arena Castelão', clubes: ['fortaleza', 'ceara'], norte: 180, vazado: 0.2,
+    id: 'estadio-castelao', alambrado: false, muro: false, nome: 'Arena Castelão', clubes: ['fortaleza', 'ceara'], norte: 180, vazado: 0.2,
     chao: { cor: '#8f8d86', esplanada: { a: 182, b: 156, forma: 'elipse' }, corEsplanada: '#d6cfb9' },
     campo: { corMargem: '#4c9656' },
     corMureta: '#e4e2da',
@@ -181,7 +181,7 @@ export const FICHAS = {
      telões pendurados atrás dos gols e o Maracanãzinho ao lado. Nota do dono:
      organizada atrás do gol leste (0°), visitante no escanteio sudoeste. */
   'estadio-maracana': {
-    id: 'estadio-maracana', nome: 'Maracanã', clubes: ['flamengo', 'fluminense'], norte: 0, vazado: 0.42, folga: 22,
+    id: 'estadio-maracana', alambrado: false, muro: false, nome: 'Maracanã', clubes: ['flamengo', 'fluminense'], norte: 0, vazado: 0.42, folga: 22,
     chao: { cor: '#8c8b86', esplanada: { a: 178, b: 158, forma: 'elipse' }, corEsplanada: '#bdb9ad' },
     campo: { corMargem: '#4c9656' },
     corMureta: '#dcd9cf',
@@ -226,7 +226,7 @@ export const FICHAS = {
      as piscinas do clube ao lado. Nota do dono: organizada atrás do gol leste,
      visitante no gol oeste. */
   'estadio-morumbi': {
-    id: 'estadio-morumbi', nome: 'Morumbi', clubes: ['sao-paulo'], norte: 180, folga: 14,
+    id: 'estadio-morumbi', alambrado: false, muro: false, nome: 'Morumbi', clubes: ['sao-paulo'], norte: 180, folga: 14,
     chao: { cor: '#8a8984' },
     campo: { corMargem: '#4c9656', corFosso: '#aaa69a', pista: { dentro: { a: 80, b: 44, r: 44 }, fora: { a: 88, b: 52, r: 52 }, cor: '#b9584a', raias: 6 },
       ondas: [{ u: 60, amp: 2.6, v: 24, larg: 2.7, cor: '#f1efe8' }, { u: 63.4, amp: 2.6, v: 24, larg: 2.7, cor: '#c8363a' }, { u: 66.8, amp: 2.6, v: 24, larg: 2.7, cor: '#4a4c50' }] },
@@ -269,7 +269,7 @@ export const FICHAS = {
      vigas que fecham o retângulo. Nota do dono: organizadas no gol oeste
      (esquerda), visitante na curva nordeste. */
   'estadio-neo-quimica-arena': {
-    id: 'estadio-neo-quimica-arena', nome: 'Neo Química Arena', clubes: ['corinthians'], norte: 180, vazado: 0.46, folga: 58,
+    id: 'estadio-neo-quimica-arena', alambrado: false, muro: false, nome: 'Neo Química Arena', clubes: ['corinthians'], norte: 180, vazado: 0.46, folga: 58,
     chao: { cor: '#8e8d88', esplanada: { a: 104, b: 118, r: 2 }, corEsplanada: '#b5b2a8' },
     campo: { corMargem: '#4c9656' },
     corMureta: '#2e3033',
@@ -380,7 +380,7 @@ export const FICHAS = {
      dentro. A fachada é o anel de vidro azul-escuro, em cima da esplanada
      redonda. Visitante na quina sudeste (em cima, à direita). */
   'estadio-arena-do-gremio': {
-    id: 'estadio-arena-do-gremio', nome: 'Arena do Grêmio', clubes: ['gremio'], norte: 180, vazado: 0.28, folga: 26,
+    id: 'estadio-arena-do-gremio', alambrado: false, muro: false, nome: 'Arena do Grêmio', clubes: ['gremio'], norte: 180, vazado: 0.28, folga: 26,
     chao: { cor: '#8c8b86', esplanada: { a: 150, b: 132, forma: 'elipse' }, corEsplanada: '#b9b5aa' },
     campo: { corMargem: '#3f78c0' },
     corMureta: '#1f2f66',
@@ -434,7 +434,7 @@ export const FICHAS = {
      do norte, o estacionamento e o ginásio. Torcida adversária no lance de
      cima da quina noroeste (em cima, à direita); a nossa atrás do gol sul. */
   'estadio-beira-rio': {
-    id: 'estadio-beira-rio', nome: 'Beira-Rio', clubes: ['internacional'], norte: 0, vazado: 0.34, folga: 34,
+    id: 'estadio-beira-rio', alambrado: false, muro: false, nome: 'Beira-Rio', clubes: ['internacional'], norte: 0, vazado: 0.34, folga: 34,
     chao: { cor: '#8c8b86', esplanada: { a: 170, b: 144, forma: 'elipse' }, corEsplanada: '#a9a59b' },
     campo: { corMargem: '#4a9a56' },
     corMureta: '#e9e6e0',

@@ -44,7 +44,7 @@ const BEIRA = linha([{ a: 95, b: 86.5, r: 42 }, { a: 122, b: 86.5, r: 78 }]);
 const PORTICO = (u, v, giro) => ({ u, v, w: 44, d: 20, h: 9, y: 39.5, cor: '#eceded', giro, cobertura: true });
 
 export default {
-  id: 'estadio-allianz-parque', nome: 'Allianz Parque', clubes: ['palmeiras'], norte: 339, vazado: 0.3, folga: 22,
+  id: 'estadio-allianz-parque', alambrado: false, muro: false, nome: 'Allianz Parque', clubes: ['palmeiras'], norte: 339, vazado: 0.3, folga: 22,
   chao: { cor: '#8b8a85' },
   campo: { corMargem: '#3f8f52' },
   corMureta: '#e9ebe8',
