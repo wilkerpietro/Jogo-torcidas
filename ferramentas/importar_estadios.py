@@ -83,6 +83,7 @@ NOVOS = [
     {'nome': 'Jayme Cintra', 'mapa': 'regiao-de-campinas', 'bairro': 'Jundiaí'},
     {'nome': 'Alfredo de Castilho', 'mapa': 'interior-de-sp', 'bairro': 'Bauru'},
     {'nome': 'Novelli Júnior', 'mapa': 'interior-de-sp', 'bairro': 'Itu'},
+    {'nome': 'Limeirão', 'mapa': 'interior-de-sp', 'bairro': 'Limeira'},
 ]
 
 

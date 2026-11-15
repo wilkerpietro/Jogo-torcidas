@@ -594,3 +594,4 @@ import alfredoDeCastilho from './fichas/estadio-alfredo-de-castilho.mjs'; FICHAS
 import maiao from './fichas/estadio-maiao.mjs'; FICHAS[maiao.id] = maiao;
 import novelliJunior from './fichas/estadio-novelli-junior.mjs'; FICHAS[novelliJunior.id] = novelliJunior;
 import jorgeIsmael from './fichas/estadio-jorge-ismael-de-biasi.mjs'; FICHAS[jorgeIsmael.id] = jorgeIsmael;
+import limeirao from './fichas/estadio-limeirao.mjs'; FICHAS[limeirao.id] = limeirao;

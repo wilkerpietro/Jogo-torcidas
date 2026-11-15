@@ -3967,13 +3967,14 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 5,
+   "quantidadeEstadios": 6,
    "estadios": [
     "Maião",
     "Santa Cruz",
     "Jorge Ismael de Biasi",
     "Alfredo de Castilho",
-    "Novelli Júnior"
+    "Novelli Júnior",
+    "Limeirão"
    ],
    "rodovias": [
     "Rodovia Sudeste 1",

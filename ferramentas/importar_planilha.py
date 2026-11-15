@@ -70,6 +70,8 @@ CLUBE_TROCADO = {
 # (que fica só com o Botafogo-SP) e manda no Alfredo de Castilho, em Bauru.
 # 15/11/2026, o dono: "depois Maião, e depois o do Ituano" — o Ituano sai do Maião (que
 # fica só com o Mirassol) e manda no Novelli Júnior, em Itu.
+# 15/11/2026, o dono: "faça o estádio do Novorizontino, depois Inter de Limeira e XV de Piracicaba" —
+# a Inter de Limeira sai do Jorge Ismael de Biasi e manda no Limeirão.
 # 15/11/2026, o dono pediu o Canindé na vez de São Paulo: a Portuguesa sai do
 # Morumbi e volta a mandar no Canindé.
 # 15/11/2026, o dono: "separe o estádio do Maringá também" — o Maringá sai do
@@ -81,7 +83,7 @@ ESTADIO_CORRIGIDO = {
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
  'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
  'athletic':'Estadio Regional','mamore':'Estadio Regional','urt':'Estadio Regional',
- 'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Jorge Ismael de Biasi','xv-de-piracicaba':'Jorge Ismael de Biasi',
+ 'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Limeirão','xv-de-piracicaba':'Jorge Ismael de Biasi',
  'noroeste':'Alfredo de Castilho','ituano':'Novelli Júnior','iguatu':'Arena Romeirão','maringa':'Willie Davids',
  'caxias':'Estadio Centenario','ypiranga-rs':'Colosso da Lagoa','pelotas':'Boca do Lobo',
  'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',

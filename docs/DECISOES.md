@@ -14306,6 +14306,48 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Garra do
   Tigre sem erro de página.
 
+## Limeirão lowpoly (Inter de Limeira); a Inter passa a mandar nele (dono, 15/11/2026)
+
+- O dono, depois de aprovar o Jorjão e as grades dos escanteios: "vamos
+  pro estádio da Inter de Limeira."
+- **A Inter de Limeira sai do Jorge Ismael de Biasi e manda no Limeirão**
+  (Estádio Major José Levy Sobrinho). Entra o estádio `limeirao`
+  (Interior de SP, bairro Limeira); o Jorjão fica com o Novorizontino e,
+  por enquanto, o XV de Piracicaba. Mudou em `times.js`, `estadios.js`,
+  `torcidas.js` (Interror), `cidades.js`, no pacote
+  `cenario3d/js/jogo.js`, nas fontes e nos dois importadores.
+  **Lotação: 18.000**, o número que eu lembro, não de planilha do dono.
+  O estádio não está desenhado na planta assada da praça.
+- Procurei o mapa de setores e NÃO achei.
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): bacia fechada em retângulo de cantos bem redondos, em cima
+  de um morro gramado, toda de degrau de cimento. No quadro a coberta
+  fica em cima.
+  - O anel dá a volta inteira: 29 a 30 m de fundo nos lados, 34 m atrás
+    do gol do norte e 24 m atrás do gol do sul (dois contornos de fora,
+    um por metade, com a mesma meia largura).
+  - A coberta (oeste): o trecho do anel debaixo do telhado branco,
+    deslocado pro norte; cadeira branca na frente, escura atrás; por
+    fora, o prédio alto com A. A. INTERNACIONAL no alto (`textoFace`).
+  - O INTER escrito em branco no degrau, no meio do lado leste, e a viga
+    comprida dos refletores por cima do fundo.
+  - A pista de asfalto entre o gramado e a arquibancada; o alambrado
+    saiu em cima da mureta (a arquibancada fica a 23 m da linha).
+- **Época**: o satélite mostra o cimento cru e encardido; as aéreas
+  recentes mostram o degrau pintado de preto e o INTER bem branco.
+  Fiquei com a pintura recente.
+- **Um engano evitado**: duas linhas escuras no meio do lado leste do
+  satélite pareciam um corredor; são a sombra da viga dos refletores.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Interror em cima do
+  INTER e a visitante na curva sul.
+- **Aproximações**: as escadas de 24 em 24 m (não contadas uma a uma);
+  as cadeiras debaixo do telhado; o prédio da coberta em caixa com
+  quatro faixas de janela; as casinhas de fora do muro; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Interror sem
+  erro de página. Os outros 43 estádios foram assados de novo depois da
+  mudança do gerador feita pro Jorjão: todos com o chão um só.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
