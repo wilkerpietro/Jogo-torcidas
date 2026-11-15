@@ -13596,8 +13596,14 @@ também".
   no fundo sudoeste. As fotos tiradas de fora mostram a coberta à
   direita de quem entra, o que só fecha com a entrada no nordeste.
 - **Os acessos**: nem o satélite nem as fotos mostram boca; ficou sem.
-- **As torcidas (escolhas minhas, sem fonte)**: a Jovem Ponte no meio da
-  arquibancada do sudeste; a visitante no canto oeste.
+- **As torcidas (conferido depois num mapa de setores, 15/11/2026)**: a
+  primeira versão punha a Jovem Ponte no meio da arquibancada do
+  sudeste, sem fonte. O mapa mostra o Setor Jovem no canto norte, ao
+  lado da coberta: ela foi pra lá. A coberta é o Setor Vitalícia, a
+  arquibancada do sudeste e o fundo da entrada são o Setor Família, e a
+  visitante fica no canto oeste (como já estava). A coberta ganhou a
+  cadeira clara na frente e azul-marinho atrás, como no satélite
+  ampliado; o canto norte passou de cimento pra cadeira azul-marinho.
 - **Aproximações**: as funduras (16 m no anel, 22 m na coberta); as
   alturas; uma foto antiga mostra PONTE PRETA pintado no degrau do
   sudeste, mas o satélite atual não mostra, então não pus.
