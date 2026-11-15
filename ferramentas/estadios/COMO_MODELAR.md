@@ -149,6 +149,11 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+ARQUIBANCADA TODA DEBAIXO DO TELHADO (o Independência): nas vistas de perto
+ela sai cinza, sem cadeira à vista. `telhados[].sombra: false` tira a sombra
+do telhado e `corEspelho` (na ficha ou no trecho) pinta o espelho do degrau
+na cor do encosto. Nenhuma das duas muda a vista de cima do jogo.
+
 RETÂNGULO NUNCA COM CANTO ZERO (o Independência): num anel `reto`, contorno
 `{ a, b, r: 0 }` faz o gerador tomar o lado do fundo pelo da lateral e
 juntar todas as colunas do fundo num ponto do canto (o lance sai só com os

@@ -325,7 +325,9 @@ export function construir(THREE, ficha) {
             q4(i + 0.12, i + 0.88, f0 + df * 0.10, f0 + df * 0.58, hk + 0.45, tomL(c, luz * 0.94));     /* o assento */
             q4(i + 0.12, i + 0.88, f0 + df * 0.58, f0 + df * 0.80, hk + 0.9, tomL(c, Math.min(1.25, luz * 1.1))); } /* o encosto */
         }
-        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), CONCRETO_ESC);
+        /* o espelho do degrau (a face de pé entre uma fileira e a outra): concreto; com `corEspelho` (o Independência), a cor
+           do encosto das cadeiras, que é o que se vê de frente nas fotos — de cima ele não aparece */
+        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), (!escada && !t.semCadeiras && (t.corEspelho || ficha.corEspelho)) || CONCRETO_ESC);
       }
     }
   }
@@ -622,6 +624,10 @@ export function construir(THREE, ficha) {
     if (t.furo) sh.holes.push(new THREE.Path(t.furo.map(q => new THREE.Vector2(q[0], q[1]))));
     const g = new THREE.ExtrudeGeometry(sh, { depth: t.h || 0.5, bevelEnabled: false }); g.rotateX(-Math.PI / 2);
     const m = sombra(new THREE.Mesh(g, mat(t.cor || '#cbcdce', { flatShading: true }))); m.position.y = t.y || 0;
+    /* `sombra: false`: o telhado não escurece as arquibancadas nas vistas de conferência (o Independência, com o fundo inteiro
+       debaixo do telhado, saía cinza, sem cadeira à vista; dono, 15/11/2026: "As arquibancadas atrás do gol também têm
+       cadeiras, da mesma cor das demais"). A vista de cima do jogo já é feita sem a sombra das coberturas. */
+    if (t.sombra === false) m.castShadow = false;
     (t.cobertura === false ? cena : coberturas).add(m);
   }
   for (const p of ficha.passarelas || []) { const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.d), mat(p.cor || CONCRETO)); m.rotation.x = -Math.PI / 2; m.position.set(p.u, 0.11, -p.v); m.receiveShadow = true; cena.add(m); }

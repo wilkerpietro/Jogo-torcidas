@@ -27,7 +27,7 @@
    Rua Ismênia Tunes, então fica na lateral sul. NÃO achei mapa de setores:
    a ponta da lateral sul pra visitante e o fundo oeste pra Seita Verde são
    escolhas minhas. */
-const V = '#3f9460', V2 = '#5aa874';                     /* a cadeira verde, em dois tons */
+const V = '#2f8a50', V2 = '#3f9e60';                     /* a cadeira verde, em dois tons (vivos, como nas fotos) */
 const CADEIRA = { cor: V, cor2: V2, padrao: 'mosaico', mistura: 0.3 };
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
@@ -44,10 +44,12 @@ const NIVEL = (bN, bN2, bS, bS2, aO, aO2, mais) => [
 const ROOF = '#d3d4cf', TRELICA = '#eceeea', TORRE = '#cfd0ca';
 
 export default {
-  id: 'estadio-independencia', alambrado: false, muro: false, nome: 'Independência', clubes: ['america-mg'], norte: 85.2, vazado: 0.25, folga: 26,
+  id: 'estadio-independencia', alambrado: false, muro: false, nome: 'Independência', clubes: ['america-mg'], norte: 85.2, vazado: 0.08, folga: 26,
   chao: { cor: '#86827a' },
   campo: { corMargem: '#4f9353' },
   corMureta: '#d9dbd6',
+  /* o espelho de cada degrau no verde do encosto (de frente, nas fotos, as fileiras são verdes, não de concreto) */
+  corEspelho: '#2a7a47',
   aneis: [
     /* a beira do campo, ao pé das três arquibancadas (atrás das placas de publicidade): é por aqui que se passa de uma
        arquibancada pra outra por dentro, contornando as torres dos cantos */
@@ -69,11 +71,12 @@ export default {
     { dentro: LAT(75), fora: { a: 88, b: 78, r: 0.5 }, reto: true,
       trechos: NIVEL(75, 77.5, 73, 75.5, 85, 87.5, { tipo: 'passagem', alt: 27, cor: '#c9c7bf' }) }
   ],
-  /* O TELHADO das três arquibancadas, de chapa clara */
+  /* O TELHADO das três arquibancadas, de chapa clara (sem sombra nas vistas de conferência: debaixo dele, as cadeiras verdes
+     iluminadas, como nas fotos do dono) */
   telhados: [
-    { y: 31, h: 0.5, cor: ROOF, pontos: [[N0, 40], [N1 + 0.6, 40], [N1 + 0.6, 80], [N0, 80]] },
-    { y: 31, h: 0.5, cor: ROOF, pontos: [[S0, -40], [S1 + 2, -40], [S1 + 2, -74], [S0, -74]] },
-    { y: 31, h: 0.5, cor: ROOF, pontos: [[-57.5, O1], [-88, O1], [-88, O0], [-57.5, O0]] }
+    { y: 31, h: 0.5, cor: ROOF, sombra: false, pontos: [[N0, 40], [N1 + 0.6, 40], [N1 + 0.6, 80], [N0, 80]] },
+    { y: 31, h: 0.5, cor: ROOF, sombra: false, pontos: [[S0, -40], [S1 + 2, -40], [S1 + 2, -74], [S0, -74]] },
+    { y: 31, h: 0.5, cor: ROOF, sombra: false, pontos: [[-57.5, O1], [-88, O1], [-88, O0], [-57.5, O0]] }
   ],
   fachada: { cor: '#c9cbc6' },
   blocos: [
