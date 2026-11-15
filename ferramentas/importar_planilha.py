@@ -64,6 +64,8 @@ CLUBE_TROCADO = {
 # 14/11/2026, o dono: o São José volta pro Passo d'Areia, o Ypiranga/RS vai
 # pro Colosso da Lagoa e o Pelotas pra Boca do Lobo — os três ganharam o
 # estádio deles modelado.
+# 15/11/2026, o dono pediu o Jayme Cintra: o Paulista de Jundiaí sai do Nabi Abi
+# Chedid (que fica só com o Bragantino) e manda no Jayme Cintra.
 # 15/11/2026, o dono pediu o Canindé na vez de São Paulo: a Portuguesa sai do
 # Morumbi e volta a mandar no Canindé.
 # 15/11/2026, o dono: "separe o estádio do Maringá também" — o Maringá sai do
@@ -71,7 +73,7 @@ CLUBE_TROCADO = {
 ESTADIO_CORRIGIDO = {
  'sao-bernardo':'Estadio Primeiro de Maio','santo-andre':'Estadio Bruno Daniel','sao-caetano':'Estadio Anacleto Campanella',
  'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Mangueirao','tuna-luso':'Estádio do Souza',
- 'atletico-mineiro':'Mineirao','ceilandia':'Bezerrão','paulista-de-jundiai':'Nabi Abi Chedid','uniao-rondonopolis':'Dutrinha',
+ 'atletico-mineiro':'Mineirao','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
  'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
  'athletic':'Estadio Regional','mamore':'Estadio Regional','urt':'Estadio Regional',

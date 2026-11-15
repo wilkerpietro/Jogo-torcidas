@@ -587,3 +587,4 @@ import ulricoMursa from './fichas/estadio-ulrico-mursa.mjs'; FICHAS[ulricoMursa.
 import anacletoCampanella from './fichas/estadio-anacleto-campanella.mjs'; FICHAS[anacletoCampanella.id] = anacletoCampanella;
 import brunoDaniel from './fichas/estadio-bruno-daniel.mjs'; FICHAS[brunoDaniel.id] = brunoDaniel;
 import primeiroDeMaio from './fichas/estadio-primeiro-de-maio.mjs'; FICHAS[primeiroDeMaio.id] = primeiroDeMaio;
+import jaymeCintra from './fichas/estadio-jayme-cintra.mjs'; FICHAS[jaymeCintra.id] = jaymeCintra;

@@ -1427,11 +1427,12 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 4,
    "estadios": [
     "Brinco de Ouro",
     "Moisés Lucarelli",
-    "Nabi Abi Chedid"
+    "Nabi Abi Chedid",
+    "Jayme Cintra"
    ],
    "rodovias": [
     "Rodovia Sudeste 1",

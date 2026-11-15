@@ -13908,6 +13908,43 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Guerreiros
   do Tigre sem erro de página. Fotos fora do repositório.
 
+## Jayme Cintra lowpoly (Paulista de Jundiaí); o Paulista passa a mandar nele (dono, 15/11/2026)
+
+- O dono: "Jayme Cintra depois Nabi Abi Chedid." Um por vez: o Nabi Abi
+  Chedid fica pra depois da revisão deste.
+- **O Paulista de Jundiaí sai do Nabi Abi Chedid e manda no Jayme
+  Cintra** (como a Portuguesa no Canindé e o Maringá no Willie Davids).
+  Entra o estádio `jayme-cintra` (Região de Campinas, bairro Jundiaí); o
+  Nabi Abi Chedid fica só com o Bragantino. Mudou em `times.js`,
+  `estadios.js`, `torcidas.js` (Raça Tricolor), `cidades.js`, no pacote
+  `cenario3d/js/jogo.js`, nas fontes e nos dois importadores.
+  **Lotação: 15.000**, o número que eu conheço, não de planilha do dono.
+  O estádio não está desenhado na planta assada da praça.
+- Procurei o mapa de setores e NÃO achei.
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): bacia oval de degrau pintado de vermelho, desbotado, com as
+  escadas amarelas. No quadro o oeste fica em cima.
+  - A ferradura de degrau: o lado leste inteiro e as duas curvas, uns
+    20 m de fundo, com as nove escadas onde o satélite mostra; no alto
+    do leste, a faixa escura dos anúncios; por fora, os tetos brancos
+    dos bares.
+  - A coberta (oeste): fica na metade SUL do lado, não no meio. Cadeira
+    branca na frente, vermelha no meio e escura no alto, debaixo do
+    telhado branco; atrás, o prédio branco.
+  - O resto do lado oeste: sem arquibancada (muro e estacionamento).
+- As fotos antigas mostram a ferradura em blocos vermelhos e brancos e o
+  letreiro CAMPEÃO COPA DO BRASIL 2005 no alto do leste. O satélite
+  atual mostra tudo vermelho desbotado e anúncios no lugar; modelei o
+  satélite.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Raça Tricolor no meio do
+  lado leste e a visitante na curva norte.
+- **Aproximações**: as cores das cadeiras debaixo do telhado (de uma
+  foto de dentro, sem data); as torres dos refletores; as alturas; a
+  rua em volta virou um retângulo.
+- **Testado**: chão um só, nenhum marcador fora; briga como Raça
+  Tricolor sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
