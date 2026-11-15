@@ -34,7 +34,7 @@ const DEG = { padrao: 'mosaico', mistura: 0.2, semCadeiras: true, corredor: 18, 
 const SOCIAL_BAIXO = ['✠', 'G', '✠', 'V', '', 'R', '✠', 'C', '✠'].map((t, k) => {
   const u0 = -61.5 + k * 115.5 / 9, u1 = u0 + 115.5 / 9, de = A(u0, -49.5), ate = A(u1, -49.5);
   if (!t) return { de, ate, fora: M, cor: '#2a2c30', cor2: '#33363b', padrao: 'mosaico', mistura: 0.2, semCadeiras: true, corredor: 0, escadaNaBorda: true, corEscada: AMARELO, vomitorios: false };
-  return { de, ate, fora: M, cor: BR, cor2: '#e4e5e2', padrao: 'mosaico', mistura: 0.1, corEspelho: '#e4e5e2', corredor: 0, escadaNaBorda: true, corEscada: AMARELO, vomitorios: false,
+  return { de, ate, fora: M, cor: BR, cor2: '#e4e5e2', padrao: 'mosaico', mistura: 0.1, corredor: 0, escadaNaBorda: true, corEscada: AMARELO, vomitorios: false,
     texto: t, corTexto: t === '✠' ? '#c8262d' : '#1c1d20', textoLargura: 0.75, textoAltura: 0.9 };
 });
 

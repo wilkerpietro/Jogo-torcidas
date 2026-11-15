@@ -312,6 +312,7 @@ export function construir(THREE, ficha) {
       const escada = G.escada(i);
       for (let k = 0; k < N; k++) {
         const f0 = fc + (1 - fc) * k / N, f1 = fc + (1 - fc) * (k + 1) / N, df = f1 - f0, sobe = (h1 - h0) / N, hk = h0 + sobe * (k + 0.5), hk1 = hk + sobe;
+        let corCad = null;   /* (a cor sorteada da cadeira desta célula: o espelho usa a mesma, sem sortear de novo) */
         if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, G.vomCor); continue; }
         /* A ESCADA É DE CONCRETO LISO (dono, 14/11/2026: "refaça as escadas entre os blocos de arquibancada pra ficarem
            condizente com a realidade"): a faixa clara entre dois blocos de cadeiras, o degrau só um tom abaixo — antes
@@ -321,13 +322,17 @@ export function construir(THREE, ficha) {
           const degrau = tomL(t.semCadeiras ? corDe(i, k) : CONCRETO, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
           q4(i, i + 1, f0, f1, hk, degrau);
           if (G.sobreVomitorio(i, k)) q4(i, i + 1, f0, f0 + df * 0.42, hk + 1, G.vomParapeito);   /* o parapeito em cima da boca */
-          else if (!t.semCadeiras) { const c = corDe(i, k), luz = 0.9 + 0.1 * k / N;
+          else if (!t.semCadeiras) { const c = corDe(i, k), luz = 0.9 + 0.1 * k / N; corCad = c;
             q4(i + 0.12, i + 0.88, f0 + df * 0.10, f0 + df * 0.58, hk + 0.45, tomL(c, luz * 0.94));     /* o assento */
             q4(i + 0.12, i + 0.88, f0 + df * 0.58, f0 + df * 0.80, hk + 0.9, tomL(c, Math.min(1.25, luz * 1.1))); } /* o encosto */
         }
         /* o espelho do degrau (a face de pé entre uma fileira e a outra): concreto; com `corEspelho` (o Independência), a cor
            do encosto das cadeiras, que é o que se vê de frente nas fotos — de cima ele não aparece */
-        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), (!escada && (t.corEspelho || (!t.semCadeiras && ficha.corEspelho))) || CONCRETO_ESC);
+        /* (com cadeira e sem `corEspelho`, o espelho sai no tom da cadeira da fileira: visto de frente, o que aparece entre uma
+           fileira e a outra são os encostos, não o concreto — dono, 15/11/2026, a social de São Januário: "você pintou o chão
+           da social em vez das cadeiras". De cima o espelho não aparece: a imagem do jogo não muda) */
+        const espelho = escada ? CONCRETO_ESC : (t.corEspelho || (!t.semCadeiras && ficha.corEspelho) || (corCad ? tomL(corCad, 0.82) : CONCRETO_ESC));
+        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), espelho);
       }
     }
   }

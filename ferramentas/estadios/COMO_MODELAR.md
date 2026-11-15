@@ -155,6 +155,13 @@ o campo (o Bernardo Rubinger de Queiroz). E faixa de chão que precisa ligar
 duas partes não pode começar no canto arredondado da beira: ali ela fica
 fina demais e o teste dá duas ilhas.
 
+O ESPELHO DO DEGRAU (a face de pé entre as fileiras): com cadeira, ele sai
+sozinho no tom da cadeira da fileira (São Januário; antes era sempre
+concreto e a arquibancada vista de frente ficava cinza). Num trecho sem
+cadeira continua concreto, a menos que a ficha dê `corEspelho`. Nunca chame
+o sorteio de cor (`corDe`) duas vezes na mesma célula: ele puxa o próximo
+número da semente e muda o mosaico de cima.
+
 ARQUIBANCADA TODA DEBAIXO DO TELHADO (o Independência): nas vistas de perto
 ela sai cinza, sem cadeira à vista. `telhados[].sombra: false` tira a sombra
 do telhado e `corEspelho` (na ficha ou no trecho) pinta o espelho do degrau
