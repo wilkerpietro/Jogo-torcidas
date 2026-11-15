@@ -266,6 +266,8 @@ trecho `passagem` no mesmo ângulo fecha o chão.
   no alambrado, pode ser a própria arquibancada tubular. Arquibancadas
   tubulares são planos retos e separados: use `retas`, uma por lance, cada
   uma no seu ângulo. Na dúvida, mostre ao dono as duas leituras.
+- Se o satélite pega o estádio EM REFORMA (o Maião), tire dele só as medidas
+  e use as aéreas mais recentes pro que existe hoje; diga isso ao dono.
 - Faixa escura na frente de um telhado alto pode ser a SOMBRA dele, não
   cadeira preta (o Santa Cruz): veja pra onde caem as outras sombras e
   confira numa foto de frente.

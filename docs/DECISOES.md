@@ -14058,6 +14058,39 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Sangue Rubro
   sem erro de página. Fotos fora do repositório.
 
+## Maião lowpoly (Mirassol) (dono, 15/11/2026)
+
+- O dono, depois de revisar o Alfredo de Castilho: "Tudo certo, vamos
+  pro Maião." O Ituano continua mandando aqui nos dados até o estádio
+  dele (o próximo da fila) ser feito.
+- Procurei o mapa de setores e NÃO achei.
+- **Duas épocas**: o satélite pega o estádio no meio da reforma (a curva
+  norte demolida, o lado leste em obra). As MEDIDAS saíram dele; o
+  ESTADO ATUAL saiu de três aéreas recentes, já com a fachada amarela.
+  Fotos mais antigas mostram o estádio azul, depois verde: não valem.
+- **Como é** (o meio do campo saiu do círculo central; no quadro o oeste
+  fica em cima):
+  - A coberta (oeste): reta, 87 m por 17 m, cadeira em blocos (azul,
+    verde, verde, amarelo), debaixo do telhado claro; atrás, o ginásio
+    de teto em arco e as piscinas.
+  - A curva nova do norte: cadeira azul-escura (16 m de fundo), com a
+    fachada amarela alta por fora, o painel do escudo e do nome do
+    estádio (`textoFace`) e alguns retângulos verdes e cinza.
+  - A amarela: o lado leste inteiro e a curva sul, 11 m de fundo, de
+    cadeira amarela com escada de 9 em 9 m; a cabine no alto do meio do
+    leste.
+  - A pista de piso azulado em volta do gramado.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Fúria do Leão (e a
+  Galoucura do Ituano, enquanto o Ituano manda aqui) no meio da amarela
+  do leste; a visitante na curva nova do norte.
+- **Aproximações**: a fundura da amarela e da curva nova (o satélite não
+  mostra as duas prontas); as escadas da amarela são regulares, não
+  contadas; a fachada tem muito mais retângulos verdes do que pus; as
+  torres dos refletores; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Fúria do
+  Leão sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
