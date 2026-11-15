@@ -14391,6 +14391,16 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Torcida
   Esquadrão sem erro de página.
 
+## Barão de Serra Negra: o desnível dos dois lados da de trás do gol (dono, 15/11/2026)
+
+O dono mandou duas fotos aéreas: "No barão de Serra negra tem um desnível nos dois lados da arquibancada atrás do gol que o satélite não captou bem, veja as imagem que mandei e corrija".
+
+- **O que as fotos mostram**: atrás do gol do sul a arquibancada é baixa no meio (onde fica a caixa amarela do túnel) e sobe para os dois lados: no sudoeste até encontrar a coberta, no sudeste até o painel alto do canto (o do escudo, na pintura antiga), que fica da altura da arquibancada do leste.
+- **Onde eu tinha errado**: fiz o fundo sul redondo, com 19 m de fundura atrás do gol. Medindo o satélite de novo, com as fotos ao lado: o muro de trás é RETO, com os dois cantos chanfrados, e a arquibancada tem só 12 m de fundo no meio. A frente é curva (acompanha a pista) e o fundo é reto: é isso que faz a sela.
+- **O que mudou na ficha**: o lado sul ganhou a sua beira de dentro (`I_S`, 5 m mais pra fora que a do norte; o oval não é centrado no campo) e o muro de trás em lances retos, um trecho por lance (`LINHA_RETA`, como no Jorjão): a ponta do telhado, o canto sudoeste, o meio, o canto sudeste, o fim do chanfro. Com `inclinacao`, a altura sai da fundura: uns 6,5 m no meio, 10 a 11 m no canto sudeste, 12 a 13 m no sudoeste. A caixa amarela do túnel entrou como `bloco`. A ficha tem `vista` com a câmera da foto do dono.
+- **O que ficou de fora**: as fotos são de uma pintura antiga (listras grená, escudo no painel do sudeste). No satélite de hoje o degrau é todo claro e o escudo está no canto sudoeste, com um letreiro que não consegui ler. Ficou claro, sem escudo e sem letreiro.
+- **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página; as grades dos escanteios do sul continuam no lugar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -149,6 +149,16 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+FRENTE CURVA COM MURO DE TRÁS RETO = SELA (o fundo sul do Barão de Serra
+Negra; dono, 15/11/2026: "tem um desnível nos dois lados da arquibancada
+atrás do gol que o satélite não captou bem"). O satélite não mostra altura.
+Se as fileiras acompanham a curva da pista e o muro de trás é reto, a
+arquibancada é rasa e BAIXA no meio e funda e ALTA nos dois cantos. Não
+arredondar o fundo por conta: medir a fundura atrás do gol em duas linhas
+do satélite e desenhar o muro lance por lance (`LINHA_RETA`, um trecho por
+lance, divisa no ponto `NS` de onde a escada chega ao canto do muro). Foto
+aérea oblíqua manda na altura; conferir com `vista` da mesma câmera.
+
 ESTÁDIO OVAL DE FUNDURA DIFERENTE EM CADA CANTO (o Barão de Serra Negra):
 um anel só com `normal: true` e, em cada trecho, o `fora` do QUADRANTE em
 que ele está: quatro retângulos de canto redondo (`a` do lado esquerdo ou
