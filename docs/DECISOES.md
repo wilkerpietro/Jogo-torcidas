@@ -13513,6 +13513,39 @@ também".
   como Leões da Fabulosa sem erro de página. As fotos de referência
   ficaram fora do repositório.
 
+## Allianz Parque lowpoly (Palmeiras) (dono, 15/11/2026)
+
+- O dono: "Vá fazendo a sua ordem de um por um." A ordem de São Paulo:
+  Allianz Parque, Vila Belmiro, Moisés Lucarelli, Brinco de Ouro, Nabi
+  Abi Chedid, Santa Cruz, Maião, Jorge Ismael de Biasi, Primeiro de
+  Maio, Anacleto Campanella, Bruno Daniel, Ulrico Mursa.
+- **De onde saiu a planta**: o telhado tapa todas as cadeiras, então o
+  satélite só dá o contorno do prédio, a abertura e os pórticos. As
+  arquibancadas saíram do mapa de acesso do clube e das fotos de dentro.
+- **Como é**: arena de três níveis que dão a volta inteira (o lance de
+  baixo, o anel dos camarotes e o lance de cima), cadeira em dois
+  verdes. Não é simétrica: a ponta norte é redonda e funda, em
+  anfiteatro (o prédio vai a 121 m do meio do campo); a ponta sul é reta
+  e rasa (94 m). Na ficha cada anel tem dois contornos, um por metade,
+  que se encontram nas laterais (mesma meia largura).
+- **O telhado**: branco, com a faixa cinza translúcida em volta da
+  abertura, bem mais larga no norte (dois `telhados` com `furo`); os
+  cinco pórticos brancos de treliça por cima; o letreiro azul nas duas
+  laterais.
+- **Os acessos** (fotos de dentro, que valem mais que a regra dos dois
+  andares): o lance de baixo do Allianz TEM boca no meio do lance, uma a
+  cada duas escadas; o de cima tem as bocas a um quarto da altura. Os
+  túneis grandes ficam no meio dos dois fundos.
+- **As torcidas (mapa do clube)**: a Mancha Verde no meio do Gol Norte e
+  a TUP ao lado; a visitante no lance de cima do canto sudeste (setores
+  526 a 530, portão D).
+- **Aproximações**: a fundura de cada lance (sem planta com medida; o
+  total bate com o prédio do satélite); as alturas; os pórticos como
+  caixas brancas; a fachada lisa, sem as faixas verdes; o entorno em
+  caixas. Não achei letreiro nas cadeiras nas fotos, então não pus.
+- **Testado**: chão um só, nenhum marcador fora; briga de 60 contra 51
+  como Mancha Verde sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

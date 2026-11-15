@@ -579,3 +579,4 @@ FICHAS[germanoKruger.id] = germanoKruger;
 import willieDavids from './fichas/estadio-willie-davids.mjs';
 FICHAS[willieDavids.id] = willieDavids;
 import caninde from './fichas/estadio-caninde.mjs'; FICHAS[caninde.id] = caninde;
+import allianzParque from './fichas/estadio-allianz-parque.mjs'; FICHAS[allianzParque.id] = allianzParque;

@@ -130,6 +130,10 @@ formam um chão só; uma fresta isola o lance).
 - `h`, `dentro`, `fora`: valem só pro trecho (um setor mais fundo ou mais
   alto que os vizinhos). Com `fora` diferente num anel `reto`, ponha
   `reto: false` no trecho.
+  Estádio assimétrico (o Allianz Parque, com uma ponta redonda e funda e a
+  outra reta e rasa): em cada anel, um trecho de -90 a 90 e outro de 90 a
+  270, cada um com o seu `dentro` e o seu `fora`; os dois contornos têm a
+  mesma meia largura `b`, então se encontram nas laterais.
   Pra uma arquibancada retangular num anel `reto` (cada lado com a sua
   fundura), dê ao contorno de fora um raio que deixe o lado reto do tamanho
   do de dentro (`a - r` e `b - r` iguais nos dois), senão ela abre em leque.
