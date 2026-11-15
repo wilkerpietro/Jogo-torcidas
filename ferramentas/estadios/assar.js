@@ -35,7 +35,7 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
     if (!FICHA) fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
     dados[id] = { nome: r.nome, clubes: r.clubes, escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
                   foto: { imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), mascara: r.mascara }, cena: r.cena };
-    if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'aerea2', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); }
+    if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'aerea2', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); if (r.perto) fs.writeFileSync(path.join(CONF, id + '_perto.jpg'), bin(r.perto)); }
     /* O CHÃO É UM SÓ? As ilhas de chão andável da máscara, e se os marcadores (bondes, túneis, PM) caem na maior. */
     { const linhas = r.mascara.split(';'), C = 384, R = linhas.length, m = new Uint8Array(C * R);
       linhas.forEach((l, y) => { let c = 0, v = 0; for (const n of l.split(',')) { for (let k = 0; k < +n && c < C; k++, c++) m[y * C + c] = v; v ^= 1; } });

@@ -171,6 +171,10 @@ jogo só nascem em `aneis`.
   sair transparente na foto de cima (use em teto). `texto` pinta um
   letreiro em cima.
 - `refletores: [[u, v, altura], ..]`, `porticos: [{ ang, larg, h }]`.
+  `textoFace: true` num bloco escreve o `texto` em pé, na face que olha pra
+  `+u` (girada com o `giro`): letreiro de fachada. Janelas são blocos finos
+  e escuros encostados na fachada (o Moisés Lucarelli gera as dele em volta
+  do centro da curva).
   Um quarto número no refletor (`[u, v, altura, pe]`) faz o poste nascer na
   altura `pe` (em cima da cobertura) em vez de vir do chão.
 - `fachada: { cor, pilares: { n, h, pe, topo, esp, fundo, cor, contorno } }`.
@@ -226,6 +230,13 @@ o anel de circulação, e o público desce dele (`vomitorios: false` e um
 anel de `passagem` com `alt` encostado no fundo). Por cima desse anel
 ficam os camarotes. O lance de CIMA tem a boca no lance, a um quarto ou um
 terço da altura (`vomitorios: { f: 0.3, cada: 2 }`).
+
+`vista: [u, altura, v, alvoU, alvoAltura, alvoV]` na ficha pede uma foto de
+perto na conferência (`_perto.jpg`), pra olhar uma fachada.
+
+Arquibancada com MENOS degraus num trecho (atrás de um gol): o trecho leva
+um `dentro` mais pra fora e o `h` só da parte de cima; na frente dele, um
+trecho `passagem` no mesmo ângulo fecha o chão.
 
 ## O que conferir antes de entregar
 

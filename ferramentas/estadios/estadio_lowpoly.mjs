@@ -490,13 +490,20 @@ export function construir(THREE, ficha) {
     const m = caixa(b.w, b.h, b.d, b.cor || '#c9c6bb', b.u, (b.y || 0) + b.h / 2, -b.v, grupo); if (b.giro) m.rotation.y = b.giro * RAD;
     /* o letreiro pintado em cima (a cobertura da Neo Química Arena) */
     if (b.texto) {
-      const cv = document.createElement('canvas'); cv.width = 1024; cv.height = Math.max(64, Math.round(1024 * b.d / b.w));
+      /* `textoFace: true`: o letreiro vai em pé, na face do bloco que olha pra `+u` (girada com o `giro`) — a fachada do Moisés Lucarelli */
+      const cv = document.createElement('canvas'); cv.width = 1024; cv.height = Math.max(64, Math.round(1024 * (b.textoFace ? b.h / b.d : b.d / b.w)));
       const x = cv.getContext('2d'); x.fillStyle = b.corTexto || '#3a3c40'; x.textAlign = 'center'; x.textBaseline = 'middle';
       const linhas = b.texto.split('|'), px = Math.round(cv.height * (b.textoAltura || 0.42)); x.font = `bold ${px}px "DejaVu Sans", "Arial", sans-serif`;
       const larg = Math.max(...linhas.map(l => x.measureText(l).width)), cabe = 1024 * (b.textoLargura || 0.6);
       linhas.forEach((l, i) => { x.save(); x.translate(512 + 1024 * (b.textoU || 0), cv.height * (b.textoMeio || 0.5) + (i - (linhas.length - 1) / 2) * px * 1.05); x.scale(Math.min(1, cabe / larg), 1);
         x.textAlign = b.textoAlinha || 'center'; x.fillText(l, b.textoAlinha === 'left' ? -larg / 2 : 0, 0); x.restore(); });
       const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      if (b.textoFace) {
+        const g = (b.giro || 0) * RAD, r = b.w / 2 + 0.08;
+        const pf = new THREE.Mesh(new THREE.PlaneGeometry(b.d, b.h), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+        pf.rotation.y = Math.PI / 2 + g; pf.position.set(b.u + r * Math.cos(g), (b.y || 0) + b.h / 2, -b.v - r * Math.sin(g)); grupo.add(pf);
+        continue;
+      }
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.d), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
       pl.rotation.order = 'YXZ'; pl.rotation.x = -Math.PI / 2; pl.rotation.y = ((b.giro || 0) + (b.textoGiro || 0)) * RAD; pl.position.set(b.u, (b.y || 0) + b.h + 0.08, -b.v); grupo.add(pl);
     }

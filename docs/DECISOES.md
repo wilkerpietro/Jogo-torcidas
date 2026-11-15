@@ -13655,6 +13655,44 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Torcida
   Jovem sem erro de página.
 
+## Moisés Lucarelli: a fachada, o letreiro PONTE PRETA e a arquibancada rasa (dono, 15/11/2026)
+
+- O dono, com quatro fotos: "Três aprimoramentos no estádio da Ponte:
+  fachada inspirada na terceira foto, letreiro na arquibancada com o
+  nome PONTE PRETA, e atrás do gol tem uma parte com menor quantidade de
+  degraus [...], justamente onde você não fez arquibancada."
+- O dono também voltou ao um por um: "Vamos voltar a fazer um por um pra
+  eu ir revisando e corrigindo as imperfeições." Cada estádio é
+  mostrado e fica parado até a revisão dele.
+- **A arquibancada rasa atrás do gol do sudoeste.** Eu tinha deixado
+  esse fundo só com o terraço. No satélite ampliado ela aparece: é a
+  parte de cima do degrau, junto ao muro de fora (9,5 m, contra 16 m nos
+  lados), com o muro na frente e o pátio de asfalto embaixo. Na ficha:
+  um trecho com `dentro` próprio e altura de 4,9 a 9,5 m, mais o piso do
+  pátio na frente; o muro branco em arco do pátio virou três blocos.
+- **O letreiro PONTE PRETA** no degrau da arquibancada do sudeste, de
+  ponta a ponta, com o P do lado da entrada, como na foto. O satélite
+  atual não mostra o letreiro (está apagado); entrou porque o dono
+  pediu. O degrau passou de cimento cru pra pintado de branco, e a ponta
+  do canto leste ganhou o painel preto da torcida.
+- **A fachada da entrada** (fundo nordeste): o corpo do meio com
+  "ESTÁDIO MOISÉS LUCARELLI / A. A. PONTE PRETA" escrito em pé, a faixa
+  da sacada e os portões; as duas torres (a da direita de quem chega com
+  as três listras pretas, a da esquerda com o painel escuro); em cima, a
+  cabine, o placar e a placa laranja; as janelas escuras em três
+  fileiras acompanhando a curva; na frente, o calçadão de listras pretas
+  e brancas em leque.
+- **Gerador**: `textoFace: true` num bloco escreve o `texto` em pé, na
+  face que olha pra `+u` (girada com o `giro`); a ficha pode pedir uma
+  vista de perto (`vista: [u, altura, v, alvoU, alvoAltura, alvoV]`),
+  que sai em `_perto.jpg` na conferência. As janelas são blocos finos
+  gerados em volta do centro da curva.
+- **Aproximações**: o número e o tamanho das janelas; o escudo pintado
+  no degrau da arquibancada rasa não foi desenhado; a rampa entre a
+  arquibancada rasa e a do sudeste ficou como piso.
+- **Testado**: chão um só, nenhum marcador fora; briga como Jovem Ponte
+  sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
