@@ -14479,6 +14479,17 @@ O dono: "Vamos pro do Athletic agora" (o primeiro dos três que dividiam o Está
 - **O que ficou de fora**: a parte da tubular cinza que vira em ângulo (ficou reta, um pouco mais funda); o painel de LED das fotos.
 - **Conferido**: os arquivos de dados abrem; chão único, nenhum marcador fora, briga do Athletic rodando sem erro de página no estádio novo.
 
+## O Mamoré sai do Estádio Regional: Bernardo Rubinger de Queiroz lowpoly (dono, 15/11/2026)
+
+O dono: "Vamos pro do Mamoré", com quatro fotos de drone.
+
+- **Os dados**: o Bernardo Rubinger de Queiroz (`bernardo-rubinger-de-queiroz`, Interior de Minas, bairro Patos de Minas II, 10.252 lugares, a capacidade das listas do clube; um site de ingressos diz 15 mil, sem fonte) entrou em `dados/estadios.js`, na lista de estádios do Interior de Minas, nas fontes (`cidades_bairros.json`, com 3 estádios; `torcidas_relacoes.json`), no `importar_estadios.py` e no `importar_planilha.py`; o Mamoré e a Independente do Mamoré passam a ter o estádio novo; o Estádio Regional fica só com a URT.
+- **A ficha** (`fichas/estadio-bernardo-rubinger-de-queiroz.mjs`), pelo satélite e pelas fotos: uma ferradura aberta pro sul, de pontas arredondadas, um anel só `normal`, com um fundo pra metade de cima (a lateral oeste, 20 m) e outro pra de baixo (a lateral leste, 10 m), e a altura pela fundura. A lateral oeste de cadeira vermelha desbotada (nas fotos parece rosa), com os dois blocos do meio pro sul verdes na metade de cima (`padrao: 'fracoes'`) e, atrás deles, a coberta verde de pilares com o PREDESTINADO A GRANDES GLÓRIAS! na frente do telhado; as cadeiras viram o canto noroeste e descem um terço do fundo norte; o resto do fundo e a lateral leste de degrau verde com as escadas brancas e o PEROVITA escrito no degrau (como no satélite; eu tinha lido "perovia" nas fotos); a calçada atrás da lateral leste; no fundo aberto do sul, a fileira de cabines de telhado marrom com uns degraus embaixo, ligada ao resto pela margem de grama.
+- **Erros meus no caminho**: um trecho do fundo norte ia de 339 a 0 graus (de trás pra frente) e desenhou paredes atravessando o campo (tem de ir até 360); e a margem do fundo aberto começava no canto arredondado da beira, onde a faixa fica fina demais, e o fundo ficava solto do resto (começa agora no fim das cadeiras).
+- **As torcidas (escolhas minhas, sem mapa de setores)**: a Independente do Mamoré nas cadeiras da lateral oeste, debaixo da coberta; a visitante nas cabines do fundo aberto.
+- **O que ficou em dúvida**: o último bloco do fundo norte, colado na lateral leste, é amarelo-claro no satélite e verde nas fotos; ficou verde mais claro.
+- **Conferido**: os arquivos de dados abrem; chão único, nenhum marcador fora, briga do Mamoré rodando sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

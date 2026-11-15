@@ -3206,10 +3206,11 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Estadio Regional",
-    "Joaquim Portugal"
+    "Joaquim Portugal",
+    "Bernardo Rubinger de Queiroz"
    ],
    "rodovias": [
     "Rodovia Sudeste 1"

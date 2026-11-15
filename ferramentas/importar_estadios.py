@@ -90,6 +90,8 @@ NOVOS = [
     {'nome': 'Arena MRV', 'mapa': 'belo-horizonte', 'bairro': 'Coração Eucarístico'},
     # o Athletic sai do Estádio Regional e manda no Joaquim Portugal (a Arena Sicredi, em São João del-Rei).
     {'nome': 'Joaquim Portugal', 'mapa': 'interior-de-minas', 'bairro': 'São João del-Rei II'},
+    # o Mamoré sai do Estádio Regional e manda no Bernardo Rubinger de Queiroz, em Patos de Minas.
+    {'nome': 'Bernardo Rubinger de Queiroz', 'mapa': 'interior-de-minas', 'bairro': 'Patos de Minas II'},
 ]
 
 

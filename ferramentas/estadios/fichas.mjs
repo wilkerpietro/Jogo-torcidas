@@ -600,3 +600,4 @@ import mineirao from './fichas/estadio-mineirao.mjs'; FICHAS[mineirao.id] = mine
 import independencia from './fichas/estadio-independencia.mjs'; FICHAS[independencia.id] = independencia;
 import arenaMrv from './fichas/estadio-arena-mrv.mjs'; FICHAS[arenaMrv.id] = arenaMrv;
 import joaquimPortugal from './fichas/estadio-joaquim-portugal.mjs'; FICHAS[joaquimPortugal.id] = joaquimPortugal;
+import bernardoRubinger from './fichas/estadio-bernardo-rubinger-de-queiroz.mjs'; FICHAS[bernardoRubinger.id] = bernardoRubinger;

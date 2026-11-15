@@ -149,6 +149,12 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+TRECHO QUE PASSA POR ZERO GRAU: `ate` tem de ser maior que `de` (de 339 a
+360, não de 339 a 0); de trás pra frente o gerador desenha paredes cruzando
+o campo (o Bernardo Rubinger de Queiroz). E faixa de chão que precisa ligar
+duas partes não pode começar no canto arredondado da beira: ali ela fica
+fina demais e o teste dá duas ilhas.
+
 ARQUIBANCADA TODA DEBAIXO DO TELHADO (o Independência): nas vistas de perto
 ela sai cinza, sem cadeira à vista. `telhados[].sombra: false` tira a sombra
 do telhado e `corEspelho` (na ficha ou no trecho) pinta o espelho do degrau

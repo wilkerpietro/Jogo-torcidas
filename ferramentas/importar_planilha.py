@@ -75,6 +75,7 @@ CLUBE_TROCADO = {
 # 15/11/2026, o dono: "A MRV arena já foi feita? Do Atlético Mineiro" — o Atlético sai do Mineirão e manda na Arena MRV.
 # 15/11/2026, o dono: "Vamos fazer o estádio de athletic, Mamoré e URT separado também" — o Athletic sai do Estádio Regional
 # e manda no Joaquim Portugal (a Arena Sicredi, em São João del-Rei).
+# 15/11/2026, o dono: "Vamos pro do Mamoré" — o Mamoré sai do Estádio Regional e manda no Bernardo Rubinger de Queiroz.
 # 15/11/2026, o dono: "vamos pro estádio do XV" — o XV de Piracicaba sai do Jorge Ismael de Biasi
 # (que fica só com o Novorizontino) e manda no Barão de Serra Negra.
 # 15/11/2026, o dono pediu o Canindé na vez de São Paulo: a Portuguesa sai do
@@ -87,7 +88,7 @@ ESTADIO_CORRIGIDO = {
  'atletico-mineiro':'Arena MRV','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
  'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
- 'athletic':'Joaquim Portugal','mamore':'Estadio Regional','urt':'Estadio Regional',
+ 'athletic':'Joaquim Portugal','mamore':'Bernardo Rubinger de Queiroz','urt':'Estadio Regional',
  'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Limeirão','xv-de-piracicaba':'Barão de Serra Negra',
  'noroeste':'Alfredo de Castilho','ituano':'Novelli Júnior','iguatu':'Arena Romeirão','maringa':'Willie Davids',
  'caxias':'Estadio Centenario','ypiranga-rs':'Colosso da Lagoa','pelotas':'Boca do Lobo',
