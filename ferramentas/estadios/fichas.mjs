@@ -599,3 +599,4 @@ import baraoDeSerraNegra from './fichas/estadio-barao-de-serra-negra.mjs'; FICHA
 import mineirao from './fichas/estadio-mineirao.mjs'; FICHAS[mineirao.id] = mineirao;
 import independencia from './fichas/estadio-independencia.mjs'; FICHAS[independencia.id] = independencia;
 import arenaMrv from './fichas/estadio-arena-mrv.mjs'; FICHAS[arenaMrv.id] = arenaMrv;
+import joaquimPortugal from './fichas/estadio-joaquim-portugal.mjs'; FICHAS[joaquimPortugal.id] = joaquimPortugal;
