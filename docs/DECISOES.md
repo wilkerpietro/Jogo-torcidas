@@ -13876,6 +13876,38 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Fúria
   Andreense sem erro de página. Fotos fora do repositório.
 
+## Primeiro de Maio lowpoly (São Bernardo) (dono, 15/11/2026)
+
+- O dono, depois de revisar o Bruno Daniel: "Primeiro de Maio."
+- Procurei o mapa de setores e NÃO achei; li o satélite e as fotos.
+- **Como é** (o meio do campo saiu do círculo central): estádio em U,
+  aberto pro nordeste, de degrau pintado de amarelo e de preto com as
+  escadas brancas. No quadro a coberta fica em cima.
+  - A coberta (noroeste): reta, 114 m por 23 m; o telhado claro cobre a
+    metade de trás; a frente em blocos amarelos e pretos; o teto verde
+    dos bancos de reserva na frente.
+  - Atrás do gol do sudoeste: a arquibancada reta de 17 m, com um bloco
+    amarelo e três pretos.
+  - O sudeste: a arquibancada comprida, três blocos pretos e três
+    amarelos, em cima de uma galeria (começa a 3 m de altura), com o
+    muro amarelo no alto.
+  - Os dois cantos de baixo em curva: o sul amarelo, o leste preto.
+  - Atrás do gol do nordeste: sem arquibancada (alambrado e
+    estacionamento).
+- **Os acessos**: as caixinhas cobertas que o satélite mostra no pé de
+  algumas escadas viraram bocas na frente (três no sudeste, duas no
+  sudoeste). É a minha leitura do que elas são.
+- **Na ficha**: uma calçada de `passagem` em volta do gramado; as
+  arquibancadas num anel `reto` com `andarReto`; a do sudoeste tem
+  contorno próprio (é um retângulo que passa do canto).
+- **As torcidas (escolha minha, sem fonte)**: a Guerreiros do Tigre nos
+  blocos amarelos do sudeste e a visitante atrás do gol do sudoeste.
+- **Aproximações**: a cor do que fica debaixo do telhado; o letreiro do
+  muro amarelo (CAMPEÃO PAULISTA 2012 SÉRIE A2, de foto antiga) não foi
+  posto; o canto oeste virou piso; as torres dos refletores; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Guerreiros
+  do Tigre sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
