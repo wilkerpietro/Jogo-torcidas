@@ -100,6 +100,8 @@ function medidasDe(ficha, anel, t, arco, prof) {
   /* a boca pode abrir no MEIO do lance (`vomitorios.f`, fração da fundura; 0 = na frente, dando no corredor) */
   const vomK0 = Math.round(Math.max(0, Math.min(0.8, (vs && vs.f) || 0)) * N);
   return { n, N, Nold: t.fileiras || anel.fileiras || 14, prof, arco, frente, fc, passo, larguraCel, corr, esc, vomCentros, vomMeia, vomRows,
+    /* a cor do fundo da boca e do parapeito em cima dela (`vomitorios.cor`, `vomitorios.corParapeito`: as bocas vermelhas do Mineirão) */
+    vomCor: (vs && vs.cor) || '#232427', vomParapeito: (vs && vs.corParapeito) || '#dddbd2',
     escada: i => (!!t.escadaNaBorda && i < esc) || (!!corr && i > 0 && (i % corr) < esc),
     vomK0, noVomitorio: (i, k) => k >= vomK0 && k < vomK0 + vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomK0 + vomRows && naBoca(i) };
 }
@@ -302,7 +304,7 @@ export function construir(THREE, ficha) {
       const escada = G.escada(i);
       for (let k = 0; k < N; k++) {
         const f0 = fc + (1 - fc) * k / N, f1 = fc + (1 - fc) * (k + 1) / N, df = f1 - f0, sobe = (h1 - h0) / N, hk = h0 + sobe * (k + 0.5), hk1 = hk + sobe;
-        if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, '#232427'); continue; }
+        if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, G.vomCor); continue; }
         /* A ESCADA É DE CONCRETO LISO (dono, 14/11/2026: "refaça as escadas entre os blocos de arquibancada pra ficarem
            condizente com a realidade"): a faixa clara entre dois blocos de cadeiras, o degrau só um tom abaixo — antes
            saía tracejada de branco e cinza. Com `corEscada` (a escada pintada), a cor cheia e o degrau um tom abaixo. */
@@ -310,7 +312,7 @@ export function construir(THREE, ficha) {
         else {
           const degrau = tomL(t.semCadeiras ? corDe(i, k) : CONCRETO, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
           q4(i, i + 1, f0, f1, hk, degrau);
-          if (G.sobreVomitorio(i, k)) q4(i, i + 1, f0, f0 + df * 0.42, hk + 1, '#dddbd2');   /* o parapeito em cima da boca */
+          if (G.sobreVomitorio(i, k)) q4(i, i + 1, f0, f0 + df * 0.42, hk + 1, G.vomParapeito);   /* o parapeito em cima da boca */
           else if (!t.semCadeiras) { const c = corDe(i, k), luz = 0.9 + 0.1 * k / N;
             q4(i + 0.12, i + 0.88, f0 + df * 0.10, f0 + df * 0.58, hk + 0.45, tomL(c, luz * 0.94));     /* o assento */
             q4(i + 0.12, i + 0.88, f0 + df * 0.58, f0 + df * 0.80, hk + 0.9, tomL(c, Math.min(1.25, luz * 1.1))); } /* o encosto */
@@ -421,7 +423,7 @@ export function construir(THREE, ficha) {
     if (ff) faixa(1 - ff, 1, cb.bordaFora.cor); if (fd) faixa(0, fd, cb.bordaDentro.cor);
     for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, 0.2);
     /* as nervuras entre os gomos */
-    if (cb.nervuras !== false) for (let i = 0; i < n; i++) { const a = 360 * i / n, e = 0.16; R.quad(pt(a - e, fd, 0.12), pt(a - e, 1 - ff, 0.12), pt(a + e, 1 - ff, 0.12), pt(a + e, fd, 0.12), cb.corNervura || '#cfcfc8'); }
+    if (cb.nervuras !== false) for (let i = 0; i < n; i++) { const a = 360 * i / n, e = cb.larguraNervura || 0.16; R.quad(pt(a - e, fd, 0.12), pt(a - e, 1 - ff, 0.12), pt(a + e, 1 - ff, 0.12), pt(a + e, fd, 0.12), cb.corNervura || '#cfcfc8'); }
     /* a borda de fora e a de dentro, de pé */
     for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n;
       R.quad(pt(a0, 1, 0), pt(a1, 1, 0), pt(a1, 1, -2.2), pt(a0, 1, -2.2), (cb.bordaFora && cb.bordaFora.cor) || cb.cor || '#f4f3ee');

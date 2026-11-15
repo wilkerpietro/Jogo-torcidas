@@ -14409,6 +14409,17 @@ O dono marcou com uma linha verde o topo da arquibancada do leste do Barão de S
 - **A correção (no gerador, `estadio_lowpoly.mjs`)**: `colunasDe` passou a dar `G.fundura(ang)`, a distância da beira de dentro ao fundo pelo caminho que a coluna faz (perpendicular no anel `normal`, ponto a ponto no `reto`, radial no resto). A altura do lance, o parapeito, a parede de trás e o muro usam essa medida. Arquibancada de fundura constante fica com o topo reto.
 - **Quem mudou**: os dez estádios que usam `inclinacao` foram assados de novo e conferidos lado a lado (antes e depois): Barão de Serra Negra, Brinco de Ouro, Willie Davids, Jorge Ismael de Biasi, Alfredo de Castilho, Allianz Parque, Limeirão e Vila Belmiro mudaram pouco (os lados retos ficaram retos); Canindé e Santa Cruz saíram idênticos. Todos com chão único e nenhum marcador fora. O chão andável não depende da altura, então o jogo não muda.
 
+## Mineirão lowpoly (Cruzeiro e Atlético-MG): Minas Gerais começa (dono, 15/11/2026)
+
+O dono: "Vamos pra Minas Gerais, começando pelo Mineirão", e mandou quatro fotos de dentro do estádio.
+
+- **De onde saiu cada coisa**: o telhado, a abertura e o entorno, do satélite (medidos no quadro girado: abertura de 170 x 108 m, divisa da membrana com o anel de concreto em 222 x 158 m, beira dos pórticos em 282 x 218 m). O lado de dentro, das fotos do dono: cadeira cinza bem clara nos dois lances; bocas laranja no meio do lance de baixo e vermelhas perto da frente do lance de cima; a faixa escura de vidro dos camarotes entre os dois, dando a volta; escadas escuras no lance de cima; um telão pendurado na beira da abertura em cada ponta; a margem verde larga e o muro na frente do lance de baixo; os bancos de teto de vidro do lado oeste.
+- **A ficha** (`fichas/estadio-mineirao.mjs`): quatro anéis em elipse (lance de baixo, camarotes, lance de cima, corredor do alto), duas `coberturasAnel` (o anel de placas solares com as nervuras claras e a membrana branca), `fachada.pilares` com os 88 pórticos inclinados, a esplanada e as tendas das entradas.
+- **No gerador**: `vomitorios.cor` e `vomitorios.corParapeito` dão cor à boca (antes era sempre escura com parapeito claro); `coberturasAnel[].larguraNervura` engrossa a nervura entre os gomos.
+- **As torcidas**: a Máfia Azul no lance de baixo do fundo sul (o setor Amarelo, onde ficam as organizadas do Cruzeiro); a visitante no lance de cima do canto noroeste (o Roxo Superior, portão A, pelas notícias de ingressos). A Galoucura ficou no mesmo fundo sul quando o Atlético manda: escolha minha, sem fonte. Qual lance a Máfia ocupa (baixo ou cima) também não achei escrito.
+- **O que não achei**: mapa de setores desenhado (a busca de imagens falhou; os setores vieram de texto). A planta dos lances debaixo do telhado é estimada pelas fotos e pela beira que aparece na abertura.
+- **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

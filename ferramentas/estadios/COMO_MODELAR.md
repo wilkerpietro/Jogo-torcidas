@@ -149,6 +149,13 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+BOCA COLORIDA E NERVURA GROSSA (o Mineirão): `vomitorios: { cor, corParapeito }`
+pinta a boca de acesso (as laranja do lance de baixo e as vermelhas do de
+cima); `coberturasAnel[].larguraNervura` (em graus, de cada lado) engrossa a
+nervura entre os gomos (as nervuras claras entre as placas solares). Arena
+toda coberta: o satélite só dá o telhado; a cor da cadeira, as bocas e a
+faixa dos camarotes só saem de foto de dentro. Sem foto, avisar o dono.
+
 A ALTURA PELA FUNDURA (`inclinacao`) usa a fundura DE VERDADE de cada
 coluna, da beira de dentro ao fundo pelo caminho que a escada faz
 (`G.fundura`), e não a medida do centro do campo. Arquibancada reta de
