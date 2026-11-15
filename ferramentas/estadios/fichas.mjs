@@ -28,10 +28,18 @@ export const FICHAS = {
     campo: { corMargem: '#4c9656' },
     corMureta: '#e4e2da',
     aneis: [
-      { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 84, b: 66, r: 50 }, h: [1.2, 11], fileiras: 12,
-        trechos: [{ de: 0, ate: 360, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18 }] },
+      /* o lance de baixo: entra-se por CIMA, pelo anel de circulação atrás da última fileira (dono, 15/11/2026, com o corte
+         da parte central: "normalmente as arquibancadas inferiores de estádios de dois andares são acessadas pelo topo do
+         setor"). Do pedido antigo dele ficam o corredor do alambrado e poucas bocas de serviço na frente (uma a cada quatro
+         escadas) */
+      { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 80, b: 62, r: 46 }, h: [1.2, 11], fileiras: 12,
+        trechos: [{ de: 0, ate: 360, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: { cada: 4 } }] },
+      /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes */
+      { dentro: { a: 80, b: 62, r: 46 }, fora: { a: 84, b: 66, r: 50 }, h: [11.1, 11.1], fileiras: 2, corredorFrente: 0,
+        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 11.1, cor: '#b3b1a8' }] },
+      /* o lance de cima: as bocas abrem no lance, a um quarto da altura */
       { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 128, b: 108, r: 90 }, h: [14, 34], fileiras: 18,
-        trechos: [{ de: 0, ate: 360, cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3,
+        trechos: [{ de: 0, ate: 360, cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3, vomitorios: { f: 0.25, cada: 2 },
                     cobertura: { h: 43, larg: 47, avanco: 9, cai: 3, cor: '#f5f5f1', cor2: '#e6e8e6', listras: true, corTrelica: '#b9bdc0', pilares: false } }] }
     ],
     fachada: { cor: '#3a4046', pilares: { n: 60, h: 41, pe: 15, topo: 6, esp: 1.3, fundo: 2.6, cor: '#f6f6f2' } },

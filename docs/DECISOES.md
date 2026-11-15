@@ -13221,6 +13221,42 @@ também".
 - **Fila do Paraná** (aguardando o dono): Estádio do Café (Londrina) e
   Germano Krüger (Operário e Maringá).
 
+## Lance de baixo de estádio de dois andares: entra-se por cima (dono, 15/11/2026)
+
+- Depois do Couto Pereira o dono mandou três cortes (a Arena Pantanal,
+  a própria Arena da Baixada e a parte central do Castelão) e a regra:
+  "Normalmente as arquibancadas inferiores de estádios de dois andares
+  são acessadas pelo topo do setor."
+- **O que os cortes mostram**:
+  - o LANCE DE BAIXO não tem boca no meio: atrás da última fileira
+    passa o anel de circulação (no nível da rua ou da esplanada); o
+    público sai dele e desce as escadas;
+  - entre os dois lances ficam os camarotes, por cima desse anel;
+  - o LANCE DE CIMA é que tem boca no lance: o público sobe por dentro
+    do prédio e sai por um vomitório a um quarto ou um terço da altura,
+    de onde sobe ou desce.
+- **Regra pros estádios de dois andares** (entra no guia): lance de
+  baixo com `vomitorios: false` e um anel de `passagem` com `alt`
+  encostado no fundo dele; lance de cima com `vomitorios: { f: 0.25 a
+  0.35 }`. Só muda se a foto do estádio mostrar outra coisa.
+- **Arena da Baixada**: o anel inferior perdeu as bocas e ganhou o anel
+  de circulação atrás (4 m, debaixo dos camarotes); o inferior ficou
+  com 14 m e o superior com 15 m; as bocas do superior subiram pra um
+  terço da altura.
+- **Castelão**: o lance de baixo ganhou o anel de circulação atrás
+  (4 m) e ficou com 20 m. Em agosto o dono tinha pedido, pelas fotos do
+  Castelão, o corredor do alambrado e o vomitório que dá nele: o
+  corredor fica, e as bocas da frente ficaram poucas (uma a cada quatro
+  escadas), como túnel de serviço. As bocas do lance de cima subiram
+  pra um quarto da altura. Se ele quiser tirar as da frente de vez, é
+  `vomitorios: false`.
+- **Os outros de dois andares já feitos** (Maracanã, Morumbi, Neo
+  Química Arena, Arena do Grêmio, Beira-Rio) não foram mexidos: no
+  Beira-Rio as bocas foram acertadas pelo dono com foto. Rever um a um
+  só quando ele mandar.
+- **Testado**: briga no Castelão e na Arena da Baixada; chão um só nos
+  dois, nenhum marcador fora; sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

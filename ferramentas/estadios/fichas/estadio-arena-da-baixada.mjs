@@ -18,8 +18,9 @@
    · Os telões ficam no alto das duas pontas. */
 const CZ = '#c6c9cc', CZ2 = '#8d9298';                  /* a cadeira cinza clara e a escura */
 const TETO = '#e2e0da', NERV = '#cdcbc5', FERRO = '#8a8f94';
-/* o anel inferior (15 m) e o superior (18 m); os cantos são concêntricos */
-const D = { a: 60, b: 41, r: 10 }, M = { a: 75, b: 56, r: 25 }, F = { a: 93, b: 74, r: 43 };
+/* o anel inferior (14 m), o anel de circulação atrás dele (4 m, debaixo dos camarotes) e o superior (15 m); os cantos são
+   concêntricos */
+const D = { a: 60, b: 41, r: 10 }, L = { a: 74, b: 55, r: 24 }, M = { a: 78, b: 59, r: 28 }, F = { a: 93, b: 74, r: 43 };
 const CADEIRA = { cor: CZ, cor2: CZ2, padrao: 'mosaico', mistura: 0.34, corredor: 12, corEscada: '#dfe0df' };
 /* as nervuras do teto (as abóbadas de policarbonato), de 9,8 em 9,8 m: inteiras nas pontas, cortadas pela abertura no meio */
 const NERVURAS = Array.from({ length: 20 }, (_, i) => -93 + i * 9.8).flatMap(u => (u < -54 || u > 55)
@@ -33,12 +34,17 @@ export default {
   campo: { corMargem: '#3f8f4b' },
   corMureta: '#e9e9e6',
   aneis: [
-    /* O ANEL INFERIOR */
-    { dentro: D, fora: M, reto: true, h: [1.2, 8.2], fileiras: 16,
-      trechos: [{ de: 0, ate: 360, ...CADEIRA }] },
-    /* O ANEL SUPERIOR */
+    /* O ANEL INFERIOR: sem boca no meio. Entra-se por CIMA (dono, 15/11/2026, com o corte do estádio: "normalmente as
+       arquibancadas inferiores de estádios de dois andares são acessadas pelo topo do setor"): o público sai do anel de
+       circulação atrás da última fileira e desce as escadas */
+    { dentro: D, fora: L, reto: true, h: [1.2, 8.2], fileiras: 16,
+      trechos: [{ de: 0, ate: 360, ...CADEIRA, vomitorios: false }] },
+    /* O ANEL DE CIRCULAÇÃO atrás do inferior, debaixo dos camarotes */
+    { dentro: L, fora: M, reto: true, h: [8.3, 8.3], fileiras: 2, corredorFrente: 0,
+      trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 8.3, cor: '#aeb1b3' }] },
+    /* O ANEL SUPERIOR: as bocas abrem no lance, a um terço da altura */
     { dentro: M, fora: F, reto: true, h: [11.5, 24], fileiras: 20, corredorFrente: 1.6,
-      trechos: [{ de: 0, ate: 360, ...CADEIRA, vomitorios: { f: 0.12, cada: 2 }, paredeAtras: true, corFachada: '#d5d9dc', parapeito: 2 }] }
+      trechos: [{ de: 0, ate: 360, ...CADEIRA, vomitorios: { f: 0.3, cada: 2 }, paredeAtras: true, corFachada: '#d5d9dc', parapeito: 2 }] }
   ],
   /* O TETO: o anel fixo, com a abertura do retrátil em cima do gramado */
   telhados: [

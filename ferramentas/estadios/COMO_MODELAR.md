@@ -206,6 +206,13 @@ mostram os túneis):
 
 Sem prova na foto ou no satélite, `vomitorios: false`.
 
+**Estádio de dois andares** (arena): o padrão é o dos cortes de
+arquitetura. O lance de BAIXO não tem boca: atrás da última fileira passa
+o anel de circulação, e o público desce dele (`vomitorios: false` e um
+anel de `passagem` com `alt` encostado no fundo). Por cima desse anel
+ficam os camarotes. O lance de CIMA tem a boca no lance, a um quarto ou um
+terço da altura (`vomitorios: { f: 0.3, cada: 2 }`).
+
 ## O que conferir antes de entregar
 
 - O meio do campo: ache o círculo central no satélite antes de medir (um
