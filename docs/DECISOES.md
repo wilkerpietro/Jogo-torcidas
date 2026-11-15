@@ -13693,6 +13693,37 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Jovem Ponte
   sem erro de página.
 
+## Brinco de Ouro lowpoly (Guarani) (dono, 15/11/2026)
+
+- O dono: "Ok, vamos pro Brinco de Ouro." Quarto de São Paulo, já no um
+  por um com revisão.
+- **Método novo aplicado**: procurei o mapa de setores do clube antes de
+  desenhar (duas buscas; NÃO achei) e ampliei o satélite lado por lado.
+- **Como é** (satélite e fotos; o meio do campo saiu do círculo
+  central): bacia oval verde, com o gramado largo em volta do campo. No
+  quadro o oeste fica em cima e o norte à direita.
+  - O anel de baixo dá a volta inteira: oval de pontas redondas, 16 m de
+    fundo na curva sul (degrau verde-claro, cinco escadas claras onde o
+    satélite mostra) e 20 m na curva norte e na social.
+  - A social coberta (oeste): o trecho mais fundo do anel, com o telhado
+    marrom em 17 panos entre dois arcos; a frente fica descoberta.
+  - O TOBOGÃ (leste): o lance alto em meia-lua, entre duas elipses (27 a
+    30 m de fundo), de cimento escurecido, por cima do fundo do anel de
+    baixo. A caixa branca das cabines na frente, no meio, e as quatro
+    bocas de vomitório a meia altura, postas uma a uma.
+- **Os acessos**: só as quatro bocas do tobogã aparecem; o anel de baixo
+  ficou sem boca.
+- **As torcidas (escolha minha, sem fonte)**: a Fúria Independente no
+  meio do tobogã; a visitante na curva sul.
+- **Aproximações**: as pontas do tobogã são cortes que saem do centro do
+  campo e ficaram mais inclinadas que as de verdade (na ponta sul a
+  frente sai 10 m mais curta e o fundo 6 m mais comprido); o oval fica
+  3 m deslocado pro oeste na vida real e saiu centrado; a cor da cadeira
+  debaixo do telhado (não aparece em imagem recente); as torres dos
+  refletores (lugar estimado); as alturas; o entorno em caixas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Fúria
+  Independente sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
