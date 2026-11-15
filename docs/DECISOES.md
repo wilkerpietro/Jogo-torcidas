@@ -14130,6 +14130,31 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Galoucura do
   Ituano sem erro de página. Fotos fora do repositório.
 
+## Novelli Júnior: as pontas dobradas das arquibancadas de trás dos gols (dono, 15/11/2026)
+
+- O dono, com o mapa de setores: "As bordas das arquibancadas atrás do
+  gol não ficaram bem feitas, observe o formato das arquibancadas aqui."
+- **O erro**: fiz cada ponta como um bloco solto (uma "asa" branca
+  girada, com vão entre ela e o lance). No mapa e no satélite a
+  arquibancada de trás do gol é UMA PEÇA SÓ, que dobra nas duas pontas
+  em direção ao campo, com a mesma fundura e a mesma altura.
+- **Como ficou** (medido de novo no satélite: a junta é em meia-esquadria
+  e o canto de trás bate com a conta): cada ponta é o leque da dobra,
+  emendado no lance (um trecho de canto com contorno próprio, raio de
+  dentro de 2 m), mais o trecho reto da ponta (uma `reta` encostada no
+  leque). A do norte dobra 40 graus e a ponta tem 8 m pela frente; a do
+  sul dobra 45 graus e tem 9,5 m.
+- **Cor das pontas**: no satélite as do norte aparecem escuras e as do
+  sul claras; segui o satélite (antes estavam todas brancas, por fotos
+  sem data).
+- **Truque do gerador (anotado no guia)**: num leque de canto com raio
+  de dentro pequeno, o número de colunas sai do arco visto do meio do
+  campo, que é minúsculo; `celula: 0.045` no trecho dá colunas que
+  chegam a 0,8 m no fundo. Sem escada na borda desse trecho (a escada
+  tomaria o leque inteiro).
+- **Testado**: chão um só, nenhum marcador fora; briga como Galoucura do
+  Ituano sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

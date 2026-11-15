@@ -149,6 +149,12 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+ARQUIBANCADA QUE DOBRA NA PONTA (o Novelli Júnior): não faça a ponta como
+bloco solto. A dobra é um trecho de canto emendado no lance (contorno
+próprio com `b - r` igual ao fim do lance reto, `r` de 2 m, o `fora` com o
+mesmo `r` mais a fundura, e `celula: 0.045` pra ter colunas), seguido de
+uma `reta` encostada no fim do leque, com a mesma fundura e altura.
+
 O TAMANHO DO QUADRO sai do `fora` do ÚLTIMO anel: o anel maior (o que vai
 mais longe do centro) tem de ser o último da lista, senão a foto corta a
 arquibancada e os marcadores caem fora (o Alfredo de Castilho).
