@@ -311,6 +311,12 @@ contorno de dentro (as laterais saem retas); os fundos partidos em 0° e 180°
 pra casar com os dois cantos. Laje que avança por cima do canto: `telhados`
 com o polígono inteiro.
 
+BLOCO DESBOTADO NO SATÉLITE: cadeira escura desbotada (grená, azul) aparece
+quase branca vista de cima. Não chame de branco sem foto de perto (o bloco
+do meio dos fundos do Raulino é grená).
+LETREIRO EM CADEIRA (`texto` no trecho): um trecho só, de ponta a ponta, sem
+`escadaNaBorda` no meio; as bocas vão no pé (`f: 0`), nas pontas.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
