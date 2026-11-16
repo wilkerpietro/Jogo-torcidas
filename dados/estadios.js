@@ -1,4 +1,4 @@
-/* ESTADIOS — 72 pracas de jogo, com o bairro de cada uma
+/* ESTADIOS — 73 pracas de jogo, com o bairro de cada uma
    GERADO por ferramentas/importar_estadios.py — nao editar a mao.
    Fonte: legado/unity/data.js (prototipo antigo). */
 TO.dados.estadios = [
@@ -66,7 +66,7 @@ TO.dados.estadios = [
   {"id": "lacerdao", "nome": "Lacerdão", "mapa": "interior-de-pe", "bairro": "Caruaru I", "capacidade": 19478, "mandantes": ["central"]},
   {"id": "limeirao", "nome": "Limeirão", "mapa": "interior-de-sp", "bairro": "Limeira", "capacidade": 18000, "mandantes": ["inter-de-limeira"]},
   {"id": "maiao", "nome": "Maião", "mapa": "interior-de-sp", "bairro": "Mirassol I", "capacidade": 15000, "mandantes": ["mirassol"]},
-  {"id": "mangueirao", "nome": "Mangueirao", "mapa": "belem", "bairro": "Marambaia", "capacidade": 53000, "mandantes": ["remo", "paysandu", "aguia-de-maraba"]},
+  {"id": "mangueirao", "nome": "Mangueirao", "mapa": "belem", "bairro": "Marambaia", "capacidade": 53000, "mandantes": ["remo", "paysandu"]},
   {"id": "maracana", "nome": "Maracanã", "mapa": "rio-de-janeiro", "bairro": "Ipanema", "capacidade": 78838, "mandantes": ["flamengo", "fluminense"]},
   {"id": "mineirao", "nome": "Mineirao", "mapa": "belo-horizonte", "bairro": "Pampulha", "capacidade": 61582, "mandantes": ["cruzeiro"]},
   {"id": "arena-mrv", "nome": "Arena MRV", "mapa": "belo-horizonte", "bairro": "Coração Eucarístico", "capacidade": 46000, "mandantes": ["atletico-mineiro"]},
@@ -89,5 +89,6 @@ TO.dados.estadios = [
   {"id": "ulrico-mursa", "nome": "Ulrico Mursa", "mapa": "santos", "bairro": "Morro do Pacheco", "capacidade": 7635, "mandantes": ["portuguesa-santista"]},
   {"id": "vila-belmiro", "nome": "Vila Belmiro", "mapa": "santos", "bairro": "Vila Belmiro", "capacidade": 16068, "mandantes": ["santos"]},
   {"id": "vila-capanema", "nome": "Vila Capanema", "mapa": "curitiba", "bairro": "Vila Parolin", "capacidade": 17140, "mandantes": ["parana"]},
-  {"id": "willie-davids", "nome": "Willie Davids", "mapa": "interior-do-pr", "bairro": "Maringá I", "capacidade": 21600, "mandantes": ["maringa"]}
+  {"id": "willie-davids", "nome": "Willie Davids", "mapa": "interior-do-pr", "bairro": "Maringá I", "capacidade": 21600, "mandantes": ["maringa"]},
+  {"id": "zinho-de-oliveira", "nome": "Zinho de Oliveira", "mapa": "belem", "bairro": "Marabá", "capacidade": 5000, "mandantes": ["aguia-de-maraba"]}
 ];

@@ -444,6 +444,13 @@ Cortar em blocos (um trecho por bloco, `escadaNaBorda: true`, `corredor: 0`),
 com o contorno do fundo no desenho de verdade (ali, uma elipse). Olhar numa foto
 de dentro se a linha do alto do lance é reta ou em arco antes de escolher o oval.
 
+SATÉLITE SEM IMAGEM (Marabá, 16/11/2026): se o ladrilho da Esri vier cinza com
+"Map data not yet available", descer o zoom não resolve; troque a fonte (os
+ladrilhos de satélite do Google, mesma conta de x, y e zoom). Confira a data: o
+do Zinho de Oliveira é de antes da reforma, e as fotos do dono mandam.
+COBERTURA MAIS ALTA NA FRENTE: `cai` negativo na `cobertura` do trecho; ponha
+`trelica: false`, senão a treliça sai por cima da telha.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

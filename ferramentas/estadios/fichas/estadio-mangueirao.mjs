@@ -1,5 +1,5 @@
-/* MANGUEIRÃO (Estádio Olímpico do Pará, Jornalista Edgar Proença; Remo,
-   Paysandu e Águia de Marabá; Belém) — no estado de depois da reforma de
+/* MANGUEIRÃO (Estádio Olímpico do Pará, Jornalista Edgar Proença; Remo e
+   Paysandu; Belém; o Águia de Marabá saiu pro Zinho de Oliveira) — no estado de depois da reforma de
    2023. Pelo satélite, por cinco fotos do acervo livre da Wikimedia (duas de
    dentro, de 2025, e uma aérea de 2023) e por cinco quadros de drone que o
    dono mandou (16/11/2026): a lateral com a estrela, a ponta com o telão, a
@@ -115,7 +115,7 @@ const TETO = (de, ate, lateral) => lateral
 const anelPts = (a, b, n = 72) => Array.from({ length: n }, (_, k) => [a * Math.cos(k * 360 / n * RAD), b * Math.sin(k * 360 / n * RAD)]);
 
 export default {
-  id: 'estadio-mangueirao', nome: 'Mangueirão', clubes: ['remo', 'paysandu', 'aguia-de-maraba'], norte: 178.2, vazado: 0.2, folga: 34,
+  id: 'estadio-mangueirao', nome: 'Mangueirão', clubes: ['remo', 'paysandu'], norte: 178.2, vazado: 0.2, folga: 34,
   chao: { cor: '#63666a' },
   vista: [-40, 40, -52, 60, 14, 62],
   campo: { corMargem: '#4c9a4e', pista: { dentro: PISTA_D, fora: PISTA_F, cor: '#b04a3e', raias: 8 } },
@@ -169,5 +169,5 @@ export default {
   ],
   jogo: { mandante1: [70, 110], mandante2: [250, 290], mandante3: [165, 195], visitante: [300, 335], tunelMandante: 90, tunelVisitante: 318, folgaPM: 3,
           fracao: { mandante1: 0.52, mandante2: 0.52, mandante3: 0.55, visitante1: 0.53, visitante2: 0.53, visitante3: 0.53 },
-          torcidas: { remista: 'mandante1', pavilhao_6: 'mandante3', terror_bicolor: 'mandante2', faccao_jovem_paysandu: 'mandante3', jovem_aguia: 'mandante1' } }
+          torcidas: { remista: 'mandante1', pavilhao_6: 'mandante3', terror_bicolor: 'mandante2', faccao_jovem_paysandu: 'mandante3' } }
 };

@@ -14862,6 +14862,25 @@ Estimado, por falta de foto de perto e de mapa de setores: a altura do tobogã (
 
 O Souza entrou nos arredores padrão (quarteirão só do estádio): três portões da casa do lado da lateral e o da visitante atrás do tobogã. No teste de chegada, os cinco bondes chegaram ao portão e apareceram na arquibancada, sem travessia de gradil.
 
+## O Águia de Marabá sai do Mangueirão: Zinho de Oliveira (dono, 16/11/2026)
+
+O dono, com cinco fotos: "segue imagens do zinho de oliveira, vamos separar o águia de marabá, e depois vamos pro amazonas, com o estádio da colina e depois o carlos zamith".
+
+**Os dados.** O Águia de Marabá passa a mandar no Zinho de Oliveira (`zinho-de-oliveira`, mapa de Belém, bairro Marabá, 5.000 lugares) em `dados/times.js`, `dados/torcidas.js` (a Jovem Águia), `dados/estadios.js`, `dados/cidades.js`, nas duas fontes em `dados/fonte/` e nas tabelas de `importar_planilha.py` e `importar_estadios.py`; as cópias de `cenario3d/dados/` e o pacote `cenario3d/js/jogo.js` levaram a mesma troca. O Mangueirão fica com o Remo e o Paysandu, e a cena dele foi regravada sem o Águia.
+
+**O estádio** (`fichas/estadio-zinho-de-oliveira.mjs`). Medidas pelo satélite e desenho pelas fotos do dono. Estádio apertado entre as casas, com a grama de 105 × 70 m e degrau verde nos quatro lados:
+
+- do lado da rua, a arquibancada coberta: um prédio de 60 m, branco, de pilastras amarelas, barra verde e faixa de cobogó verde, com o letreiro ESTÁDIO MUNICIPAL ZINHO OLIVEIRA e o telhado cinza de uma água;
+- atrás dos dois gols, as de degrau verde de espelho branco, de uns nove degraus; atrás da do nordeste, o degrau velho de concreto, marrom, cercado de tela;
+- do outro lado, colada nas casas, a lateral baixa de quatro degraus com a barra azul na frente;
+- o muro do terreno, branco com a barra verde do lado da rua.
+
+Estimado: as alturas, a inclinação do telhado, o tamanho do gramado (100 × 66), as torres de luz e os anexos dos dois lados do prédio. O satélite é anterior à reforma. As torcidas são escolha minha, pela foto do jogo (as bandeiras estão atrás do gol do sudoeste): a Jovem Águia ali, a visitante atrás do outro gol.
+
+O Zinho entrou nos arredores padrão. Briga e chegada testadas sem erros: os cinco bondes chegam ao portão e aparecem na arquibancada.
+
+**Satélite.** A Esri não tem imagem de Marabá no zoom de trabalho ("Map data not yet available"); a imagem saiu dos ladrilhos do Google.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

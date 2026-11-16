@@ -89,9 +89,11 @@ CLUBE_TROCADO = {
 # Morumbi e volta a mandar no Canindé.
 # 15/11/2026, o dono: "separe o estádio do Maringá também" — o Maringá sai do
 # Germano Krüger (que fica só com o Operário) e manda no Willie Davids.
+# 16/11/2026, o dono, com as fotos do Zinho de Oliveira: "vamos separar o águia de marabá" — o Águia sai do
+# Mangueirão (que fica com o Remo e o Paysandu) e manda no Zinho de Oliveira, em Marabá.
 ESTADIO_CORRIGIDO = {
  'sao-bernardo':'Estadio Primeiro de Maio','santo-andre':'Estadio Bruno Daniel','sao-caetano':'Estadio Anacleto Campanella',
- 'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Mangueirao','tuna-luso':'Estádio do Souza',
+ 'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Zinho de Oliveira','tuna-luso':'Estádio do Souza',
  'atletico-mineiro':'Arena MRV','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
  'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',

@@ -348,10 +348,11 @@
    "temPraia": false,
    "temLagoa": true,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Mangueirao",
-    "Estádio do Souza"
+    "Estádio do Souza",
+    "Zinho de Oliveira"
    ],
    "rodovias": [
     "Rodovia Norte"

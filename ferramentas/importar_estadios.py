@@ -100,6 +100,8 @@ NOVOS = [
     {'nome': 'Ary de Oliveira e Souza', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes II'},
     # 16/11/2026, o dono: "o Americano ganha estádio próprio" — o Godofredo Cruz antigo (demolido em 2014), pelas fotos dele.
     {'nome': 'Godofredo Cruz', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes I'},
+    # 16/11/2026, o dono: "vamos separar o águia de marabá" — o Águia sai do Mangueirão e manda no Zinho de Oliveira.
+    {'nome': 'Zinho de Oliveira', 'mapa': 'belem', 'bairro': 'Marabá'},
 ]
 
 

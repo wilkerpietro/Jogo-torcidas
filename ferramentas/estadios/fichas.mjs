@@ -619,3 +619,4 @@ import arenaPantanal from './fichas/estadio-arena-pantanal.mjs'; FICHAS[arenaPan
 import dutrinha from './fichas/estadio-dutrinha.mjs'; FICHAS[dutrinha.id] = dutrinha;
 import mangueirao from './fichas/estadio-mangueirao.mjs'; FICHAS[mangueirao.id] = mangueirao;
 import souza from './fichas/estadio-do-souza.mjs'; FICHAS[souza.id] = souza;
+import zinho from './fichas/estadio-zinho-de-oliveira.mjs'; FICHAS[zinho.id] = zinho;

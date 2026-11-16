@@ -69,7 +69,7 @@ export const COM_PADRAO = new Set([
   'estadio-moca-bonita', 'estadio-conselheiro-galvao', 'estadio-ary-de-oliveira-e-souza', 'estadio-giulite-coutinho', 'estadio-raulino-de-oliveira',
   'estadio-godofredo-cruz',
   /* o Norte (o Pará) */
-  'estadio-do-souza'
+  'estadio-do-souza', 'estadio-zinho-de-oliveira'
 ]);
 const RAD = Math.PI / 180;
 const dentroPoli = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
