@@ -13,7 +13,8 @@
    · A FAIXA DO MEIO: os camarotes de concreto branco nas laterais; nas
      pontas, a parede de vidro cinza.
    · O LANCE DE CIMA: fundo nas laterais (umas trinta fileiras), raso nas
-     pontas (umas quinze), com a altura acompanhando a fundura. Nas laterais,
+     pontas (umas doze), perdendo fileiras bloco a bloco ao longo da lateral e
+     da curva, com a altura acompanhando a fundura. Nas laterais,
      o MOSAICO DA BANDEIRA DO PARÁ nas cadeiras: vermelho em cima e azul
      embaixo, com a faixa branca atravessando em diagonal e a estrela azul no
      meio; pra fora do meio a pintura vira três camadas salpicadas (vermelho,
@@ -48,7 +49,11 @@ const PISTA_D = { a: 78.7, b: 36.5, r: 36.5 }, PISTA_F = { a: 88.5, b: 46.3, r: 
 const W = { a: 99, b: 52, r: 52 };        /* a mureta: a frente do lance de baixo */
 const L = { a: 103, b: 64, r: 64 };       /* o fundo do lance de baixo (12 m nas laterais, 4 nas pontas) */
 const BN = { a: 108, b: 69, r: 69 };      /* a faixa dos camarotes */
-const U = { a: 120, b: 95, r: 95 };       /* o fundo do lance de cima (26 m nas laterais, 12 nas pontas) */
+/* O FUNDO DO LANCE DE CIMA É UM ARCO (dono, 16/11/2026, com duas fotos de dentro: "veja como a arquibancada tem uma variação
+   maior de degraus quando chega atrás do gol"): a frente dele corre reta ao longo da lateral, mas o fundo é uma elipse — 26 m
+   de fundura no meio da lateral, 21 onde a reta acaba, 14 no canto, 10 atrás do gol. Na primeira versão o fundo era um oval de
+   lado reto, e o lance tinha a mesma altura a lateral inteira. */
+const U = { a: 118, b: 95, forma: 'elipse' };
 const GAL = { a: 124.5, b: 108, r: 108 };  /* a beira das galerias de fora, atrás do lance de cima */
 const DECK = { a: 139, b: 123, r: 123 };   /* a beira do anel da rampa, o primeiro andar, que passa das colunas */
 const TETO_D = { a: 99.5, b: 50.5, r: 50.5 }, TETO_F = { a: 128, b: 112, r: 112 };
@@ -71,9 +76,24 @@ const bandeira = (X, y, rnd, fundo) => {
   return BRANCO;
 };
 const BASE = { cor: AZUL, cor2: BRANCO, paredeAtras: true, corFachada: CONC, corMureta: '#e4e2da', parapeito: 1.1, corEscada: '#bdbab0' };
-/* o lance de cima: as duas laterais com a bandeira (124 m de comprimento no meio da fundura), as curvas e as pontas em camadas */
-const CIMA_LADO = { ...BASE, corredor: 10.4, vomitorios: { f: 0.2, cada: 2, larg: 4.2, fundo: 4.5, cor: '#2c2d2f' }, pinta: (x, y, rnd) => bandeira((x - 0.5) * 124, y, rnd, 26) };
-const CIMA_PONTA = { ...BASE, corredor: 11, vomitorios: { f: 0.25, cada: 3, larg: 4, fundo: 4, cor: '#2c2d2f' }, pinta: (x, y, rnd) => bandeira(999, y, rnd, 26) };
+/* O LANCE DE CIMA EM BLOCOS: sessenta blocos de uns dez metros em volta do estádio, cada um um trecho com a escada na divisa e
+   COM O NÚMERO DE FILEIRAS DELE (o gerador conta as fileiras pela fundura do meio do trecho): umas trinta no meio da lateral,
+   caindo bloco a bloco até umas doze atrás do gol. As divisas saem andando pelo meio do lance em passos iguais, a partir do
+   meio da lateral, onde a escada corta a estrela. */
+const raioOval = (ang, c) => { const co = Math.abs(Math.cos(ang * RAD)), si = Math.abs(Math.sin(ang * RAD)), k = c.a - c.r; if (si > 1e-6 && c.b / si * co <= k) return c.b / si; return k * co + Math.sqrt(c.r * c.r - k * k * si * si); };
+const raioElipse = (ang, c) => 1 / Math.sqrt(Math.pow(Math.cos(ang * RAD) / c.a, 2) + Math.pow(Math.sin(ang * RAD) / c.b, 2));
+const meioDoLance = ang => (raioOval(ang, BN) + raioElipse(ang, U)) / 2, funduraEm = ang => raioElipse(ang, U) - raioOval(ang, BN);
+const DIVISAS = (() => { const N = 15, ac = [0]; for (let a = 0.05; a <= 90.0001; a += 0.05) ac.push(ac[ac.length - 1] + meioDoLance(a - 0.025) * 0.05 * RAD);
+  const tot = ac[ac.length - 1], q = [0]; for (let k = 1; k < N; k++) { const alvo = tot * k / N; let i = 0; while (ac[i] < alvo) i++; q.push(+(i * 0.05).toFixed(2)); } q.push(90);
+  /* (um quadrante, espelhado nos outros três) */
+  return [...q, ...q.slice(0, -1).reverse().map(a => 180 - a), ...q.slice(1).map(a => 180 + a), ...q.slice(0, -1).reverse().map(a => 360 - a)]; })();
+/* onde um ponto do lance cai ao longo da lateral, em metros a partir do meio dela (negativo à esquerda de quem olha do campo) */
+const aoLongo = ang => meioDoLance(ang) * Math.cos(ang * RAD) * (Math.sin(ang * RAD) >= 0 ? 1 : -1);
+const BLOCOS_DE_CIMA = DIVISAS.slice(0, -1).map((de, k) => { const ate = DIVISAS[k + 1], Xe = aoLongo(ate - 0.01), Xd = aoLongo(de + 0.01), fundo = funduraEm((de + ate) / 2);
+  return { ...BASE, de, ate, corredor: 0, escadaNaBorda: true,
+    /* (uma boca a cada duas divisas, a um quinto da altura; meia de cada lado da escada) */
+    vomitorios: fundo > 11 ? { f: 0.2, larg: 4.2, fundo: 4.2, cor: '#2c2d2f', em: [k % 2 ? 0 : 1] } : false,
+    pinta: (x, y, rnd) => bandeira(Xe + (Xd - Xe) * x, y, rnd, fundo) }; });
 /* o lance de baixo: azul na frente, vermelho e branco em cima; nas pontas, só o vermelho e branco */
 const BAIXO_LADO = { ...BASE, vomitorios: false, paredeAtras: false, corredor: 12, pinta: (x, y, rnd) => y < 0.47 ? (rnd() < 0.12 ? BRANCO : AZUL) : (rnd() < 0.42 ? BRANCO : VERM) };
 const BAIXO_PONTA = { ...BASE, vomitorios: false, paredeAtras: false, corredor: 14, pinta: (x, y, rnd) => rnd() < 0.45 ? BRANCO : VERM };
@@ -97,7 +117,7 @@ const anelPts = (a, b, n = 72) => Array.from({ length: n }, (_, k) => [a * Math.
 export default {
   id: 'estadio-mangueirao', nome: 'Mangueirão', clubes: ['remo', 'paysandu', 'aguia-de-maraba'], norte: 178.2, vazado: 0.2, folga: 34,
   chao: { cor: '#63666a' },
-  vista: [120, 62, -215, 20, 9, -40],
+  vista: [-40, 40, -52, 60, 14, 62],
   campo: { corMargem: '#4c9a4e', pista: { dentro: PISTA_D, fora: PISTA_F, cor: '#b04a3e', raias: 8 } },
   corMureta: '#e4e2da', corAlambrado: '#9aa0a4', alambrado: false, muro: false,
   aneis: [
@@ -119,12 +139,7 @@ export default {
       ] },
     /* o LANCE DE CIMA, com a altura acompanhando a fundura */
     { dentro: BN, fora: U, h: [9.4, 27], inclinacao: 0.68, corredorFrente: 1.2, passoFileira: 0.85,
-      trechos: [
-        { ...CIMA_PONTA, de: D2 - 180, ate: D1 },
-        { ...CIMA_LADO, de: D1, ate: D2 },
-        { ...CIMA_PONTA, de: D2, ate: D1 + 180 },
-        { ...CIMA_LADO, de: D1 + 180, ate: D2 + 180 }
-      ] },
+      trechos: BLOCOS_DE_CIMA },
     /* as GALERIAS de fora, atrás do lance de cima: o piso alto por onde se chega às bocas, aberto até a cobertura, com as
        colunas da cobertura na beira (na foto de fora do dono, os três andares de galeria atrás das colunas) */
     { dentro: U, fora: GAL, h: [14, 14], corredorFrente: 0, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 14, cor: '#cdcabf', semParede: true }] }

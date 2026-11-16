@@ -434,6 +434,13 @@ antigo tem andares de galeria abertos: `fachada.galerias` (lajes com a beira
 branca, vão escuro, pilares recuados, o anel da rampa). Parede lisa só onde a
 foto mostra parede lisa.
 
+LANCE QUE MUDA DE ALTURA AO LONGO DA VOLTA (o Mangueirão, 16/11/2026): o gerador
+conta as fileiras de um trecho pela fundura do MEIO dele. Lance fundo no meio da
+lateral e raso atrás do gol, num trecho só, sai com as mesmas fileiras em tudo.
+Cortar em blocos (um trecho por bloco, `escadaNaBorda: true`, `corredor: 0`),
+com o contorno do fundo no desenho de verdade (ali, uma elipse). Olhar numa foto
+de dentro se a linha do alto do lance é reta ou em arco antes de escolher o oval.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

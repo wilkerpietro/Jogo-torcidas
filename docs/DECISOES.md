@@ -14838,6 +14838,14 @@ Atrás do lance de cima eu tinha posto um piso alto com um paredão liso embaixo
 
 No gerador: `fachada.galerias` (`pisos`, `bordas`, `pilares`, `deck`, o fundo escuro) e `semParede` no trecho de piso alto, pra laje ficar solta. A aleta da cobertura ganhou `bico`, a ponta que passa da beira de fora. Vale pra qualquer estádio de concreto dessa época.
 
+## Mangueirão: o lance de cima perde fileiras até atrás do gol (dono, 16/11/2026)
+
+O dono, com duas fotos de dentro: "veja como a arquibancada tem uma variação maior de degraus quando chega atrás do gol", e depois "veja em outro angulo".
+
+Na primeira versão o fundo do lance de cima era um oval de lado reto: o lance tinha a mesma altura a lateral inteira e só caía na curva. Nas fotos ele acompanha o arco da cobertura: mais alto no meio da lateral, onde está a estrela, e perdendo fileiras bloco a bloco até ficar baixo atrás do gol.
+
+O fundo passou a ser uma elipse (26 m de fundura no meio da lateral, 21 onde a reta acaba, 14 no canto, 10 atrás do gol), com a frente reta como era. O lance foi cortado em sessenta blocos de uns dez metros, cada um um trecho com a escada na divisa e com o número de fileiras dele, porque o gerador conta as fileiras pela fundura do meio do trecho: num trecho só, a lateral inteira ficava com as mesmas fileiras, espremidas onde o lance é raso. As bocas ficaram a cada duas divisas e somem onde o lance tem menos de 11 m. O mosaico da bandeira é pintado bloco a bloco pela posição ao longo da lateral.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
