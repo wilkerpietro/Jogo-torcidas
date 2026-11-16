@@ -292,6 +292,9 @@ e ela ainda liga os lances soltos num chão só. Os lances começam no fundo
 dessa passagem.
 DEGRAU PINTADO (sem cadeira) visto de frente sai cinza se não levar
 `corEspelho`: ponha a cor da pintura, um tom abaixo.
+Quando a pintura é um DESENHO (a cruz de malta do tobogã do Souza, feita com
+`pinta`), uma cor só de espelho não serve: `espelhoPintado: true` faz cada
+espelho levar a cor do degrau dele.
 FOTO ANTIGA CONTRA SATÉLITE NOVO: quando as fotos do dono e o satélite
 mostram épocas diferentes (cadeira na foto, bloco pintado no satélite), diga
 qual é qual e o que foi feito; não escolha calado.

@@ -14846,6 +14846,22 @@ Na primeira versão o fundo do lance de cima era um oval de lado reto: o lance t
 
 O fundo passou a ser uma elipse (26 m de fundura no meio da lateral, 21 onde a reta acaba, 14 no canto, 10 atrás do gol), com a frente reta como era. O lance foi cortado em sessenta blocos de uns dez metros, cada um um trecho com a escada na divisa e com o número de fileiras dele, porque o gerador conta as fileiras pela fundura do meio do trecho: num trecho só, a lateral inteira ficava com as mesmas fileiras, espremidas onde o lance é raso. As bocas ficaram a cada duas divisas e somem onde o lance tem menos de 11 m. O mosaico da bandeira é pintado bloco a bloco pela posição ao longo da lateral.
 
+## Estádio do Souza, da Tuna Luso (dono, 16/11/2026)
+
+O dono, com duas fotos de drone: "segue imagens do estádio do souza, só tem arquibancada em uma lateral e uma arquibancada maior atrás do gol".
+
+Segundo estádio do Pará. As medidas saíram do satélite (o contorno do gramado no OpenStreetMap deu o rumo, 131 graus) e o desenho, das fotos do dono:
+
+- **O tobogã**, atrás do gol do sudeste: 71 m de largura por 27 de fundura, de degrau pintado de verde, com a faixa branca em trapézio no meio e a cruz de malta vermelha (pintura feita com `pinta` no trecho), duas bocas escuras embaixo, a mureta branca com o letreiro e o muro branco no alto.
+- **A lateral coberta**, do lado da sede social: baixa, de degrau verde, de ponta a ponta, com o telhado branco de uma água e os pilares finos na frente.
+- Do outro lado e atrás do outro gol não há arquibancada: muro verde, bancos de reserva e alambrado.
+
+No gerador, `espelhoPintado: true` no trecho: em arquibancada de cimento pintada por inteiro, o espelho do degrau leva a cor do degrau. Sem isso a cruz e a faixa saíam desbotadas vistas de frente.
+
+Estimado, por falta de foto de perto e de mapa de setores: a altura do tobogã (uns 13 m) e a da lateral, o tamanho do gramado (108 × 72 dentro de uma grama de 121 × 83), o texto do letreiro, as torres de luz e o muro do lado das quadras de grama sintética. A divisão das torcidas é escolha minha: a da Tuna na lateral coberta, que é o setor que abre em todo jogo, e a visitante no tobogã.
+
+O Souza entrou nos arredores padrão (quarteirão só do estádio): três portões da casa do lado da lateral e o da visitante atrás do tobogã. No teste de chegada, os cinco bondes chegaram ao portão e apareceram na arquibancada, sem travessia de gradil.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

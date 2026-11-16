@@ -333,8 +333,11 @@ export function construir(THREE, ficha) {
            saía tracejada de branco e cinza. Com `corEscada` (a escada pintada), a cor cheia e o degrau um tom abaixo. */
         if (escada) { const ce = t.corEscada || ficha.corEscada || '#c9c7be'; q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, ce); q4(i, i + 1, f0 + df / 2, f1, hk, tomL(ce, 0.92)); }
         else {
-          const degrau = tomL(t.semCadeiras ? corDe(i, k) : CONCRETO, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
+          const base = t.semCadeiras ? corDe(i, k) : CONCRETO, degrau = tomL(base, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
           q4(i, i + 1, f0, f1, hk, degrau);
+          /* `espelhoPintado: true` (o tobogã do Souza): arquibancada de cimento pintada por inteiro, o espelho leva a cor do
+             degrau em vez do concreto — sem isso o desenho pintado nos degraus sai desbotado visto de frente */
+          if (t.semCadeiras && t.espelhoPintado) corCad = base;
           if (G.sobreVomitorio(i, k)) q4(i, i + 1, f0, f0 + df * 0.42, hk + 1, G.vomParapeito);   /* o parapeito em cima da boca */
           else if (!t.semCadeiras) { const c = corDe(i, k), luz = 0.9 + 0.1 * k / N; corCad = c;
             q4(i + 0.12, i + 0.88, f0 + df * 0.10, f0 + df * 0.58, hk + 0.45, tomL(c, luz * 0.94));     /* o assento */

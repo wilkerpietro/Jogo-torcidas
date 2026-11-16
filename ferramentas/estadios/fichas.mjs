@@ -618,3 +618,4 @@ import serejao from './fichas/estadio-serejao.mjs'; FICHAS[serejao.id] = serejao
 import arenaPantanal from './fichas/estadio-arena-pantanal.mjs'; FICHAS[arenaPantanal.id] = arenaPantanal;
 import dutrinha from './fichas/estadio-dutrinha.mjs'; FICHAS[dutrinha.id] = dutrinha;
 import mangueirao from './fichas/estadio-mangueirao.mjs'; FICHAS[mangueirao.id] = mangueirao;
+import souza from './fichas/estadio-do-souza.mjs'; FICHAS[souza.id] = souza;
