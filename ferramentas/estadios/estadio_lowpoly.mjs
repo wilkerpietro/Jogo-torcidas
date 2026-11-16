@@ -403,20 +403,25 @@ export function construir(THREE, ficha) {
       const cb = t.cobertura;
       if (cb) {
         const nn = Math.max(3, Math.ceil(vao / 4)), av = cb.avanco == null ? 2 : cb.avanco, hc = cb.h, cai = cb.cai == null ? 2.5 : cb.cai;
+        /* o ponto da cobertura neste ângulo, a `dr` metros do fundo. Por padrão mede-se do centro do campo; com `pelaColuna:
+           true` a cobertura acompanha a COLUNA da arquibancada (o Dutrinha: num lance `reto` que não está centrado no eixo, a
+           medida do centro faz o telhado passar da ponta da arquibancada, enviesado). */
+        const pc = cb.pelaColuna ? (ang, dr) => { const a = G.pos(ang, 0), b = G.pos(ang, 1), L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [b[0] + (b[0] - a[0]) / L * dr, b[1] + (b[1] - a[1]) / L * dr]; }
+                                 : (ang, dr) => ponto(ang, raioDe(ang, cf) + dr);
         for (let i = 0; i < nn; i++) {
           const a0 = t.de + vao * i / nn, a1 = t.de + vao * (i + 1) / nn;
-          const q = (ang, dr, h) => { const w = ponto(ang, raioDe(ang, cf) + dr); return P(w[0], w[1], h); };
+          const q = (ang, dr, h) => { const w = pc(ang, dr); return P(w[0], w[1], h); };
           const tom = cb.listras && i % 2 ? (cb.cor2 || '#e9e9e4') : (cb.cor || '#f1f1ec');
           const RR = cb.opaca ? Ro : R;
           RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, -cb.larg, hc - cai), q(a0, -cb.larg, hc - cai), tom);
           RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, av, hc - 1.4), q(a0, av, hc - 1.4), cb.corBorda || tom);
           /* a treliça de cada módulo */
-          if (cb.trelica !== false && i % 2 === 0) { const w0 = ponto(a0, raioDe(a0, cf) + av), w1 = ponto(a0, raioDe(a0, cf) - cb.larg);
+          if (cb.trelica !== false && i % 2 === 0) { const w0 = pc(a0, av), w1 = pc(a0, -cb.larg);
             const m = sombra(new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(w1[0] - w0[0], w1[1] - w0[1]), 0.5, 0.35), mat(cb.corTrelica || '#8a8f93')));
             m.position.set((w0[0] + w1[0]) / 2, hc - cai / 2 + 0.3, -(w0[1] + w1[1]) / 2); m.rotation.y = Math.atan2(w1[1] - w0[1], w1[0] - w0[0]); coberturas.add(m); }
         }
         /* os pilares de trás */
-        if (cb.pilares !== false) for (let i = 0; i <= nn; i += 2) { const a0 = t.de + vao * i / nn, w = ponto(a0, raioDe(a0, cf) + av - 0.6); caixa(0.7, hc, 0.7, cb.corPilar || '#9a9a96', w[0], hc / 2, -w[1]); }
+        if (cb.pilares !== false) for (let i = 0; i <= nn; i += 2) { const a0 = t.de + vao * i / nn, w = pc(a0, av - 0.6); caixa(0.7, hc, 0.7, cb.corPilar || '#9a9a96', w[0], hc / 2, -w[1]); }
       }
     }
   });

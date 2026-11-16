@@ -377,6 +377,10 @@ o lance de baixo e o de cima costuma haver o lance curto dos camarotes: não tro
 grande tapa o lance de cima no satélite e aparece deslocada: comprimentos e pilares saem das fotos, não da beira do telhado.
 Fachada, grade e pista em curva: os ajudantes `PTS` e `FAIXA` da ficha da Arena Pantanal (um bloco girado por trecho).
 
+COBERTURA DE TRECHO NUM LANCE `reto` FORA DO EIXO: ponha `pelaColuna: true` na `cobertura` (o Dutrinha). Sem isso ela é medida
+do centro do campo e passa da ponta da arquibancada, enviesada. NÃO COMECE ESTÁDIO PEQUENO SÓ PELO SATÉLITE quando ele mostra
+"um prédio comprido" colado na arquibancada: pode ser a própria arquibancada pintada de branco. Peça foto ao dono antes.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
