@@ -603,3 +603,4 @@ import joaquimPortugal from './fichas/estadio-joaquim-portugal.mjs'; FICHAS[joaq
 import bernardoRubinger from './fichas/estadio-bernardo-rubinger-de-queiroz.mjs'; FICHAS[bernardoRubinger.id] = bernardoRubinger;
 import zamaMaciel from './fichas/estadio-zama-maciel.mjs'; FICHAS[zamaMaciel.id] = zamaMaciel;
 import saoJanuario from './fichas/estadio-sao-januario.mjs'; FICHAS[saoJanuario.id] = saoJanuario;
+import niltonSantos from './fichas/estadio-nilton-santos.mjs'; FICHAS[niltonSantos.id] = niltonSantos;
