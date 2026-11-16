@@ -19,11 +19,14 @@
      meio; pra fora do meio a pintura vira três camadas salpicadas (vermelho,
      branco, azul), que seguem pelas curvas e pelas pontas. As bocas de acesso
      ficam a um quarto da altura, uma a cada dois blocos.
-   · A COBERTURA dá a volta inteira e cobre os dois lances (do alto só se vê
-     uma faixa estreita de arquibancada): alta nas laterais, de concreto com as
-     treliças brancas por cima e a beira da frente clara; baixa nas pontas,
-     branca, com as placas solares e o TELÃO em cima da beira.
-   · POR FORA, as galerias de concreto com as colunas brancas finas, o nome do
+   · A COBERTURA é um anel só de laje branca, que dá a volta inteira e cobre
+     os dois lances (do alto só se vê uma faixa estreita de arquibancada): a
+     beira de fora corre na mesma altura e a de dentro sobe em arco no meio de
+     cada lateral e desce nas pontas. Em cada divisa, a aleta branca em cima
+     da coluna fina que vai até o chão; nas laterais, as treliças de aço por
+     cima; as placas solares; e o TELÃO em cima da beira de cada ponta.
+   · POR FORA, as galerias de concreto (um anel de piso alto atrás do lance de
+     cima) com as colunas brancas finas da cobertura na beira, o nome do
      estádio na fachada do OESTE, e o anel de concreto da esplanada com as
      duas marquises brancas das entradas (leste e oeste).
    LADO A E LADO B: o Lado A é o do leste (em cima), o da torcida do Remo; o
@@ -44,6 +47,7 @@ const W = { a: 99, b: 52, r: 52 };        /* a mureta: a frente do lance de baix
 const L = { a: 103, b: 64, r: 64 };       /* o fundo do lance de baixo (12 m nas laterais, 4 nas pontas) */
 const BN = { a: 108, b: 69, r: 69 };      /* a faixa dos camarotes */
 const U = { a: 120, b: 95, r: 95 };       /* o fundo do lance de cima (26 m nas laterais, 12 nas pontas) */
+const GAL = { a: 124.5, b: 108, r: 108 };  /* a beira das galerias de fora, atrás do lance de cima */
 const TETO_D = { a: 99.5, b: 50.5, r: 50.5 }, TETO_F = { a: 128, b: 112, r: 112 };
 const VERM = '#c22a2e', AZUL = '#1f3f93', BRANCO = '#f1f1ec', CONC = '#d2cfc5', CONC2 = '#c6c3b9';
 /* a estrela de cinco pontas (a ponta pra cima), em metros a partir do meio dela */
@@ -73,17 +77,24 @@ const BAIXO_PONTA = { ...BASE, vomitorios: false, paredeAtras: false, corredor: 
 /* as divisas, vistas do meio do campo: onde a lateral reta acaba (a 62 m do meio, no meio da fundura do lance de cima) e onde
    a curva vira ponta */
 const D1 = 53, D2 = 127, P1 = 22;
-/* a cobertura: quatro pedaços do mesmo anel, altos nas laterais e baixos nas pontas */
-const TETO = (de, ate, alta) => alta
-  ? { dentro: TETO_D, fora: TETO_F, de, ate, n: 14, h: 30.5, cai: -3.5, cor: '#cbc8be', cor2: '#c2bfb5', corNervura: '#f4f4f0', larguraNervura: 0.5, bordaDentro: { larg: 11, cor: '#f5f5f1' }, aneis: [{ f: 0.42, larg: 5, cor: '#4a5870' }], beiral: [2.4, 1.6], corBeiral: '#e9e8e2' }
-  : { dentro: TETO_D, fora: { a: 128, b: 112, r: 112 }, de, ate, n: 12, h: 21.5, cai: -1, cor: '#e7e5dd', cor2: '#dedcd4', corNervura: '#f6f6f2', larguraNervura: 0.35, aneis: [{ f: 0.45, larg: 4.5, cor: '#4a5870' }], beiral: [1.6, 1.2], corBeiral: '#f0efe9' };
+/* A COBERTURA (dono, 16/11/2026, com a foto de fora: "corrija a cobertura"; a primeira versão eram quatro lajes soltas,
+   com um degrau de nove metros entre a das laterais e a das pontas). É UM ANEL SÓ, de laje branca: a beira de fora corre
+   na mesma altura a volta inteira, e a de dentro sobe em arco no meio de cada lateral e desce nas pontas, em sela. Em cada
+   divisa, a ALETA branca que sobe até passar da beira de fora, em cima da COLUNA fina que desce até o chão. Nas laterais,
+   a beira da frente mais clara e as três TRELIÇAS de aço deitadas por cima da laje; as placas solares escuras em volta. */
+const ALTURAS = ang => { const s = Math.abs(Math.sin(ang * RAD)); return [26, 21.5 + 11.5 * Math.pow(s, 1.5)]; };
+const LAJE = { dentro: TETO_D, fora: TETO_F, alturas: ALTURAS, h: 26, cor: '#eceae3', cor2: '#e2e0d8', corNervura: '#f6f6f2', larguraNervura: 0.3, beiral: [1.8, 1.4], corBeiral: '#f1f0ea',
+  aletas: { h: 3.4, de: 0.22, esp: 0.5, cor: '#f6f6f2' } };
+const TETO = (de, ate, lateral) => lateral
+  ? { ...LAJE, de, ate, n: 14, bordaDentro: { larg: 10, cor: '#f8f8f5' }, aneis: [{ f: 0.5, larg: 4.5, cor: '#55627a' }], trelicas: { angs: [(de + ate) / 2 - 21, (de + ate) / 2, (de + ate) / 2 + 21], esp: 1.5, alt: 1.3, cor: '#e9ebec' } }
+  : { ...LAJE, de, ate, n: 12, aneis: [{ f: 0.42, larg: 5, cor: '#4a5870' }] };
 /* a esplanada: o anel de concreto em volta, com o estacionamento por dentro e por fora */
 const anelPts = (a, b, n = 72) => Array.from({ length: n }, (_, k) => [a * Math.cos(k * 360 / n * RAD), b * Math.sin(k * 360 / n * RAD)]);
 
 export default {
   id: 'estadio-mangueirao', nome: 'Mangueirão', clubes: ['remo', 'paysandu', 'aguia-de-maraba'], norte: 178.2, vazado: 0.2, folga: 34,
   chao: { cor: '#63666a' },
-  vista: [0, 26, -30, 0, 15, 85],
+  vista: [150, 95, -235, 10, 8, -20],
   campo: { corMargem: '#4c9a4e', pista: { dentro: PISTA_D, fora: PISTA_F, cor: '#b04a3e', raias: 8 } },
   corMureta: '#e4e2da', corAlambrado: '#9aa0a4', alambrado: false, muro: false,
   aneis: [
@@ -110,19 +121,22 @@ export default {
         { ...CIMA_LADO, de: D1, ate: D2 },
         { ...CIMA_PONTA, de: D2, ate: D1 + 180 },
         { ...CIMA_LADO, de: D1 + 180, ate: D2 + 180 }
-      ] }
+      ] },
+    /* as GALERIAS de fora, atrás do lance de cima: o piso alto por onde se chega às bocas, aberto até a cobertura, com as
+       colunas da cobertura na beira (na foto de fora do dono, os três andares de galeria atrás das colunas) */
+    { dentro: U, fora: GAL, h: [13.5, 13.5], corredorFrente: 0, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 13.5, cor: '#cdcabf' }] }
   ],
   coberturasAnel: [TETO(D1 - 12, D2 + 12, true), TETO(D1 + 168, D2 + 192, true), TETO(D2 + 12 - 180, D1 - 12, false), TETO(D2 + 12, D1 + 168, false)],
-  fachada: { cor: CONC2, pilares: { n: 84, h: 22, pe: 5, topo: 1, esp: 0.45, fundo: 2, cor: '#f1f0ea' } },
+  fachada: { cor: CONC2 },
   blocos: [
     /* os dois TELÕES, em cima da beira da cobertura das pontas */
-    { u: 100.5, v: 0, w: 1.2, d: 22, h: 9, y: 20.5, cor: '#0f1114' }, { u: -100.5, v: 0, w: 1.2, d: 22, h: 9, y: 20.5, cor: '#0f1114' },
+    { u: 100.5, v: 0, w: 1.2, d: 22, h: 9, y: 21.4, cor: '#0f1114' }, { u: -100.5, v: 0, w: 1.2, d: 22, h: 9, y: 21.4, cor: '#0f1114' },
     /* os túneis dos vestiários, no meio de cada lateral, e os bancos de reserva */
     { u: 0, v: 53.5, w: 5, d: 5, h: 2.6, cor: '#e9ebee' }, { u: 0, v: -53.5, w: 5, d: 5, h: 2.6, cor: '#e9ebee' },
     { u: -18, v: 48.6, w: 10, d: 1.8, h: 1.9, cor: '#dfe4ea' }, { u: 18, v: 48.6, w: 10, d: 1.8, h: 1.9, cor: '#dfe4ea' },
     /* o NOME DO ESTÁDIO na fachada do oeste (embaixo) */
-    { u: 0, v: -97.6, w: 0.6, d: 46, h: 2.6, y: 15.5, cor: '#2f6fb3', texto: 'ESTÁDIO OLÍMPICO DO PARÁ', corTexto: '#ffffff', textoFace: true, giro: -90 },
-    { u: 0, v: -97.6, w: 0.6, d: 40, h: 2.2, y: 12.4, cor: '#e9e8e2', texto: 'JORNALISTA  EDGAR  PROENÇA', corTexto: '#2b2f36', textoFace: true, giro: -90 },
+    { u: 0, v: -108.5, w: 0.6, d: 46, h: 2.6, y: 9.6, cor: '#2f6fb3', texto: 'ESTÁDIO OLÍMPICO DO PARÁ', corTexto: '#ffffff', textoFace: true, giro: -90 },
+    { u: 0, v: -108.5, w: 0.6, d: 40, h: 2.2, y: 6.8, cor: '#e9e8e2', texto: 'JORNALISTA  EDGAR  PROENÇA', corTexto: '#2b2f36', textoFace: true, giro: -90 },
     /* as duas marquises brancas das entradas, no anel da esplanada */
     { u: 0, v: 166, w: 20, d: 22, h: 0.5, y: 6, cor: '#f3f3ef' }, { u: 0, v: -166, w: 20, d: 22, h: 0.5, y: 6, cor: '#f3f3ef' }
   ],
@@ -132,6 +146,6 @@ export default {
     { tipo: 'arvores', u: -170, v: 170, w: 30, d: 16, n: 6 }, { tipo: 'arvores', u: 172, v: -172, w: 26, d: 16, n: 5 }
   ],
   jogo: { mandante1: [70, 110], mandante2: [250, 290], mandante3: [165, 195], visitante: [300, 335], tunelMandante: 90, tunelVisitante: 318, folgaPM: 3,
-          fracao: { mandante1: 0.68, mandante2: 0.68, mandante3: 0.7, visitante1: 0.68, visitante2: 0.68, visitante3: 0.68 },
+          fracao: { mandante1: 0.52, mandante2: 0.52, mandante3: 0.55, visitante1: 0.53, visitante2: 0.53, visitante3: 0.53 },
           torcidas: { remista: 'mandante1', pavilhao_6: 'mandante3', terror_bicolor: 'mandante2', faccao_jovem_paysandu: 'mandante3', jovem_aguia: 'mandante1' } }
 };

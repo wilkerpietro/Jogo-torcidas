@@ -14820,6 +14820,16 @@ No jogo o Pará tem dois estádios: o Mangueirão (Remo, Paysandu e Águia de Ma
 
 **No gerador.** `pinta(x, y, rnd)` no trecho: a ficha pinta as cadeiras por conta dela (x da esquerda pra direita de quem olha do campo, y da frente ao fundo). As ferramentas de satélite, mapa e quadro em metros foram reescritas (a pasta de rascunho se perdeu no reinício): o mapa agora vem direto da API do OpenStreetMap, porque os servidores do Overpass não respondem daqui.
 
+## Mangueirão: a cobertura refeita; Remo e Paysandu ficam no Mangueirão (dono, 16/11/2026)
+
+O dono, com uma foto aérea de fora: "corrija a cobertura. remo e paysandu vão pro mangueirão".
+
+**A cobertura.** A primeira versão eram quatro lajes soltas, altas nas laterais e baixas nas pontas, com um degrau de nove metros entre uma e outra. Na foto ela é um anel só de laje branca: a beira de fora corre na mesma altura a volta inteira e a de dentro sobe em arco no meio de cada lateral e desce nas pontas, em sela. Em cada divisa, a aleta branca que sobe até passar da beira de fora, em cima da coluna fina que desce até o chão; nas laterais, três treliças de aço deitadas por cima da laje; as placas solares em volta. Atrás do lance de cima entrou o anel das galerias de fora (um piso alto, aberto até a cobertura), que na foto são os três andares atrás das colunas; o nome do estádio foi pra parede dele, no oeste.
+
+No gerador, a cobertura em anel ganhou `alturas: ang => [fora, dentro]` (a altura muda ao longo da volta), `aletas` (a viga que sobe em cada divisa, com a coluna) e `trelicas` (as vigas de aço por cima, nos ângulos dados).
+
+**Quem manda onde.** Remo e Paysandu mandam no Mangueirão: o Baenão e a Curuzu não entram no jogo. Sobre o Águia de Marabá o dono não respondeu; segue no Mangueirão, como está nos dados.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

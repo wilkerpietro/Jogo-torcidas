@@ -422,6 +422,12 @@ cobertura ao mesmo tempo: não quer dizer que a arquibancada é descoberta.
 O MAPA DE RUAS vem de api.openstreetmap.org (map?bbox=...); o Overpass não
 responde daqui. Desenho nas cadeiras que não é letra: `pinta(x, y, rnd)`.
 
+COBERTURA: ANTES DE REPARTIR EM PEDAÇOS, VER DE FORA SE ELA É UMA SÓ (o
+Mangueirão, 16/11/2026): do satélite e das fotos de dentro eu li "alta nas
+laterais, baixa nas pontas" e fiz quatro lajes com degrau entre elas; a foto de
+fora mostrou um anel contínuo em sela. Cobertura que muda de altura ao longo da
+volta é `alturas: ang => [fora, dentro]` num anel só, não vários anéis.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

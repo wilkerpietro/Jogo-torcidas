@@ -462,8 +462,11 @@ export function construir(THREE, ficha) {
       let s0 = 0, s1 = 2; while (sai(s1) < 0 && s1 < 400) s1 *= 2;
       for (let k = 0; k < 40; k++) { const m = (s0 + s1) / 2; if (sai(m) < 0) s0 = m; else s1 = m; }
       q = [a, [a[0] + nx * s1, a[1] + ny * s1]]; if (memoN.size < 20000) memoN.set(ang, q); return q; };
-    const pu = cb.normal ? (ang, f, dh) => { const [a, b] = porNormal(ang); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, hd + (hf - hd) * f + (dh || 0)]; }
-      : (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return [q[0], q[1], hd + (hf - hd) * f + (dh || 0)]; };
+    /* `alturas: ang => [fora, dentro]`: a altura da beira de fora e da de dentro muda ao longo da volta (a cobertura em sela
+       do Mangueirão: a beira de dentro sobe em arco no meio das laterais e desce nas pontas). Sem ela, valem `h` e `cai`. */
+    const alt = (ang, f) => { if (!cb.alturas) return hd + (hf - hd) * f; const [x1, x0] = cb.alturas(ang); return x0 + (x1 - x0) * f; };
+    const pu = cb.normal ? (ang, f, dh) => { const [a, b] = porNormal(ang); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, alt(ang, f) + (dh || 0)]; }
+      : (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return [q[0], q[1], alt(ang, f) + (dh || 0)]; };
     const pt = (ang, f, dh) => { const q = pu(ang, f, dh); return P(q[0], q[1], q[2]); };
     const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = angs[i], a1 = angs[i + 1]; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
     const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
@@ -485,6 +488,18 @@ export function construir(THREE, ficha) {
       R.quad(pt(a0, 0, 0), pt(a1, 0, 0), pt(a1, 0, -bD), pt(a0, 0, -bD), (cb.bordaDentro && cb.bordaDentro.cor) || cb.corBeiral || cb.cor || '#f4f3ee'); }
     /* os pilares com a viga por baixo, e os mastros em A com os tirantes por cima */
     const pl = cb.pilares, ms = cb.mastros, grupo = cb.opaca ? cena : coberturas;
+    /* AS ALETAS (o Mangueirão; dono, 16/11/2026, com a foto de fora: "corrija a cobertura"): em cada divisa, a viga branca
+       que nasce rente à laje (em `de`, fração da frente pro fundo) e vai subindo até passar `h` metros da beira de fora, em
+       cima da COLUNA fina que desce até o chão. `aletas: { h, de, esp, cor, cada, coluna, base }`. E `trelicas: { angs, esp,
+       alt, cor }`: as treliças de aço deitadas por cima da laje, da beira de dentro à de fora, nos ângulos dados. */
+    const al = cb.aletas;
+    if (al) for (let i = 0; i < (inteiro ? n : n + 1); i++) { if (i % (al.cada || 1)) continue; const a = angs[i], e = al.esp || 0.4, c = al.cor || '#f4f4f0';
+      const pe = pu(a, al.de == null ? 0.3 : al.de, 0.15), topo = pu(a, 1, al.h == null ? 3 : al.h), beira = pu(a, 1, 0);
+      barra(pe, topo, e, c, grupo); barra(beira, topo, e, c, grupo);
+      if (al.coluna !== false) barra([beira[0], beira[1], al.base || 0], beira, e * 0.9, c, cena); }
+    if (cb.trelicas) for (const a of cb.trelicas.angs) { const tr = cb.trelicas, e = tr.esp || 1.4, h0 = tr.alt == null ? 1.1 : tr.alt, c = tr.cor || '#e6e8ea';
+      barra(pu(a, 0.02, h0), pu(a, 1.02, h0), e, c, grupo);
+      for (const f of [0.02, 0.35, 0.68, 1.02]) barra(pu(a, f, 0), pu(a, f, h0), e * 0.35, c, grupo); }
     if (pl || ms) for (let i = 0; i < (inteiro ? n : n + 1); i++) { const a = angs[i];
       if (pl && i % (pl.cada || 1) === 0) { const f = pl.f == null ? 0.85 : pl.f, topo = pu(a, f, -0.1);
         barra([topo[0], topo[1], pl.base || 0], topo, pl.esp || 0.36, pl.cor || '#d9dcde', grupo);
