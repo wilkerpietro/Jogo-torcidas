@@ -41,9 +41,34 @@
    recortar a mais), `pisos` (pisos a mais, desenhados), `entorno`, `px`.
    ========================================================= */
 import { colunasDe, raioDe } from './estadio_lowpoly.mjs';
-/* QUEM JÁ TEM os arredores padrão (a lista cresce estádio a estádio, com a cena conferida; os 21 dos arredores de verdade
-   não entram aqui: levam `arredores` com as ruas do mapa na própria ficha) */
-export const COM_PADRAO = new Set(['estadio-dutrinha', 'estadio-arena-pantanal', 'estadio-serejao', 'estadio-bezerrao', 'estadio-jonas-duarte', 'estadio-antonio-accyoly']);
+/* QUEM TEM os arredores padrão. O Centro-Oeste entrou estádio a estádio; o Sul e o Sudeste entraram de uma vez (dono,
+   16/11/2026: "Pode aplicar esse padrão aos demais estádios do sul e sudeste que já fizemos, fora os que são diferenciados").
+   Os diferenciados não entram aqui: levam `arredores` na própria ficha, com as ruas e as casas do lugar de verdade
+   (Maracanã, Nilton Santos, São Januário, Mineirão, Arena MRV, Independência, Morumbi, Allianz Parque, Neo Química Arena,
+   Vila Belmiro, Arena da Baixada, Couto Pereira, Beira-Rio, Arena do Grêmio, Ilha do Retiro, Arruda, Aflitos, Barradão,
+   Fonte Nova, Castelão, Mangueirão e Serra Dourada). */
+export const COM_PADRAO = new Set([
+  /* o Centro-Oeste */
+  'estadio-dutrinha', 'estadio-arena-pantanal', 'estadio-serejao', 'estadio-bezerrao', 'estadio-jonas-duarte',
+  'estadio-antonio-accyoly',
+  /* o Rio Grande do Sul */
+  'estadio-alfredo-jaconi', 'estadio-centenario', 'estadio-colosso-da-lagoa', 'estadio-bento-freitas', 'estadio-boca-do-lobo',
+  'estadio-passo-dareia',
+  /* Santa Catarina */
+  'estadio-heriberto-hulse', 'estadio-arena-conda', 'estadio-da-ressacada', 'estadio-orlando-scarpelli', 'estadio-arena-joinville',
+  /* o Paraná */
+  'estadio-vila-capanema', 'estadio-do-cafe', 'estadio-germano-kruger', 'estadio-willie-davids',
+  /* São Paulo */
+  'estadio-caninde', 'estadio-moises-lucarelli', 'estadio-brinco-de-ouro', 'estadio-ulrico-mursa', 'estadio-anacleto-campanella',
+  'estadio-bruno-daniel', 'estadio-primeiro-de-maio', 'estadio-jayme-cintra', 'estadio-nabi-abi-chedid', 'estadio-santa-cruz',
+  'estadio-alfredo-de-castilho', 'estadio-maiao', 'estadio-novelli-junior', 'estadio-jorge-ismael-de-biasi', 'estadio-limeirao',
+  'estadio-barao-de-serra-negra',
+  /* Minas Gerais */
+  'estadio-joaquim-portugal', 'estadio-bernardo-rubinger-de-queiroz', 'estadio-zama-maciel',
+  /* o Rio de Janeiro */
+  'estadio-moca-bonita', 'estadio-conselheiro-galvao', 'estadio-ary-de-oliveira-e-souza', 'estadio-giulite-coutinho', 'estadio-raulino-de-oliveira',
+  'estadio-godofredo-cruz',
+]);
 const RAD = Math.PI / 180;
 const dentroPoli = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
 /* o casco convexo de uma nuvem de pontos */
@@ -62,6 +87,11 @@ function solidoDe(ficha) {
     const G = colunasDe(ficha, anel, t); for (const a of G.angs) { pts.push(G.pos(a, 0)); pts.push(G.pos(a, 1)); } }
   for (const b of ficha.blocos || []) { if ((b.h || 0) + (b.y || 0) < 1 || b.cobertura) continue; const g = (b.giro || 0) * RAD, c = Math.cos(g), s = Math.sin(g);
     for (const [x, z] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) pts.push([b.u + x * b.w * c + z * b.d * s, b.v + x * b.w * s - z * b.d * c]); }
+  /* (as arquibancadas retas avulsas, os telhados em polígono e as passarelas também são estádio) */
+  for (const r of ficha.retas || []) { const g = r.ang * RAD, o = [Math.cos(g), Math.sin(g)], tg = [-Math.sin(g), Math.cos(g)];
+    for (const [x, y] of [[-r.comp / 2, 0], [r.comp / 2, 0], [r.comp / 2, r.prof], [-r.comp / 2, r.prof]]) pts.push([r.u + tg[0] * x + o[0] * y, r.v + tg[1] * x + o[1] * y]); }
+  for (const tl of ficha.telhados || []) for (const q of tl.pontos || []) pts.push([q[0], q[1]]);
+  for (const q of ficha.passarelas || []) for (const [x, z] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) pts.push([q.u + x * q.w, q.v + z * q.d]);
   for (const k of ficha.conchas || []) for (let t = 0; t < 360; t += 6) pts.push([k.cu + k.a * Math.cos(t * RAD), k.cv + (k.lado === -1 ? -1 : 1) * Math.abs(k.b * Math.sin(t * RAD))]);
   for (const r of ficha.refletores || []) pts.push([r[0], r[1]]);
   const h = casco(pts), cu = h.reduce((q, p) => q + p[0], 0) / h.length, cv = h.reduce((q, p) => q + p[1], 0) / h.length;
@@ -122,7 +152,13 @@ export function arredoresPadrao(ficha) {
     if (!cortes.length) trecho(0, P); else for (const [a, b] of cortes) { trecho(s, a); s = b; } }
   /* o funil de cada abertura até o portão */
   for (const e of usadas) { const g = e.g, c = e.c, gl = Math.hypot(g.dir[0], g.dir[1]) || 1, tx = -g.dir[1] / gl, ty = g.dir[0] / gl;
-    for (const sg of [-1, 1]) filas.push({ pts: [[c.p[0] + c.t[0] * sg * ABRE, c.p[1] + c.t[1] * sg * ABRE], [g.u + tx * sg * 5.5 * (tx * c.t[0] + ty * c.t[1] >= 0 ? 1 : -1), g.v + ty * sg * 5.5 * (tx * c.t[0] + ty * c.t[1] >= 0 ? 1 : -1)]] });
+    /* O FUNIL ENTRA NA PAREDE (16/11/2026): cada gradil do funil acabava na altura do portão, a 2,2 m da parede do estádio,
+       e por essa fresta o campo de rota achava passagem: o bonde entrava pela abertura do portão VIZINHO, que ficava mais
+       perto, seguia por dentro, rente à parede, e entalava na ponta do funil (Bruno Daniel, Anacleto Campanella, Nabi Abi
+       Chedid, com dois ou três portões no mesmo lado). O gradil agora segue 4,5 m pra dentro do sólido: entre um funil e
+       outro não se passa, e cada bonde só chega ao portão pela abertura dele. */
+    for (const sg of [-1, 1]) { const k = sg * 5.5 * (tx * c.t[0] + ty * c.t[1] >= 0 ? 1 : -1), q = [g.u + tx * k, g.v + ty * k];
+      filas.push({ pts: [[c.p[0] + c.t[0] * sg * ABRE, c.p[1] + c.t[1] * sg * ABRE], q, [q[0] + g.dir[0] / gl * 4.5, q[1] + g.dir[1] / gl * 4.5]] }); }
     /* o PM do portão fica do lado de DENTRO do gradil, ao lado do funil (16/11/2026): na calçada, do lado de fora, ele
        ficava no caminho de quem vem rente ao gradil — o disco não atravessa PM e o campo de rota não o vê, então meia
        dúzia passava a noite empurrando o policial (medido no Jonas Duarte, com o quarteirão reduzido) */
@@ -155,10 +191,22 @@ export function arredoresPadrao(ficha) {
   const B = 9, pontas = [
     { canto: 0, p: [cu + MU - B, R.baixo] }, { canto: 0, p: [R.direita, cv - MV + B] }, { canto: 1, p: [cu + MU - B, R.cima] }, { canto: 1, p: [R.direita, cv + MV - B] },
     { canto: 2, p: [cu - MU + B, R.cima] }, { canto: 2, p: [R.esquerda, cv + MV - B] }, { canto: 3, p: [cu - MU + B, R.baixo] }, { canto: 3, p: [R.esquerda, cv - MV + B] }].map(q => Object.assign(q, { visita: naZona(CANTOS[q.canto]), livre: true }));
-  const bondes = {}, pegar = (alvo, visita) => { const c = pontas.filter(q => q.visita === visita), livres = c.filter(q => q.livre), lista = livres.length ? livres : c; if (!lista.length) return null;
-    const q = lista.reduce((m, x) => Math.hypot(x.p[0] - alvo[0], x.p[1] - alvo[1]) < Math.hypot(m.p[0] - alvo[0], m.p[1] - alvo[1]) ? x : m); const usado = !q.livre; q.livre = false;
-    /* (ponta repetida: o segundo bonde nasce 22 m mais pra dentro da rua) */
-    return usado ? [q.p[0] + Math.sign(cu - q.p[0]) * (Math.abs(q.p[1] - R.cima) < 1 || Math.abs(q.p[1] - R.baixo) < 1 ? 22 : 0), q.p[1] + Math.sign(cv - q.p[1]) * (Math.abs(q.p[0] - R.esquerda) < 1 || Math.abs(q.p[0] - R.direita) < 1 ? 22 : 0)] : q.p; };
+  const bondes = {}, pegar = (alvo, visita) => { const lista = pontas.filter(q => q.visita === visita); if (!lista.length) return null;
+    /* DE QUE PONTA DE RUA O BONDE CHEGA: o da casa, da que dá a caminhada mais curta até a abertura dele PELO CONTORNO DO
+       QUARTEIRÃO SEM CRUZAR A ZONA DA VISITANTE (16/11/2026); era a mais perto em linha reta, e no Moisés Lucarelli o 2º
+       escalão nascia do outro lado do cordão: dava a volta no quarteirão inteiro, mais de dois minutos andando. A
+       visitante segue chegando pela ponta mais perto do portão dela, dentro da zona.
+       DOIS BONDES PODEM VIR PELA MESMA RUA: ponta já usada custa 70 m a mais, e só. Antes cada bonde tinha de pegar uma
+       ponta livre, e com três portões do mesmo lado (Anacleto Campanella, Nabi Abi Chedid) o 3º escalão sobrava com a
+       ponta do canto oposto. Quem divide a rua nasce 26 m mais pra dentro dela, por bonde que já está ali. */
+    const reta = x => Math.hypot(x.p[0] - alvo[0], x.p[1] - alvo[1]), sA = sDe(alvo[0], alvo[1]), arco = (de, ate) => ((ate - de) % P + P) % P;
+    const andar = x => { const sP = CANTOS[x.canto]; let m = Infinity;
+      for (const sn of [1, -1]) { const len = sn > 0 ? arco(sP, sA) : arco(sA, sP); let ok = true; for (let k = 0; k <= len && ok; k += 2) if (naZona(sP + sn * k)) ok = false; if (ok) m = Math.min(m, len); }
+      return m + reta(x) * 0.001; };
+    const custo = x => (visita ? reta(x) : andar(x)) + (x.usos || 0) * 70;
+    const q = lista.reduce((m, x) => custo(x) < custo(m) ? x : m), k = q.usos || 0; q.usos = k + 1; q.livre = false;
+    const naHorizontal = Math.abs(q.p[1] - R.cima) < 1 || Math.abs(q.p[1] - R.baixo) < 1;
+    return k ? [q.p[0] + (naHorizontal ? Math.sign(cu - q.p[0]) * 26 * k : 0), q.p[1] + (naHorizontal ? 0 : Math.sign(cv - q.p[1]) * 26 * k)] : q.p; };
   for (const id of ['mandante1', 'mandante2', 'mandante3']) { const n = entradaDe[id]; if (n == null) continue; const g = portao(n), de = pegar([g.u, g.v], false); if (de) bondes[id] = { de, portao: n, exato: true }; }
   if (eV) for (const id of ['visitante1', 'visitante2']) { const de = pegar([eV.g.u, eV.g.v], true); if (de) bondes[id] = { de, portao: eV.n, exato: true }; }
   const quadra = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];

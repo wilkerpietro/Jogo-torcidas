@@ -14789,6 +14789,21 @@ Com a calçada estreita apareceu um defeito que já existia: o PM de cada portã
 
 Regravados os seis estádios de arredores padrão (Dutrinha, Arena Pantanal, Serejão, Bezerrão, Jonas Duarte, Antônio Accioly), a cena de fora e a de dentro. Conferido andando: os cinco bondes chegam ao portão e aparecem na arquibancada nos seis.
 
+## Arredores padrão em todo o Sul e o Sudeste; os diferenciados ficam pro mapa de verdade (dono, 16/11/2026)
+
+O dono: "Pode aplicar esse padrão aos demais estádios do sul e sudeste que já fizemos, fora os que são diferenciados: maracanã, nilton santos, sao januário, mineirão, mrv arena, independencia, morumbi, allianz parque, arena corinthians, vila belmiro, arena da baixada, couto pereira, beira rio, arena do gremio, ilha do retiro, arruda, aflitos, barradão, fonte nova, casteão, mangueirão e serra dourada. Nestes, você vai ter o trabalho de olhar os arredores no street view e replicar casa a casa o formato dos arredores pra ficar bem feito."
+
+**Os 40 que entraram** (`COM_PADRAO`, em `arredores_padrao.mjs`): Alfredo Jaconi, Centenário, Colosso da Lagoa, Bento Freitas, Boca do Lobo, Passo d'Areia; Heriberto Hülse, Arena Condá, Ressacada, Orlando Scarpelli, Arena Joinville; Vila Capanema, Estádio do Café, Germano Krüger, Willie Davids; Canindé, Moisés Lucarelli, Brinco de Ouro, Ulrico Mursa, Anacleto Campanella, Bruno Daniel, Primeiro de Maio, Jayme Cintra, Nabi Abi Chedid, Santa Cruz, Alfredo de Castilho, Maião, Novelli Júnior, Jorge Ismael de Biasi, Limeirão, Barão de Serra Negra; Joaquim Portugal, Bernardo Rubinger de Queiroz, Zama Maciel; Moça Bonita, Conselheiro Galvão, Ary de Oliveira e Souza, Giulite Coutinho, Raulino de Oliveira, Godofredo Cruz. Com os seis do Centro-Oeste são 46; com o Independência e o Serra Dourada, que já têm a primeira versão do mapa de verdade, 48 cenas de arredores. O Romeirão (Nordeste) fica como estava.
+
+**Os diferenciados** (22, a regra do dono): arredores feitos um a um, olhando a rua de verdade e repetindo casa a casa o formato do entorno. Nenhum foi feito nesta rodada; o Independência e o Serra Dourada têm as ruas do mapa, não as casas uma a uma.
+
+**O que a chegada mostrou nos 40 e foi corrigido no gerador** (todos gravados e depois testados andando, os cinco bondes):
+
+- O casco do estádio passou a contar as arquibancadas retas avulsas, os telhados em polígono e as passarelas.
+- **O funil entra na parede.** Cada gradil do funil acabava a 2,2 m da parede, e por essa fresta o campo de rota achava passagem: o bonde entrava pela abertura do portão vizinho, seguia por dentro e entalava (Bruno Daniel, Anacleto Campanella, Nabi Abi Chedid, com dois ou três portões no mesmo lado). O gradil agora segue 4,5 m pra dentro do sólido.
+- **A rua de chegada é a de caminhada mais curta**, pelo contorno do quarteirão e sem cruzar a zona da visitante; era a mais perto em linha reta, e no Moisés Lucarelli o 2º escalão nascia do outro lado do cordão e dava a volta no quarteirão.
+- **Dois bondes podem vir pela mesma rua** (o segundo nasce 26 m mais pra dentro): com três portões no mesmo lado, o 3º escalão sobrava com a ponta do canto oposto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -404,6 +404,13 @@ poste do lado de fora do gradil, na calçada, fica no caminho de quem vem rente 
 ele. O torcedor não atravessa PM e o campo de rota não desvia de PM: forma fila
 atrás dele. Posto de portão vai do lado de dentro do gradil, ao lado do funil.
 
+GRADIL QUE FECHA TEM DE ENTRAR NO QUE ELE FECHA (16/11/2026): gradil que acaba
+"na altura" da parede deixa fresta, e o campo de rota passa por qualquer fresta em
+que caiba uma célula. O funil do portão e o cordão seguem alguns metros pra dentro
+do sólido do estádio. E "caminho até o portão: todos" não basta pra saber se o
+bonde chega em tempo: conferir de que rua cada bonde nasce (a caminhada, não a
+linha reta) e rodar a chegada com a visitante por último.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
