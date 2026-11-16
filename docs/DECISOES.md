@@ -14688,6 +14688,18 @@ O dono: "Vamos pro DF iniciando pelo Bezerrão"; no meio do levantamento, três 
 - **Conferido**: chão único, nenhum marcador fora, briga do Gama abrindo em `estadio-bezerrao` sem erro de página.
 - **Os muros e o Ceilândia** (dono, no mesmo dia: "senti falta dos muros atras do estadio"; "o Ceilandia vai jogar no Bezerrão no nosso jogo"): entrou o muro do terreno, traçado no satélite (por trás da arquibancada do sul com as duas guaritas, entre a lateral do leste e o Centro Olímpico, por trás da rampa do norte, até os dois cantos da concha) e a mureta branca da rampa em curva. Os trechos enviesados e a ligação do canto nordeste são estimados. É a segunda vez que o dono pede o muro (a primeira foi no Antônio Accioly): **muro do terreno entra em toda ficha, sem esperar pedido**. O Ceilândia fica no Bezerrão; o Abadião não será modelado.
 
+## Serejão, a Boca do Jacaré, lowpoly (Brasiliense); DF fechado (dono, 16/11/2026)
+
+O dono, com cinco fotos (uma aérea antiga, a principal vista do gramado, duas de dentro e uma do alto da principal): "Vamos fazer a Boca do Jacaré do Brasiliense somente. o Ceilandia vai jogar no Bezerrão no nosso jogo."
+
+- **Os dados**: nada mudou. Nos dados o estádio se chama "Serejão" (27.000), só do Brasiliense; "Boca do Jacaré" é o apelido e não entrou como nome. Usa o mapa padrão de arredores.
+- **De onde saiu**: a planta e o rumo (campo de sudoeste a nordeste, 48,1 graus), do satélite e do OpenStreetMap; as cores e a tribuna, das fotos. O contorno do gramado no mapa está 5 m e 10 m fora do lugar; centrei pelas linhas do campo. Não achei mapa de setores.
+- **A ficha** (`fichas/estadio-serejao.mjs`): estádio oval e baixo, de um lance só em volta, com o gramado dez metros fora do meio do oval, puxado pro lado da tribuna. Por isso os contornos são ovais fora do centro (os ajudantes `PTS` e `OVAL` da ficha, que viram lista de raios). Em volta do gramado, a faixa de terra com o alambrado. NOROESTE (em cima), a principal: duas faixas de cadeira com o corredor no meio, amarela no meio e azul-acinzentada dos lados, com a tribuna azul de laje plana no alto e os bancos azuis ao pé. SUDESTE (embaixo), três blocos de cadeira azul-escura com os dois vãos de entrada e o prédio dos vestiários atrás. Nas duas pontas, as curvas de cimento com as escadas amarelas. Por fora, o muro oval do terreno (já pela regra nova: muro sempre) e três postes de refletores de cada lado.
+- **Fotos e satélite de épocas diferentes**: nas fotos a principal tem cadeira até embaixo; no satélite de hoje a faixa de baixo aparece escura. Fiz como nas fotos do dono.
+- **O que é estimado**: as alturas, as divisas dos blocos de cadeira, o tamanho da tribuna. **Escolhas minhas, sem fonte**: a Facção Brasiliense no bloco do meio do lado oposto à tribuna; a visitante na curva do nordeste.
+- **Conferido**: chão único, nenhum marcador fora, briga do Brasiliense abrindo em `estadio-serejao` sem erro de página.
+- **DF fechado**: Bezerrão (Gama e Ceilândia) e Serejão (Brasiliense).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

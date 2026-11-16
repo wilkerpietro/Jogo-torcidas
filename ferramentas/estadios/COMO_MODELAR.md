@@ -357,6 +357,11 @@ O MURO DO TERRENO ENTRA SEMPRE, SEM ESPERAR PEDIDO (o dono sentiu falta no Antô
 satélite a linha branca ou a sombra fina em volta do estádio e ponha com o ajudante `MURO(pontos, altura, cor)` da ficha do
 Bezerrão (um bloco fino com `giro` em cada trecho; serve pra muro enviesado e em curva). Diga o que foi estimado.
 
+GRAMADO FORA DO MEIO DO ESTÁDIO (o Serejão: dez metros puxado pra um lado): a ficha é sempre centrada no CAMPO; o oval
+das arquibancadas vai deslocado. Retângulo de canto redondo não aceita centro próprio: use os ajudantes `PTS(a, b, r, cu, cv)`
+e `OVAL(...)` da ficha do Serejão, que viram contorno `forma: 'raios'` (as colunas saem radiais, e os ângulos dos trechos
+continuam medidos do meio do campo: `A(u, v)` de um ponto da divisa).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

@@ -614,3 +614,4 @@ import serraDourada from './fichas/estadio-serra-dourada.mjs'; FICHAS[serraDoura
 import antonioAccyoly from './fichas/estadio-antonio-accyoly.mjs'; FICHAS[antonioAccyoly.id] = antonioAccyoly;
 import jonasDuarte from './fichas/estadio-jonas-duarte.mjs'; FICHAS[jonasDuarte.id] = jonasDuarte;
 import bezerrao from './fichas/estadio-bezerrao.mjs'; FICHAS[bezerrao.id] = bezerrao;
+import serejao from './fichas/estadio-serejao.mjs'; FICHAS[serejao.id] = serejao;
