@@ -14559,6 +14559,17 @@ O dono mandou sete fotos de drone com o nome: "Ary de Oliveira e Souza". Não co
 - **O que é estimado ou escolha minha**: as alturas; o lugar exato dos postes; a Jovem Goyta no degrau azul coberto do oeste e a visitante no fundo sul.
 - **Conferido**: chão único, nenhum marcador fora, briga da Jovem Goyta abrindo em `estadio-ary-de-oliveira-e-souza` sem erro de página.
 
+## Giulite Coutinho lowpoly (America) (dono, 16/11/2026)
+
+O dono: "Giulite Coutinho". Sem fotos desta vez.
+
+- **Os dados**: nada mudou; o America já mandava nele (13.544 lugares, praça Subúrbio Carioca).
+- **De onde saiu**: só do satélite. A busca de imagens não devolve nada que preste, e o único mapa com os setores (o da imprensa, de 2016) recusou o acesso. Dos avisos de ingresso de 2016 saiu só isto: quatro setores, A e B nas laterais, C atrás de um gol e D o da visitante.
+- **A ficha** (`fichas/estadio-giulite-coutinho.mjs`): quatro arquibancadas retas e soltas, de degrau de cimento com a mureta e as escadas vermelhas, longe do campo (uns 19 m atrás dos gols, 13 m nas laterais), os quatro cantos abertos. Os dois fundos (norte e sul), gêmeos, de uns 90 m por 20 m e vinte e poucos degraus, com três escadas vermelhas e a caixa da boca em cima de cada uma, perto da frente (quatro trechos por fundo, `escadaNaBorda` e meia boca em cada divisa). A lateral principal do oeste, de treze degraus e cinco escadas, com o prédio das cabines atrás, os três túneis vermelhos avançando no gramado e os bancos de reserva. A lateral do leste, de oito degraus e cinco escadas, com as cabines de telhado branco e as caixas d'água atrás. Uma faixa de 2 m ao pé das quatro (o primeiro anel, `passagem`), com a grade na beira de dentro, liga tudo num chão só.
+- **O que não vi e fica com o dono**: se o degrau é só cimento ou tem cadeira (no satélite parece cimento manchado); se a lateral do oeste tem cobertura (não vi telhado, só vigas vermelhas e a laje das cabines); as bocas do fundo sul (ele está na sombra; espelhei as do norte); as alturas; a pintura de frente das arquibancadas.
+- **As torcidas**: a visitante no fundo sul e a Sangue Americano no fundo norte: sei que um fundo é da casa (setor C) e o outro da visitante (D), mas não qual é qual.
+- **Conferido**: chão único, nenhum marcador fora, briga da Sangue Americano abrindo em `estadio-giulite-coutinho` sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -296,6 +296,14 @@ FOTO ANTIGA CONTRA SATÉLITE NOVO: quando as fotos do dono e o satélite
 mostram épocas diferentes (cadeira na foto, bloco pintado no satélite), diga
 qual é qual e o que foi feito; não escolha calado.
 
+QUATRO ARQUIBANCADAS RETAS E SOLTAS (o Giulite Coutinho): um anel `reto` de
+beira retangular comum, cada arquibancada em trechos com o seu `fora`
+(`FUN(a)` nos fundos, `LAT(b)` nas laterais) e `vazio` nos cantos. Escada em
+lugar medido: um trecho por vão, `escadaNaBorda: true` do segundo em diante.
+Boca em cima da escada: `vomitorios: { em: [0, 1] }` (meia boca em cada
+divisa; `[1]` no primeiro trecho, `[0]` no último). Gere os trechos com uma
+função e confira por código que o `ate` de um é o `de` do seguinte.
+
 LADOS DE FUNDURA DIFERENTE NO MESMO ANEL (o Ary de Oliveira e Souza): cada
 trecho leva o seu `fora` e a sua `inclinacao`. Pra reta não sair torta, o
 `fora` de um lado tem de ter `a - r` (ou `b - r`) igual ao do contorno de

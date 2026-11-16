@@ -607,3 +607,4 @@ import niltonSantos from './fichas/estadio-nilton-santos.mjs'; FICHAS[niltonSant
 import mocaBonita from './fichas/estadio-moca-bonita.mjs'; FICHAS[mocaBonita.id] = mocaBonita;
 import conselheiroGalvao from './fichas/estadio-conselheiro-galvao.mjs'; FICHAS[conselheiroGalvao.id] = conselheiroGalvao;
 import aryDeOliveiraESouza from './fichas/estadio-ary-de-oliveira-e-souza.mjs'; FICHAS[aryDeOliveiraESouza.id] = aryDeOliveiraESouza;
+import giuliteCoutinho from './fichas/estadio-giulite-coutinho.mjs'; FICHAS[giuliteCoutinho.id] = giuliteCoutinho;
