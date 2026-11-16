@@ -610,3 +610,4 @@ import aryDeOliveiraESouza from './fichas/estadio-ary-de-oliveira-e-souza.mjs'; 
 import giuliteCoutinho from './fichas/estadio-giulite-coutinho.mjs'; FICHAS[giuliteCoutinho.id] = giuliteCoutinho;
 import raulinoDeOliveira from './fichas/estadio-raulino-de-oliveira.mjs'; FICHAS[raulinoDeOliveira.id] = raulinoDeOliveira;
 import godofredoCruz from './fichas/estadio-godofredo-cruz.mjs'; FICHAS[godofredoCruz.id] = godofredoCruz;
+import serraDourada from './fichas/estadio-serra-dourada.mjs'; FICHAS[serraDourada.id] = serraDourada;

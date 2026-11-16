@@ -14630,6 +14630,19 @@ O dono: "Cena de arredores fiel à realidade em todos os estádios e o acesso ao
 - **O crédito**: dados de rua © colaboradores do OpenStreetMap (licença ODbL). Tem de aparecer nos créditos do jogo; ainda não pus em tela nenhuma.
 - **Conferido**: 326 casas montadas sem falha; os cinco bondes com caminho até o portão; a briga do América-MG abrindo na rua, sem erro de página.
 
+## Serra Dourada lowpoly (Goiás e Vila Nova); os dois ficam nele; o crédito do mapa (dono, 16/11/2026)
+
+O dono, depois de eu ter separado os dois (commit desfeito): "Vamos agrupar os dois no serra dourada mesmo, e os dois do Pará no mangueirão. Independencia com os arredores reais. Crédito dos colaboradores do openstreetmap no canto direito. Vamos pra Goiás agora".
+
+- **Os dados**: desfiz a separação (a Serrinha e o OBA saíram); Goiás e Vila Nova mandam os dois no Serra Dourada, Remo e Paysandu os dois no Mangueirão. **A lista dos arredores de verdade fica em 21 estádios**, mais o Independência, que o dono manteve.
+- **O crédito do mapa**: "© colaboradores do OpenStreetMap" vai escrito no canto direito de baixo de toda cena de arredores de verdade (a bancada escreve na imagem). A do Independência foi assada de novo.
+- **De onde saiu o Serra Dourada**: a planta, do satélite (de 2026, com o estádio parado e em obra: gramado falhado, anel de baixo sem cadeira); o resto, das três imagens do PROJETO DA REFORMA que o dono mandou quando eu fechava a primeira versão (o camarote do nível do campo, a aérea e a vista da arquibancada). **O modelo é o estádio de depois da obra**, não o que o satélite mostra hoje. Não achei mapa de setores. O centro e o rumo do campo vieram do contorno do gramado no OpenStreetMap (rumo 9,1 graus; o contorno do mapa está uns 10 m fora do lugar, e centrei pelo satélite).
+- **A ficha** (`fichas/estadio-serra-dourada.mjs`): contornos em elipse, os de fora com o centro 8 m ao sul do meio do campo, como no satélite. A pista de atletismo vermelha de oito raias em volta do gramado (`campo.pista`, com o piso cinza-azulado até a arquibancada); o anel de baixo, de cadeira amarela, dando a volta inteira em 36 blocos entre as escadas, com a frente alta de vidro (o camarote do nível do campo); atrás dele, só nos dois lados, a faixa dos camarotes de vidro e a arquibancada de cima, de cadeira amarela, em pares de blocos com a caixa da boca na escada do meio de cada par; as duas coberturas de concreto claro (`coberturasAnel` com `de`/`ate`, pilares no fundo, mastros com tirantes a cada três vigas) e a armação comprida de refletores no meio de cada uma; na ponta sul, o terraço com as árvores e o bloco no eixo; na ponta norte, o prédio em arco de laje cinza-azulada.
+- **A primeira versão, só de satélite, estava errada pro que o dono quer**: eu tinha feito o anel largo de piso cinza em volta do gramado (é onde entra a pista e a parte nova do anel de baixo), degrau de cimento sem cadeira e a cobertura escura (a de hoje, de lâminas).
+- **O que é estimado ou escolha minha**: as alturas, o número de blocos e de fileiras, a largura da faixa dos camarotes; a torcida da casa no meio da arquibancada de cima do oeste e a visitante na ponta norte da de cima do leste.
+- **Os arredores de verdade dele ficam pra depois da revisão**: o estádio fica no meio de um estacionamento, sem quarteirões em volta; preciso saber por onde cada torcida chega e onde ficam os portões.
+- **Conferido**: chão único, nenhum marcador fora, briga do Goiás abrindo em `estadio-serra-dourada` sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

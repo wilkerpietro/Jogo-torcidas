@@ -26,8 +26,8 @@
    poste vira uma haste de longe; o resto, que é miúdo, some.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ATLAS } from './modelos_atlas.js?v=86887e9133';
-import { Construtor, METRO, lerp } from './construtor3d.js?v=86887e9133';
+import { ATLAS } from './modelos_atlas.js?v=37f3f5ef7e';
+import { Construtor, METRO, lerp } from './construtor3d.js?v=37f3f5ef7e';
 
 /* as cores que o vértice dá pro que sai claro na folha */
 const COR_CESTO = ['#6aa33a', '#d2b53a', '#3f82ad', '#8b6a3c', '#b8452f'];

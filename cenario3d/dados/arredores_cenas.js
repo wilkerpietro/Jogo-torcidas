@@ -6,7 +6,7 @@ window.__ARREDORES = {
  "estadio-independencia": {
   "nome": "Independência",
   "escala": 7.056,
-  "imagem": "img/cenas/arredores_estadio_independencia.webp?v=36d36e08",
+  "imagem": "img/cenas/arredores_estadio_independencia.webp?v=1cb33b79",
   "largura": 2512,
   "altura": 2496,
   "celula": 8,

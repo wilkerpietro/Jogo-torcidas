@@ -327,6 +327,11 @@ legível e pelo satélite.
 ABÓBADA DE CONCRETO: `abobadas` com `concreto: true`; `fundo: false` na fila
 da frente (senão a parede de trás dela corta a arquibancada).
 
+ESTÁDIO EM OBRA (o Serra Dourada): o satélite mostra o canteiro, não o estádio. Pergunte ao dono se ele quer o de antes ou o
+do projeto ANTES de desenhar o que se vê de cima; do satélite só sai a planta.
+ESTÁDIO QUASE REDONDO: contornos `{ forma: 'elipse', a, b, cu, cv }`; o anel que dá a volta inteira com cadeira vai em blocos
+de ângulo igual (36 de 10 graus), gerados por função.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

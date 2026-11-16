@@ -113,6 +113,11 @@ window.assarArredores = async function (id) {
   /* fora do limite da cena a cidade continua, mais escura: ali não se pisa */
   if (ar.limite) { bx.beginPath(); bx.rect(0, 0, WA, HA); ar.limite.forEach((p, i) => { const q = paraPx(p[0], p[1]); if (i) bx.lineTo(q[0], q[1]); else bx.moveTo(q[0], q[1]); }); bx.closePath();
     bx.fillStyle = 'rgba(22,22,26,0.46)'; bx.fill('evenodd'); }
+  /* o crédito das ruas, no canto direito de baixo (dono, 16/11/2026: "Crédito dos colaboradores do openstreetmap no canto
+     direito"); a licença do mapa (ODbL) pede que ele apareça */
+  { const txt = '© colaboradores do OpenStreetMap', px = Math.round(WA / 105); bx.font = '600 ' + px + 'px Arial, Helvetica, sans-serif'; const lw = bx.measureText(txt).width;
+    bx.fillStyle = 'rgba(16,16,20,0.62)'; bx.fillRect(WA - lw - px * 1.6, HA - px * 2.1, lw + px * 1.6, px * 2.1);
+    bx.fillStyle = 'rgba(244,243,236,0.95)'; bx.textAlign = 'right'; bx.textBaseline = 'middle'; bx.fillText(txt, WA - px * 0.8, HA - px * 1.02); }
   const imagem = base.toDataURL('image/webp', 0.86);
   tela(1280, 720);
   const persp = new THREE.PerspectiveCamera(40, 1280 / 720, 1, 4000);
