@@ -1556,7 +1556,8 @@ TO.diaJogo.combate = (function(){
     }
     if(!n) return 0;
     J.entrando = true;
-    J.entrarAte = J.t + TEMPO_DE_ENTRAR;
+    /* (no mapa com o estádio no meio a caminhada é mais comprida: o prazo de escape é maior) */
+    J.entrarAte = J.t + (D.assentos ? 150 : TEMPO_DE_ENTRAR);
     logar(J, _t('Ordem de entrar: todo mundo pro portão.'), 'v');
     aviso(J, _t('TODO MUNDO PRO PORTÃO'), '#d9a441');
     return n;

@@ -399,6 +399,11 @@ Depois de gravar os arredores de um estádio, abrir a bancada da chegada
 bondes irem até o portão, de mandante e de visitante. O gradil conta três células
 de espessura no mapa de rota: abertura estreita demais some.
 
+NADA PARADO NA CALÇADA, RENTE AO GRADIL (16/11/2026): posto de PM, barraca ou
+poste do lado de fora do gradil, na calçada, fica no caminho de quem vem rente a
+ele. O torcedor não atravessa PM e o campo de rota não desvia de PM: forma fila
+atrás dele. Posto de portão vai do lado de dentro do gradil, ao lado do funil.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

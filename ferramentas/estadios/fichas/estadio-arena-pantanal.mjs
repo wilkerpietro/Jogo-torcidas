@@ -129,7 +129,7 @@ export default {
      pista de caminhada dentro; os portões são os dez do mapa do clube, e a visitante entra pelo I, do norte. A primeira
      versão, feita à mão, tinha só quatro ruas em volta e a grade do terreno; a grade saiu: o gradil do quarteirão faz o
      papel dela. */
-  arredoresPadrao: { solido: PTS(125, 104, 49), margem: 30, corCalcadao: '#c9b697', portoes: PORTOES, entradaDe: { mandante1: 'D', mandante2: 'F', mandante3: 'B', visitante: 'I' },
+  arredoresPadrao: { solido: PTS(125, 104, 49), corCalcadao: '#c9b697', portoes: PORTOES, entradaDe: { mandante1: 'D', mandante2: 'F', mandante3: 'B', visitante: 'I' },
     entorno: [{ tipo: 'arvores', u: 92, v: 80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: 92, v: -80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: -92, v: 80, w: 14, d: 14, n: 2 }, { tipo: 'arvores', u: -92, v: -80, w: 14, d: 14, n: 2 }] },
   jogo: { mandante1: [162, 198], mandante2: [240, 300], mandante3: [60, 120], visitante: [-20, 20], tunelMandante: 180, tunelVisitante: 0, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.6, visitante2: 0.6, visitante3: 0.5 },

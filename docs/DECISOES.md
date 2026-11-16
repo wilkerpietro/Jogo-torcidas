@@ -14779,6 +14779,16 @@ O dono: "quando a torcida chega no seu ponto de entrada no estádio ela spawna a
 
 **O que ficou como está, e o dono precisa saber.** Em noite tranquila o jogo encerra a cena quando um dos lados não tem mais ninguém na rua ("não sobrou ninguém deles na cena"), mesmo que a torcida do jogador ainda não tenha entrado. É regra antiga (o relógio da noite faz os outros entrarem faltando 25 a 20 minutos); na bancada, um do outro lado fica na rua de propósito pra segurar a cena aberta. A visitante que vem pra brigar não rompe o cordão da PM sozinha: avança, recua e volta.
 
+## Arredores padrão: o quarteirão do estádio é só o estádio (dono, 16/11/2026)
+
+O dono: "reduza o tamanho dos quarteirões pro quarteirão ser sempre somente o estádio, no caso dos estádios dos arredores genéricos."
+
+O quarteirão do meio já foi o casco do estádio mais 12 m de calçadão, esticado até cobrir tudo o que a cena de dentro mostra, o que dava uma praça em volta de estádio pequeno. Agora é o casco mais uma calçada de 7 m (`margem`, em `arredores_padrao.mjs`): cabem o gradil, o funil de cada portão e uma fileira de árvores, e as ruas passam rente. A Arena Pantanal perdeu a margem própria de 30 m. A praça do chafariz, os estacionamentos e os jardins só aparecem onde sobra canto (estádio oval em quarteirão retangular, terreno murado maior que a arquibancada).
+
+Com a calçada estreita apareceu um defeito que já existia: o PM de cada portão ficava do lado de fora do gradil, na calçada, no caminho de quem vem rente a ele. O disco não atravessa PM e o campo de rota não o vê; no Jonas Duarte meia dúzia ficava empurrando o policial. O posto foi pro lado de dentro do gradil, ao lado do funil. O prazo de escape da ordem de entrar passou de 90 pra 150 s nas cenas com o estádio no mapa, onde a caminhada é mais comprida.
+
+Regravados os seis estádios de arredores padrão (Dutrinha, Arena Pantanal, Serejão, Bezerrão, Jonas Duarte, Antônio Accioly), a cena de fora e a de dentro. Conferido andando: os cinco bondes chegam ao portão e aparecem na arquibancada nos seis.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

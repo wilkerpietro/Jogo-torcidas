@@ -34,13 +34,13 @@
      pelas outras.
 
    AJUSTES (`arredoresPadrao: { ... }`): `solido` (o contorno do que não se
-   pisa, quando o casco não serve), `margem` (a largura do calçadão, 12 m),
+   pisa, quando o casco não serve), `margem` (a largura da calçada em volta do estádio, 7 m),
    `fundo` (a fundura dos quarteirões de fora, 62 m), `ruas` (os nomes:
    { cima, baixo, esquerda, direita }), `portoes` ([{ n, nome, u, v, dir }])
    com `entradaDe` ({ mandante1: n, .., visitante: n }), `tiras` (pisos a
    recortar a mais), `pisos` (pisos a mais, desenhados), `entorno`, `px`.
    ========================================================= */
-import { colunasDe, raioDe, limites } from './estadio_lowpoly.mjs';
+import { colunasDe, raioDe } from './estadio_lowpoly.mjs';
 /* QUEM JÁ TEM os arredores padrão (a lista cresce estádio a estádio, com a cena conferida; os 21 dos arredores de verdade
    não entram aqui: levam `arredores` com as ruas do mapa na própria ficha) */
 export const COM_PADRAO = new Set(['estadio-dutrinha', 'estadio-arena-pantanal', 'estadio-serejao', 'estadio-bezerrao', 'estadio-jonas-duarte', 'estadio-antonio-accyoly']);
@@ -69,22 +69,18 @@ function solidoDe(ficha) {
 }
 
 /* a meia largura e a meia altura do que a cena de DENTRO do estádio mostra (a mesma conta da bancada) */
-function meiaCenaDeDentro(ficha) {
-  const f = limites(ficha).fora, folga = ficha.folga == null ? 14 : ficha.folga, extra = ficha.fachada && ficha.fachada.pilares ? (ficha.fachada.pilares.pe || 9) + 3 : 0; let mu = 0, mv = 0;
-  for (let a = 0; a < 360; a += 2) { const r = raioDe(a, f); mu = Math.max(mu, Math.abs(Math.cos(a * RAD) * r)); mv = Math.max(mv, Math.abs(Math.sin(a * RAD) * r)); }
-  const s = Math.min(3072 / (2 * (mu + extra + folga)), 2048 / (2 * (mv + extra + folga))); return [1536 / s, 1024 / s];
-}
 function semente(n) { let s = n >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 const dSeg = (px, py, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], q = dx * dx + dy * dy || 1e-9, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / q)); return Math.hypot(px - a[0] - dx * t, py - a[1] - dy * t); };
 
 export function arredoresPadrao(ficha) {
   const o = ficha.arredoresPadrao === true ? {} : (ficha.arredoresPadrao || {});
-  const solido = o.solido || solidoDe(ficha), margem = o.margem == null ? 12 : o.margem, fundo = o.fundo == null ? 62 : o.fundo, LARG = 10, CALC = 2.6, MEIA = LARG / 2 + CALC;
+  const solido = o.solido || solidoDe(ficha), margem = o.margem == null ? 7 : o.margem, fundo = o.fundo == null ? 62 : o.fundo, LARG = 10, CALC = 2.6, MEIA = LARG / 2 + CALC;
   let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9; for (const p of solido) { u0 = Math.min(u0, p[0]); u1 = Math.max(u1, p[0]); v0 = Math.min(v0, p[1]); v1 = Math.max(v1, p[1]); }
   u0 = Math.floor(u0 - margem); u1 = Math.ceil(u1 + margem); v0 = Math.floor(v0 - margem); v1 = Math.ceil(v1 + margem);
-  /* O QUARTEIRÃO DO ESTÁDIO PEGA TUDO O QUE A CENA DE DENTRO MOSTRA (dono, 16/11/2026: "a cena na hora do jogo vai deixar a
-     visão aproximada dentro do estádio sem mostrar as ruas"): as ruas ficam sempre fora do quadro de dentro */
-  { const [hu, hv] = meiaCenaDeDentro(ficha); u0 = Math.min(u0, Math.floor(-hu)); u1 = Math.max(u1, Math.ceil(hu)); v0 = Math.min(v0, Math.floor(-hv)); v1 = Math.max(v1, Math.ceil(hv)); }
+  /* O QUARTEIRÃO DO ESTÁDIO É SÓ O ESTÁDIO (dono, 16/11/2026: "reduza o tamanho dos quarteirões pro quarteirão ser sempre
+     somente o estádio, no caso dos estádios dos arredores genéricos"). Ele já foi o casco mais 12 m de calçadão, esticado
+     até cobrir tudo o que a cena de dentro mostra, o que dava uma praça em volta de estádio pequeno; agora é o casco mais
+     uma calçada de 7 m, o bastante pro gradil, o funil de cada portão e uma fileira de árvores. As ruas passam rente. */
   const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2, MU = (u1 - u0) / 2 + 2 * MEIA + fundo, MV = (v1 - v0) / 2 + 2 * MEIA + fundo, nomes = o.ruas || {};
   /* as quatro ruas, pelo eixo, até depois da beira da cena */
   const R = { cima: v1 + MEIA, baixo: v0 - MEIA, esquerda: u0 - MEIA, direita: u1 + MEIA };
@@ -127,7 +123,10 @@ export function arredoresPadrao(ficha) {
   /* o funil de cada abertura até o portão */
   for (const e of usadas) { const g = e.g, c = e.c, gl = Math.hypot(g.dir[0], g.dir[1]) || 1, tx = -g.dir[1] / gl, ty = g.dir[0] / gl;
     for (const sg of [-1, 1]) filas.push({ pts: [[c.p[0] + c.t[0] * sg * ABRE, c.p[1] + c.t[1] * sg * ABRE], [g.u + tx * sg * 5.5 * (tx * c.t[0] + ty * c.t[1] >= 0 ? 1 : -1), g.v + ty * sg * 5.5 * (tx * c.t[0] + ty * c.t[1] >= 0 ? 1 : -1)]] });
-    pm.push([c.p[0] + c.t[0] * (ABRE + 4) + c.n[0] * 1.5, c.p[1] + c.t[1] * (ABRE + 4) + c.n[1] * 1.5]); }
+    /* o PM do portão fica do lado de DENTRO do gradil, ao lado do funil (16/11/2026): na calçada, do lado de fora, ele
+       ficava no caminho de quem vem rente ao gradil — o disco não atravessa PM e o campo de rota não o vê, então meia
+       dúzia passava a noite empurrando o policial (medido no Jonas Duarte, com o quarteirão reduzido) */
+    pm.push([c.p[0] + c.t[0] * (ABRE + 3) - c.n[0] * Math.min(3, margem * 0.45), c.p[1] + c.t[1] * (ABRE + 3) - c.n[1] * Math.min(3, margem * 0.45)]); }
   /* O CORDÃO: a zona da visitante vai, de cada lado da abertura dela, até a metade do caminho da abertura mandante mais
      próxima (no máximo 30% do contorno), e pega pelo menos um canto, que é por onde ela chega */
   const eV = usadas.find(e => e.n === entradaDe.visitante), zona = { de: 0, ate: 0 }, cordoes = [];
