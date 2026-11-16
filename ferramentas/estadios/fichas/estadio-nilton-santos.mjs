@@ -89,15 +89,17 @@ export default {
         { de: LL[1], ate: LO[0] + 360, tipo: 'vazio' }] }
   ],
   coberturasAnel: [
-    /* o telhado branco: inteiro por fora das arquibancadas, transparente por cima delas */
-    { fora: { a: 152, b: 112, r: 100 }, dentro: F, h: 46, cai: 2, n: 80, cor: '#eeeeea', cor2: '#e6e6e2', opaca: true, nervuras: false, bordaFora: { larg: 1.5, cor: '#d9dad6' } },
-    { fora: F, dentro: { a: 100, b: 68, r: 58 }, h: 47, cai: 6, n: 80, cor: '#eeeeea', cor2: '#e6e6e2', nervuras: false, bordaDentro: { larg: 1.5, cor: '#c9cbcd' } }
+    /* o telhado branco, INCLINADO (dono, 16/11/2026: "Observe que a cobertura do Nilton Santos tem uma inclinação"): alto na
+       beira da abertura e descendo pra fora, como uma aba de chapéu, com a beira de fora dobrada pra baixo; inteiro por fora das
+       arquibancadas, transparente por cima delas (`cai` negativo: a beira de dentro mais alta que a de fora) */
+    { fora: { a: 152, b: 112, r: 100 }, dentro: F, h: 35, cai: -9, n: 80, cor: '#eeeeea', cor2: '#e6e6e2', opaca: true, nervuras: false, bordaFora: { larg: 3, cor: '#e3e3df' } },
+    { fora: F, dentro: { a: 100, b: 68, r: 58 }, h: 44, cai: -6, n: 80, cor: '#eeeeea', cor2: '#e6e6e2', nervuras: false, bordaDentro: { larg: 1.5, cor: '#c9cbcd' } }
   ],
   fachada: { cor: '#d9dad6' },
   blocos: [
     /* os quatro arcos de treliça branca, por cima do telhado */
-    { u: 0, v: 96, w: 270, d: 2.2, h: 2.2, y: 49, cor: '#f4f4f0' }, { u: 0, v: -96, w: 270, d: 2.2, h: 2.2, y: 49, cor: '#f4f4f0' },
-    { u: 134, v: 0, w: 2.2, d: 190, h: 2.2, y: 49, cor: '#f4f4f0' }, { u: -134, v: 0, w: 2.2, d: 190, h: 2.2, y: 49, cor: '#f4f4f0' },
+    { u: 0, v: 96, w: 270, d: 2.2, h: 2.2, y: 54, cor: '#f4f4f0' }, { u: 0, v: -96, w: 270, d: 2.2, h: 2.2, y: 54, cor: '#f4f4f0' },
+    { u: 134, v: 0, w: 2.2, d: 190, h: 2.2, y: 54, cor: '#f4f4f0' }, { u: -134, v: 0, w: 2.2, d: 190, h: 2.2, y: 54, cor: '#f4f4f0' },
     /* o escudo do Botafogo pintado na pista, atrás de cada gol */
     { u: 74, v: 0, w: 10, d: 12, h: 0.12, cor: PT, texto: '★', corTexto: BR, textoLargura: 0.6, textoAltura: 0.6 },
     { u: -74, v: 0, w: 10, d: 12, h: 0.12, cor: PT, texto: '★', corTexto: BR, textoLargura: 0.6, textoAltura: 0.6 },
@@ -106,7 +108,7 @@ export default {
     /* as duas rampas redondas do lado oeste */
     { u: 60, v: 150, w: 28, d: 28, h: 16, cor: '#bdb9b0' }, { u: -10, v: 156, w: 28, d: 28, h: 16, cor: '#bdb9b0' }
   ],
-  vista: [0, 30, -40, 0, 22, 100],
+  vista: [-90, 130, 330, 10, 20, 0],
   entorno: [
     /* à esquerda (sul): os dois campos de treino; à direita, a linha do trem; em cima (oeste), os galpões compridos */
     { tipo: 'grama', u: -205, v: -40, w: 70, d: 110, cor: '#3f8a52' }, { tipo: 'predio', u: 30, v: 220, w: 160, d: 30, h: 9, cor: '#a5583f' },
