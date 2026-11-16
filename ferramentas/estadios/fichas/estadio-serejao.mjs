@@ -14,20 +14,24 @@
    campo ficam a 4 m e meio da beira do gramado, do lado da tribuna:
    · EM VOLTA do gramado, a faixa de terra (a pista velha) com o alambrado,
      mais larga do lado de baixo.
-   · EM CIMA (noroeste), a PRINCIPAL: duas faixas de cadeira, com o corredor
-     no meio; AMARELA no meio, azul-acinzentada (desbotada) dos lados. No
-     alto do bloco amarelo, a TRIBUNA azul de laje plana. Ao pé, os bancos
-     de reserva azuis.
-   · EMBAIXO (sudeste), o lado oposto: três blocos de cadeira azul-escura,
-     com os dois vãos de entrada entre eles e o prédio dos vestiários por
-     trás do bloco do meio.
+   · EM CIMA (noroeste), a PRINCIPAL: SÓ OS DEGRAUS DE CIMA TÊM CADEIRA
+     (dono, 16/11/2026, com mais uma foto aérea: "na parte lateral da
+     arquibancada do serejão, somente os degraus de cima tem cadeiras"):
+     a faixa de baixo é degrau de cimento; a de cima, depois do corredor, é
+     de cadeira AMARELA no meio e azul-acinzentada dos lados, e a cadeira
+     azul ainda entra um pouco pela curva do sudoeste. No alto do bloco
+     amarelo, a TRIBUNA azul de laje plana. Ao pé, os bancos azuis.
+   · EMBAIXO (sudeste), o lado oposto: nos dois blocos dos lados, cimento
+     embaixo e cadeira azul nos degraus de cima; o bloco do meio é de
+     cimento debaixo de um telhado baixo de metal (é como leio a foto nova
+     e a textura do satélite; não tenho certeza), com os dois vãos de
+     entrada e o prédio dos vestiários por trás.
    · NAS DUAS PONTAS (sudoeste e nordeste), as CURVAS de degrau de cimento,
      com as escadas pintadas de amarelo.
    · POR FORA, o anel de asfalto e o MURO oval do terreno; três postes de
      refletores de cada lado.
-   FOTOS E SATÉLITE SÃO DE ÉPOCAS DIFERENTES: nas fotos a principal tem
-   cadeira até embaixo; no satélite de hoje a faixa de baixo aparece escura
-   (cadeira tirada ou suja). Fiz como nas fotos.
+   (Na primeira versão pus cadeira até embaixo, lendo a foto tirada do
+   gramado, em que o muro esconde os degraus de cimento.)
    O QUE É ESTIMADO: todas as alturas, as divisas dos blocos de cadeira e o
    tamanho da tribuna. Não achei mapa de setores.
    AS TORCIDAS (escolhas minhas, sem fonte): a Facção Brasiliense no bloco
@@ -51,12 +55,12 @@ const MURO = (pts, h = 2.6, cor = '#cfcbc0') => pts.slice(1).map((b, i) => { con
 /* a beira do gramado, o pé das arquibancadas, o corredor do meio da principal e o fundo: todos com as pontas em meio-círculo
    (o raio é a meia largura). A beira do gramado tem o meio dela: a faixa de terra é mais larga do lado de baixo. */
 const GR = OVAL(87.8, 47.2, 47.2, CU, -7.7), I = OVAL(90, 54.5, 54.5), M = OVAL(100.5, 65, 65), F = OVAL(115.6, 77.15, 77.15, CU, CV + 3.65);
-const AM = '#e2c64a', AM2 = '#d4b63a', AZ = '#8798b3', AZ2 = '#a9b5c6', AZE = '#33466e', AZE2 = '#2a3a5c', CIM = '#8f8c85', CIM2 = '#86837c', ESC = '#d8c98a', MUR = '#6f6258';
+const AM = '#e2c64a', AM2 = '#d4b63a', AZ = '#8798b3', AZ2 = '#a9b5c6', AZO = '#56719f', AZO2 = '#4a6590', CIM = '#8f8c85', CIM2 = '#86837c', ESC = '#d8c98a', MUR = '#6f6258';
 const BASE = { vomitorios: false, paredeAtras: true, corFachada: '#8a867e', corMureta: MUR, parapeito: 1.2, corEscada: ESC };
 const DEGRAU = { ...BASE, cor: CIM, cor2: CIM2, padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corEspelho: '#77746e', corredor: 44 };
 const CAD = (cor, cor2, mais) => ({ ...BASE, cor, cor2, padrao: 'mosaico', mistura: 0.4, corredor: 13.5, ...mais });
 /* as divisas, vistas do meio do campo */
-const P1 = A(75.9, 58), P2 = A(14.7, 60), P3 = A(-16.1, 60), P4 = A(-83.3, 54);                                                    /* a principal: azul, amarelo, azul */
+const P1 = A(75.9, 58), P2 = A(14.7, 60), P3 = A(-16.1, 60), P4 = 160;                                                    /* a principal: azul, amarelo, azul */
 const O1 = A(-72.5, -60), O2 = A(-28, -66), O3 = A(-22.1, -66), O4 = A(22.4, -66), O5 = A(31.4, -66), O6 = A(63.4, -62);    /* o lado oposto: três blocos e dois vãos */
 
 export default {
@@ -72,25 +76,28 @@ export default {
       trechos: [
         /* À DIREITA (nordeste): a curva de cimento */
         { ...DEGRAU, de: O6 - 360, ate: P1 },
-        /* EM CIMA (noroeste): a faixa de baixo da principal: azul, amarela no meio, azul */
-        { ...CAD(AZ, AZ2), de: P1, ate: P2, fora: M, h: [1.8, 5.9], paredeAtras: false },
-        { ...CAD(AM, AM2, { corredor: 8 }), de: P2, ate: P3, fora: M, h: [1.8, 5.9], paredeAtras: false },
-        { ...CAD(AZ, AZ2), de: P3, ate: P4, fora: M, h: [1.8, 5.9], paredeAtras: false },
+        /* EM CIMA (noroeste): a faixa de baixo da principal, de degrau de cimento */
+        { ...DEGRAU, de: P1, ate: P4, fora: M, h: [1.8, 5.9], paredeAtras: false, corredor: 13.5 },
         /* À ESQUERDA (sudoeste): a outra curva de cimento */
         { ...DEGRAU, de: P4, ate: O1 },
-        /* EMBAIXO (sudeste): os três blocos de cadeira azul-escura e os dois vãos de entrada */
-        { ...CAD(AZE, AZE2, { corredor: 22 }), de: O1, ate: O2, h: [1.6, 9.2] },
+        /* EMBAIXO (sudeste): a faixa de baixo dos dois blocos dos lados (cimento), os dois vãos de entrada e o bloco do meio,
+           de cimento debaixo do telhado baixo de metal */
+        { ...DEGRAU, de: O1, ate: O2, fora: M, h: [1.6, 5.4], paredeAtras: false, corredor: 22 },
         { de: O2, ate: O3, tipo: 'passagem', cor: '#a0664d' },
-        { ...CAD(AZE, AZE2, { corredor: 22 }), de: O3, ate: O4, h: [1.6, 8.6] },
+        { ...DEGRAU, de: O3, ate: O4, h: [1.6, 8.6], corredor: 22,
+          cobertura: { h: 11.2, larg: 16.5, avanco: 0.4, cai: 0.9, cor: '#a9acad', cor2: '#9ea1a2', listras: true, corTrelica: '#7f8386', corPilar: '#b9bcbd' } },
         { de: O4, ate: O5, tipo: 'passagem', cor: '#a0664d' },
-        { ...CAD(AZE, AZE2, { corredor: 22 }), de: O5, ate: O6, h: [1.6, 9.2] }
+        { ...DEGRAU, de: O5, ate: O6, fora: M, h: [1.6, 5.4], paredeAtras: false, corredor: 22 }
       ] },
     /* a faixa de cima da principal, do corredor ao fundo */
     { dentro: M, fora: F, h: [6.1, 12.4], corredorFrente: 1.6,
       trechos: [
         { ...CAD(AZ, AZ2), de: P1, ate: P2 },
         { ...CAD(AM, AM2, { corredor: 8 }), de: P2, ate: P3 },
-        { ...CAD(AZ, AZ2), de: P3, ate: P4 }
+        { ...CAD(AZ, AZ2), de: P3, ate: P4 },
+        /* o lado oposto: a cadeira azul dos degraus de cima, nos dois blocos dos lados */
+        { ...CAD(AZO, AZO2, { corredor: 22 }), de: O1, ate: O2, h: [5.6, 9.4], corredorFrente: 0.8 },
+        { ...CAD(AZO, AZO2, { corredor: 22 }), de: O5, ate: O6, h: [5.6, 9.4], corredorFrente: 0.8 }
       ] }
   ],
   fachada: { cor: '#8a867e' },

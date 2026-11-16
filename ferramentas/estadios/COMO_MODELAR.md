@@ -366,6 +366,10 @@ O RAIO DAS PONTAS DE UM OVAL SE MEDE, NÃO SE CHUTA (o Serejão: o dono achou o 
 o ponto mais de fora da ponta e um ponto da curva perto da reta; se o raio der igual à meia largura, a ponta é meio-círculo
 inteiro (`r` = `b`). Confira pondo o desenho assado ao lado do satélite e olhando a distância das quinas do campo à beira.
 
+FOTO TIRADA DO GRAMADO ESCONDE OS DEGRAUS DE BAIXO (o muro e o ângulo raso): não conclua dela que a cadeira desce até o
+campo. Se o satélite mostra a faixa de baixo escura e a de cima clara, é cimento embaixo e cadeira em cima (o Serejão; eu
+tinha descartado o satélite como "outra época" e o dono corrigiu). Satélite e foto só são "de épocas diferentes" com prova.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
