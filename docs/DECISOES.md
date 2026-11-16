@@ -14994,6 +14994,21 @@ O dono: "coloque as cadeiras azuis no noroeste do nível de cima."
 
 O trecho sem cadeira que eu tinha posto no noroeste do nível de cima (lido em duas fotos de dentro, com a posição no chute) saiu. O nível de cima tem agora o azul claro na ferradura inteira.
 
+## Sergipe: o Batistão (dono, 16/11/2026)
+
+O dono: "Vamos pra sergipe, com batistão e depois o estádio do itabaiana", e em seguida, com três fotos (duas aéreas e uma de dentro): "segue as imagens do batistão".
+
+O Lourival Baptista, do Confiança e do Sergipe, que já mandavam nele nos dados (`fichas/estadio-batistao.mjs`). Oval inteiro de um lance só, em elipse (208 × 167 m por fora), com a grama também em elipse e a pista estreita de concreto ao pé da mureta:
+
+- a metade do norte de cadeiras vermelhas e a metade do sul de cadeiras azuis;
+- a lateral do oeste de cadeiras brancas, debaixo da cobertura branca (a de telha em gomos e, na ponta do sul, a de lona lisa);
+- a lateral do leste também coberta, com o vermelho e o azul se encontrando debaixo dela;
+- o muro amarelo por fora, na volta toda, e quatro torres de luz.
+
+Estimado: as alturas, onde ficam as bocas e a cor das cadeiras debaixo da cobertura do leste (o satélite mostra só uma faixa escura). A Esri não tem imagem de Aracaju; o satélite é o do Google.
+
+As torcidas são escolha minha, pelas cores: a do Confiança (Trovão Azul) atrás do gol do sul, no azul; a do Sergipe (Esquadrão Colorado) atrás do gol do norte, no vermelho; a Jovem Confiança na lateral das cadeiras brancas; a visitante no meio da lateral do leste. O Batistão entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
