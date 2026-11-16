@@ -100,6 +100,10 @@ NOVOS = [
     {'nome': 'Ary de Oliveira e Souza', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes II'},
     # 16/11/2026, o dono: "o Americano ganha estádio próprio" — o Godofredo Cruz antigo (demolido em 2014), pelas fotos dele.
     {'nome': 'Godofredo Cruz', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes I'},
+    # 16/11/2026, o dono: "Goiás com o serrinha, vila com o OBA" — a Serrinha fica no Setor Bela Vista (no mapa do jogo, o vizinho Setor
+    # Marista) e o OBA no Setor Leste Universitário (no mapa do jogo, o vizinho Vila Nova); o Serra Dourada fica sem mandante.
+    {'nome': 'Serrinha', 'mapa': 'goiania', 'bairro': 'Setor Marista'},
+    {'nome': 'OBA', 'mapa': 'goiania', 'bairro': 'Vila Nova'},
 ]
 
 

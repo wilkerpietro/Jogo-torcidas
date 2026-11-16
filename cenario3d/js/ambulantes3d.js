@@ -27,8 +27,8 @@
    que a planta acha o lugar dela na calçada do estádio. `sol`: o meio e
    o raio da copa ([x, z, r]), que o mapa desenha de perto.
    ========================================================= */
-import { Construtor, noMundo, placasNoMundo, sorteio, esfera, unit } from './construtor3d.js?v=86887e9133';
-import { Lugar, barra, tubo, cilindro, bloco, pano, toro, guardaSol, cadeiraPlastica, isopor, banqueta, CORES_SOL } from './praia3d.js?v=86887e9133';
+import { Construtor, noMundo, placasNoMundo, sorteio, esfera, unit } from './construtor3d.js?v=3b2fc6c6d0';
+import { Lugar, barra, tubo, cilindro, bloco, pano, toro, guardaSol, cadeiraPlastica, isopor, banqueta, CORES_SOL } from './praia3d.js?v=3b2fc6c6d0';
 
 const AQUI = Lugar();
 const escolha = (rnd, lista) => lista[Math.floor(rnd() * lista.length) % lista.length];

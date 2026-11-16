@@ -77,6 +77,8 @@ CLUBE_TROCADO = {
 # e manda no Joaquim Portugal (a Arena Sicredi, em São João del-Rei).
 # 15/11/2026, o dono: "Vamos pro do Mamoré" — o Mamoré sai do Estádio Regional e manda no Bernardo Rubinger de Queiroz.
 # 15/11/2026, o dono: "vamos pro da URT agora" — o Estádio Regional (nome genérico do protótipo) vira o Zama Maciel, o da URT.
+# 16/11/2026, o dono: "Goiás com o serrinha, vila com o OBA. Remo e Paysandu com o mangueirão mesmo" — o Goiás e o Vila Nova
+# saem do Serra Dourada (que fica sem mandante) e mandam na Serrinha (o Hailé Pinheiro) e no OBA (o Onésio Brasileiro Alvarenga).
 # 16/11/2026, o dono: "o Americano ganha estádio próprio" e "Vamos pro estádio do americano de Campos", com as fotos do
 # Godofredo Cruz antigo (demolido em 2014) — o Americano sai do Raulino de Oliveira (que fica só com o Volta Redonda).
 # 16/11/2026, o dono mandou as fotos do "Ary de Oliveira e Souza" — o Goytacaz sai do Raulino de Oliveira e manda no
@@ -94,7 +96,7 @@ ESTADIO_CORRIGIDO = {
  'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Mangueirao','tuna-luso':'Estádio do Souza',
  'atletico-mineiro':'Arena MRV','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
- 'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
+ 'goias':'Serrinha','vila-nova':'OBA','atletico-go':'Antonio Accyoly',
  'athletic':'Joaquim Portugal','mamore':'Bernardo Rubinger de Queiroz','urt':'Zama Maciel',
  'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Limeirão','xv-de-piracicaba':'Barão de Serra Negra',
  'noroeste':'Alfredo de Castilho','ituano':'Novelli Júnior','iguatu':'Arena Romeirão','maringa':'Willie Davids',
