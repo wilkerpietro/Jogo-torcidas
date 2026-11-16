@@ -115,7 +115,7 @@ window.assarArredores = async function (id) {
     bx.fillStyle = 'rgba(22,22,26,0.46)'; bx.fill('evenodd'); }
   /* o crédito das ruas, no canto direito de baixo (dono, 16/11/2026: "Crédito dos colaboradores do openstreetmap no canto
      direito"); a licença do mapa (ODbL) pede que ele apareça */
-  { const txt = '© colaboradores do OpenStreetMap', px = Math.round(WA / 105); bx.font = '600 ' + px + 'px Arial, Helvetica, sans-serif'; const lw = bx.measureText(txt).width;
+  if (ar.osm && ar.osm.ruas && ar.osm.ruas.length) { const txt = '© colaboradores do OpenStreetMap', px = Math.round(WA / 105); bx.font = '600 ' + px + 'px Arial, Helvetica, sans-serif'; const lw = bx.measureText(txt).width;
     bx.fillStyle = 'rgba(16,16,20,0.62)'; bx.fillRect(WA - lw - px * 1.6, HA - px * 2.1, lw + px * 1.6, px * 2.1);
     bx.fillStyle = 'rgba(244,243,236,0.95)'; bx.textAlign = 'right'; bx.textBaseline = 'middle'; bx.fillText(txt, WA - px * 0.8, HA - px * 1.02); }
   const imagem = base.toDataURL('image/webp', 0.86);

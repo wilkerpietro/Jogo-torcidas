@@ -381,6 +381,13 @@ COBERTURA DE TRECHO NUM LANCE `reto` FORA DO EIXO: ponha `pelaColuna: true` na `
 do centro do campo e passa da ponta da arquibancada, enviesada. NÃO COMECE ESTÁDIO PEQUENO SÓ PELO SATÉLITE quando ele mostra
 "um prédio comprido" colado na arquibancada: pode ser a própria arquibancada pintada de branco. Peça foto ao dono antes.
 
+ARREDORES NO PRÓPRIO MAPA, SEM RUAS DO MAPA (a Arena Pantanal; é o destino de todo estádio fora da lista dos arredores de
+verdade): `arredores: { osm: { ruas: [], areas: [], predios: [] }, quadro, corQuadra, pisos, portoes, bondes, grades, filas,
+pm, entorno }`. Só se pisa no que estiver em `pisos` (ruas e caminhos como faixas com `larg` e `cor`; a esplanada como
+polígono); recorte com `tira: true` o estádio e a grade do terreno, deixando os portões abertos. Os bondes levam
+`exato: true`. Asse com `ARREDORES=1 SO=<id>` e exija "caminho até o portão: todos". `soFora: true` (na ficha e no
+`arredores`) é do estádio em que os setores não se ligam por dentro: a briga da arquibancada abre aqui.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
