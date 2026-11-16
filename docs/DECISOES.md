@@ -14662,10 +14662,19 @@ O dono: "Jonas Duarte agora"; e, no meio do levantamento, duas fotos de drone.
 
 - **Os dados**: nada mudou; o Anápolis já mandava nele (10.707 lugares). Usa o mapa padrão de arredores.
 - **De onde saiu**: a planta, do satélite; as cores e o jeito, das duas fotos. O rumo do campo veio do contorno do gramado no OpenStreetMap (25,8 graus), mas o contorno do mapa está 8,7 m fora do lugar ao longo do campo: centrei pelas linhas do gramado no satélite. Não achei mapa de setores.
-- **A ficha** (`fichas/estadio-jonas-duarte.mjs`): oval baixo de degrau de cimento claro, com as muretas e o muro de fora azuis. Em volta do gramado, a mureta azul e o anel de cimento (a pista velha), que é o primeiro anel, `passagem`. OESTE (em cima): a social, de cadeira azul e branca em blocos (`padrao: 'blocos'`), coberta na metade de trás (a `cobertura` do trecho), com as cabines no alto e os três bancos azuis ao pé. NORTE (à direita): a curva, com a boca de acesso e a caixa azul do placar. LESTE (embaixo): a de cimento descoberta. SUL (à esquerda): a outra curva, com as bocas e a escada listrada de vermelho, branco e azul no eixo.
+- **A ficha** (`fichas/estadio-jonas-duarte.mjs`): oval baixo de degrau de cimento claro, com as muretas e o muro de fora azuis. Em volta do gramado, a mureta azul e o anel de cimento, que nesta primeira versão saiu como pista velha, chão liso (`passagem`); o dono corrigiu no mesmo dia: é uma geral, ver a seção seguinte. OESTE (em cima): a social, de cadeira azul e branca em blocos (`padrao: 'blocos'`), coberta na metade de trás (a `cobertura` do trecho), com as cabines no alto e os três bancos azuis ao pé. NORTE (à direita): a curva, com a boca de acesso e a caixa azul do placar. LESTE (embaixo): a de cimento descoberta. SUL (à esquerda): a outra curva, com as bocas e a escada listrada de vermelho, branco e azul no eixo.
 - **O que é estimado ou escolha minha**: as alturas, o desenho dos blocos de cadeira da social, o lugar das bocas (pelas marcas escuras do satélite), os postes de luz; a Independente do Anápolis na curva do sul e a visitante na curva do norte.
 - **Conferido**: chão único, nenhum marcador fora, briga do Anápolis abrindo em `estadio-jonas-duarte` sem erro de página.
 - **Goiás fechado**: Serra Dourada (Goiás e Vila Nova, com arredores de verdade), Antônio Accioly (Atlético-GO) e Jonas Duarte (Anápolis).
+
+## Jonas Duarte: a geral em volta do gramado (dono, 16/11/2026)
+
+O dono, com uma foto de perto: "Essa parte de baixo é uma arquibancada geral igual nos anos antigos".
+
+- **O erro**: na primeira versão o anel de cimento entre a mureta do gramado e as arquibancadas saiu como pista velha, chão liso (`passagem`). No satélite ele é uma faixa cinza sem relevo; de perto se veem os degraus.
+- **O que mudou na ficha**: esse anel virou a GERAL: degraus baixos e rasos de cimento mais escuro (do chão a 1,7 m em 7 m), sem cadeira, sem escada e sem boca, dando a volta inteira, com a mureta azul na frente e atrás. Atrás dela entrou o corredor estreito no chão (um anel `passagem` de 1,3 m) e a parede azul das arquibancadas, que agora nascem altas nas duas laterais (2,6 m) e baixas nas duas curvas (1,2 m, com o corredor plano e o corrimão na frente). Saiu a grade da beira do gramado (`alambrado: false`): ali só tem a mureta. Entrou a escada de corrimão vermelho e branco no meio do leste (a do eixo da curva do sul foi refeita em lances). Eu também tinha posto a cerquinha escura rente ao campo do lado do leste e as placas pretas atrás do gol do sul, que aparecem nas fotos; o dono mandou tirar ("Retire os trapos no meio e atrás do gol que você colocou") e saíram: faixa escura solta no gramado não entra.
+- **O que é estimado**: a altura da geral, a largura do corredor e a altura da parede das laterais (pela foto, sem medida).
+- **Conferido**: chão único, nenhum marcador fora, briga do Anápolis sem erro de página.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

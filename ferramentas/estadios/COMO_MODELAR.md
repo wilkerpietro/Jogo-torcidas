@@ -341,6 +341,11 @@ O CONTORNO DO GRAMADO NO OPENSTREETMAP dá o rumo do campo, mas o centro pode es
 Duarte, 10 m no Serra Dourada): confira as linhas do gramado no quadro e meça tudo a partir do meio de verdade.
 TRECHO COM `fora` MAIS FUNDO NUM ANEL `reto`: mantenha `a - r` igual ao do `fora` do anel, senão a emenda faz dente.
 
+FAIXA CINZA ENTRE O GRAMADO E A ARQUIBANCADA NÃO É SEMPRE PISTA: em estádio antigo pode ser a GERAL, degraus baixos e rasos
+que o satélite achata (o Jonas Duarte; o dono corrigiu com uma foto de perto). Procure foto oblíqua antes de pôr `passagem`.
+A geral é um anel de lance baixo (`h: [0.2, 1.7]`, `passoFileira: 0.7`, `corredor: 0`, `vomitorios: false`, `semCadeiras`),
+um anel `passagem` estreito atrás (o corredor) e só então a arquibancada, com a frente alta.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
