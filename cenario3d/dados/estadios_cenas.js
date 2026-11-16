@@ -16642,6 +16642,7 @@ window.__ESTADIOS = {
   "clubes": [
    "cuiaba"
   ],
+  "soFora": true,
   "escala": 8.192,
   "largura": 3072,
   "altura": 2048,

@@ -88,7 +88,7 @@ window.assar = async function (id, opc) {
   const perto = ficha.vista ? olhar(ficha.vista[0], ficha.vista[1], -ficha.vista[2], ficha.vista[3], ficha.vista[4], -ficha.vista[5]) : null;
   /* ---- a máscara e os marcadores ---- */
   const m = marcadores(ficha, paraPx, s);
-  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
+  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, soFora: !!ficha.soFora, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
 };
 /* OS ARREDORES DE VERDADE (dono, 16/11/2026): o estádio com os quarteirões em volta — as ruas do mapa, as casas do jogo 3D
    antigo, os portões —, fotografado de cima na cena de arredores do jogo. A cobertura do estádio sai quase fechada: a briga

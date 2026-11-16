@@ -63,6 +63,10 @@ const FACH = PTS(124, 103, 48), GRADE = PTS(141, 120, 62), PISTA = PTS(149, 128,
 
 export default {
   id: 'estadio-arena-pantanal', nome: 'Arena Pantanal', clubes: ['cuiaba'], norte: 9.9, vazado: 0.3, folga: 30,
+  /* NÃO SE BRIGA DENTRO (dono, 16/11/2026: "o setor superior da arena pantanal não deve dar acesso ao setor inferior [...] é
+     impossível brigar na arquibancada, só nos arredores, porque um setor não se conecta ao outro"): cada lance tem a sua
+     entrada por baixo, pelas bocas, e as quatro arquibancadas são soltas. A briga do dia de jogo abre nos arredores. */
+  soFora: true,
   chao: { cor: '#c9b697' },
   campo: { corMargem: '#4c9a4b' },
   corMureta: '#e9ecee',

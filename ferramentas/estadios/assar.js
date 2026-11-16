@@ -65,7 +65,8 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
     const r = await pg.evaluate(id => window.assar(id), id);
     const arq = id.replace(/-/g, '_') + '.webp';
     if (!FICHA) fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
-    dados[id] = { nome: r.nome, clubes: r.clubes, escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
+    /* (`soFora`: a ficha do estádio em que os setores não se ligam por dentro; a briga da arquibancada abre nos arredores) */
+    dados[id] = { nome: r.nome, clubes: r.clubes, ...(r.soFora ? { soFora: true } : {}), escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
                   foto: { imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), mascara: r.mascara }, cena: r.cena };
     if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'aerea2', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); if (r.perto) fs.writeFileSync(path.join(CONF, id + '_perto.jpg'), bin(r.perto)); }
     /* O CHÃO É UM SÓ? As ilhas de chão andável da máscara, e se os marcadores (bondes, túneis, PM) caem na maior. */

@@ -63425,9 +63425,12 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       if(!TO.feed.travado(e)) retomarTempo('decisao');
       return;
     }
-    /* NO ESTÁDIO EM QUE NÃO SE BRIGA DENTRO (`soFora`), a briga da arquibancada abre na rua, nos arredores de verdade dele */
+    /* NO ESTÁDIO EM QUE NÃO SE BRIGA DENTRO (`soFora`), a briga da arquibancada abre na rua: nos arredores de verdade dele,
+       se ele tiver, ou nos arredores padrão. A marca vem dos arredores de verdade (o Independência) ou da ficha do próprio
+       estádio (dono, 16/11/2026, a Arena Pantanal: "é impossível brigar na arquibancada, só nos arredores, porque um setor
+       não se conecta ao outro"). */
     const dentro = cenaDoEstadio(e, d), fora = (TO.dados.arredoresReais || {})[dentro];
-    const soFora = !!(fora && fora.soFora);
+    const soFora = !!((fora && fora.soFora) || ((TO.dados.estadiosLowPoly || {})[dentro] || {}).soFora);
     const local = soFora ? 'arredores' : dentro;
     const setores = soFora ? {mandante:3, visitante:2} : (SETORES_ESTADIO[local] || {mandante:3, visitante:3});
     const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
