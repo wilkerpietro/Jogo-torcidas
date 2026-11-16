@@ -6,7 +6,7 @@ window.__ARREDORES = {
  "estadio-independencia": {
   "nome": "Independência",
   "escala": 7.056,
-  "imagem": "img/cenas/arredores_estadio_independencia.webp?v=1cb33b79",
+  "imagem": "img/cenas/arredores_estadio_independencia.webp?v=66749bcd",
   "largura": 2512,
   "altura": 2496,
   "celula": 8,
@@ -343,7 +343,87 @@ window.__ARREDORES = {
     "y": 2176,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 662,
+    "y": 1283,
+    "raio": [
+     1,
+     0
+    ],
+    "dir": [
+     0,
+     1
+    ],
+    "prof": 196
+   },
+   "mandante2": {
+    "x": 1101,
+    "y": 958,
+    "raio": [
+     0,
+     1
+    ],
+    "dir": [
+     -1,
+     0
+    ],
+    "prof": 225
+   },
+   "mandante3": {
+    "x": 903,
+    "y": 1600,
+    "raio": [
+     0.53,
+     -0.85
+    ],
+    "dir": [
+     0.85,
+     0.53
+    ],
+    "prof": 218
+   },
+   "visitante1": {
+    "x": 1343,
+    "y": 1604,
+    "raio": [
+     -0.61,
+     -0.8
+    ],
+    "dir": [
+     0.8,
+     -0.61
+    ],
+    "prof": 240
+   },
+   "visitante2": {
+    "x": 1297,
+    "y": 1613,
+    "raio": [
+     -0.5,
+     -0.87
+    ],
+    "dir": [
+     0.87,
+     -0.5
+    ],
+    "prof": 222
+   },
+   "visitante3": {
+    "x": 1394,
+    "y": 1596,
+    "raio": [
+     -0.69,
+     -0.73
+    ],
+    "dir": [
+     0.73,
+     -0.69
+    ],
+    "prof": 233
+   }
+  }
  },
  "estadio-serra-dourada": {
   "nome": "Serra Dourada",
@@ -594,12 +674,92 @@ window.__ARREDORES = {
     "y": 1628,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 1147,
+    "y": 1033,
+    "raio": [
+     0.02,
+     1
+    ],
+    "dir": [
+     -1,
+     0.02
+    ],
+    "prof": 201
+   },
+   "mandante2": {
+    "x": 1112,
+    "y": 2007,
+    "raio": [
+     0.09,
+     -1
+    ],
+    "dir": [
+     1,
+     0.09
+    ],
+    "prof": 201
+   },
+   "mandante3": {
+    "x": 811,
+    "y": 1124,
+    "raio": [
+     0.67,
+     0.74
+    ],
+    "dir": [
+     -0.74,
+     0.67
+    ],
+    "prof": 201
+   },
+   "visitante1": {
+    "x": 1515,
+    "y": 1873,
+    "raio": [
+     -0.7,
+     -0.71
+    ],
+    "dir": [
+     0.71,
+     -0.7
+    ],
+    "prof": 201
+   },
+   "visitante2": {
+    "x": 1475,
+    "y": 1923,
+    "raio": [
+     -0.61,
+     -0.79
+    ],
+    "dir": [
+     0.79,
+     -0.61
+    ],
+    "prof": 201
+   },
+   "visitante3": {
+    "x": 1550,
+    "y": 1821,
+    "raio": [
+     -0.78,
+     -0.62
+    ],
+    "dir": [
+     0.62,
+     -0.78
+    ],
+    "prof": 201
+   }
+  }
  },
  "estadio-arena-pantanal": {
   "nome": "Arena Pantanal",
   "escala": 5.294,
-  "imagem": "img/cenas/arredores_estadio_arena_pantanal.webp?v=5ee25ef8",
+  "imagem": "img/cenas/arredores_estadio_arena_pantanal.webp?v=c092678f",
   "largura": 2808,
   "altura": 2240,
   "celula": 8,
@@ -1018,7 +1178,87 @@ window.__ARREDORES = {
     "y": 370,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 977,
+    "y": 1120,
+    "raio": [
+     1,
+     0
+    ],
+    "dir": [
+     0,
+     1
+    ],
+    "prof": 212
+   },
+   "mandante2": {
+    "x": 1404,
+    "y": 1484,
+    "raio": [
+     0,
+     -1
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "prof": 212
+   },
+   "mandante3": {
+    "x": 1404,
+    "y": 756,
+    "raio": [
+     0,
+     1
+    ],
+    "dir": [
+     -1,
+     0
+    ],
+    "prof": 212
+   },
+   "visitante1": {
+    "x": 1858,
+    "y": 1120,
+    "raio": [
+     -1,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "prof": 212
+   },
+   "visitante2": {
+    "x": 1858,
+    "y": 1210,
+    "raio": [
+     -0.98,
+     -0.19
+    ],
+    "dir": [
+     0.19,
+     -0.98
+    ],
+    "prof": 212
+   },
+   "visitante3": {
+    "x": 1832,
+    "y": 1035,
+    "raio": [
+     -0.98,
+     0.19
+    ],
+    "dir": [
+     -0.19,
+     -0.98
+    ],
+    "prof": 212
+   }
+  }
  },
  "estadio-dutrinha": {
   "nome": "Dutrinha",
@@ -1441,7 +1681,87 @@ window.__ARREDORES = {
     "y": 457,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 1352,
+    "y": 1390,
+    "raio": [
+     0.21,
+     -0.98
+    ],
+    "dir": [
+     0.98,
+     0.21
+    ],
+    "prof": 47
+   },
+   "mandante2": {
+    "x": 1618,
+    "y": 1390,
+    "raio": [
+     -0.6,
+     -0.8
+    ],
+    "dir": [
+     0.8,
+     -0.6
+    ],
+    "prof": 60
+   },
+   "mandante3": {
+    "x": 1529,
+    "y": 801,
+    "raio": [
+     -0.33,
+     0.94
+    ],
+    "dir": [
+     -0.94,
+     -0.33
+    ],
+    "prof": 121
+   },
+   "visitante1": {
+    "x": 1141,
+    "y": 801,
+    "raio": [
+     0.66,
+     0.75
+    ],
+    "dir": [
+     -0.75,
+     0.66
+    ],
+    "prof": 154
+   },
+   "visitante2": {
+    "x": 1207,
+    "y": 801,
+    "raio": [
+     0.55,
+     0.83
+    ],
+    "dir": [
+     -0.83,
+     0.55
+    ],
+    "prof": 137
+   },
+   "visitante3": {
+    "x": 1058,
+    "y": 801,
+    "raio": [
+     0.75,
+     0.66
+    ],
+    "dir": [
+     -0.66,
+     0.75
+    ],
+    "prof": 176
+   }
+  }
  },
  "estadio-antonio-accyoly": {
   "nome": "Antonio Accyoly",
@@ -1864,7 +2184,87 @@ window.__ARREDORES = {
     "y": 1815,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 920,
+    "y": 1182,
+    "raio": [
+     1,
+     0
+    ],
+    "dir": [
+     0,
+     1
+    ],
+    "prof": 152
+   },
+   "mandante2": {
+    "x": 1384,
+    "y": 1540,
+    "raio": [
+     0,
+     -1
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "prof": 147
+   },
+   "mandante3": {
+    "x": 1384,
+    "y": 812,
+    "raio": [
+     0,
+     1
+    ],
+    "dir": [
+     -1,
+     0
+    ],
+    "prof": 167
+   },
+   "visitante1": {
+    "x": 1862,
+    "y": 1182,
+    "raio": [
+     -1,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "prof": 180
+   },
+   "visitante2": {
+    "x": 1872,
+    "y": 1288,
+    "raio": [
+     -0.98,
+     -0.21
+    ],
+    "dir": [
+     0.21,
+     -0.98
+    ],
+    "prof": 186
+   },
+   "visitante3": {
+    "x": 1853,
+    "y": 1079,
+    "raio": [
+     -0.98,
+     0.22
+    ],
+    "dir": [
+     -0.22,
+     -0.98
+    ],
+    "prof": 184
+   }
+  }
  },
  "estadio-jonas-duarte": {
   "nome": "Jonas Duarte",
@@ -2287,7 +2687,87 @@ window.__ARREDORES = {
     "y": 464,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 856,
+    "y": 1131,
+    "raio": [
+     1,
+     0
+    ],
+    "dir": [
+     0,
+     1
+    ],
+    "prof": 136
+   },
+   "mandante2": {
+    "x": 1400,
+    "y": 1495,
+    "raio": [
+     0,
+     -1
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "prof": 138
+   },
+   "mandante3": {
+    "x": 1400,
+    "y": 766,
+    "raio": [
+     0,
+     1
+    ],
+    "dir": [
+     -1,
+     0
+    ],
+    "prof": 138
+   },
+   "visitante1": {
+    "x": 1954,
+    "y": 1131,
+    "raio": [
+     -1,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "prof": 156
+   },
+   "visitante2": {
+    "x": 1954,
+    "y": 1240,
+    "raio": [
+     -0.98,
+     -0.19
+    ],
+    "dir": [
+     0.19,
+     -0.98
+    ],
+    "prof": 150
+   },
+   "visitante3": {
+    "x": 1939,
+    "y": 1024,
+    "raio": [
+     -0.98,
+     0.19
+    ],
+    "dir": [
+     -0.19,
+     -0.98
+    ],
+    "prof": 149
+   }
+  }
  },
  "estadio-bezerrao": {
   "nome": "Bezerrão",
@@ -2710,7 +3190,87 @@ window.__ARREDORES = {
     "y": 51,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 1014,
+    "y": 1125,
+    "raio": [
+     1,
+     0
+    ],
+    "dir": [
+     0,
+     1
+    ],
+    "prof": 154
+   },
+   "mandante2": {
+    "x": 1420,
+    "y": 1413,
+    "raio": [
+     0,
+     -1
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "prof": 140
+   },
+   "mandante3": {
+    "x": 1420,
+    "y": 751,
+    "raio": [
+     0,
+     1
+    ],
+    "dir": [
+     -1,
+     0
+    ],
+    "prof": 223
+   },
+   "visitante1": {
+    "x": 1804,
+    "y": 1125,
+    "raio": [
+     -1,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "prof": 110
+   },
+   "visitante2": {
+    "x": 1810,
+    "y": 1210,
+    "raio": [
+     -0.98,
+     -0.21
+    ],
+    "dir": [
+     0.21,
+     -0.98
+    ],
+    "prof": 113
+   },
+   "visitante3": {
+    "x": 1798,
+    "y": 1042,
+    "raio": [
+     -0.98,
+     0.22
+    ],
+    "dir": [
+     -0.22,
+     -0.98
+    ],
+    "prof": 112
+   }
+  }
  },
  "estadio-serejao": {
   "nome": "Serejão",
@@ -3133,6 +3693,86 @@ window.__ARREDORES = {
     "y": 395,
     "raio": 34
    }
-  ]
+  ],
+  "assentos": {
+   "mandante1": {
+    "x": 1986,
+    "y": 1098,
+    "raio": [
+     -1,
+     -0.01
+    ],
+    "dir": [
+     0.01,
+     -1
+    ],
+    "prof": 150
+   },
+   "mandante2": {
+    "x": 1408,
+    "y": 1480,
+    "raio": [
+     0,
+     -1
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "prof": 156
+   },
+   "mandante3": {
+    "x": 1403,
+    "y": 778,
+    "raio": [
+     0.01,
+     1
+    ],
+    "dir": [
+     -1,
+     0.01
+    ],
+    "prof": 166
+   },
+   "visitante1": {
+    "x": 839,
+    "y": 1138,
+    "raio": [
+     1,
+     -0.09
+    ],
+    "dir": [
+     0.09,
+     1
+    ],
+    "prof": 149
+   },
+   "visitante2": {
+    "x": 852,
+    "y": 1011,
+    "raio": [
+     0.99,
+     0.13
+    ],
+    "dir": [
+     -0.13,
+     0.99
+    ],
+    "prof": 154
+   },
+   "visitante3": {
+    "x": 873,
+    "y": 1260,
+    "raio": [
+     0.95,
+     -0.3
+    ],
+    "dir": [
+     0.3,
+     0.95
+    ],
+    "prof": 147
+   }
+  }
  }
 };

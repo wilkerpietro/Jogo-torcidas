@@ -2573,7 +2573,7 @@ TO.diaJogo.bonecos3 = (function(){
           dur:1.3 + Math.random()*0.9, tam:7, cresce:16, cor:'#e2e4de', alfa:0.42});
       }
     }
-    const v = J.viatura, tem = !!(v && v.chegou && !v.aPe);
+    const v = J.viatura, tem = !!(v && (v.chegou || v.andando) && !v.aPe);
     if(tem && !carroPM){
       const g = G(), grupo = new THREE.Group();
       const peca = (cor, sx, sy, sz, x, y, z) => { const m = new THREE.Mesh(g.caixa, mat(cor)); m.scale.set(sx, sy, sz); m.position.set(x, y, z); grupo.add(m); return m; };
@@ -2617,7 +2617,7 @@ TO.diaJogo.bonecos3 = (function(){
       conta.vistos++;
     };
     J.discos.forEach((d,i)=>{
-      if(d.entrou || d.sumiu) return;
+      if((d.entrou && !d.naArquibancada) || d.sumiu) return;
       /* o ferido some depois do prazo: não anima, e a limpeza abaixo
          tira a figura da cena */
       if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) return;

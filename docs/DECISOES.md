@@ -14759,6 +14759,26 @@ O dono: "Arena Pantanal e depois o Dutrinha"; depois de eu começar só pelo sat
 - **O que é estimado**: as alturas, quanto do fundo o telhado cobre, a posição da tribuna, dos postes e da torre. **Escolhas minhas, sem fonte**: a Boca Suja na arquibancada verde do sudeste; a visitante na ponta sudoeste da principal.
 - **Conferido**: chão único, nenhum marcador fora, briga do Mixto abrindo em `estadio-dutrinha` sem erro de página.
 
+## Quem chega no portão aparece na arquibancada; a bancada da chegada e a primeira rodada de correções (dono, 16/11/2026)
+
+O dono: "quando a torcida chega no seu ponto de entrada no estádio ela spawna automaticamente pro seu local na arquibancada." Depois: "Monte a rota das torcidas até o seu portão e veja o que acontece." E: "crie um artefato que simula isso com opção de selecionar estádio em um dropdown pra eu mesmo ver o resultado. eu posso controlar uma torcida mandante ou visitante ou então dizer qual torcida é de cada lado em cada um dos estádios."
+
+**A regra.** A cena de arredores que tem o estádio no mapa leva `assentos`: o lugar de cada escalão na arquibancada (o mesmo ponto em que o bonde nasce na cena de dentro), com a direção das fileiras e a fundura do lance. Quem cruza o portão sai da rua e aparece ali, de pé, em bloco mais largo que fundo (`entrarNoEstadio`, combate.js). Ele continua fora da conta: `entrou` tira de `vivo`, e `naArquibancada` só avisa o desenho. O líder pisar no portão dele é a ordem de entrar, sem botão, desde que não haja rival a 220 px.
+
+**A bancada da chegada.** `ferramentas/chegada/` (chegada.js, pagina.html, montar.js) monta uma página que carrega o jogo inteiro e abre direto a cena de arredores do estádio escolhido, com as torcidas de cada escalão, o lado controlado e o clima. É o motor de verdade, não uma imitação: o que ela mostra de errado é erro do jogo. Publicada como artefato ("Bancada da Chegada").
+
+**O que a rota mostrou e foi corrigido** (as frases são do dono, testando na bancada):
+
+- "os bonecos caminham em fila indiana": o campo de rota aponta de cada célula pra vizinha mais perto do destino e todas as linhas dele se juntam numa; quem o seguia ao pé da letra andava um atrás do outro. Agora cada disco tem uma raia, um desvio de lado fixo que cresce com o bonde (26 a 90 px), encolhe perto do destino e vira de lado quando encosta em parede. Medido no Serra Dourada com 33: de 38 px de largura pra 55 a 66. Ainda é uma coluna larga, não um bloco.
+- Encostado num gradil comprido, o disco era puxado pra célula do OUTRO lado dele (a conta pesava mais a distância ao portão que a distância até a célula) e passava a noite empurrando o gradil, com fila atrás. No Serejão, seis ficavam parados a 11 px um do outro; agora os 22 entram em 38 s.
+- "não ocorre hostilidade por parte do atacado": `jogador:true` está cravado em `mandante1` nos dados; jogando de visitante, o 1º escalão da casa ficava marcado como nosso e não reagia. O bonde do jogador passou a ser o bonde em que os discos dele nasceram.
+- "os meus membros da torcida não vão pra cima junto comigo": o seguidor andava em linha reta pro lugar dele na formação e desistia ao bater no gradil. Agora, sem ganhar terreno e longe do lugar, ele vem pela rota até o líder, e aperta o passo (22%) enquanto estiver a mais de 100 px.
+- "a viatura aparece mas não fica na cena": ela surgia parada no primeiro posto da PM, que nesses mapas pode estar a duas telas da briga. Agora entra por uma boca de rua nos últimos segundos, roda pelo campo de rota e para a uns 170 px da confusão, de giroflex ligado até o fim.
+- "quando o rival corre agora [...] ele acaba atravessando a física das paredes do estádio": a corrida de quem debanda era uma reta sem colisão. Agora o rumo é o que deixa correr mais longe sem bater em nada, e o passo passa pela física.
+- "não dá pra entrar na minha entrada também": a entrada automática ao pisar no portão, acima.
+
+**O que ficou como está, e o dono precisa saber.** Em noite tranquila o jogo encerra a cena quando um dos lados não tem mais ninguém na rua ("não sobrou ninguém deles na cena"), mesmo que a torcida do jogador ainda não tenha entrado. É regra antiga (o relógio da noite faz os outros entrarem faltando 25 a 20 minutos); na bancada, um do outro lado fica na rua de propósito pra segurar a cena aberta. A visitante que vem pra brigar não rompe o cordão da PM sozinha: avança, recua e volta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

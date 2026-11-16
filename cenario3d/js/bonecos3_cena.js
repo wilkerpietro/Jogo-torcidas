@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=1f4c14ad52';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=4a54dba384';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2612,7 +2612,7 @@ let escalaDoTabuleiro = () => 1;
     let rapidez = 10;                     // quão rápido a pose atual persegue a alvo
 
     /* (quem saiu correndo da briga — `d.longe`, combate.js — está fora dela, mas de pé: corre e para lá) */
-    if(!d.vivo && !d.longe){
+    if(!d.vivo && !d.longe && !d.naArquibancada){
       if(d.preso){ sentar(p, f, t); f.queda = null; rapidez = 6; esmaecer(c, 1); }
       else {
         cair(p, f, dt, d); rapidez = 14;
@@ -2747,7 +2747,7 @@ let escalaDoTabuleiro = () => 1;
       /* o anel não gira com o corpo: fica deitado no chão, alinhado à tela */
       c.anel.rotation.z = c.anelFundo.rotation.z = -f.yaw;
     }
-    const chao = (!d.vivo && !d.longe) || d.derrubado > 0;
+    const chao = (!d.vivo && !d.longe && !d.naArquibancada) || d.derrubado > 0;
     c.sombra.scale.set(8.5*(chao?1.6:1), 6.5*(chao?1.3:1), 1);
     c.raiz.visible = true;
   }
@@ -3666,7 +3666,7 @@ void main() {`)
         } else { camX = camNivel.position.x; camZ = camNivel.position.z; }
         const ds = [];
         for(const d of todos){
-          if(d.entrou || (d.sumiu && !d.longe)) continue;
+          if((d.entrou && !d.naArquibancada) || (d.sumiu && !d.longe)) continue;
           const q = pos(d.x, d.y, d);
           ds.push((q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ));
         }
@@ -3719,7 +3719,7 @@ void main() {`)
     };
     J.discos.forEach((d,i)=>{
       /* (quem fugiu continua na tela: corre até o ponto dele e fica lá, combate.js `correrLonge`) */
-      if(d.entrou || (d.sumiu && !d.longe)) return;
+      if((d.entrou && !d.naArquibancada) || (d.sumiu && !d.longe)) return;
       /* o ferido some depois do prazo: não anima, e a limpeza abaixo
          tira a figura da cena */
       if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) return;
@@ -3760,7 +3760,7 @@ void main() {`)
           dur:1.3 + Math.random()*0.9, tam:7, cresce:16, cor:'#e2e4de', alfa:0.42});
       }
     }
-    const v = J.viatura, tem = !!(v && v.chegou && !v.aPe);
+    const v = J.viatura, tem = !!(v && (v.chegou || v.andando) && !v.aPe);
     if(tem && !carroPM){
       const g = G(), grupo = new THREE.Group();
       const peca = (cor, sx, sy, sz, x, y, z) => { const m = new THREE.Mesh(g.caixa, mat(cor)); m.scale.set(sx, sy, sz); m.position.set(x, y, z); grupo.add(m); return m; };

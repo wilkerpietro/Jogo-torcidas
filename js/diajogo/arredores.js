@@ -546,7 +546,15 @@ TO.diaJogo.arredores = (function(){
             const v=dist[nr*COLS+nc];
             if(v===Infinity) continue;
             const q=dc*dc+dr*dr;
-            if(v+q*0.5<md){md=v+q*0.5; alvo=[dc,dr];}
+            /* A MAIS PERTO, E SÓ DEPOIS A MAIS ADIANTADA (16/11/2026): a conta
+               era `v + q*0.5`, e a distância ao destino pesava mais que a
+               distância até a célula. Encostado num gradil comprido — três
+               células de espessura no mapa de rota —, a célula "melhor" era a
+               do OUTRO lado dele, que fica mais perto do portão: o disco
+               passava a noite empurrando o gradil, e atrás dele se formava
+               uma fila (medido no Serejão: seis parados a 11 px um do outro). */
+            const k=q*1e6+v;
+            if(k<md){md=k; alvo=[dc,dr];}
           }
           if(!alvo) return {dx:0,dy:0,semRota:true};
           const d=hyp(alvo[0],alvo[1])||1;

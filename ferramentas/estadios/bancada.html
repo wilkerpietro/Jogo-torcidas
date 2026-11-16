@@ -97,6 +97,19 @@ window.assar = async function (id, opc) {
   const m = marcadores(ficha, paraPx, s);
   return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, soFora: !!ficha.soFora, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
 };
+/* O LUGAR DE CADA ESCALÃO NA ARQUIBANCADA, na cena de arredores (dono, 16/11/2026: "quando a torcida chega no seu ponto de
+   entrada no estádio ela spawna automaticamente pro seu local na arquibancada"). É o mesmo ponto em que o bonde nasce na cena
+   de dentro (o meio do setor da ficha), passado pro quadro dos arredores: `raio` aponta do fundo pra frente do lance (as
+   fileiras empilham nele), `dir` corre ao longo do lance (as colunas abrem pros dois lados) e `prof` é a fundura do lance em
+   pixels, que diz quantas fileiras cabem. O jogo (combate.js, `entrarNoEstadio`) põe ali quem cruza o portão. */
+function assentosDe(ficha, paraPx, s) {
+  const m = marcadores(ficha, paraPx, s), j = ficha.jogo || {}, out = {};
+  for (const sp of m.spawns) { const fx = m.faixas[sp.id]; if (!fx) continue;
+    const dx = fx.x - sp.x, dy = fx.y - sp.y, q = Math.hypot(dx, dy) || 1, f = (j.fracao && j.fracao[sp.id] != null) ? j.fracao[sp.id] : 0.5;
+    const raio = [+(dx / q).toFixed(2), +(dy / q).toFixed(2)];
+    out[sp.id] = { x: sp.x, y: sp.y, raio, dir: [-raio[1], raio[0]], prof: Math.round(Math.min(40 * s, q / Math.max(0.2, f))) }; }
+  return out;
+}
 /* OS ARREDORES DE VERDADE (dono, 16/11/2026): o estádio com os quarteirões em volta — as ruas do mapa, as casas do jogo 3D
    antigo, os portões —, fotografado de cima na cena de arredores do jogo. A cobertura do estádio sai quase fechada: a briga
    aqui é do lado de fora. */
@@ -132,7 +145,7 @@ window.assarArredores = async function (id) {
   const aerea = olhar(cu - ar.quadro.u * 1.25, ar.quadro.u * 0.95, -cq + ar.quadro.v * 1.7, cu, 0, -cq), aerea2 = olhar(cu + ar.quadro.u * 1.25, ar.quadro.u * 0.95, -cq - ar.quadro.v * 1.7, cu, 0, -cq);
   const perto = ar.vista ? olhar(ar.vista[0], ar.vista[1], -ar.vista[2], ar.vista[3], ar.vista[4], -ar.vista[5]) : null;
   return { id, largura: WA, altura: HA, escala: +s.toFixed(3), nome: ficha.nome, imagem, aerea, aerea2, perto, casas: fora.casas, falhas: fora.falhas, lotes: prep.lotes.length, soFora: !!ar.soFora,
-    mascara: mascaraArredores(prep, paraMetros, WA, HA, CEL), cena: marcadoresArredores(ficha, prep, paraPx) };
+    mascara: mascaraArredores(prep, paraMetros, WA, HA, CEL), cena: Object.assign(marcadoresArredores(ficha, prep, paraPx), { assentos: assentosDe(ficha, paraPx, s) }) };
 };
 window.FICHAS = Object.keys(FICHAS);
 window.COM_ARREDORES = Object.keys(FICHAS).filter(id => FICHAS[id].arredores);

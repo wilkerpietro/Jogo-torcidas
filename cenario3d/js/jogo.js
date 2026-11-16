@@ -45284,7 +45284,15 @@ TO.diaJogo.arredores = (function(){
             const v=dist[nr*COLS+nc];
             if(v===Infinity) continue;
             const q=dc*dc+dr*dr;
-            if(v+q*0.5<md){md=v+q*0.5; alvo=[dc,dr];}
+            /* A MAIS PERTO, E SÓ DEPOIS A MAIS ADIANTADA (16/11/2026): a conta
+               era `v + q*0.5`, e a distância ao destino pesava mais que a
+               distância até a célula. Encostado num gradil comprido — três
+               células de espessura no mapa de rota —, a célula "melhor" era a
+               do OUTRO lado dele, que fica mais perto do portão: o disco
+               passava a noite empurrando o gradil, e atrás dele se formava
+               uma fila (medido no Serejão: seis parados a 11 px um do outro). */
+            const k=q*1e6+v;
+            if(k<md){md=k; alvo=[dc,dr];}
           }
           if(!alvo) return {dx:0,dy:0,semRota:true};
           const d=hyp(alvo[0],alvo[1])||1;
@@ -46274,9 +46282,19 @@ TO.diaJogo.combate = (function(){
       const chance = Math.min(90, 3 + tensao*0.85);
       const ateJogo = P.minutosAteJogo/0.6;
       for(const s of D.spawns){
+        /* DE QUEM É O BONDE: de quem nasceu nele. `jogador:true` está
+           cravado em `mandante1` nos dados da cena, e jogando de visitante
+           o nosso bonde nasce em `visitante1` (16/11/2026, o dono na
+           bancada da chegada: "não ocorre hostilidade por parte do
+           atacado"): o 1º escalão da casa ficava marcado como nosso —
+           nunca vinha disposto e, atacado, não revidava nem corria — e o
+           nosso de verdade entrava no sorteio de humor da IA. A marca do
+           dado fica de reserva, pra cena sem ninguém nascido no ponto. */
+        const nascidos = J.discos.filter(d=>d.spawn===s.id);
+        const doJogador = nascidos.length ? nascidos.some(d=>d.doJogador) : !!s.jogador;
         const b = {id:s.id, rot:s.rot||s.id, lado:s.lado,
-                   jogador:!!s.jogador, humor:'paz', agirEm:Infinity};
-        if(!s.jogador && U.rng()*100 < chance){
+                   jogador:doJogador, humor:'paz', agirEm:Infinity};
+        if(!doJogador && U.rng()*100 < chance){
           b.humor='atacar';
           /* e mesmo esse não sai atrás de ninguém no primeiro segundo:
              espera, mistura-se, e só depois vai. A noite começa igual
@@ -47366,6 +47384,21 @@ TO.diaJogo.combate = (function(){
     return !!e && U.dist(d.x, d.y, e.x, e.y) < PERTO_DO_PORTAO;
   }
   function conferirEntrada(J){
+    /* CHEGOU NO PORTÃO, ENTRA (dono, 16/11/2026: "quando a torcida chega no
+       seu ponto de entrada no estádio ela spawna automaticamente pro seu
+       local na arquibancada"; e, na bancada da chegada, com o bonde parado
+       na boca do portão: "não dá pra entrar na minha entrada também"). Na
+       cena que tem o estádio no mapa, o líder pisar no portão dele É a
+       ordem de entrar: o bonde inteiro vai atrás, sem botão. Só não vale
+       com rival por perto (220 px) — passar correndo pelo portão no meio
+       da briga não é desistir dela; aí a ordem continua sendo do botão. */
+    if(!J.entrando && J.fase === 'ativo' && D.assentos && !J.reuniao){
+      const l = J.discos.find(d=>d.lider && d.vivo);
+      const e = l && (D.entradas.find(x=>x.id===l.entrada) || null);
+      if(e && U.dist(l.x,l.y,e.x,e.y) < (e.raio||34)+8 &&
+         !J.discos.some(o=>o.vivo && inimigos(o.lado,l.lado) && U.dist2(o.x,o.y,l.x,l.y) < 220*220))
+        mandarEntrar(J);
+    }
     if(!J.entrando || J.fase !== 'ativo') return;
     const fora = J.discos.filter(d=>d.entrando && d.vivo);
     /* emperrado conta como entrado só JUNTO DO PORTÃO: dez discos não
@@ -47689,6 +47722,47 @@ TO.diaJogo.combate = (function(){
     if(d.entrou) return;
     d.entrou=true; d.vx=d.vy=0;
     J.entraram[d.lado]=(J.entraram[d.lado]||0)+1;
+    /* QUEM ENTRA APARECE NO LUGAR DELE NA ARQUIBANCADA (dono, 16/11/2026:
+       "quando a torcida chega no seu ponto de entrada no estádio ela
+       spawna automaticamente pro seu local na arquibancada"). A cena de
+       arredores que traz o estádio desenhado no meio diz onde é o lugar
+       de cada escalão (`assentos`, gravado pela bancada a partir do
+       setor da ficha): quem cruza o portão sai da rua e surge lá, de pé,
+       em fileiras, comemorando. Ele continua fora da conta — `entrou`
+       tira de `vivo`, então ninguém briga com ele, a PM não o prende e o
+       fim da cena é o de sempre; `naArquibancada` só avisa o desenho de
+       que este "entrou" ainda aparece. Cena sem `assentos` (a genérica,
+       a rua): some como sempre sumiu. */
+    const as = D.assentos && D.assentos[d.spawn];
+    if(as){
+      J.sentados = J.sentados || {}; J.doBonde = J.doBonde || {};
+      const k = J.sentados[d.spawn] = (J.sentados[d.spawn]||0) + 1, P = 9;
+      /* o bloco é mais largo que fundo, como torcida em arquibancada: umas três vezes mais colunas que fileiras, e nunca
+         mais fileiras do que o lance tem de fundura (numa coluna só, do alambrado ao fundo, o bonde virava uma fila) */
+      const N = J.doBonde[d.spawn] || (J.doBonde[d.spawn] = J.discos.filter(o=>o.spawn===d.spawn).length);
+      const R = Math.max(1, Math.min(Math.floor((as.prof||40)*0.7/P), Math.round(Math.sqrt(N/3)))), fila = (k-1) % R, col = Math.floor((k-1)/R);
+      const lado = col % 2 ? 1 : -1, n = (col+1) >> 1, f = (fila - (R-1)/2) * P;
+      d.x = as.x + as.dir[0]*lado*n*P + as.raio[0]*f; d.y = as.y + as.dir[1]*lado*n*P + as.raio[1]*f;
+      d.naArquibancada = true; d.comemorando = true;
+    }
+  }
+
+  /* dá pra ir em linha reta de um ponto ao outro sem pisar fora do chão? */
+  function visadaLivre(x1,y1,x2,y2){
+    const n = Math.max(1, Math.ceil(U.dist(x1,y1,x2,y2)/12));
+    for(let k=1;k<n;k++) if(!A.caminhavel(x1+(x2-x1)*k/n, y1+(y2-y1)*k/n)) return false;
+    return true;
+  }
+  /* a rota até o líder: um campo só, refeito quando ele muda de quadra
+     (48 px) ou quando uma grade cai */
+  function campoDoLider(J, lider){
+    let qx = Math.round(lider.x/48)*48, qy = Math.round(lider.y/48)*48;
+    const c = J._campoLider;
+    if(c && c.qx===qx && c.qy===qy && c.v===J.versaoGrades) return c.campo;
+    let px = qx, py = qy;
+    if(!A.caminhavel(px,py)){ const q = A.pontoLivreMaisProximo(lider.x, lider.y, 7); px = q.x; py = q.y; }
+    J._campoLider = {qx, qy, v:J.versaoGrades, campo:A.criarCampo(px, py, A.celulasDeGrades(J.grades))};
+    return J._campoLider.campo;
   }
 
   /* ---------- discos ---------- */
@@ -48133,6 +48207,31 @@ TO.diaJogo.combate = (function(){
             const q=A.pontoLivreMaisProximo(ax,ay,d.r);
             ax=q.x; ay=q.y;
           }
+          /* QUEM FICOU PRA TRÁS VEM PELO CAMINHO (16/11/2026, o dono na
+             bancada da chegada: "os meus membros da torcida não vão pra
+             cima junto comigo"). O seguidor anda em linha reta pro lugar
+             dele na formação e, se não ganha terreno, desiste e para —
+             bom na esplanada aberta, ruim nos arredores com gradil: o
+             líder passa pela abertura, o bonde bate no gradil e fica.
+             Sem ganhar terreno e longe do lugar dele, ele troca a linha
+             reta pela rota até o líder (a mesma que o campo dos portões
+             usa, com as grades de pé no caminho) e volta pra formação
+             quando chega perto. */
+          {
+            const longe = U.dist2(d.x,d.y,ax,ay) > 70*70;
+            if(longe && (d.semGanho||0) > 0.3) d._pelaRota = J.t + 2.5;
+            if(d._pelaRota && !longe) d._pelaRota = 0;
+            if(d._pelaRota && J.t >= d._pelaRota){
+              /* venceu o prazo: se já dá pra ir reto, vai; senão segue na rota */
+              const livre = !A.atravessaGrade(d.x,d.y,ax,ay,J.grades) && visadaLivre(d.x,d.y,ax,ay);
+              d._pelaRota = livre ? 0 : J.t + 2.5;
+              if(livre){ d.semGanho = 0; d.melhorDist = undefined; }
+            }
+            if(d._pelaRota){
+              const cl = campoDoLider(J, lider);
+              if(cl){ campo = cl; usarCampo = true; ramo = 'atras-do-lider'; }
+            }
+          }
         }
         /* na bancada ninguém espera o rival vir: vai-se por cima da
            grade, que é a única coisa entre um setor e o outro */
@@ -48172,7 +48271,43 @@ TO.diaJogo.combate = (function(){
 
       let dirx,diry;
       if(usarCampo && campo){
-        const c=campo.passo(d.x,d.y);
+        let c=campo.passo(d.x,d.y);
+        /* CADA UM NA SUA RAIA (16/11/2026, o dono na bancada da chegada: "os
+           bonecos caminham em fila indiana"). O campo aponta, de cada célula,
+           pra vizinha mais perto do destino, e todas as linhas dele se juntam
+           numa só — o caminho mais curto, colado na quina e no gradil. Quem
+           segue o campo ao pé da letra acaba em cima dessa linha, um atrás do
+           outro. Agora cada disco tem uma raia, um desvio de lado fixo (de 26
+           a 90 px pra um lado ou pro outro, conforme o tamanho do bonde): ele lê o campo no ponto que estaria
+           SEM o desvio, e com isso anda em paralelo à linha, do lado dele. A
+           raia encolhe perto do destino (no portão cabe um de cada vez), vira
+           pro outro lado quando o lado dela é parede, e some no aperto. */
+        if(!c.semRota && (c.dx||c.dy)){
+          if(d._raia===undefined){
+            /* (a largura da faixa cresce com o bonde: uns seis lado a lado num bonde de 35, nunca menos que dois) */
+            const h=Math.imul((d._ord||0)+1, 2654435761)>>>0, nb=(J.doBonde=J.doBonde||{});
+            const N=nb[d.spawn] || (nb[d.spawn]=J.discos.filter(o=>o.spawn===d.spawn).length);
+            d._raia=((h%2001)/1000-1)*Math.max(26, Math.min(90, 10.5*Math.sqrt(N)));
+          }
+          const al=campo.alvo, falta=al ? hyp(al.x-d.x, al.y-d.y) : 1e9;
+          let o=d._raia*Math.min(1, Math.max(0, (falta-60)/150));
+          if(Math.abs(o)>3 && campo.dist){
+            /* (parede, gradil e grade de pé são células sem distância no próprio campo:
+               é por elas que se sabe se um lado está tapado, sem varrer as grades) */
+            const nx=-c.dy, ny=c.dx, sg=o<0?-1:1, CELm=A.CEL, COLSm=A.COLS, dd=campo.dist;
+            const passa=(x,y)=>{ const cc=Math.floor(x/CELm), rr=Math.floor(y/CELm); if(cc<0||rr<0||cc>=COLSm) return false;
+              const v=dd[rr*COLSm+cc]; return v!==undefined && v!==Infinity; };
+            if(!passa(d.x+nx*sg*16, d.y+ny*sg*16)) o = passa(d.x-nx*sg*16, d.y-ny*sg*16) ? -o : 0;
+            if(o){
+              const n=Math.max(1, Math.ceil(Math.abs(o)/CELm)); let ok=true;
+              for(let k=1;k<=n && ok;k++) ok=passa(d.x-nx*o*k/n, d.y-ny*o*k/n);
+              if(ok){
+                const c2=campo.passo(d.x-nx*o, d.y-ny*o);
+                if(!c2.semRota && (c2.dx||c2.dy)) c=c2;
+              }
+            }
+          }
+        }
         dirx=c.dx; diry=c.dy;
         /* Sem caminho até o portão sem derrubar nada: só então a grade
            vira alvo. Enquanto houver volta, o campo já mandou dar a volta. */
@@ -48221,7 +48356,10 @@ TO.diaJogo.combate = (function(){
       /* quem está de conversa anda devagar: é passeio, não deslocamento */
       const passeio = d.vadiando && !agressivo(J,d) && J.t < d.entraEm;
       /* quem corre atrás corre igual — ver `inimigoFugindo` */
-      const vel=P.velocidade*(d.fugindo||d._cacando||d.fugaBomba?1.25:recua?1.15:passeio?0.5:1);
+      /* (quem é do bonde do jogador e ficou pra trás aperta o passo até alcançar o líder: os dois andam na mesma
+         velocidade, e sem isso quem saiu atrasado chegava na briga depois de o líder já ter caído sozinho) */
+      const alcancando = d.doJogador && lider && !d.lider && !d.entrando && !recua && U.dist2(d.x,d.y,lider.x,lider.y) > 100*100;
+      const vel=P.velocidade*(d.fugindo||d._cacando||d.fugaBomba?1.25:recua?1.15:passeio?0.5:alcancando?1.22:1);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
            a 8 px mantém micromovimento que, com 60 discos na tela,
@@ -48634,7 +48772,32 @@ TO.diaJogo.combate = (function(){
       if(ini){ vx=d.x-ini.x; vy=d.y-ini.y; v=hyp(vx,vy); }
     }
     if(v < 1e-3){ d.vx=d.vy=0; return; }
-    d.longe = {vx:vx/v*LONGE.vel, vy:vy/v*LONGE.vel, resta: LONGE.de + Math.random()*(LONGE.ate-LONGE.de), parado:false};
+    vx/=v; vy/=v;
+    const resta = LONGE.de + Math.random()*(LONGE.ate-LONGE.de);
+    /* QUEM CORRE, CORRE POR ONDE DÁ PRA ANDAR (16/11/2026, o dono na bancada
+       da chegada: "quando o rival corre agora, na animação 'Eles correram',
+       ele acaba atravessando a física das paredes do estádio"). A corrida
+       era uma reta cega no rumo em que o disco vinha — na cena de uma tela
+       só ela saía pela borda e ninguém via; nos arredores com o estádio no
+       mapa, quem debanda perto do ponto em que chegou "some" ali mesmo e
+       saía correndo por cima de casa, de gradil e de arquibancada. Agora o
+       rumo é escolhido: dos dezesseis em volta, o que deixa correr mais
+       longe sem bater em nada, entre os que não vão pra cima de quem ficou
+       (até uns 100° do rumo de fuga); e o passo passa pela física da cena. */
+    {
+      let melhor=null, mq=-1;
+      for(let i=0;i<16;i++){
+        const a=i*Math.PI/8, ux=Math.cos(a), uy=Math.sin(a), co=ux*vx+uy*vy;
+        if(co < -0.17) continue;
+        let livre=0;
+        for(let s=14; s<=resta; s+=14){ if(!A.caminhavel(d.x+ux*s, d.y+uy*s)) break; livre=s; }
+        if(livre > 28 && A.atravessaGrade(d.x, d.y, d.x+ux*livre, d.y+uy*livre, J.grades)) livre=Math.min(livre, 28);
+        const q=livre*(0.75+0.25*co);
+        if(q>mq){ mq=q; melhor={ux, uy, livre}; }
+      }
+      if(melhor){ vx=melhor.ux; vy=melhor.uy; }
+    }
+    d.longe = {vx:vx*LONGE.vel, vy:vy*LONGE.vel, resta, parado:false, preso:0};
     d.vx=d.longe.vx; d.vy=d.longe.vy;
   }
   /* quem saiu correndo da briga segue até o ponto dele e para lá, virado pra ela */
@@ -48643,9 +48806,15 @@ TO.diaJogo.combate = (function(){
       const L = d.longe;
       if(!L || L.parado) continue;
       const passo = Math.min(L.resta, LONGE.vel*dt);
-      d.x += L.vx/LONGE.vel*passo; d.y += L.vy/LONGE.vel*passo;
+      /* (pela física: parede, gradil e grade de pé seguram; quem ficou sem
+         ter pra onde ir para ali mesmo, virado pra briga) */
+      const ax = d.x, ay = d.y;
+      A.mover(d, L.vx/LONGE.vel*passo, L.vy/LONGE.vel*passo);
+      A.barrarGrades(d, J.grades);
       d.rumo = Math.atan2(L.vx, L.vy);
       L.resta -= passo;
+      L.preso = hyp(d.x-ax, d.y-ay) < passo*0.3 ? (L.preso||0) + dt : 0;
+      if(L.preso > 0.35) L.resta = 0;
       if(L.resta <= 1e-3){
         L.parado = true; d.vx = d.vy = 0; d.fugindo = false;
         const c = centroDoInimigo(J, d.lado);
@@ -49323,7 +49492,40 @@ TO.diaJogo.combate = (function(){
   const PM_AVANCO_MAX = 170, PM_AVANCO_VEL = 14;
   const GAS = {raio:78, pavio:0.9, dura:6, cd:7, alcance:420};
   const ALGEMA = {raio:30, tempo:1.2, busca:110};
-  const VIATURA = {de:26, ate:36, pms:3, dura:16};
+  const VIATURA = {de:26, ate:36, pms:3, dura:16, vem:9, para:170};
+  /* por onde a viatura entra e onde para: da boca de rua mais perto da briga
+     (mas a mais de 420 px dela, pra dar pra ver chegando), pelo campo de rota
+     até a briga, parando a `VIATURA.para` px do centro dela */
+  function rotaDaViatura(J){
+    let c = centroDaBriga(J);
+    if(!c){
+      /* ninguém se pegando ainda: o meio de quem veio disposto, ou de todo mundo que está na rua */
+      const disp = J.discos.filter(d=>d.vivo && !d.doJogador && agressivo(J,d)), lista = disp.length ? disp : J.discos.filter(d=>d.vivo);
+      if(!lista.length) return null;
+      c = {x:lista.reduce((a,d)=>a+d.x,0)/lista.length, y:lista.reduce((a,d)=>a+d.y,0)/lista.length};
+      const q = A.pontoLivreMaisProximo(c.x, c.y, 12); c = {x:q.x, y:q.y};
+    }
+    const campo = A.criarCampo(c.x, c.y, A.celulasDeGrades(J.grades));
+    if(!campo.dist) return null;
+    const CEL = A.CEL, COLS = A.COLS;
+    let boca = null, md = Infinity;
+    for(const s of [].concat(A.fugas || [], D.spawns || [])){
+      const q = A.pontoLivreMaisProximo(s.x, s.y, 12), v = campo.dist[Math.floor(q.y/CEL)*COLS + Math.floor(q.x/CEL)];
+      if(v === undefined || v === Infinity || v*CEL < 420) continue;
+      if(v < md){ md = v; boca = q; }
+    }
+    if(!boca) return null;
+    const pts = [{x:boca.x, y:boca.y, s:0}]; let p = pts[0];
+    for(let k = 0; k < 4000; k++){
+      if(U.dist(p.x, p.y, c.x, c.y) <= VIATURA.para) break;
+      const st = campo.passo(p.x, p.y);
+      if(st.semRota || (!st.dx && !st.dy)) break;
+      const n = {x:p.x + st.dx*CEL, y:p.y + st.dy*CEL, s:p.s + CEL};
+      pts.push(n); p = n;
+    }
+    if(pts.length < 8) return null;
+    return {pts, total:p.s};
+  }
   const temPM = J => J.policiais.some(p => p.vivo);
   /* A POLÍCIA APARTA (dono, 14/11/2026: "quando a polícia chega na briga, as
      torcidas tendem a se apartar e ficarem longes uma da outra, e os
@@ -49519,6 +49721,28 @@ TO.diaJogo.combate = (function(){
     const v = J.viatura;
     if(v && !v.chegou){
       if(!v.avisou && v.chegaEm - J.t <= 10){ v.avisou = true; aviso(J, D.semRecuoPM ? _t('O reforço da PM está chegando') : _t('Sirene: a viatura está chegando'), '#e0b040'); logar(J, _t('Dá pra ouvir a sirene: a viatura está chegando.'), 'pm'); som(J, 'sirene'); }
+      /* A VIATURA VEM PELA RUA E PARA PERTO DA BRIGA (16/11/2026, o dono na
+         bancada da chegada: "a viatura aparece mas não fica na cena"). Ela
+         surgia já parada no primeiro posto da PM — o que serve na esplanada
+         de uma tela só, e não nos arredores com o estádio no mapa, quatro
+         vezes maiores: lá o posto pode estar a duas telas da confusão, e o
+         carro que "chegou" ninguém via. Nesses mapas ela entra por uma boca
+         de rua nos últimos segundos da contagem, roda pelo caminho que o
+         campo de rota dá (sem atravessar gradil nem grade de pé), para a uns
+         25 m da briga e fica ali, de giroflex ligado, até o fim da cena. */
+      if(!v.rota && v.rota !== null && D.assentos && !D.semRecuoPM && v.chegaEm - J.t <= VIATURA.vem){
+        v.rota = rotaDaViatura(J);
+        if(v.rota){ v.saiuEm = Math.max(J.t, v.chegaEm - Math.min(VIATURA.vem, Math.max(3, v.rota.total/240))); }
+      }
+      if(v.rota && J.t >= v.saiuEm){
+        const k = Math.min(1, (J.t - v.saiuEm)/Math.max(0.1, v.chegaEm - v.saiuEm)), alvo = v.rota.total*k, P2 = v.rota.pts;
+        let i = 1; while(i < P2.length - 1 && P2[i].s < alvo) i++;
+        const a = P2[i-1], b = P2[i], f = (alvo - a.s)/Math.max(0.001, b.s - a.s);
+        v.x = a.x + (b.x - a.x)*f; v.y = a.y + (b.y - a.y)*f;
+        const j = Math.min(P2.length - 1, i + 5), e0 = P2[Math.max(0, i - 3)];
+        if(P2[j].x !== e0.x || P2[j].y !== e0.y) v.rumo = Math.atan2(P2[j].x - e0.x, P2[j].y - e0.y);
+        v.andando = true;
+      }
       if(J.t >= v.chegaEm){
         v.chegou = true; v.ate = J.t + VIATURA.dura;
         /* por onde ela entra: a boca marcada pra tropa, um posto da PM, ou
@@ -49532,8 +49756,11 @@ TO.diaJogo.combate = (function(){
           }
         }
         porta = porta || {x:A.W/2, y:A.H/2};
-        const q0 = A.pontoLivreMaisProximo(porta.x, porta.y, 12);
-        v.x = q0.x; v.y = q0.y; v.rumo = Math.atan2(c.x - v.x, c.y - v.y);
+        if(!v.rota){
+          const q0 = A.pontoLivreMaisProximo(porta.x, porta.y, 12);
+          v.x = q0.x; v.y = q0.y; v.rumo = Math.atan2(c.x - v.x, c.y - v.y);
+        }
+        v.andando = false;
         /* dentro do setor não entra carro: é o reforço a pé */
         v.aPe = !!D.semRecuoPM;
         /* (pra apartar vem mais gente quanto maior a briga: de 3 a 8) */
@@ -50266,7 +50493,7 @@ TO.diaJogo.combate = (function(){
     const tx=d.tremor?(Math.random()-0.5)*d.tremor*0.3:0;
     const ty=d.tremor?(Math.random()-0.5)*d.tremor*0.3:0;
     const x=d.x+tx, y=d.y+ty;
-    if(!d.vivo){
+    if(!d.vivo && !d.naArquibancada){
       if(d.entrou) return;
       c.globalAlpha=d.preso?.5:.33;
       c.fillStyle='#000'; c.beginPath(); c.ellipse(x,y,d.r,d.r*.6,0,0,7); c.fill();
@@ -50855,7 +51082,7 @@ TO.diaJogo.combate = (function(){
        chão e desaparece — com muita gente caída não se sabia quem
        estava de pé. A conta (J.caidos) não muda; só o desenho. */
     if(corpo) for(const d of ord) if(!d.vivo && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
-    for(const d of ord) if(d.vivo){ if(corpo) desenharDisco(c,d); else desenharRotulo(c,d); }
+    for(const d of ord) if(d.vivo || d.naArquibancada){ if(corpo) desenharDisco(c,d); else if(d.vivo) desenharRotulo(c,d); }
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
     desenharPM2(c, J);
   }
@@ -50863,7 +51090,7 @@ TO.diaJogo.combate = (function(){
      (12/11/2026): do chão, valem com ou sem os bonecos por cima */
   function desenharPM2(c, J){
     const v = J.viatura;
-    if(v && v.chegou && !v.aPe){
+    if(v && (v.chegou || v.andando) && !v.aPe){
       c.save(); c.translate(v.x, v.y); c.rotate(-v.rumo);
       c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-13, -24, 28, 50);
       c.fillStyle='#e8e4dc'; c.fillRect(-12, -25, 24, 48);
@@ -53889,7 +54116,7 @@ TO.diaJogo.tres = (function(){
 
   function boneco(d, i, J, dt){
     /* (quem fugiu corre até o ponto dele e fica: combate.js `correrLonge`) */
-    if(d.entrou || (d.sumiu && !d.longe)) return;
+    if((d.entrou && !d.naArquibancada) || (d.sumiu && !d.longe)) return;
     if(!vistaDeCima && cam.modo===0 && d.vivo && !d.lider && Math.hypot(d.x-cam.olho[0], d.y-cam.olho[2]) < 30) return;
     const f = fichaDe(d, i);
     if(d.lider && !f.bandana && !f.bone) f.bandana = f.faixa;
@@ -53899,7 +54126,7 @@ TO.diaJogo.tres = (function(){
     const tz = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
     const o = {x:d.x+tx, z:d.y+tz, yaw:f.yaw};
 
-    if(!d.vivo && !d.longe){
+    if(!d.vivo && !d.longe && !d.naArquibancada){
       if(d.preso){ sentar(p); f.queda = null; }
       else cair(p, f, dt);
       corpo(din, o, p, f);

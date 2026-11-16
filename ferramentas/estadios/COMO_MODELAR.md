@@ -390,6 +390,15 @@ Arena Pantanal). O quarteirão do estádio é uma praça desenhada pelo gerador 
 estacionamento, ambulantes) e é também o que a cena de DENTRO mostra em volta do estádio: quem entra na lista tem de regravar
 as duas cenas, e o `entorno` desenhado à mão na ficha deixa de aparecer. `soFora: true` é do estádio em que os setores não se ligam por dentro: a briga da arquibancada abre aqui.
 
+A CENA DE ARREDORES SE TESTA ANDANDO, NÃO SÓ PELA MÁSCARA (16/11/2026): a linha
+"caminho até o portão: todos" do assar.js só diz que existe passagem na máscara.
+Ela não vê fila indiana, gente presa no gradil, bonde que não acompanha o líder
+nem portão em que não se entra: tudo isso só apareceu rodando a chegada no jogo.
+Depois de gravar os arredores de um estádio, abrir a bancada da chegada
+(`node ferramentas/chegada/montar.js <pasta>` e servir a pasta) e ver os cinco
+bondes irem até o portão, de mandante e de visitante. O gradil conta três células
+de espessura no mapa de rota: abertura estreita demais some.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
