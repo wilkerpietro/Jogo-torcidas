@@ -34,8 +34,11 @@
    gramado, em que o muro esconde os degraus de cimento.)
    O QUE É ESTIMADO: todas as alturas, as divisas dos blocos de cadeira e o
    tamanho da tribuna. Não achei mapa de setores.
-   AS TORCIDAS (escolhas minhas, sem fonte): a Facção Brasiliense no bloco
-   do meio do lado oposto à tribuna; a visitante na curva do nordeste. */
+   AS TORCIDAS (dono, 16/11/2026: "facção brasiliense atrás do gol
+   escanteio nordeste e o visitante no escanteio sudoeste"): a Facção
+   Brasiliense na curva do nordeste (à direita), a visitante na curva do
+   sudoeste (à esquerda). Eu tinha posto a Facção no bloco do meio do lado
+   oposto e a visitante no nordeste, sem fonte. */
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
 /* o meio do oval, medido a partir do meio do campo */
@@ -128,7 +131,7 @@ export default {
     /* em cima à direita: a avenida; embaixo à direita: o pátio de asfalto */
     { tipo: 'rua', de: [40, 132], ate: [172, 40], larg: 16 }, { tipo: 'estacionamento', u: 95, v: -140, w: 110, d: 50, cheio: 0.04 }
   ],
-  jogo: { mandante1: [255, 285], mandante2: [160, 210], mandante3: [78, 104], visitante: [-30, 25], tunelMandante: 180, tunelVisitante: 0, folgaPM: 3,
+  jogo: { mandante1: [-28, 26], mandante2: [255, 285], mandante3: [78, 104], visitante: [162, 208], tunelMandante: 0, tunelVisitante: 180, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { faccao_brasiliense: 'mandante1' } }
 };

@@ -16397,21 +16397,21 @@ window.__ESTADIOS = {
    "nome": "Serejão",
    "faixas": {
     "mandante1": {
+     "x": 2335,
+     "y": 1038,
+     "len": 130,
+     "dir": [
+      -1,
+      -0.02
+     ]
+    },
+    "mandante2": {
      "x": 1536,
      "y": 1523,
      "len": 130,
      "dir": [
       0,
       -1
-     ]
-    },
-    "mandante2": {
-     "x": 749,
-     "y": 1093,
-     "len": 130,
-     "dir": [
-      1,
-      -0.09
      ]
     },
     "mandante3": {
@@ -16424,30 +16424,30 @@ window.__ESTADIOS = {
      ]
     },
     "visitante1": {
-     "x": 2337,
-     "y": 1059,
+     "x": 749,
+     "y": 1093,
      "len": 130,
      "dir": [
-      -1,
-      -0.04
+      1,
+      -0.09
      ]
     },
     "visitante2": {
-     "x": 2300,
-     "y": 1271,
+     "x": 786,
+     "y": 920,
      "len": 130,
      "dir": [
-      -0.95,
-      -0.31
+      0.99,
+      0.14
      ]
     },
     "visitante3": {
-     "x": 2267,
-     "y": 857,
+     "x": 786,
+     "y": 1266,
      "len": 130,
      "dir": [
-      -0.97,
-      0.22
+      0.95,
+      -0.31
      ]
     }
    },
@@ -16457,8 +16457,8 @@ window.__ESTADIOS = {
      "rot": "MANDANTE 1º ESCALÃO",
      "lado": "mandante",
      "entrada": "portao_mandante",
-     "x": 1536,
-     "y": 1648,
+     "x": 2454,
+     "y": 1040,
      "jogador": true
     },
     {
@@ -16466,8 +16466,8 @@ window.__ESTADIOS = {
      "rot": "MANDANTE 2º ESCALÃO",
      "lado": "mandante",
      "entrada": "portao_mandante",
-     "x": 632,
-     "y": 1103
+     "x": 1536,
+     "y": 1648
     },
     {
      "id": "mandante3",
@@ -16482,24 +16482,24 @@ window.__ESTADIOS = {
      "rot": "VISITANTE 1º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 2456,
-     "y": 1064
+     "x": 632,
+     "y": 1103
     },
     {
      "id": "visitante2",
      "rot": "VISITANTE 2º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 2425,
-     "y": 1311
+     "x": 652,
+     "y": 902
     },
     {
      "id": "visitante3",
      "rot": "VISITANTE 3º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 2377,
-     "y": 831
+     "x": 685,
+     "y": 1298
     }
    ],
    "entradas": [
@@ -16509,10 +16509,10 @@ window.__ESTADIOS = {
      "lado": "mandante",
      "raio": 40,
      "dir": [
-      -1,
+      1,
       0
      ],
-     "x": 535,
+     "x": 2553,
      "y": 1024
     },
     {
@@ -16521,29 +16521,29 @@ window.__ESTADIOS = {
      "lado": "visitante",
      "raio": 40,
      "dir": [
-      1,
+      -1,
       0
      ],
-     "x": 2553,
+     "x": 535,
      "y": 1024
     }
    ],
    "pmPostos": [
     {
-     "x": 2240,
-     "y": 1481
+     "x": 806,
+     "y": 744
     },
     {
-     "x": 2316,
-     "y": 1531
+     "x": 716,
+     "y": 709
     },
     {
-     "x": 2198,
-     "y": 672
+     "x": 820,
+     "y": 1454
     },
     {
-     "x": 2288,
-     "y": 624
+     "x": 743,
+     "y": 1500
     }
    ],
    "grades": [
@@ -16551,28 +16551,28 @@ window.__ESTADIOS = {
      "id": "div_v1",
      "rot": "DIVISÓRIA",
      "de": {
-      "x": 2204,
-      "y": 1410
+      "x": 857,
+      "y": 804
      },
      "ate": {
-      "x": 2408,
-      "y": 1528
+      "x": 620,
+      "y": 726
      },
-     "modulos": 8,
+     "modulos": 9,
      "espessura": 10
     },
     {
      "id": "div_v2",
      "rot": "DIVISÓRIA",
      "de": {
-      "x": 2153,
-      "y": 736
+      "x": 859,
+      "y": 1384
      },
      "ate": {
-      "x": 2391,
-      "y": 625
+      "x": 652,
+      "y": 1494
      },
-     "modulos": 9,
+     "modulos": 8,
      "espessura": 10
     },
     {
@@ -16607,12 +16607,12 @@ window.__ESTADIOS = {
      "id": "canto_3",
      "rot": "GRADE DO ESCANTEIO",
      "de": {
-      "x": 901,
-      "y": 1417
+      "x": 923,
+      "y": 1434
      },
      "ate": {
-      "x": 681,
-      "y": 1553
+      "x": 708,
+      "y": 1578
      },
      "modulos": 9,
      "espessura": 10
@@ -16621,12 +16621,12 @@ window.__ESTADIOS = {
      "id": "canto_4",
      "rot": "GRADE DO ESCANTEIO",
      "de": {
-      "x": 2134,
-      "y": 1455
+      "x": 2178,
+      "y": 1422
      },
      "ate": {
-      "x": 2348,
-      "y": 1609
+      "x": 2398,
+      "y": 1558
      },
      "modulos": 9,
      "espessura": 10
