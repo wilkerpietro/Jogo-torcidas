@@ -84,7 +84,7 @@ TO.dados.genero = {
         "Brigadier General Estanislao López", "Brinco de Ouro",
         "Bruno José Daniel", "Calvo y Bascuñán", "Campeón del Siglo",
         "Campeones del 36", "Canindé", "CAP", "Carlos Barraza",
-        "Carlos Dittborn", "Castelão", "Centenário",
+        "Carlos Dittborn", "Carlos Zamith", "Castelão", "Centenário",
         "Centenario Ciudad de Quilmes", "Chacarita Juniors",
         "Ciudad de Caseros", "Ciudad de Cumaná", "Ciudad de Ezeiza",
         "Ciudad de Vicente López", "Ciudad de Zárate", "Claudio Tapia",

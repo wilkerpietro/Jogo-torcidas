@@ -451,6 +451,13 @@ do Zinho de Oliveira é de antes da reforma, e as fotos do dono mandam.
 COBERTURA MAIS ALTA NA FRENTE: `cai` negativo na `cobertura` do trecho; ponha
 `trelica: false`, senão a treliça sai por cima da telha.
 
+DUAS ARQUIBANCADAS IGUAIS QUE O SATÉLITE MOSTRA DE FUNDURAS DIFERENTES (o Carlos
+Zamith: 16 m numa, 12 na outra): a imagem é oblíqua e o alto de cada uma sai
+deslocado pro mesmo lado, alongando uma e encurtando a outra. A fundura de
+verdade é a média; a diferença, dividida por dois, dá o deslocamento do topo.
+CLUBE DE ESTÁDIO NOVO SEM DONO DITO: pergunte ao dono quem manda nele antes de
+mexer nos dados (no Zamith, a resposta tirou os dois clubes da Arena da Amazônia).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

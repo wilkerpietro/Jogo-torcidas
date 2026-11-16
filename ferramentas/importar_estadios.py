@@ -102,6 +102,8 @@ NOVOS = [
     {'nome': 'Godofredo Cruz', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes I'},
     # 16/11/2026, o dono: "vamos separar o águia de marabá" — o Águia sai do Mangueirão e manda no Zinho de Oliveira.
     {'nome': 'Zinho de Oliveira', 'mapa': 'belem', 'bairro': 'Marabá'},
+    # 16/11/2026, o dono: o Amazonas e o Manaus saem da Arena da Amazônia e mandam no Carlos Zamith.
+    {'nome': 'Carlos Zamith', 'mapa': 'manaus', 'bairro': 'Sâo José Operário'},
 ]
 
 
@@ -182,7 +184,9 @@ def main():
     # Colosso da Lagoa e a Boca do Lobo, na lista NOVOS.)
     # (15/11/2026: o Canindé volta — a Portuguesa manda nele de novo, e o Morumbi fica só com o São Paulo.)
     # (15/11/2026: sai o Estadio Regional — o nome genérico vira o Zama Maciel, na lista NOVOS.)
-    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira', 'estadio-regional'}
+    # (16/11/2026: o Zinho de Oliveira volta — o Águia manda nele de novo, na lista NOVOS —, e sai a Arena da
+    # Amazônia, que ficou sem clube: o Amazonas e o Manaus mandam no Carlos Zamith.)
+    TIRAR = set(TIRAR) | {'felipe-santiago', 'estadio-regional', 'arena-da-amazonia'}
     legado_e_novos = [e for e in estadios if identificador(e['nome']) not in TIRAR] + \
         [{'nome': n['nome'], 'mapaNovo': n['mapa'], 'bairroEstadio': n['bairro']} for n in NOVOS]
     for e in sorted(legado_e_novos, key=lambda x: x['nome']):

@@ -14881,6 +14881,18 @@ O Zinho entrou nos arredores padrão. Briga e chegada testadas sem erros: os cin
 
 **Satélite.** A Esri não tem imagem de Marabá no zoom de trabalho ("Map data not yet available"); a imagem saiu dos ladrilhos do Google.
 
+## Amazonas: o Carlos Zamith, com o Amazonas e o Manaus (dono, 16/11/2026)
+
+O dono, com quatro fotos (três da obra de 2014 e uma de drone recente): "inicie pelo estádio carlos zamith". Perguntado sobre quem manda nele, respondeu: Amazonas e Manaus.
+
+**Os dados.** O Amazonas e o Manaus saem da Arena da Amazônia e mandam no Carlos Zamith (`carlos-zamith`, mapa de Manaus, bairro São José Operário, 5.000 lugares). Sem clube, a Arena da Amazônia saiu da lista de estádios, pela regra de sempre (estádio sem mandante não fica). A troca foi feita em `dados/times.js`, `dados/torcidas.js` (Raça Amazonas e Gavirmãos), `dados/estadios.js`, `dados/cidades.js`, `dados/genero.js`, nas duas fontes de `dados/fonte/`, nas tabelas de `importar_planilha.py` e `importar_estadios.py`, nas cópias de `cenario3d/dados/` e no pacote `cenario3d/js/jogo.js`. O Nacional e o São Raimundo continuam na Colina.
+
+**O estádio** (`fichas/estadio-carlos-zamith.mjs`). Duas arquibancadas iguais, uma de frente pra outra, de 107 m por 14 de fundura, de degrau de concreto sem cadeira em cima de um embasamento branco de 2,8 m, com o muro azul no alto: a do lado da rua com as escadas azuis, a outra com os corrimãos amarelos e a cabine no meio. Atrás de um gol, o prédio baixo e comprido da entrada, com o bloco azul-escuro do letreiro ESTÁDIO CARLOS ZAMITH; atrás do outro, só o muro e a caixa-d'água branca. Seis torres de luz, três atrás de cada arquibancada.
+
+Estimado: a cor do degrau (cinza-azulado nas duas; na foto de drone uma está na sombra e a outra no sol), as alturas, as duas bocas de cada arquibancada (as manchas escuras do satélite), o muro de trás do gol sem prédio e a posição da caixa-d'água. As torcidas são escolha minha: a da casa na arquibancada da cabine, a visitante inteira na do lado da rua.
+
+O Zamith entrou nos arredores padrão. Briga e chegada testadas sem erros, pelo Amazonas e pelo Manaus.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

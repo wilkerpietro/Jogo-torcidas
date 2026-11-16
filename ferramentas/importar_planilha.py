@@ -91,8 +91,11 @@ CLUBE_TROCADO = {
 # Germano Krüger (que fica só com o Operário) e manda no Willie Davids.
 # 16/11/2026, o dono, com as fotos do Zinho de Oliveira: "vamos separar o águia de marabá" — o Águia sai do
 # Mangueirão (que fica com o Remo e o Paysandu) e manda no Zinho de Oliveira, em Marabá.
+# 16/11/2026, o dono: "inicie pelo estádio carlos zamith" e, perguntado quem manda nele, "Amazonas, Manaus" — os dois
+# saem da Arena da Amazônia (que fica sem clube e sai da lista) e mandam no Carlos Zamith.
 ESTADIO_CORRIGIDO = {
  'sao-bernardo':'Estadio Primeiro de Maio','santo-andre':'Estadio Bruno Daniel','sao-caetano':'Estadio Anacleto Campanella',
+ 'amazonas':'Carlos Zamith','manaus':'Carlos Zamith',
  'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Zinho de Oliveira','tuna-luso':'Estádio do Souza',
  'atletico-mineiro':'Arena MRV','ceilandia':'Bezerrão','paulista-de-jundiai':'Jayme Cintra','uniao-rondonopolis':'Dutrinha',
  'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',

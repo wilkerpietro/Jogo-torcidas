@@ -620,3 +620,4 @@ import dutrinha from './fichas/estadio-dutrinha.mjs'; FICHAS[dutrinha.id] = dutr
 import mangueirao from './fichas/estadio-mangueirao.mjs'; FICHAS[mangueirao.id] = mangueirao;
 import souza from './fichas/estadio-do-souza.mjs'; FICHAS[souza.id] = souza;
 import zinho from './fichas/estadio-zinho-de-oliveira.mjs'; FICHAS[zinho.id] = zinho;
+import zamith from './fichas/estadio-carlos-zamith.mjs'; FICHAS[zamith.id] = zamith;
