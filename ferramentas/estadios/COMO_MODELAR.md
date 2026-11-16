@@ -346,6 +346,13 @@ que o satélite achata (o Jonas Duarte; o dono corrigiu com uma foto de perto). 
 A geral é um anel de lance baixo (`h: [0.2, 1.7]`, `passoFileira: 0.7`, `corredor: 0`, `vomitorios: false`, `semCadeiras`),
 um anel `passagem` estreito atrás (o corredor) e só então a arquibancada, com a frente alta.
 
+COBERTURA EM CONCHA (meia cúpula atrás de um arco, o Bezerrão): `conchas: [{ cu, cv, a, b, p, vArco, base, h, cume, opacaDe,
+escoras, muro }]`. O D da planta sai do satélite, mas a casca é alta e o satélite a mostra DESLOCADA (e a sombra dela parece
+parte dela): meça a boca do D pelas pontas da arquibancada, que estão no chão, e peça ao dono uma foto de lado para o perfil.
+ARQUIBANCADA QUE FECHA PRA TRÁS (trapézio): num anel `reto`, dê ao `fora` um `a` menor que o do `dentro`; a coluna leva a
+mesma fração do lado da frente ao fundo. Arquibancadas que se cruzam em ângulo (lateral mais comprida que o vão entre as de
+trás do gol) vão em ANÉIS SEPARADOS: dentro de um anel os trechos não podem repetir ângulo.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

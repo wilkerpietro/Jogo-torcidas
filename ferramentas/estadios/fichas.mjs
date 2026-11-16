@@ -613,3 +613,4 @@ import godofredoCruz from './fichas/estadio-godofredo-cruz.mjs'; FICHAS[godofred
 import serraDourada from './fichas/estadio-serra-dourada.mjs'; FICHAS[serraDourada.id] = serraDourada;
 import antonioAccyoly from './fichas/estadio-antonio-accyoly.mjs'; FICHAS[antonioAccyoly.id] = antonioAccyoly;
 import jonasDuarte from './fichas/estadio-jonas-duarte.mjs'; FICHAS[jonasDuarte.id] = jonasDuarte;
+import bezerrao from './fichas/estadio-bezerrao.mjs'; FICHAS[bezerrao.id] = bezerrao;

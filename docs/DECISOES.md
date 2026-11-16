@@ -14676,6 +14676,17 @@ O dono, com uma foto de perto: "Essa parte de baixo é uma arquibancada geral ig
 - **O que é estimado**: a altura da geral, a largura do corredor e a altura da parede das laterais (pela foto, sem medida).
 - **Conferido**: chão único, nenhum marcador fora, briga do Anápolis sem erro de página.
 
+## Bezerrão lowpoly (Gama) e a cobertura em concha (dono, 16/11/2026)
+
+O dono: "Vamos pro DF iniciando pelo Bezerrão"; no meio do levantamento, três fotos (duas aéreas e a principal de frente) e depois mais uma, da cobertura vista de lado: "Veja o formato da cobertura com mais detalhes".
+
+- **Os dados**: nada mudou. O Bezerrão (20.310) segue com o Gama e o Ceilândia, como já estava; usa o mapa padrão de arredores. Fica para o dono decidir se o Ceilândia ganha estádio próprio (na vida real ele manda no Abadião).
+- **De onde saiu**: a planta e o rumo (campo de sul a norte, 2 graus), do satélite e do contorno do gramado no OpenStreetMap; as cores, os níveis da principal e a cobertura, das fotos. Setores: os ingressos saem por Norte, Sul, Leste, Oeste e Cadeira Oeste; uma reportagem de jogo da Série D fala em "Norte Visitante". Não achei onde fica a Ira Jovem.
+- **A ficha** (`fichas/estadio-bezerrao.mjs`): quatro arquibancadas retas soltas, elevadas, de cadeira verde com escada clara e boca de moldura branca. OESTE (em cima), a principal em três níveis: o lance de baixo (metade degrau de cimento, metade cadeira), o lance grande com GAMA em cadeira branca (`texto`) e as sete bocas ao pé, e o lance pequeno do alto com as cabines; em planta ela fecha pra trás (o `fora` de cada anel mais estreito que o `dentro`). NORTE (à direita), a de trás do gol rasa, com o placar atrás. SUL (à esquerda), a de trás do gol funda. LESTE (embaixo), a lateral comprida com os quatro postes de refletores no fundo.
+- **A concha** (novo no gerador, `conchas`): a meia cúpula branca atrás do arco de treliça. Em planta é um D (superelipse de expoente 2,6 cortada pela linha do arco); o arco sobe da beirada até o meio, a casca ainda sobe um pouco pra trás até o cume e cai em quarto de círculo até a beirada, que corre em cima do muro verde em D; os cavaletes em V seguram o arco. Na foto de cima sai transparente em cima das cadeiras e inteira atrás delas, como as outras coberturas.
+- **O que é estimado**: todas as alturas (o arco em 33 m no meio, a beirada em 19), a largura do D atrás (no satélite a casca aparece deslocada pela altura), a divisão cimento/cadeira do lance de baixo (as fotos são de épocas diferentes). **Escolha minha, sem fonte**: a Ira Jovem do Gama atrás do gol do sul. A visitante atrás do gol do norte vem da reportagem.
+- **Conferido**: chão único, nenhum marcador fora, briga do Gama abrindo em `estadio-bezerrao` sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

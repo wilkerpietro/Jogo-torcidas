@@ -533,6 +533,50 @@ export function construir(THREE, ficha) {
     for (let k = 0; k <= n; k++) { const f = ab.pilarEm == null ? 0.62 : ab.pilarEm, hp = perfil.reduce((q, [pf, ph]) => Math.abs(pf - f) < Math.abs(q[0] - f) ? [pf, ph] : q, perfil[0])[1];
       caixa(ab.espPilar || 0.8, hp, ab.espPilar || 0.8, ab.corPilar || '#f1f1ed', ab.u - ab.comp / 2 + mod * k, hp / 2, -pv(f), ab.concreto ? coberturas : cena); }
   }
+  /* ---- A CONCHA (o Bezerrão; dono, 16/11/2026: "Veja o formato da cobertura com mais detalhes"): a meia cúpula branca atrás
+     de um arco alto. Em planta é um D: a superelipse de centro (`cu`, `cv`), semieixos `a` (ao longo do campo) e `b` (pra
+     trás) e expoente `p` (2 = elipse; mais que 2, os lados mais retos), cortada na frente pela linha do ARCO (`vArco`). O
+     arco sobe de `base` (a altura da beirada, nas duas pontas) até perto de `h` (no meio); dali a casca ainda sobe um
+     pouco pra trás, até o cume (`cume`: a que fração do caminho do arco à beirada, 0,22 por padrão; 0 = o cume é o
+     próprio arco), e desce em quarto de círculo até a beirada, que corre em cima do MURO em D (`muro: { cor, hFrente, vFrente }`: nasce baixo ao lado da frente da
+     arquibancada e chega na altura da beirada na linha do arco). `lado: -1` vira a concha pro outro lado do campo.
+     `opacaDe`: de que `v` pra trás a casca sai inteira na foto de cima (atrás das cadeiras; na frente disso sai
+     transparente, como toda cobertura). `escoras: { n, v, h, abre, cor, esp }`: os cavaletes em V que seguram o arco,
+     com o pé no alto da arquibancada. ---- */
+  for (const c of ficha.conchas || []) {
+    const sg = c.lado === -1 ? -1 : 1, p = c.p || 2, y0 = Math.abs(c.vArco - c.cv), k = Math.pow(y0 / c.b, p), t0 = Math.asin(Math.pow(y0 / c.b, p / 2)), n = c.n || 30, m = c.m || 9;
+    /* a altura: cada fatia (um `x`) tem a sua crista, que cai pros lados como o arco; ao longo da fatia, da frente (f = 0)
+       à beirada (f = 1), o perfil sobe até o cume e cai em quarto de círculo */
+    const aF = c.a * Math.pow(1 - k, 1 / p), fc = c.cume == null ? 0.22 : c.cume, yBeira = x => c.b * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(x) / c.a, p)), 1 / p);
+    const crista = x => (c.h - c.base) * Math.sqrt(Math.max(0, 1 - Math.pow(Math.min(1, Math.abs(x) / aF), p)));
+    const alt = (x, y) => { const yr = yBeira(x), f = yr > y0 + 0.01 ? Math.max(0, Math.min(1, (y - y0) / (yr - y0))) : 1, q = (f - fc) / (1 - fc);
+      return c.base + crista(x) * Math.sqrt(Math.max(0, 1 - q * q)); };
+    const beira = t => [c.a * Math.sign(Math.cos(t)) * Math.pow(Math.abs(Math.cos(t)), 2 / p), c.b * Math.sign(Math.sin(t)) * Math.pow(Math.abs(Math.sin(t)), 2 / p)];
+    const pt = (x, y, h) => P(c.cu + x, c.cv + sg * y, h == null ? alt(x, y) : h);
+    const th = i => t0 + (Math.PI - 2 * t0) * i / n, corArco = c.corArco || '#c9cdd0', hArco = c.hArco || 2.2;
+    for (let i = 0; i < n; i++) {
+      const [xa, ya] = beira(th(i)), [xb, yb] = beira(th(i + 1)), cor = i % 2 ? (c.cor2 || c.cor || '#f4f4f0') : (c.cor || '#f4f4f0');
+      for (let j = 0; j < m; j++) {
+        /* (as fileiras se apertam perto da beirada, onde a casca cai mais depressa) */
+        const f0 = Math.sin(j / m * Math.PI / 2), f1 = Math.sin((j + 1) / m * Math.PI / 2);
+        const a0 = [xa, y0 + (ya - y0) * f0], a1 = [xa, y0 + (ya - y0) * f1], b0 = [xb, y0 + (yb - y0) * f0], b1 = [xb, y0 + (yb - y0) * f1];
+        const M = c.opacaDe != null && sg * (c.cv + sg * (a0[1] + b1[1]) / 2 - c.opacaDe) >= 0 ? Ro : R;
+        M.quad(pt(...a0), pt(...b0), pt(...b1), pt(...a1), cor);
+      }
+      /* o arco de treliça da frente: a testeira e o banzo de baixo */
+      const za = alt(xa, y0), zb = alt(xb, y0);
+      R.quad(pt(xa, y0 - 0.15, za + 0.3), pt(xb, y0 - 0.15, zb + 0.3), pt(xb, y0 - 0.15, zb - hArco), pt(xa, y0 - 0.15, za - hArco), corArco);
+      R.quad(pt(xa, y0 - 0.15, za - hArco), pt(xb, y0 - 0.15, zb - hArco), pt(xb, y0 + 2.6, zb - hArco), pt(xa, y0 + 2.6, za - hArco), c.corArco2 || '#aeb4b9');
+    }
+    if (c.escoras) { const e = c.escoras, abre = e.abre == null ? 4 : e.abre;
+      for (let q = 0; q < e.n; q++) { const x = -aF * 0.84 + aF * 1.68 * (e.n > 1 ? q / (e.n - 1) : 0.5), pe = [c.cu + x, e.v, e.h];
+        for (const d of [-abre, abre]) barra(pe, [c.cu + x + d, c.cv + sg * y0, alt(x + d, y0) - hArco], e.esp || 0.55, e.cor || '#d9dcde', coberturas);
+        if (e.pilar !== false) caixa(1, e.h - (e.pe || 0), 1, e.corPilar || '#d9dcde', pe[0], (e.h + (e.pe || 0)) / 2, -pe[1], cena); } }
+    if (c.muro) { const mu = c.muro, yF = sg * (mu.vFrente - c.cv), tA = Math.asin(Math.sign(yF) * Math.pow(Math.min(1, Math.abs(yF) / c.b), p / 2)), n2 = mu.n || 56, hF = mu.hFrente == null ? 4 : mu.hFrente;
+      const topo = y => y >= y0 ? c.base : hF + (c.base - hF) * Math.max(0, (y - yF) / Math.max(0.1, y0 - yF));
+      for (let i = 0; i < n2; i++) { const [xa, ya] = beira(tA + (Math.PI - 2 * tA) * i / n2), [xb, yb] = beira(tA + (Math.PI - 2 * tA) * (i + 1) / n2);
+        Pm.quad(pt(xa, ya, 0), pt(xb, yb, 0), pt(xb, yb, topo(yb)), pt(xa, ya, topo(ya)), i % 2 ? (mu.cor2 || mu.cor || '#2e7d4f') : (mu.cor || '#2e7d4f')); } }
+  }
   /* ---- O ALAMBRADO e O MURO (dono, 15/11/2026: "adicionando cerca de alambrado ao redor do campo caso a arquibancada não
      seja colada no campo"; "um muro por de trás da arquibancada [...] pra mostrar pro jogador uma limitação da área de
      briga"). Os dois nascem sozinhos, do desenho da ficha:
