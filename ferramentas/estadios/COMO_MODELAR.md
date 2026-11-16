@@ -539,6 +539,13 @@ false`, `corBaixo`); e se uma faixa de cor é ao comprido ou é ESCADA pintada
 ESCADA PINTADA QUE PRECISA APARECER: um trecho estreito (2,6 m) de degrau da cor,
 com `espelhoPintado`, entre dois trechos comuns.
 
+COBERTURA QUE MUDA DE ALTURA AO LONGO DA VOLTA (o declive da laje do Rei Pelé,
+16/11/2026): a `cobertura` do trecho só tem uma altura; use uma `coberturasAnel`
+com `de`, `ate` e `alturas: ang => [fora, dentro]` (um degrau suave entre a
+altura do meio e a das pontas). E NÃO LEVE UM NÍVEL PELA VOLTA TODA SEM OLHAR
+CADA LADO: o lance de cima pode existir só na lateral; atrás dos gols, no lugar
+dele, uma galeria (`tipo: 'passagem'` com `alt`).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

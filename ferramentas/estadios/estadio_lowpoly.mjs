@@ -500,6 +500,8 @@ export function construir(THREE, ficha) {
         R.quad(pt(am, fd, b * 0.4), pt(am, 1 - ff, b), pt(a1, 1 - ff, 0), pt(a1, fd, 0), c); }
     } else faixa(fd, 1 - ff, cb.cor || '#f4f3ee', cb.cor2);
     if (ff) faixa(1 - ff, 1, cb.bordaFora.cor); if (fd) faixa(0, fd, cb.bordaDentro.cor);
+    /* `corBaixo` (a laje do Rei Pelé): a face de baixo de outra cor (o concreto cinza visto de dentro) */
+    if (cb.corBaixo) faixa(0, 1, cb.corBaixo, null, -0.35);
     /* (`dh` no anel: negativo pendura a faixa por baixo da cobertura — a passarela de luz da Fonte Nova) */
     for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, an.dh == null ? 0.2 : an.dh);
     /* as nervuras entre os gomos */

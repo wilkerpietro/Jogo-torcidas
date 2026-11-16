@@ -5,8 +5,10 @@
    164 graus, saiu do contorno do gramado no OpenStreetMap.
    No quadro a lateral em ARCO fica EMBAIXO e a arquibancada RETA em cima.
    São DUAS arquibancadas diferentes em volta de uma pista bege em forma de D:
-   · o U de TRÊS níveis, debaixo de uma laje de concreto em balanço, marrom por
-     cima e de beira azul: as duas de trás do gol são TIRAS RETAS de 21 m de
+   · o U, debaixo de uma laje de concreto em balanço, marrom por cima e de beira
+     azul, com TRÊS níveis na lateral em arco e só os DOIS de baixo atrás dos
+     gols (lá, no lugar do de cima, a galeria das placas de publicidade); a laje
+     é alta sobre o arco, DESCE ao longo dos cantos e fica baixa atrás dos gols: as duas de trás do gol são TIRAS RETAS de 21 m de
      fundura (vão de v = 99 até virar), e a lateral de baixo é um ARCO de
      círculo (164 m de raio por dentro), que chega a 37 m de fundura no meio.
      Junto da pista, o lance baixo atrás do muro branco; em cima do muro das
@@ -57,7 +59,15 @@ const TELHA = larg => ({ h: 23.5, larg, avanco: 0.8, cai: 1.2, cor: MARROM, cor2
    lado vermelha"): do meio do campo pra esquerda as cadeiras são vermelhas (o lado do CRB), pra direita azuis (o do CSA) */
 const EMBAIXO = cor => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, faixaTopo: { n: 2, cor } });
 const NOMEIO = cor => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, padrao: 'fracoes', fracoes: [[0.62, cor], [1, CINZA]], espelhoPintado: true });
-const EMCIMA = (larg, cor) => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, faixaBase: { n: 5, cor }, paredeAtras: true, corFachada: CONC, parapeito: 1.4, cobertura: TELHA(larg) });
+const EMCIMA = cor => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, faixaBase: { n: 5, cor }, paredeAtras: true, corFachada: CONC, parapeito: 1.4 });
+/* ATRÁS DOS GOLS E NOS CANTOS NÃO HÁ O LANCE DE CIMA (dono, 16/11/2026: "atrás do gol são somente dois lances de arquibancada,
+   que são os inferiores que voce desenhou, e a cobertura atrás do gol sofre um declive"): ali fica a galeria, uma laje andável
+   com as placas de publicidade no fundo, debaixo da laje baixa */
+const GALERIA = { tipo: 'passagem', alt: 9.6, cor: '#aeb0b2', corFachada: CONC };
+/* A LAJE DO U, uma peça só: alta sobre o arco (24,5 m), DESCE ao longo dos cantos e fica baixa atrás dos gols (13,8 m, um pouco
+   caída pra frente). `s` é quantos graus o ângulo está longe do meio do arco. */
+const suave = x => { const k = Math.max(0, Math.min(1, x)); return k * k * (3 - 2 * k); };
+const ALTURA_LAJE = ang => { const s = Math.abs(((ang % 360) + 360) % 360 - 270), q = suave((s - 48) / 25), h = 24.5 - 10.7 * q; return [h + 0.6 * q, h + 0.6 - 1.2 * q]; };
 /* os trechos do U: a tira da direita, o vão de cima (a arquibancada reta fica ali, em outro anel), a tira da esquerda e o
    arco, em cinco pedaços (o telhado é mais fundo no meio) */
 const U = (tira, arco) => [
@@ -88,9 +98,9 @@ export default {
     /* o U, NO MEIO: o segundo lance, em cima do muro branco das bocas */
     { dentro: M1, fora: MEIO, h: [5.8, 9], fileiras: 7, corredorFrente: 1.2, corMureta: '#eeeeea',
       trechos: U(v => NOMEIO(v ? VERM : AZUL), (k, v) => NOMEIO(v ? VERM : AZUL)) },
-    /* o U, EM CIMA: o lance grande, debaixo da laje, com a galeria de pilares no alto */
+    /* o U, EM CIMA: o lance grande, só na lateral em arco, debaixo da laje alta; nos cantos e atrás dos gols, a galeria */
     { dentro: MEIO, fora: FUNDO, h: [11.2, 18.8], fileiras: 14, corredorFrente: 1.2, corMureta: '#e9e9e4',
-      trechos: U(v => EMCIMA(15, v ? VERM : AZUL_ESC), (k, v) => EMCIMA([17, 22, 26][k], v ? VERM : AZUL_ESC)) },
+      trechos: U(() => GALERIA, (k, v) => k === 0 ? GALERIA : EMCIMA(v ? VERM : AZUL_ESC)) },
     /* a arquibancada RETA, do outro lado: o lance de baixo, de degrau cinza, com as ESCADAS PINTADAS — vermelhas nas pontas,
        azuis, e brancas no meio (pelas imagens de dentro; eu tinha lido faixas ao comprido no satélite) */
     { dentro: RETA(54.4), fora: RETA(70), reto: true, h: [1.4, 8], fileiras: 16, corredorFrente: 1.2,
@@ -109,6 +119,13 @@ export default {
         { de: A(-68, 70), ate: A(70, 70) + 360, tipo: 'vazio' }] }
   ],
   fachada: { cor: CONC },
+  /* a laje do U: do alto de uma tira ao alto da outra, passando pelo arco; marrom por cima, cinza por baixo, de beira azul */
+  coberturasAnel: [
+    { dentro: D(95.7, 99, 119.6, 180.6), fora: D(110, 99, 128, 213.4), de: 137.5, ate: 402.5, n: 46, alturas: ALTURA_LAJE, h: 24.5,
+      cor: MARROM, cor2: MARROM2, corNervura: '#3f2c26', larguraNervura: 0.12, corBaixo: '#8f9296',
+      bordaDentro: { larg: 1.1, cor: AZUL }, bordaFora: { larg: 0.8, cor: '#6a4c42' }, beiral: [1.2, 1.6],
+      pilares: { f: 0.9, base: 9.6, cor: '#d9d9d4', esp: 0.5, cada: 1, viga: false } }
+  ],
   refletores: [[-50, 93, 50], [-17, 93, 50], [17, 93, 50], [50, 93, 50], [-62, -80, 42], [62, -80, 42]],
   blocos: [
     /* os bancos de reserva, na pista, ao pé do arco */
@@ -116,7 +133,10 @@ export default {
     /* o letreiro na parede escura entre os dois lances da arquibancada reta, virado pro campo */
     { u: 1, v: 69.65, w: 0.4, d: 44, h: 1.5, y: 8.05, cor: '#3a3d42', texto: 'ESTÁDIO REI PELÉ', corTexto: '#d9d9d4', textoFace: true, giro: -90, textoLargura: 0.9, textoAltura: 0.6 },
     /* o placar, no canto, em cima da ponta da tira de trás do gol do lado vermelho */
-    { u: -103, v: 84, w: 3, d: 13, h: 8, y: 24, cor: '#1c1d20' }, { u: -101.4, v: 84, w: 0.2, d: 11.6, h: 6.6, y: 24.7, cor: '#2b3550' },
+    { u: -103, v: 84, w: 3, d: 13, h: 8, y: 15.4, cor: '#1c1d20' }, { u: -101.4, v: 84, w: 0.2, d: 11.6, h: 6.6, y: 16.1, cor: '#2b3550' },
+    /* as placas de publicidade no fundo da galeria das duas de trás do gol */
+    ...[-1, 1].flatMap(sg => ['#d9b62a', '#b3262b', '#8a1f24', '#5a3fa0', '#e9e9e4', '#b3262b', '#d9b62a', '#2f6fc4'].map((cor, i) =>
+      ({ u: sg * 108.4, v: -14 + 13.6 * i + 6.8, w: 0.3, d: 12.6, h: 2.4, y: 10, cor }))),
     /* a torre de concreto ao lado do ginásio, atrás da ponta da arquibancada reta */
     { u: 76, v: 104, w: 7, d: 7, h: 32, cor: '#b3ada0' },
     /* o letreiro da entrada, na faixa branca do lado de fora do arco */
@@ -135,6 +155,6 @@ export default {
     { tipo: 'predio', u: 120, v: 60, w: 14, d: 50, h: 6, cor: '#8f9a8c' }, { tipo: 'arvores', u: 118, v: -30, w: 8, d: 30, n: 4 }
   ],
   jogo: { mandante1: [164, 194], mandante2: [-14, 16], mandante3: [254, 286], visitante: [72, 108], tunelMandante: 262, tunelVisitante: 278, folgaPM: 3,
-          fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
+          fracao: { mandante1: 0.22, mandante2: 0.22, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { comando_alvirrubro: 'mandante1', garra: 'mandante3', mancha_azul_do_csa: 'mandante2' } }
 };

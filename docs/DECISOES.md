@@ -15053,6 +15053,14 @@ O que elas mostraram e as aéreas escondiam:
 
 Não entrou: o fosso entre o muro da pista e a grade do lance baixo. Briga e chegada testadas de novo, sem erros.
 
+## Rei Pelé: atrás dos gols, dois lances e a laje em declive (dono, 16/11/2026)
+
+O dono: "atrás do gol são somente dois lances de arquibancada, que são os inferiores que voce desenhou, e a cobertura atrás do gol sofre um declive. analise bem pra corrigir."
+
+Eu tinha levado os três níveis e a laje alta pela volta toda do U. Relendo as imagens de dentro e as aéreas: o lance grande de cima só existe na lateral em arco; nos cantos e atrás dos gols há, no lugar dele, uma galeria (laje andável a 9,6 m) com as placas de publicidade no fundo. E a laje da cobertura é alta sobre o arco (24,5 m), desce ao longo dos cantos e fica baixa atrás dos gols (13,8 m), um pouco caída pra frente.
+
+A cobertura do U deixou de ser a marquise de cada trecho (que só sabe uma altura por trecho e fazia degraus) e virou uma `coberturasAnel` só, do alto de uma tira ao alto da outra, com `alturas` variando ao longo da volta. No gerador, `corBaixo` também vale na cobertura em anel (a face de baixo cinza). O placar desceu pra cima da laje baixa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
