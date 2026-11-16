@@ -60,11 +60,6 @@ const TETO = (lat, s) => { const cob = true, T = '#f1f0ea', N = '#c3c7c8';
     ...Array.from({ length: 9 }, (_, k) => ({ u: s * um, v: -48 + 12 * k, w, d: 0.7, h: 2.6, y: 34.4, cor: N, cobertura: cob })),
     ...[-51.3, 51.3].map(v => ({ u: s * (u0 + 1.6), v, w: 5.4, d: 4.6, h: 37.7, cor: BR }))]; };
 const FACH = PTS(124, 103, 48), PISTA = PTS(149, 128, 70);
-/* a GRADE do terreno, em quatro pedaços: fica aberta na frente de cada arquibancada (os quatro portões da grade) */
-const ARCO = i => PTS(141, 120, 62).slice(i * 11, i * 11 + 11);
-const GRADE = [[[141, 9], ...ARCO(0), [9, 120]], [[-9, 120], ...ARCO(1), [-141, 9]], [[-141, -9], ...ARCO(2), [-9, -120]], [[9, -120], ...ARCO(3), [141, -9]]];
-/* um muro ou grade por uma linha ABERTA de pontos */
-const LINHA = (pts, o) => pts.slice(1).map((b, i) => { const a = pts[i], du = b[0] - a[0], dv = b[1] - a[1]; return { u: (a[0] + b[0]) / 2, v: (a[1] + b[1]) / 2, w: Math.hypot(du, dv) + 0.4, giro: Math.atan2(dv, du) / RAD, ...o }; });
 /* os dez portões do mapa do clube: A e B no oeste, C, D e E no sul, F e G no leste, H, I e J no norte */
 const PORTOES = [['A', 'OESTE', 38, 105, 0, -1], ['B', 'OESTE', -38, 105, 0, -1], ['C', 'SUL', -126, 35, 1, 0], ['D', 'SUL', -126, 0, 1, 0], ['E', 'SUL', -126, -35, 1, 0],
   ['F', 'LESTE', -38, -105, 0, 1], ['G', 'LESTE', 38, -105, 0, 1], ['H', 'NORTE', 126, 35, -1, 0], ['I', 'NORTE', 126, 0, -1, 0], ['J', 'NORTE', 126, -35, -1, 0]]
@@ -117,8 +112,7 @@ export default {
     /* a FACHADA de tela dourada: o embasamento escuro e os painéis, altos nas retas e mais baixos nos quatro cantos curvos */
     ...FAIXA(FACH, 10, (canto, i) => ({ d: 0.6, h: canto ? 11 : 27.5, y: canto ? 5 : 4.5, cor: i % 2 ? OURO : OURO2 })),
     ...FAIXA(PTS(123, 102, 47), 10, () => ({ d: 0.5, h: 4.6, cor: '#3b3f42' })),
-    /* a grade do terreno e a pista vermelha de caminhada, por fora */
-    ...GRADE.flatMap(g => LINHA(g, { d: 0.3, h: 2.2, cor: '#5c6165' })),
+    /* a pista vermelha de caminhada, por fora */
     ...FAIXA(PISTA, 10, () => ({ d: 4.5, h: 0.08, cor: '#b0655c' }))
   ],
   /* a câmera de uma das aéreas do dono: do alto, pelo canto, olhando o estádio de fora */
@@ -128,39 +122,15 @@ export default {
     { tipo: 'arvores', u: 92, v: 80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: 92, v: -80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: -92, v: 80, w: 14, d: 14, n: 2 }, { tipo: 'arvores', u: -92, v: -80, w: 14, d: 14, n: 2 },
     { tipo: 'grama', u: -165, v: 120, w: 40, d: 60, cor: '#6b9a55' }, { tipo: 'grama', u: 150, v: 150, w: 70, d: 24, cor: '#6b9a55' }, { tipo: 'grama', u: -70, v: -152, w: 120, d: 26, cor: '#6b9a55' }
   ],
-  /* OS ARREDORES NO PRÓPRIO MAPA DO ESTÁDIO (dono, 16/11/2026, vendo a briga abrir na cena genérica de rua: "essa cena de
-     arredores vai deixar de existir, a lógica que falei de existirem arredores desenhados no mapa do estádio serve
-     exatamente pra isso"). Sem ruas do mapa (`osm` vazio): tudo desenhado à mão. O que se pisa: as quatro ruas em volta, os
-     quatro caminhos até os portões da grade, a pista vermelha de caminhada e a esplanada entre a grade e a fachada. O
-     estádio e o gramado de fora não se pisam. Os portões são os dez do mapa do clube; a visitante entra pelo norte. As ruas
-     são padrão (não são as de verdade): a Arena Pantanal não está na lista dos arredores de verdade. */
-  arredores: {
-    osm: { ruas: [], areas: [], predios: [] }, soFora: true, quadro: { u: 190, v: 150 }, vazado: 0.62, corQuadra: '#8fa076',
-    pisos: [
-      /* as quatro ruas em volta: a calçada e o asfalto */
-      ...[[[-190, 138], [190, 138]], [[-190, -138], [190, -138]], [[-176, -150], [-176, 150]], [[176, -150], [176, 150]]].flatMap(pts => [{ pts, larg: 19, cor: '#b9b5aa', y: 0.05 }, { pts, larg: 12, cor: '#57585c', y: 0.07 }]),
-      /* os quatro caminhos, da rua ao portão da grade, e a pista vermelha de caminhada */
-      ...[[[0, 118], [0, 134]], [[0, -118], [0, -134]], [[-139, 0], [-172, 0]], [[139, 0], [172, 0]]].map(pts => ({ pts, larg: 16, cor: '#c2b08f', y: 0.08 })),
-      { pts: [...PISTA, PISTA[0]], larg: 5, cor: '#b0655c', y: 0.09 },
-      /* a esplanada, da grade pra dentro */
-      { pts: PTS(141, 120, 62), cor: '#c9b697' },
-      /* (a grade só se passa pelos quatro portões dela; o estádio não é chão) */
-      ...GRADE.map(pts => ({ pts, larg: 1.4, tira: true })),
-      { pts: PTS(125, 104, 49), tira: true }
-    ],
-    portoes: PORTOES,
-    bondes: { mandante1: { de: [-176, -120], portao: 'D', exato: true }, mandante2: { de: [-120, -138], portao: 'F', exato: true }, mandante3: { de: [-120, 138], portao: 'B', exato: true },
-              visitante1: { de: [176, 120], portao: 'I', exato: true }, visitante2: { de: [176, -120], portao: 'J', exato: true } },
-    /* o cordão que separa o lado do norte (o da visitante) dentro da grade, e os gradis de fila dos portões D e I */
-    grades: [{ de: [127, 54], ate: [140, 54] }, { de: [127, -54], ate: [140, -54] }],
-    filas: [{ pts: [[-128, 5.5], [-137, 5.5]] }, { pts: [[-128, -5.5], [-137, -5.5]] }, { pts: [[128, 5.5], [137, 5.5]] }, { pts: [[128, -5.5], [137, -5.5]] }],
-    pm: [[134, 30], [134, -30], [152, 0], [-134, 22], [-134, -22], [0, 113], [0, -113], [-152, 0], [104, 96], [104, -96]],
-    entorno: [
-      { tipo: 'arvores', u: 92, v: 80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: 92, v: -80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: -92, v: 80, w: 14, d: 14, n: 2 }, { tipo: 'arvores', u: -92, v: -80, w: 14, d: 14, n: 2 },
-      { tipo: 'arvores', u: 160, v: 121, w: 14, d: 10, n: 3 }, { tipo: 'arvores', u: 160, v: -121, w: 14, d: 10, n: 3 }, { tipo: 'arvores', u: -160, v: 121, w: 14, d: 10, n: 3 }, { tipo: 'arvores', u: -160, v: -121, w: 14, d: 10, n: 3 }
-    ],
-    vista: [-230, 150, -230, 0, 0, 0]
-  },
+  /* OS ARREDORES (dono, 16/11/2026: "essa cena de arredores vai deixar de existir, a lógica que falei de existirem arredores
+     desenhados no mapa do estádio serve exatamente pra isso"; e depois: "deve haver uma estrutura de polícia com efetivo
+     policial e grades [...] e o jogo deve ter 9 quarteirões com o quarteirão do estádio estando no meio"): os arredores
+     padrão (arredores_padrao.mjs), com o que é da Arena: o sólido é a fachada; o quarteirão é largo, com a esplanada e a
+     pista de caminhada dentro; os portões são os dez do mapa do clube, e a visitante entra pelo I, do norte. A primeira
+     versão, feita à mão, tinha só quatro ruas em volta e a grade do terreno; a grade saiu: o gradil do quarteirão faz o
+     papel dela. */
+  arredoresPadrao: { solido: PTS(125, 104, 49), margem: 30, corCalcadao: '#c9b697', portoes: PORTOES, entradaDe: { mandante1: 'D', mandante2: 'F', mandante3: 'B', visitante: 'I' },
+    entorno: [{ tipo: 'arvores', u: 92, v: 80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: 92, v: -80, w: 14, d: 14, n: 3 }, { tipo: 'arvores', u: -92, v: 80, w: 14, d: 14, n: 2 }, { tipo: 'arvores', u: -92, v: -80, w: 14, d: 14, n: 2 }] },
   jogo: { mandante1: [162, 198], mandante2: [240, 300], mandante3: [60, 120], visitante: [-20, 20], tunelMandante: 180, tunelVisitante: 0, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.6, visitante2: 0.6, visitante3: 0.5 },
           torcidas: { raca_cuiabana: 'mandante1' } }

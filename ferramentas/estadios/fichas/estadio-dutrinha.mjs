@@ -51,7 +51,7 @@ export default {
   aneis: [
     /* a faixa em volta do gramado, com a grade verde: é por ela que se passa de uma arquibancada à outra */
     { dentro: { a: 57, b: 38, r: 0.5 }, fora: { a: 59.5, b: 40.5, r: 0.5 }, reto: true, h: [0.15, 0.15], corredorFrente: 0, trechos: [{ de: 0, ate: 360, tipo: 'passagem', cor: '#8fa184' }] },
-    { dentro: LAT(40.5), fora: LAT(56.5), reto: true, h: [2.4, 9.6], corredorFrente: 1,
+    { dentro: LAT(40.5), fora: LAT(56.5), reto: true, andarReto: true, h: [2.4, 9.6], corredorFrente: 1,
       trechos: [
         /* EM CIMA (noroeste): a principal, em três panos: os dois de telhado verde e o do meio, da tribuna */
         { ...PRINC, de: A(54, 40.5), ate: A(7, 40.5), corredor: 15.6, cobertura: TELHADO },
