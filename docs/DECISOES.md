@@ -14804,6 +14804,22 @@ O dono: "Pode aplicar esse padrão aos demais estádios do sul e sudeste que já
 - **A rua de chegada é a de caminhada mais curta**, pelo contorno do quarteirão e sem cruzar a zona da visitante; era a mais perto em linha reta, e no Moisés Lucarelli o 2º escalão nascia do outro lado do cordão e dava a volta no quarteirão.
 - **Dois bondes podem vir pela mesma rua** (o segundo nasce 26 m mais pra dentro): com três portões no mesmo lado, o 3º escalão sobrava com a ponta do canto oposto.
 
+## Região Norte, Pará: Mangueirão lowpoly (Remo, Paysandu, Águia de Marabá) (dono, 16/11/2026)
+
+O dono: "quero continuar pelos demais estadios que faltam, vamos pra região norte agora, no Pará", e depois cinco quadros de drone do estádio: "segue mais imagens pra ajudar".
+
+No jogo o Pará tem dois estádios: o Mangueirão (Remo, Paysandu e Águia de Marabá) e o Estádio do Souza (Tuna Luso). O Mangueirão foi o primeiro (`ferramentas/estadios/fichas/estadio-mangueirao.mjs`), no estado de depois da reforma de 2023.
+
+**De onde saiu.** O satélite (o gramado do mapa de ruas dá o eixo: norte a sul, rumo 178,2), cinco fotos do acervo livre da Wikimedia (duas de dentro, de 2025, e uma aérea de 2023) e os cinco quadros de drone do dono: a lateral com a estrela, a ponta com o telão, a virada da lateral pra curva e a fachada de fora. As fotos ficam fora do repositório.
+
+**O que é.** Oval de dois lances em toda a volta, com a pista vermelha de oito raias. Lance de baixo: azul na frente e vermelho com branco em cima nas laterais; quatro fileiras nas pontas. Faixa dos camarotes no meio. Lance de cima fundo nas laterais (26 m) e raso nas pontas (12 m), com a altura acompanhando a fundura, e o mosaico da bandeira do Pará nas cadeiras das laterais: vermelho em cima, azul embaixo, a faixa branca em diagonal e a estrela azul no meio. A cobertura dá a volta inteira: alta nas laterais, baixa e branca nas pontas, com as placas solares e os dois telões. Por fora, as colunas brancas, o nome do estádio na fachada do oeste e o anel de concreto da esplanada com as duas marquises.
+
+**Lado A e Lado B.** O Lado A é o leste (Remo); o Lado B é o oeste (Paysandu), do lado da Via Transmangueirão: saiu das reportagens de venda de ingresso e do mapa de ruas. A Remista fica no meio do Lado A, a Terror Bicolor no meio do Lado B, a visitante no canto sul do Lado B (a reportagem diz "B4"; em que ponta fica o B4 é escolha minha).
+
+**O que é estimado ou escolha minha, dito ao dono.** Todas as alturas; a fundura de cada lance (medi a volta de fora e a abertura da cobertura, e reparti pelas fileiras contadas nas fotos); a estrela nos dois lados (só vi a de um); o 3º escalão na ponta do norte. Não achei mapa de setores desenhado. O muro do terreno não entrou: o terreno é o estacionamento inteiro, muito além do quadro, e o Mangueirão é dos diferenciados, com arredores de verdade por fazer.
+
+**No gerador.** `pinta(x, y, rnd)` no trecho: a ficha pinta as cadeiras por conta dela (x da esquerda pra direita de quem olha do campo, y da frente ao fundo). As ferramentas de satélite, mapa e quadro em metros foram reescritas (a pasta de rascunho se perdeu no reinício): o mapa agora vem direto da API do OpenStreetMap, porque os servidores do Overpass não respondem daqui.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

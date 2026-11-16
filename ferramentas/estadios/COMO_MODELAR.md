@@ -411,6 +411,17 @@ do sólido do estádio. E "caminho até o portão: todos" não basta pra saber s
 bonde chega em tempo: conferir de que rua cada bonde nasce (a caminhada, não a
 linha reta) e rodar a chegada com a visitante por último.
 
+ESTÁDIO COM COBERTURA NO ANEL INTEIRO E PISTA (o Mangueirão, 16/11/2026): do
+satélite só se vê uma faixa estreita de arquibancada; a faixa escura entre o
+verde e a cobertura é sombra, não é a medida do lance. A PISTA dá a conta: a
+reta de fora de uma pista de oito raias fica a 46,3 m do eixo e a ponta a
+88,5 m do meio, então a mureta está pra fora disso. A fundura de cada lance sai
+das fileiras contadas nas fotos (0,85 m por fileira), repartida entre a mureta e
+a volta de fora. Foto tirada de dentro e do alto mostra as cadeiras E o tampo da
+cobertura ao mesmo tempo: não quer dizer que a arquibancada é descoberta.
+O MAPA DE RUAS vem de api.openstreetmap.org (map?bbox=...); o Overpass não
+responde daqui. Desenho nas cadeiras que não é letra: `pinta(x, y, rnd)`.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

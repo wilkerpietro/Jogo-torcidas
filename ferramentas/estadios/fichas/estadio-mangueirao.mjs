@@ -1,0 +1,137 @@
+/* MANGUEIRÃO (Estádio Olímpico do Pará, Jornalista Edgar Proença; Remo,
+   Paysandu e Águia de Marabá; Belém) — no estado de depois da reforma de
+   2023. Pelo satélite, por cinco fotos do acervo livre da Wikimedia (duas de
+   dentro, de 2025, e uma aérea de 2023) e por cinco quadros de drone que o
+   dono mandou (16/11/2026): a lateral com a estrela, a ponta com o telão, a
+   virada da lateral pra curva e a fachada vista de fora.
+   O campo corre de norte a sul; no quadro o SUL fica à direita e o LESTE em
+   cima. Estádio oval de DOIS LANCES em toda a volta, com a pista de
+   atletismo vermelha de oito raias em volta do gramado:
+   · O LANCE DE BAIXO: nas laterais, cadeira azul nas fileiras da frente e
+     vermelha com branca nas de cima; nas pontas ele encolhe pra quatro
+     fileiras vermelhas e brancas atrás da mureta dos anúncios.
+   · A FAIXA DO MEIO: os camarotes de concreto branco nas laterais; nas
+     pontas, a parede de vidro cinza.
+   · O LANCE DE CIMA: fundo nas laterais (umas trinta fileiras), raso nas
+     pontas (umas quinze), com a altura acompanhando a fundura. Nas laterais,
+     o MOSAICO DA BANDEIRA DO PARÁ nas cadeiras: vermelho em cima e azul
+     embaixo, com a faixa branca atravessando em diagonal e a estrela azul no
+     meio; pra fora do meio a pintura vira três camadas salpicadas (vermelho,
+     branco, azul), que seguem pelas curvas e pelas pontas. As bocas de acesso
+     ficam a um quarto da altura, uma a cada dois blocos.
+   · A COBERTURA dá a volta inteira e cobre os dois lances (do alto só se vê
+     uma faixa estreita de arquibancada): alta nas laterais, de concreto com as
+     treliças brancas por cima e a beira da frente clara; baixa nas pontas,
+     branca, com as placas solares e o TELÃO em cima da beira.
+   · POR FORA, as galerias de concreto com as colunas brancas finas, o nome do
+     estádio na fachada do OESTE, e o anel de concreto da esplanada com as
+     duas marquises brancas das entradas (leste e oeste).
+   LADO A E LADO B: o Lado A é o do leste (em cima), o da torcida do Remo; o
+   Lado B é o do oeste (embaixo), o da torcida do Paysandu, do lado da Via
+   Transmangueirão. A reportagem de venda de ingressos põe a visitante no B4.
+   O QUE É ESTIMADO OU ESCOLHA MINHA: todas as alturas; a fundura de cada
+   lance (medi a volta de fora e a abertura da cobertura no satélite, e
+   reparti pelas fileiras contadas nas fotos); a estrela nos DOIS lados (só
+   vi a de um); em que ponta do Lado B fica o B4 (pus na do sul); o lugar do
+   3º escalão (a ponta do norte). Não achei mapa de setores desenhado.
+   O MURO DO TERRENO não entra: o terreno é o estacionamento inteiro, muito
+   além do quadro; fica pros arredores de verdade (o Mangueirão é dos
+   diferenciados). */
+const RAD = Math.PI / 180;
+/* os contornos: ovais de ponta em meio-círculo (o raio é a meia largura) */
+const PISTA_D = { a: 78.7, b: 36.5, r: 36.5 }, PISTA_F = { a: 88.5, b: 46.3, r: 46.3 };
+const W = { a: 99, b: 52, r: 52 };        /* a mureta: a frente do lance de baixo */
+const L = { a: 103, b: 64, r: 64 };       /* o fundo do lance de baixo (12 m nas laterais, 4 nas pontas) */
+const BN = { a: 108, b: 69, r: 69 };      /* a faixa dos camarotes */
+const U = { a: 120, b: 95, r: 95 };       /* o fundo do lance de cima (26 m nas laterais, 12 nas pontas) */
+const TETO_D = { a: 99.5, b: 50.5, r: 50.5 }, TETO_F = { a: 128, b: 112, r: 112 };
+const VERM = '#c22a2e', AZUL = '#1f3f93', BRANCO = '#f1f1ec', CONC = '#d2cfc5', CONC2 = '#c6c3b9';
+/* a estrela de cinco pontas (a ponta pra cima), em metros a partir do meio dela */
+const ESTRELA = Array.from({ length: 10 }, (_, k) => { const r = k % 2 ? 5.3 : 12.5, a = (90 + 36 * k) * RAD; return [r * Math.cos(a), r * Math.sin(a)]; });
+const naEstrela = (x, y) => { let c = false; for (let i = 0, j = 9; i < 10; j = i++) { const [xi, yi] = ESTRELA[i], [xj, yj] = ESTRELA[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const reta = (x, pts) => { if (x <= pts[0][0]) return pts[0][1]; for (let k = 1; k < pts.length; k++) if (x <= pts[k][0]) { const [x0, y0] = pts[k - 1], [x1, y1] = pts[k]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); } return pts[pts.length - 1][1]; };
+/* A PINTURA DO LANCE DE CIMA. `X`: metros ao longo da lateral, a partir do meio (negativo à esquerda de quem olha do campo);
+   `y`: de 0 (frente) a 1 (fundo); `fundo`: a fundura do lance em metros. Acima de `yv` é vermelho, abaixo de `ya` é azul, o
+   resto é branco; no meio as duas divisas viram a diagonal da faixa branca da bandeira, e a estrela fica em cima dela. */
+const YV = [[-48, 0.60], [-14, 1.04], [9, 1.0], [44, 0.58]], YA = [[-44, 0.44], [-6, 0.0], [30, 0.0], [52, 0.42]];
+const bandeira = (X, y, rnd, fundo) => {
+  if (Math.abs(X) < 14 && naEstrela(X, (y - 0.5) * fundo)) return AZUL;
+  const yv = reta(X, YV), ya = reta(X, YA), salp = Math.max(0.1, Math.min(1, (Math.abs(X) - 24) / 24));
+  if (y > yv) return rnd() < Math.max(0, 1 - (y - yv) / 0.24) * 0.8 * salp ? BRANCO : VERM;
+  if (y < ya) return rnd() < Math.max(0, 1 - (ya - y) / 0.2) * 0.75 * salp ? BRANCO : AZUL;
+  if (yv - y < 0.1 && rnd() < 0.35 * salp) return VERM;
+  if (y - ya < 0.1 && rnd() < 0.35 * salp) return AZUL;
+  return BRANCO;
+};
+const BASE = { cor: AZUL, cor2: BRANCO, paredeAtras: true, corFachada: CONC, corMureta: '#e4e2da', parapeito: 1.1, corEscada: '#bdbab0' };
+/* o lance de cima: as duas laterais com a bandeira (124 m de comprimento no meio da fundura), as curvas e as pontas em camadas */
+const CIMA_LADO = { ...BASE, corredor: 10.4, vomitorios: { f: 0.2, cada: 2, larg: 4.2, fundo: 4.5, cor: '#2c2d2f' }, pinta: (x, y, rnd) => bandeira((x - 0.5) * 124, y, rnd, 26) };
+const CIMA_PONTA = { ...BASE, corredor: 11, vomitorios: { f: 0.25, cada: 3, larg: 4, fundo: 4, cor: '#2c2d2f' }, pinta: (x, y, rnd) => bandeira(999, y, rnd, 26) };
+/* o lance de baixo: azul na frente, vermelho e branco em cima; nas pontas, só o vermelho e branco */
+const BAIXO_LADO = { ...BASE, vomitorios: false, paredeAtras: false, corredor: 12, pinta: (x, y, rnd) => y < 0.47 ? (rnd() < 0.12 ? BRANCO : AZUL) : (rnd() < 0.42 ? BRANCO : VERM) };
+const BAIXO_PONTA = { ...BASE, vomitorios: false, paredeAtras: false, corredor: 14, pinta: (x, y, rnd) => rnd() < 0.45 ? BRANCO : VERM };
+/* as divisas, vistas do meio do campo: onde a lateral reta acaba (a 62 m do meio, no meio da fundura do lance de cima) e onde
+   a curva vira ponta */
+const D1 = 53, D2 = 127, P1 = 22;
+/* a cobertura: quatro pedaços do mesmo anel, altos nas laterais e baixos nas pontas */
+const TETO = (de, ate, alta) => alta
+  ? { dentro: TETO_D, fora: TETO_F, de, ate, n: 14, h: 30.5, cai: -3.5, cor: '#cbc8be', cor2: '#c2bfb5', corNervura: '#f4f4f0', larguraNervura: 0.5, bordaDentro: { larg: 11, cor: '#f5f5f1' }, aneis: [{ f: 0.42, larg: 5, cor: '#4a5870' }], beiral: [2.4, 1.6], corBeiral: '#e9e8e2' }
+  : { dentro: TETO_D, fora: { a: 128, b: 112, r: 112 }, de, ate, n: 12, h: 21.5, cai: -1, cor: '#e7e5dd', cor2: '#dedcd4', corNervura: '#f6f6f2', larguraNervura: 0.35, aneis: [{ f: 0.45, larg: 4.5, cor: '#4a5870' }], beiral: [1.6, 1.2], corBeiral: '#f0efe9' };
+/* a esplanada: o anel de concreto em volta, com o estacionamento por dentro e por fora */
+const anelPts = (a, b, n = 72) => Array.from({ length: n }, (_, k) => [a * Math.cos(k * 360 / n * RAD), b * Math.sin(k * 360 / n * RAD)]);
+
+export default {
+  id: 'estadio-mangueirao', nome: 'Mangueirão', clubes: ['remo', 'paysandu', 'aguia-de-maraba'], norte: 178.2, vazado: 0.2, folga: 34,
+  chao: { cor: '#63666a' },
+  vista: [0, 26, -30, 0, 15, 85],
+  campo: { corMargem: '#4c9a4e', pista: { dentro: PISTA_D, fora: PISTA_F, cor: '#b04a3e', raias: 8 } },
+  corMureta: '#e4e2da', corAlambrado: '#9aa0a4', alambrado: false, muro: false,
+  aneis: [
+    /* o LANCE DE BAIXO */
+    { dentro: W, fora: L, h: [1.9, 6.0], corredorFrente: 0.8, passoFileira: 0.85,
+      trechos: [
+        { ...BAIXO_PONTA, de: -P1, ate: P1, h: [3.4, 6.0] },
+        { ...BAIXO_LADO, de: P1, ate: 180 - P1 },
+        { ...BAIXO_PONTA, de: 180 - P1, ate: 180 + P1, h: [3.4, 6.0] },
+        { ...BAIXO_LADO, de: 180 + P1, ate: 360 - P1 }
+      ] },
+    /* a FAIXA DOS CAMAROTES (concreto branco nas laterais, vidro cinza nas pontas) */
+    { dentro: L, fora: BN, h: [6.4, 6.4], corredorFrente: 0,
+      trechos: [
+        { de: -P1, ate: P1, tipo: 'passagem', alt: 6.4, cor: '#8f9aa6' },
+        { de: P1, ate: 180 - P1, tipo: 'passagem', alt: 6.4, cor: '#e3e1d9' },
+        { de: 180 - P1, ate: 180 + P1, tipo: 'passagem', alt: 6.4, cor: '#8f9aa6' },
+        { de: 180 + P1, ate: 360 - P1, tipo: 'passagem', alt: 6.4, cor: '#e3e1d9' }
+      ] },
+    /* o LANCE DE CIMA, com a altura acompanhando a fundura */
+    { dentro: BN, fora: U, h: [9.4, 27], inclinacao: 0.68, corredorFrente: 1.2, passoFileira: 0.85,
+      trechos: [
+        { ...CIMA_PONTA, de: D2 - 180, ate: D1 },
+        { ...CIMA_LADO, de: D1, ate: D2 },
+        { ...CIMA_PONTA, de: D2, ate: D1 + 180 },
+        { ...CIMA_LADO, de: D1 + 180, ate: D2 + 180 }
+      ] }
+  ],
+  coberturasAnel: [TETO(D1 - 12, D2 + 12, true), TETO(D1 + 168, D2 + 192, true), TETO(D2 + 12 - 180, D1 - 12, false), TETO(D2 + 12, D1 + 168, false)],
+  fachada: { cor: CONC2, pilares: { n: 84, h: 22, pe: 5, topo: 1, esp: 0.45, fundo: 2, cor: '#f1f0ea' } },
+  blocos: [
+    /* os dois TELÕES, em cima da beira da cobertura das pontas */
+    { u: 100.5, v: 0, w: 1.2, d: 22, h: 9, y: 20.5, cor: '#0f1114' }, { u: -100.5, v: 0, w: 1.2, d: 22, h: 9, y: 20.5, cor: '#0f1114' },
+    /* os túneis dos vestiários, no meio de cada lateral, e os bancos de reserva */
+    { u: 0, v: 53.5, w: 5, d: 5, h: 2.6, cor: '#e9ebee' }, { u: 0, v: -53.5, w: 5, d: 5, h: 2.6, cor: '#e9ebee' },
+    { u: -18, v: 48.6, w: 10, d: 1.8, h: 1.9, cor: '#dfe4ea' }, { u: 18, v: 48.6, w: 10, d: 1.8, h: 1.9, cor: '#dfe4ea' },
+    /* o NOME DO ESTÁDIO na fachada do oeste (embaixo) */
+    { u: 0, v: -97.6, w: 0.6, d: 46, h: 2.6, y: 15.5, cor: '#2f6fb3', texto: 'ESTÁDIO OLÍMPICO DO PARÁ', corTexto: '#ffffff', textoFace: true, giro: -90 },
+    { u: 0, v: -97.6, w: 0.6, d: 40, h: 2.2, y: 12.4, cor: '#e9e8e2', texto: 'JORNALISTA  EDGAR  PROENÇA', corTexto: '#2b2f36', textoFace: true, giro: -90 },
+    /* as duas marquises brancas das entradas, no anel da esplanada */
+    { u: 0, v: 166, w: 20, d: 22, h: 0.5, y: 6, cor: '#f3f3ef' }, { u: 0, v: -166, w: 20, d: 22, h: 0.5, y: 6, cor: '#f3f3ef' }
+  ],
+  entorno: [
+    /* o anel de concreto da esplanada */
+    { tipo: 'piso', pts: anelPts(186, 180), furo: anelPts(160, 153), cor: '#cdc6b6', cor2: '#c4bdad', padrao: 'liso', y: 0.06 },
+    { tipo: 'arvores', u: -170, v: 170, w: 30, d: 16, n: 6 }, { tipo: 'arvores', u: 172, v: -172, w: 26, d: 16, n: 5 }
+  ],
+  jogo: { mandante1: [70, 110], mandante2: [250, 290], mandante3: [165, 195], visitante: [300, 335], tunelMandante: 90, tunelVisitante: 318, folgaPM: 3,
+          fracao: { mandante1: 0.68, mandante2: 0.68, mandante3: 0.7, visitante1: 0.68, visitante2: 0.68, visitante3: 0.68 },
+          torcidas: { remista: 'mandante1', pavilhao_6: 'mandante3', terror_bicolor: 'mandante2', faccao_jovem_paysandu: 'mandante3', jovem_aguia: 'mandante1' } }
+};

@@ -292,6 +292,10 @@ export function construir(THREE, ficha) {
       if (letreiro) { const bx = n - 1 - i, by = N - 1 - k; if (letreiro[(by * n + bx) * 4] > 110) return t.corTexto || '#ffffff'; }
       if (nTopo && k >= N - nTopo) return t.faixaTopo.cor;
       if (nBase && k < nBase) return t.faixaBase.cor;
+      /* `pinta(x, y, rnd)`: a ficha pinta as cadeiras por conta dela (o mosaico da bandeira do Pará no Mangueirão). `x` vai de
+         0 a 1 da esquerda pra direita DE QUEM OLHA DO CAMPO, `y` de 0 (a fileira da frente) a 1 (a do fundo); devolve a cor,
+         ou nada pra deixar a pintura de sempre. */
+      if (t.pinta) { const c = t.pinta((n - 1 - i + 0.5) / n, (k + 0.5) / N, rnd); if (c) return c; }
       if (t.padrao === 'mosaico') return rnd() < (t.mistura || 0.45) ? (t.cor2 || '#ffffff') : t.cor;
       if (t.padrao === 'blocos') return (Math.floor(i / bloco) + Math.floor(k / blocoF)) % 2 ? (t.cor2 || t.cor) : t.cor;
       if (t.padrao === 'vazias') return rnd() < (t.mistura || 0.5) ? CONCRETO : t.cor;
