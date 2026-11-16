@@ -471,10 +471,21 @@ ENFEITE REPETIDO AO LONGO DO MURO DE FORA (pilastras, quadros, cobogó): o
 ajudante `muroDeFora(contorno, passo)` da mesma ficha percorre as retas e os
 arcos do retângulo de canto redondo e devolve os blocos já com o `giro`.
 
-FIGURA PINTADA NO DEGRAU (o leão do Barradão, 16/11/2026): desenhe a silhueta
-como uma lista de pontos numa caixa (40 × 20) e teste ponto em polígono dentro
-do `pinta`; `espelha` vira a figura no outro fundo. A escada corta a figura,
-como na foto.
+FIGURA PINTADA NO DEGRAU (o leão do Barradão, 16/11/2026): NÃO INVENTE A
+SILHUETA (a primeira, inventada, o dono achou "muito feio"). Amplie a foto umas
+seis vezes com uma grade de pixels, trace o contorno ponto a ponto (uns
+sessenta) e tire a perspectiva: `x` é a fração entre as duas escadas que fecham
+o setor (cada escada com a sua inclinação na foto), `y` a fração entre a beira
+de baixo e a de cima da zona pintada. Desenhe o polígono solto e compare com a
+foto antes de assar. Veja em que SETOR a figura fica (entre quais escadas) e
+faça desse setor um trecho, com `escadaNaBorda`, pra escada não cortar o
+desenho; no `pinta` o `x` já é a fração do trecho. Asse uma vista de frente
+(uma cópia da ficha com outra `vista`) pra conferir.
+LANCE DE CIMA ENCOSTADO NO DE BAIXO: a mureta do lance de cima (1,1 m) aparece
+como uma tira entre os dois; dê a ela a cor do lance de baixo (`corMureta`).
+LISTRA PINTADA NO DEGRAU NÃO É CADEIRA: cadeira escura em piso claro sai cinza
+salpicado; pra listra aparecer, `semCadeiras` com `espelhoPintado` e `corPiso`
+escuro.
 ARQUIBANCADA EM U DE CANTO CHANFRADO: três contornos de canto redondo (beira,
 fim das cadeiras, fundo) com `r` crescendo pra fora, anéis `reto`, e o ajudante
 `U(contorno, fundo1, canto, lateral, fundo2)` da ficha dele, que tira os ângulos

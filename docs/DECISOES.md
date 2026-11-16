@@ -14940,6 +14940,18 @@ As torcidas: Os Imbatíveis no meio da lateral e a visitante atrás do gol da di
 
 O Barradão é dos diferenciados: não entrou nos arredores padrão e o muro do terreno não foi desenhado; ficam para os arredores de verdade, casa a casa. Briga testada sem erros; a chegada das torcidas só dá para testar quando ele tiver a cena de fora.
 
+## Barradão: o leão refeito, a listra preta e as torcidas (dono, 16/11/2026)
+
+O dono, com mais uma foto (a lateral vista do fundo): "o desenho do leão ficou muito feio, leia de forma detalhada como se desenha esse leão e faça fielmente. o mandante fica na arquibancada leste, atrás do gol, e o visitante fica na arquibancada no extremo oeste. veja como existe uma listra preta nos degraus de baixo da arquibancada."
+
+**O leão.** A primeira versão era uma silhueta inventada, de vinte e poucos pontos, posta no meio do fundo. A nova foi lida na foto do dono ampliada seis vezes, com uma grade de pixels: de perfil, virado pra esquerda de quem olha do campo, a juba grande com o recorte do focinho, as quatro patas retas com os três vãos vermelhos e o rabo erguido com o tufo virado pra frente. O contorno (58 pontos) foi traçado na ampliação e tirado da perspectiva pelas duas escadas que fecham o setor, cada uma com a sua inclinação na foto. Ele ocupa um setor só, o segundo a contar do lado da lateral, do pé do degrau vermelho até quase a faixa preta do alto, e os pés encostam na listra preta de baixo. Cada fundo passou a ter quatro trechos, com as escadas nas divisas de verdade (não corta mais o leão). No outro fundo só há o satélite, que mostra a figura no mesmo setor: ficou o mesmo desenho.
+
+**A listra preta.** A faixa de baixo eram cadeiras cinza-escuras em piso claro, e a listra não aparecia. Agora são degraus pintados de preto (espelho incluído), em cima do muro vermelho da frente, com o corredor escuro; a mureta do degrau vermelho ficou preta, pra não abrir uma tira vermelha entre a listra e os pés do leão.
+
+**A lateral**, pela foto nova: as cadeiras vermelhas nos três setores do meio e o prédio vermelho da cabine, de três andares, com as faixas de vidro e o letreiro ESTÁDIO MANOEL BARRADAS; mais duas torres de luz atrás dela.
+
+**As torcidas.** Os Imbatíveis atrás do gol do lado leste (o da direita no quadro), a visitante atrás do outro gol, no extremo oeste. A Camisa 12 foi pra lateral, perto do fundo da casa (escolha minha; antes estava no fundo que agora é da visitante, por causa da faixa dela na primeira foto).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
