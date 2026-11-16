@@ -361,6 +361,17 @@ jogo só nascem em `aneis`.
 - `coberturasAnel: [{ fora, dentro, h, cai, n, cor, cor2, corNervura, bordaFora: { larg, cor }, bordaDentro: { larg, cor }, bojo, fenda }]`:
   anel de cobertura em gomos, do contorno de fora até a boca de dentro
   (`cai` negativo sobe de fora pra dentro).
+  COBERTURA DE UMA LATERAL SÓ, COM ESTRUTURA (o Raulino de Oliveira): `de`,
+  `ate` limitam o arco; `angulos: [..]` dá as divisas dos painéis (calcule
+  pelos pontos da beira da frente, a cada 6 m); `normal: true` faz cada
+  divisa sair perpendicular à beira da frente (`dentro` tem de ser retângulo
+  de canto redondo ou chanfrado; `fora` pode ser qualquer contorno, até um
+  polígono lido raio a raio com `forma: 'raios'`); `beiral: [fora, dentro]`
+  é a altura da testeira (telha fina: 0,35); `pilares: { f, base, cor, esp,
+  cada, viga }` põe o pilar em cada divisa e a viga por baixo; `mastros: {
+  f, h, abre, cor, esp, cada }` põe o cavalete em A com os dois tirantes.
+  NÃO faça cobertura de arquibancada com `telhados` (chapa solta no ar, sem
+  apoio): o dono recusou. `telhados` é pra laje de prédio e marquise.
 - `folhas: [{ fora, dentro, n, bojo, fenda, cor, cor2, perfil: [[f, altura, largura], ..] }]`:
   folhas abauladas (o Beira-Rio).
 - `abobadas: [{ u, comp, vFrente, vFundo, n, bojo, cor, cor2, perfil: [[f, altura], ..] }]`:

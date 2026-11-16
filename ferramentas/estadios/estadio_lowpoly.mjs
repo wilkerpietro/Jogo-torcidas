@@ -204,6 +204,10 @@ export function construir(THREE, ficha) {
   const caixa = (w, h, d, c, x, y, z, grupo) => { const m = sombra(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c))); m.position.set(x, y, z); (grupo || cena).add(m); return m; };
   /* (u, v, altura) da ficha → (x, y, z) do three: v pra cima da imagem é −z */
   const P = (u, v, h) => [u, h, -v];
+  /* uma barra redonda entre dois pontos `[u, v, altura]` (os arcos, os mastros e os pilares das coberturas) */
+  const barra = (a, b, esp, c, grupo) => { const va = new THREE.Vector3(...P(a[0], a[1], a[2])), vb = new THREE.Vector3(...P(b[0], b[1], b[2])), d = vb.clone().sub(va), len = d.length();
+    if (len < 0.05) return; const m = sombra(new THREE.Mesh(new THREE.CylinderGeometry(esp / 2, esp / 2, len, 7), mat(c)));
+    m.position.copy(va.add(vb).multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); (grupo || cena).add(m); };
 
   /* ---- malha de faces coloridas ---- */
   function Malha() {
@@ -433,25 +437,53 @@ export function construir(THREE, ficha) {
     /* `opaca: true`: o pedaço de fora da arquibancada sai inteiro na vista de cima, como o anel de placas solares do Mineirão
        fora das cadeiras (a regra do Beira-Rio: em cima das cadeiras a cobertura sai transparente; fora delas, inteira) */
     const R = cb.opaca ? Ro : R0;
-    const n = cb.n || 60, hf = cb.h, hd = cb.h - (cb.cai || 0), prof = raioDe(0, cb.fora) - raioDe(0, cb.dentro);
-    const pt = (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return P(q[0], q[1], hd + (hf - hd) * f + (dh || 0)); };
-    const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
+    /* A COBERTURA DE UM TRECHO SÓ (o Raulino de Oliveira; dono, 16/11/2026: "Preciso que a cobertura do estádio do Volta Redonda
+       seja mais realista, é só um bloco solto acima da arquibancada"): `de` e `ate` limitam o arco; `angulos: [..]` dá as divisas
+       dos gomos uma a uma (pra elas caírem nas quinas de um contorno chanfrado e a telha ter a mesma largura na reta toda);
+       `beiral: [fora, dentro]` é a altura da testeira (telha fina: 0,3); `pilares: { f, base, cor, esp, cada, viga }` põe um pilar
+       em cada divisa, do degrau (`base`) até a telha, e a viga por baixo, da frente ao fundo; `mastros: { f, h, abre, cor, esp,
+       cada }` põe em cima de cada divisa o cavalete em A com os dois tirantes, um pra beira da frente e um pra de trás. */
+    const de = cb.de || 0, vao = (cb.ate == null ? de + 360 : cb.ate) - de, angs = cb.angulos || Array.from({ length: (cb.n || 60) + 1 }, (_, i) => de + vao * i / (cb.n || 60));
+    const n = angs.length - 1, inteiro = !cb.angulos && vao >= 360, hf = cb.h, hd = cb.h - (cb.cai || 0), am = (angs[0] + angs[n]) / 2, prof = raioDe(inteiro ? 0 : am, cb.fora) - raioDe(inteiro ? 0 : am, cb.dentro);
+    /* `normal: true` (com a beira de dentro em retângulo de canto redondo ou chanfrado): cada divisa sai PERPENDICULAR à beira
+       de dentro e vai reta até o contorno de fora, que pode ter qualquer desenho (a telha de uma lateral reta não abre em leque) */
+    const memoN = new Map(), porNormal = ang => { let q = memoN.get(ang); if (q) return q;
+      const cd = cb.dentro, pm = paramDe(ang, cd), a = pontoPor(pm, cd), ph = cd.chanfro ? Math.PI / 4 : pm.phi, nx = pm.tipo === 'h' ? 0 : pm.tipo === 'v' ? pm.sx : pm.sx * Math.cos(ph), ny = pm.tipo === 'h' ? pm.sy : pm.tipo === 'v' ? 0 : pm.sy * Math.sin(ph);
+      const sai = s => { const x = a[0] + nx * s, y = a[1] + ny * s; return Math.hypot(x, y) - raioDe(Math.atan2(y, x) / RAD, cb.fora); };
+      let s0 = 0, s1 = 2; while (sai(s1) < 0 && s1 < 400) s1 *= 2;
+      for (let k = 0; k < 40; k++) { const m = (s0 + s1) / 2; if (sai(m) < 0) s0 = m; else s1 = m; }
+      q = [a, [a[0] + nx * s1, a[1] + ny * s1]]; if (memoN.size < 20000) memoN.set(ang, q); return q; };
+    const pu = cb.normal ? (ang, f, dh) => { const [a, b] = porNormal(ang); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, hd + (hf - hd) * f + (dh || 0)]; }
+      : (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return [q[0], q[1], hd + (hf - hd) * f + (dh || 0)]; };
+    const pt = (ang, f, dh) => { const q = pu(ang, f, dh); return P(q[0], q[1], q[2]); };
+    const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = angs[i], a1 = angs[i + 1]; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
     const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
     /* AS FOLHAS (o Beira-Rio): com `bojo`, cada gomo é uma folha abaulada — a espinha do meio sobe `bojo` metros, e
        a luz pega um lado e o outro de cada folha de jeito diferente; `fenda` deixa um vão escuro entre as folhas */
-    if (cb.bojo) { const fen = (cb.fenda || 0) * 360 / n / 2;
-      for (let i = 0; i < n; i++) { const a0 = 360 * i / n + fen, a1 = 360 * (i + 1) / n - fen, am = (a0 + a1) / 2, c = i % 2 ? (cb.cor2 || cb.cor || '#f4f3ee') : (cb.cor || '#f4f3ee'), b = cb.bojo;
+    if (cb.bojo) { const fen = (cb.fenda || 0) * vao / n / 2;
+      for (let i = 0; i < n; i++) { const a0 = angs[i] + fen, a1 = angs[i + 1] - fen, am = (a0 + a1) / 2, c = i % 2 ? (cb.cor2 || cb.cor || '#f4f3ee') : (cb.cor || '#f4f3ee'), b = cb.bojo;
         R.quad(pt(a0, fd, 0), pt(a0, 1 - ff, 0), pt(am, 1 - ff, b), pt(am, fd, b * 0.4), c);
         R.quad(pt(am, fd, b * 0.4), pt(am, 1 - ff, b), pt(a1, 1 - ff, 0), pt(a1, fd, 0), c); }
     } else faixa(fd, 1 - ff, cb.cor || '#f4f3ee', cb.cor2);
     if (ff) faixa(1 - ff, 1, cb.bordaFora.cor); if (fd) faixa(0, fd, cb.bordaDentro.cor);
     for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, 0.2);
     /* as nervuras entre os gomos */
-    if (cb.nervuras !== false) for (let i = 0; i < n; i++) { const a = 360 * i / n, e = cb.larguraNervura || 0.16; R.quad(pt(a - e, fd, 0.12), pt(a - e, 1 - ff, 0.12), pt(a + e, 1 - ff, 0.12), pt(a + e, fd, 0.12), cb.corNervura || '#cfcfc8'); }
+    if (cb.nervuras !== false) for (let i = 0; i < (inteiro ? n : n + 1); i++) { const a = angs[i], e = cb.larguraNervura || 0.16; R.quad(pt(a - e, fd, 0.12), pt(a - e, 1 - ff, 0.12), pt(a + e, 1 - ff, 0.12), pt(a + e, fd, 0.12), cb.corNervura || '#cfcfc8'); }
     /* a borda de fora e a de dentro, de pé */
-    for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n;
-      R.quad(pt(a0, 1, 0), pt(a1, 1, 0), pt(a1, 1, -2.2), pt(a0, 1, -2.2), (cb.bordaFora && cb.bordaFora.cor) || cb.cor || '#f4f3ee');
-      R.quad(pt(a0, 0, 0), pt(a1, 0, 0), pt(a1, 0, -1.2), pt(a0, 0, -1.2), (cb.bordaDentro && cb.bordaDentro.cor) || cb.cor || '#f4f3ee'); }
+    const bF = cb.beiral ? cb.beiral[0] : 2.2, bD = cb.beiral ? cb.beiral[1] : 1.2;
+    for (let i = 0; i < n; i++) { const a0 = angs[i], a1 = angs[i + 1];
+      R.quad(pt(a0, 1, 0), pt(a1, 1, 0), pt(a1, 1, -bF), pt(a0, 1, -bF), (cb.bordaFora && cb.bordaFora.cor) || cb.corBeiral || cb.cor || '#f4f3ee');
+      R.quad(pt(a0, 0, 0), pt(a1, 0, 0), pt(a1, 0, -bD), pt(a0, 0, -bD), (cb.bordaDentro && cb.bordaDentro.cor) || cb.corBeiral || cb.cor || '#f4f3ee'); }
+    /* os pilares com a viga por baixo, e os mastros em A com os tirantes por cima */
+    const pl = cb.pilares, ms = cb.mastros, grupo = cb.opaca ? cena : coberturas;
+    if (pl || ms) for (let i = 0; i < (inteiro ? n : n + 1); i++) { const a = angs[i];
+      if (pl && i % (pl.cada || 1) === 0) { const f = pl.f == null ? 0.85 : pl.f, topo = pu(a, f, -0.1);
+        barra([topo[0], topo[1], pl.base || 0], topo, pl.esp || 0.36, pl.cor || '#d9dcde', grupo);
+        if (pl.viga !== false) barra(pu(a, 0, -0.32), pu(a, 1, -0.32), pl.espViga || 0.3, pl.corViga || pl.cor || '#d9dcde', grupo); }
+      if (ms && i % (ms.cada || 1) === 0) { const f = ms.f == null ? 0.85 : ms.f, pe = pu(a, f, 0.1), topo = pu(a, f, ms.h || 3), q0 = pu(a - 0.4, f, 0), q1 = pu(a + 0.4, f, 0);
+        const dl = Math.hypot(q1[0] - q0[0], q1[1] - q0[1]) || 1, ab = ms.abre == null ? 1.2 : ms.abre, tx = (q1[0] - q0[0]) / dl * ab, ty = (q1[1] - q0[1]) / dl * ab, c = ms.cor || '#eef0f1', e = ms.esp || 0.22;
+        barra([pe[0] - tx, pe[1] - ty, pe[2]], topo, e, c, grupo); barra([pe[0] + tx, pe[1] + ty, pe[2]], topo, e, c, grupo);
+        barra(topo, pu(a, 0, 0.1), e * 0.6, c, grupo); barra(topo, pu(a, 1, 0.1), e * 0.6, c, grupo); } }
   }
   /* ---- A COBERTURA DE FOLHAS (o Beira-Rio; dono, 14/11/2026: "observe a cobertura pra ficar mais condizente"): cada
      folha é uma membrana abaulada que nasce numa ponta no chão, do lado de fora, alarga subindo pela fachada, encosta
@@ -610,9 +642,6 @@ export function construir(THREE, ficha) {
      tombado `inclina` metros pra dentro do estádio; dele descem os tirantes em zigue-zague até a linha da cobertura (`base`, a
      altura do telhado embaixo do arco). Em cada pé, o pilar redondo de concreto com o anel da passarela. O arco sai transparente
      na vista de cima, como toda cobertura (`cobertura: false` deixa opaco); os pilares, de fora das arquibancadas, inteiros. ---- */
-  const barra = (a, b, esp, c, grupo) => { const va = new THREE.Vector3(...P(a[0], a[1], a[2])), vb = new THREE.Vector3(...P(b[0], b[1], b[2])), d = vb.clone().sub(va), len = d.length();
-    if (len < 0.05) return; const m = sombra(new THREE.Mesh(new THREE.CylinderGeometry(esp / 2, esp / 2, len, 7), mat(c)));
-    m.position.copy(va.add(vb).multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); (grupo || cena).add(m); };
   for (const ar of ficha.arcos || []) {
     const n = ar.n || 14, [u0, v0] = ar.de, [u1, v1] = ar.ate, L = Math.hypot(u1 - u0, v1 - v0), cor = ar.cor || '#f1f1ee', esp = ar.esp || 2.2, g = ar.cobertura === false ? cena : coberturas;
     /* (a normal que aponta pro meio do campo) */
