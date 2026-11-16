@@ -353,6 +353,10 @@ ARQUIBANCADA QUE FECHA PRA TRÁS (trapézio): num anel `reto`, dê ao `fora` um 
 mesma fração do lado da frente ao fundo. Arquibancadas que se cruzam em ângulo (lateral mais comprida que o vão entre as de
 trás do gol) vão em ANÉIS SEPARADOS: dentro de um anel os trechos não podem repetir ângulo.
 
+O MURO DO TERRENO ENTRA SEMPRE, SEM ESPERAR PEDIDO (o dono sentiu falta no Antônio Accioly e de novo no Bezerrão): trace no
+satélite a linha branca ou a sombra fina em volta do estádio e ponha com o ajudante `MURO(pontos, altura, cor)` da ficha do
+Bezerrão (um bloco fino com `giro` em cada trecho; serve pra muro enviesado e em curva). Diga o que foi estimado.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

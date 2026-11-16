@@ -34,6 +34,9 @@ const LAT = (b, a) => ({ a: a || 100, b, r: 0.5 }), FUN = a => ({ a, b: 90, r: 0
 const VD = '#3f9762', VD2 = '#378a58', VDE = '#2e7d4f', BR = '#eceae4', CIM = '#b9b8b0', ESC = '#d5d6cf';
 const BOCA = { larg: 3.4, fundo: 5, cor: '#1f2a24', corParapeito: '#f0f0ea' };
 const CAD = { cor: VD, cor2: VD2, padrao: 'mosaico', mistura: 0.4, corEscada: ESC, paredeAtras: true, corFachada: VDE, corMureta: '#e6e6df', parapeito: 1.6 };
+/* um MURO por uma linha de pontos: um bloco fino girado em cada trecho */
+const MURO = (pts, h = 2.6, cor = '#dedcd4') => pts.slice(1).map((b, i) => { const a = pts[i], du = b[0] - a[0], dv = b[1] - a[1];
+  return { u: (a[0] + b[0]) / 2, v: (a[1] + b[1]) / 2, w: Math.hypot(du, dv) + 0.4, d: 0.4, h, cor, giro: Math.atan2(dv, du) / RAD }; });
 /* o meio da principal e da concha (a arquibancada está um metro e meio pro sul do meio do campo) */
 const CU = -1.5;
 
@@ -81,6 +84,15 @@ export default {
     { u: CU - 1, v: 48, w: 5, d: 9, h: 0.3, y: 4.2, cor: '#1f2a24' },
     /* os dois bancos de reserva, ao pé da principal */
     { u: CU - 22, v: 40.2, w: 9, d: 1.8, h: 1.9, cor: '#e9ebe6' }, { u: CU + 22, v: 40.2, w: 9, d: 1.8, h: 1.9, cor: '#e9ebe6' },
+    /* O MURO do terreno (dono, 16/11/2026: "senti falta dos muros atrás do estádio"), traçado no satélite: do canto sul da
+       concha, por trás da arquibancada do sul (com as duas guaritas), por trás da lateral do leste (entre ela e o Centro
+       Olímpico) e por trás da rampa do norte, até o canto norte da concha. Os trechos enviesados e a ligação do canto
+       nordeste são estimados. */
+    ...MURO([[-65, 65], [-82.6, 65], [-82.6, 56.7], [-106.4, 56.7], [-106.4, -14.7], [-100.4, -14.7], [-100.4, -50], [-81.2, -52], [-81.2, -68], [-58.4, -83.7],
+             [82.4, -83.7], [88.6, -57.5], [124.9, -57.5], [124.9, 28], [94.1, 56.7], [61, 56.7]]),
+    { u: -110.5, v: 42, w: 7, d: 7, h: 3.2, cor: '#cfcdc4' }, { u: -110.5, v: 0, w: 8, d: 9, h: 3.2, cor: '#cfcdc4' },
+    /* a mureta branca da rampa em curva, atrás da arquibancada do norte */
+    ...MURO([[81.6, 40], [97, 34], [108.3, 23.3], [113.5, 12], [114.9, 0], [113, -14], [108.3, -26.7], [100, -42], [89.9, -55.8]], 1.2, '#eeeeea'),
     /* o placar, atrás da arquibancada do norte */
     { u: 84, v: 5, w: 1, d: 9, h: 5, y: 7, cor: '#17191c' }, { u: 84, v: 1.5, w: 0.7, d: 0.7, h: 7, cor: '#8d949a' }, { u: 84, v: 8.5, w: 0.7, d: 0.7, h: 7, cor: '#8d949a' }
   ],
@@ -92,7 +104,7 @@ export default {
     { tipo: 'arvores', u: -95, v: 62, w: 30, d: 12, n: 4 }, { tipo: 'arvores', u: 95, v: 86, w: 14, d: 50, n: 5 },
     { tipo: 'rua', de: [-150, 108], ate: [-112, 148], larg: 10 }, { tipo: 'rua', de: [100, 132], ate: [142, 70], larg: 12 },
     /* à direita (norte): a rampa em curva e a quadrinha */
-    { tipo: 'grama', u: 97, v: -2, w: 12, d: 78, cor: '#b9ac9a' }, { tipo: 'quadra', u: 111, v: -76, w: 28, d: 22, cor: '#5aa58c' },
+    { tipo: 'grama', u: 99, v: -2, w: 14, d: 70, cor: '#b9ac9a' }, { tipo: 'quadra', u: 111, v: -76, w: 28, d: 22, cor: '#5aa58c' },
     /* embaixo (leste): o Centro Olímpico: a pista de atletismo, as piscinas e o ginásio */
     { tipo: 'grama', u: 38, v: -104, w: 98, d: 34, cor: '#a8554a' }, { tipo: 'quadra', u: 38, v: -104, w: 80, d: 20, cor: '#5d8a4f' },
     { tipo: 'predio', u: -92, v: -100, w: 66, d: 24, h: 9, cor: '#e9e6dc', giro: -36 }, { tipo: 'piscina', u: -56, v: -128, w: 24, d: 12 },
