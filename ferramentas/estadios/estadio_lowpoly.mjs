@@ -598,6 +598,31 @@ export function construir(THREE, ficha) {
     const nb = Math.round(pp.larg / 4); for (let i = 0; i <= nb; i++) { const x = -pp.larg / 2 + pp.larg * i / nb; caixa(0.5, 4.2, 0.5, cr, c[0] + tx * x, pp.h + 2.1, -(c[1] + ty * x)); }
     const luz = caixa(pp.larg * 0.86, 3, 0.9, '#f7f9fb', c[0] - Math.cos(a) * 1.4, pp.h + 2.1, -(c[1] - Math.sin(a) * 1.4)); luz.rotation.y = (pp.ang + 90) * RAD;
   }
+  /* ---- OS ARCOS DE TRELIÇA por cima da cobertura (o Nilton Santos; dono, 16/11/2026: "aplique o arco de decoração da
+     cobertura corretamente"): `arcos: [{ de: [u, v], ate: [u, v], pe, topo, inclina, base, n, esp, cor, pilar: { r, cor } }]`.
+     Um tubo grosso em parábola, do alto de um pilar (`pe`, a altura dos pés) ao alto do outro, com o meio a `topo` metros e
+     tombado `inclina` metros pra dentro do estádio; dele descem os tirantes em zigue-zague até a linha da cobertura (`base`, a
+     altura do telhado embaixo do arco). Em cada pé, o pilar redondo de concreto com o anel da passarela. O arco sai transparente
+     na vista de cima, como toda cobertura (`cobertura: false` deixa opaco); os pilares, de fora das arquibancadas, inteiros. ---- */
+  const barra = (a, b, esp, c, grupo) => { const va = new THREE.Vector3(...P(a[0], a[1], a[2])), vb = new THREE.Vector3(...P(b[0], b[1], b[2])), d = vb.clone().sub(va), len = d.length();
+    if (len < 0.05) return; const m = sombra(new THREE.Mesh(new THREE.CylinderGeometry(esp / 2, esp / 2, len, 7), mat(c)));
+    m.position.copy(va.add(vb).multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); (grupo || cena).add(m); };
+  for (const ar of ficha.arcos || []) {
+    const n = ar.n || 14, [u0, v0] = ar.de, [u1, v1] = ar.ate, L = Math.hypot(u1 - u0, v1 - v0), cor = ar.cor || '#f1f1ee', esp = ar.esp || 2.2, g = ar.cobertura === false ? cena : coberturas;
+    /* (a normal que aponta pro meio do campo) */
+    let nx = -(v1 - v0) / L, ny = (u1 - u0) / L; if (nx * (u0 + u1) + ny * (v0 + v1) > 0) { nx = -nx; ny = -ny; }
+    const inc = ar.inclina || 0, base = ar.base == null ? ar.pe : ar.base;
+    const noArco = f => { const k = 4 * f * (1 - f); return [u0 + (u1 - u0) * f + nx * inc * k, v0 + (v1 - v0) * f + ny * inc * k, ar.pe + (ar.topo - ar.pe) * k]; };
+    const noTelhado = f => { const k = 4 * f * (1 - f); return [u0 + (u1 - u0) * f + nx * inc * 0.5 * k, v0 + (v1 - v0) * f + ny * inc * 0.5 * k, base]; };
+    for (let i = 0; i < n; i++) { const f0 = i / n, f1 = (i + 1) / n, fm = (i + 0.5) / n;
+      barra(noArco(f0), noArco(f1), esp, cor, g);
+      /* (os tirantes só onde o arco já passou da altura do telhado) */
+      if (noArco(fm)[2] > base + 3) { barra(noArco(f0), noTelhado(fm), esp * 0.22, cor, g); barra(noTelhado(fm), noArco(f1), esp * 0.22, cor, g);
+        if (i > 0 && noArco((i - 0.5) / n)[2] > base + 3) barra(noTelhado((i - 0.5) / n), noTelhado(fm), esp * 0.3, cor, g); } }
+    if (ar.pilar !== false) for (const [u, v] of [ar.de, ar.ate]) { const pl = ar.pilar || {}, r = pl.r || 2.6, cp = pl.cor || '#d3d3cd';
+      const cil = (raio, h, y, c) => { const m = sombra(new THREE.Mesh(new THREE.CylinderGeometry(raio, raio, h, 14), mat(c))); m.position.set(u, y + h / 2, -v); cena.add(m); };
+      cil(r, ar.pe, 0, cp); cil(r + 1.1, 1.2, ar.pe * 0.66, '#e6e6e1'); cil(r + 0.25, 3, ar.pe - 1.5, '#eeeeea'); }
+  }
   for (const b of ficha.blocos || []) {
     const grupo = b.cobertura ? coberturas : cena;
     const m = caixa(b.w, b.h, b.d, b.cor || '#c9c6bb', b.u, (b.y || 0) + b.h / 2, -b.v, grupo); if (b.giro) m.rotation.y = b.giro * RAD;

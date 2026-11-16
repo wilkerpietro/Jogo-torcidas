@@ -155,6 +155,14 @@ o campo (o Bernardo Rubinger de Queiroz). E faixa de chão que precisa ligar
 duas partes não pode começar no canto arredondado da beira: ali ela fica
 fina demais e o teste dá duas ilhas.
 
+ARCO DE TRELIÇA POR CIMA DA COBERTURA (o Nilton Santos): `arcos: [{ de: [u,
+v], ate: [u, v], pe, topo, inclina, base, n, esp, cor, pilar: { r, cor } }]`.
+Parábola do alto de um pilar ao outro (`pe` nos pés, `topo` no meio),
+tombada `inclina` metros pra dentro, com tirantes até a altura `base` do
+telhado e um pilar redondo em cada pé (`pilar: false` tira). Os pés ficam
+de FORA da beira do telhado. E `alambrado: false, muro: false` só nas arenas
+de cadeira colada no campo: estádio com pista em volta leva os dois.
+
 O ESPELHO DO DEGRAU (a face de pé entre as fileiras): com cadeira, ele sai
 sozinho no tom da cadeira da fileira (São Januário; antes era sempre
 concreto e a arquibancada vista de frente ficava cinza). Num trecho sem

@@ -20,8 +20,11 @@
      cinza.
    · O SUL (à esquerda), um anel só, branco embaixo e quadriculado de preto e
      branco em cima: o da VISITANTE (o mapa de ingressos).
-   · O TELHADO branco cobre tudo, com a abertura em cima do campo, pendurado
-     nos quatro arcos de treliça branca. Em volta, as duas rampas redondas e
+   · O TELHADO branco cobre tudo, inclinado (alto na abertura, descendo pra
+     fora), pendurado nos quatro arcos de treliça branca, que nascem nos
+     pilares redondos dos cantos (`arcos`).
+   · O ALAMBRADO em volta da pista e o MURO no fim do chão andável (as regras
+     de todo estádio; eu tinha desligado, como nas arenas). Em volta, as duas rampas redondas e
      a esplanada do lado oeste.
    AS TORCIDAS: a visitante no Sul (o mapa); a Fúria Jovem no Norte e a Torcida
    Jovem no Leste Inferior (escolhas minhas, sem fonte). */
@@ -54,7 +57,7 @@ const OESTE_SUP = (() => { const seq = ['', '', '★', '', '', 'T', '', '', '★
 const FRESTA = (de, ate) => ({ de, ate, tipo: 'passagem', cor: '#9a9893' });
 
 export default {
-  id: 'estadio-nilton-santos', alambrado: false, muro: false, nome: 'Nilton Santos', clubes: ['botafogo'], norte: 24, vazado: 0.12, folga: 20,
+  id: 'estadio-nilton-santos', nome: 'Nilton Santos', clubes: ['botafogo'], norte: 24, vazado: 0.12, folga: 20,
   chao: { cor: '#8a867e', esplanada: { a: 175, b: 140, forma: 'elipse' }, corEsplanada: '#b9b2a6' },
   campo: { corMargem: '#6aaed6', pista: { dentro: PISTA, fora: W, cor: '#3f86c4', raias: 8 } },
   corMureta: '#d9dad6',
@@ -95,11 +98,17 @@ export default {
     { fora: { a: 152, b: 112, r: 100 }, dentro: F, h: 35, cai: -9, n: 80, cor: '#eeeeea', cor2: '#e6e6e2', opaca: true, nervuras: false, bordaFora: { larg: 3, cor: '#e3e3df' } },
     { fora: F, dentro: { a: 100, b: 68, r: 58 }, h: 44, cai: -6, n: 80, cor: '#eeeeea', cor2: '#e6e6e2', nervuras: false, bordaDentro: { larg: 1.5, cor: '#c9cbcd' } }
   ],
+  /* OS QUATRO ARCOS de treliça branca por cima do telhado (as fotos do dono): os dois compridos, em cima dos laterais, e os dois
+     dos fundos; cada um nasce no alto de um pilar redondo de concreto (dois pilares juntos em cada canto), sobe em curva,
+     tombado pra dentro, e segura o telhado pelos tirantes */
+  arcos: [
+    { de: [-112, 96], ate: [112, 96], pe: 46, topo: 80, inclina: 16, base: 44.5, n: 16 },
+    { de: [-112, -96], ate: [112, -96], pe: 46, topo: 80, inclina: 16, base: 44.5, n: 16 },
+    { de: [125, 85], ate: [125, -85], pe: 46, topo: 72, inclina: 14, base: 44.5, n: 12 },
+    { de: [-125, 85], ate: [-125, -85], pe: 46, topo: 72, inclina: 14, base: 44.5, n: 12 }
+  ],
   fachada: { cor: '#d9dad6' },
   blocos: [
-    /* os quatro arcos de treliça branca, por cima do telhado */
-    { u: 0, v: 96, w: 270, d: 2.2, h: 2.2, y: 54, cor: '#f4f4f0' }, { u: 0, v: -96, w: 270, d: 2.2, h: 2.2, y: 54, cor: '#f4f4f0' },
-    { u: 134, v: 0, w: 2.2, d: 190, h: 2.2, y: 54, cor: '#f4f4f0' }, { u: -134, v: 0, w: 2.2, d: 190, h: 2.2, y: 54, cor: '#f4f4f0' },
     /* o escudo do Botafogo pintado na pista, atrás de cada gol */
     { u: 74, v: 0, w: 10, d: 12, h: 0.12, cor: PT, texto: '★', corTexto: BR, textoLargura: 0.6, textoAltura: 0.6 },
     { u: -74, v: 0, w: 10, d: 12, h: 0.12, cor: PT, texto: '★', corTexto: BR, textoLargura: 0.6, textoAltura: 0.6 },
