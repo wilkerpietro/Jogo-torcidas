@@ -14630,15 +14630,6 @@ O dono: "Cena de arredores fiel à realidade em todos os estádios e o acesso ao
 - **O crédito**: dados de rua © colaboradores do OpenStreetMap (licença ODbL). Tem de aparecer nos créditos do jogo; ainda não pus em tela nenhuma.
 - **Conferido**: 326 casas montadas sem falha; os cinco bondes com caminho até o portão; a briga do América-MG abrindo na rua, sem erro de página.
 
-## Goiás na Serrinha, Vila Nova no OBA; Remo e Paysandu ficam no Mangueirão (dono, 16/11/2026)
-
-Perguntei, pela lista dos estádios com arredores de verdade, se separava os quatro que dividem estádio nos dados. O dono: "Goiás com o serrinha, vila com o OBA. Remo e Paysandu com o mangueirão mesmo".
-
-- **Os dados**: o Goiás sai do Serra Dourada e manda na **Serrinha** (o Hailé Pinheiro), `serrinha`, **14.525 lugares** (a imprensa de Goiânia, 2025; a Wikipédia em inglês diz 14.450); o Vila Nova manda no **OBA** (o Onésio Brasileiro Alvarenga), `oba`, **11.788 lugares**. Os dois nomes já estavam na lista de gênero. No mapa do jogo, a Serrinha (Setor Bela Vista) fica no vizinho Setor Marista e o OBA (Setor Leste Universitário) no vizinho Vila Nova. Mudaram `times.js`, `estadios.js`, `torcidas.js` (Força Jovem Goiás, Esquadrão Vilanovense), `cidades.js`, as cópias de `cenario3d/dados/`, o pacote `cenario3d/js/jogo.js`, as duas fontes em `dados/fonte/` e os dois importadores.
-- **O Serra Dourada** continua na praça de Goiânia, sem mandante (o jogo aceita a lista vazia). Fica com o dono decidir se ele sai ou se recebe os clássicos.
-- **A conta dos estádios com arredores de verdade** passa a 22: os 11 dos 12 grandes, os 6 dos 7 grandes do Nordeste, Serrinha, OBA, Arena da Baixada, Couto Pereira e Mangueirão (o dono contou 23, com Remo e Paysandu separados). O Independência, o piloto, continua fora da lista até ele dizer.
-- **Nenhum dos dois tem ficha ainda**: até serem modelados, o Goiás e o Vila Nova usam a cena genérica pelo tamanho (a de 10 mil).
-
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -2923,11 +2923,9 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "cerrado",
-   "quantidadeEstadios": 5,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Serra Dourada",
-    "Serrinha",
-    "OBA",
     "Antonio Accyoly",
     "Jonas Duarte"
    ],
