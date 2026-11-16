@@ -14982,6 +14982,12 @@ As torcidas são escolha minha: a Bamor atrás do gol do norte, a Terror Tricolo
 
 A Fonte Nova é dos diferenciados: não entrou nos arredores padrão, e o muro do terreno e a esplanada do sul (as tendas, a escadaria, o edifício-garagem) ficam para os arredores de verdade. Briga testada sem erros.
 
+## Fonte Nova: só o anel do meio tem outro tom (dono, 16/11/2026)
+
+O dono, com mais uma foto de dentro: "perceba que só o anel central da arena fonte nova tem arquibancada com tom diferente do azul claro predominante das demais".
+
+Eu tinha lido três cores: verde-água embaixo, azul no meio (com um trecho azul-marinho no oeste) e verde em cima. São duas: o azul claro (verde-água) nos níveis de baixo e de cima, e um azul mais fechado no anel do meio, inteiro. O trecho azul-marinho saiu; o verde do nível de cima era a sombra da cobertura nas fotos.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

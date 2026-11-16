@@ -6,11 +6,11 @@
    No quadro o SUL (o lado aberto, virado pro Dique do Tororó) fica à DIREITA,
    o NORTE à esquerda, o LESTE em cima e o OESTE embaixo.
    Arquibancada em FERRADURA, de três níveis de cadeiras, aberta no fundo sul:
-   · embaixo, o anel de cadeiras verde-água claro, na ferradura inteira;
-   · no meio, o nível estreito de cadeiras azul-esverdeadas (azul-marinho no
-     lado oeste), atrás da testeira cinza;
-   · em cima, o nível verde, atrás da faixa cor de vinho dos anúncios; um trecho
-     do noroeste sem cadeira, só o degrau claro.
+   · embaixo, o anel de cadeiras azul claro (verde-água), na ferradura inteira;
+   · no meio, o nível estreito, o ÚNICO de outro tom: azul mais fechado, atrás
+     da testeira cinza;
+   · em cima, o mesmo azul claro de baixo, atrás da faixa cor de vinho dos
+     anúncios; um trecho do noroeste sem cadeira, só o degrau claro.
    · no fundo sul, a laje sobre pilares altos onde a ferradura abre, e a viga do
      letreiro ARENA FONTE NOVA; nas duas pontas da ferradura, os painéis
      vermelhos de fora.
@@ -33,7 +33,9 @@
    AS TORCIDAS (escolha minha, sem mapa de setores): a Bamor atrás do gol do
    norte, a Terror Tricolor ao lado dela; a visitante no canto do sudeste,
    embaixo, onde está a torcida de fora na foto de jogo do dono. */
-const AGUA = '#34c2b6', AGUA2 = '#2db2c2', MEIO = '#2a9cb0', MEIO2 = '#2790a6', MARINHO = '#22507f', MARINHO2 = '#1d4670', VERDE = '#1f9a80', VERDE2 = '#1b8d76';
+/* o azul claro (verde-água) dos níveis de baixo e de cima, e o azul mais fechado do anel do meio, o único de tom diferente
+   (dono, 16/11/2026: "só o anel central da arena fonte nova tem arquibancada com tom diferente do azul claro predominante") */
+const AGUA = '#36c0bf', AGUA2 = '#2fb3c6', MEIO = '#2b84b0', MEIO2 = '#2677a3';
 const CONC = '#dfe0dc', VINHO = '#7a2433';
 /* a beira de dentro e os fundos dos três níveis (o contorno abre `d` metros pra fora) */
 const C = d => ({ a: 61 + d, b: 42 + d, r: 26 + d });
@@ -55,20 +57,18 @@ export default {
       trechos: [
         { de: -AB1, ate: AB1, tipo: 'passagem', cor: '#b9b6ac' },
         { de: AB1, ate: 360 - AB1, ...CADEIRA(AGUA, AGUA2, { vomitorios: { f: 0.5, cada: 2 } }) }] },
-    /* NO MEIO: o nível estreito, azul-esverdeado; azul-marinho no oeste */
+    /* NO MEIO: o nível estreito, o único de outro tom: azul mais fechado */
     { dentro: C(19), fora: C(28), h: [11.6, 16.2], fileiras: 10, corredorFrente: 1.2, corMureta: '#c9ccd0',
       trechos: [
         { de: -AB2, ate: AB2, tipo: 'vazio' },
-        { de: AB2, ate: 235, ...CADEIRA(MEIO, MEIO2, { vomitorios: { f: 0, cada: 1 } }) },
-        { de: 235, ate: 305, ...CADEIRA(MARINHO, MARINHO2, { vomitorios: { f: 0, cada: 1 } }) },
-        { de: 305, ate: 360 - AB2, ...CADEIRA(MEIO, MEIO2, { vomitorios: { f: 0, cada: 1 } }) }] },
-    /* EM CIMA: o nível verde, atrás da faixa cor de vinho; o trecho sem cadeira do noroeste */
+        { de: AB2, ate: 360 - AB2, ...CADEIRA(MEIO, MEIO2, { vomitorios: { f: 0, cada: 1 } }) }] },
+    /* EM CIMA: o mesmo azul claro de baixo, atrás da faixa cor de vinho; o trecho sem cadeira do noroeste */
     { dentro: C(28), fora: C(45), h: [20, 31.5], fileiras: 19, corredorFrente: 1.4, corMureta: VINHO,
       trechos: [
         { de: -AB2, ate: AB2, tipo: 'vazio' },
-        { de: AB2, ate: 205, ...CADEIRA(VERDE, VERDE2, { vomitorios: { f: 0.06, cada: 2 } }) },
+        { de: AB2, ate: 205, ...CADEIRA(AGUA, AGUA2, { vomitorios: { f: 0.06, cada: 2 } }) },
         { de: 205, ate: 255, cor: '#d6d6d0', cor2: '#cbcbc5', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 12, vomitorios: { f: 0.06, cada: 2 } },
-        { de: 255, ate: 360 - AB2, ...CADEIRA(VERDE, VERDE2, { vomitorios: { f: 0.06, cada: 2 } }) }] }
+        { de: 255, ate: 360 - AB2, ...CADEIRA(AGUA, AGUA2, { vomitorios: { f: 0.06, cada: 2 } }) }] }
   ],
   /* a fachada: as galerias abertas, de lajes brancas, só na ferradura */
   fachada: { cor: CONC, galerias: { de: AB2, ate: 360 - AB2, dentro: C(45), fora: GALERIA, pisos: [7, 13, 19, 25], bordas: [31], topo: 31, esp: 0.6, guarda: 1.3,

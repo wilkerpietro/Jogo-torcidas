@@ -511,6 +511,9 @@ cima; as `galerias` da fachada levam `de` e `ate`. A cobertura pode dar a volta
 inteira mesmo assim (olhe uma foto de dentro virada pro lado aberto).
 CADEIRA QUE DE LONGE É UMA MANCHA DE COR (arena de cadeira colorida):
 `pisoPintado: true`, senão o concreto entre as cadeiras apaga a cor.
+COR DE CADEIRA DEBAIXO DE COBERTURA: o nível de cima fica na sombra e parece de
+outra cor (na Fonte Nova li verde onde é o mesmo azul claro de baixo). Compare
+os níveis numa foto em que os dois estejam na mesma luz antes de dar cor nova.
 
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
