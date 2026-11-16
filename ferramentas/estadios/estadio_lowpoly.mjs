@@ -776,6 +776,65 @@ export function construir(THREE, ficha) {
       for (let i = 0; i < e.n; i++) { const u = e.u + (rnd() - 0.5) * e.w, v = e.v + (rnd() - 0.5) * e.d, r = 2.4 + rnd() * 2;
         caixa(0.6, 3, 0.6, '#6b5a45', u, 1.5, -v);
         const m = sombra(new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat(['#3f8a47', '#4a9a52', '#357a3e'][Math.floor(rnd() * 3)], { flatShading: true }))); m.position.set(u, 3 + r * 0.7, -v); cena.add(m); }
+    } else if (e.tipo === 'piso') {
+      /* O PISO DESENHADO do quarteirão do estádio (dono, 16/11/2026: "preciso de mais detalhismo no quarteirão do estádio [...]
+         pode ter calçadas, ciclovias, jardim maior, ou concreto também, ou piso de praça"): um retângulo (`u, v, w, d, giro`)
+         ou um polígono (`pts`, com `furo` opcional) pintado com um padrão que se repete em metros. `padrao`: 'ladrilho' (a
+         junta a cada `passo`), 'xadrez' (duas cores), 'pedra' (a pedra portuguesa, em ondas), 'ciclovia' (vermelha, com as
+         faixas brancas da beira e a tracejada do meio; corre ao longo de `w`) ou 'liso'. */
+      const T = 256, cp = document.createElement('canvas'); cp.width = cp.height = T; const x = cp.getContext('2d'), c1 = e.cor || '#c4bfb2', c2 = e.cor2 || '#aaa598', pas = e.passo || 3; let per = pas;
+      x.fillStyle = c1; x.fillRect(0, 0, T, T);
+      if (e.padrao === 'xadrez') { per = pas * 2; x.fillStyle = c2; x.fillRect(0, 0, T / 2, T / 2); x.fillRect(T / 2, T / 2, T / 2, T / 2); }
+      else if (e.padrao === 'pedra') { per = pas * 2; x.fillStyle = c2; for (const y0 of [0, T / 2]) { x.beginPath(); x.moveTo(0, y0 + T * 0.1); for (let i = 0; i <= T; i += 4) x.lineTo(i, y0 + T * 0.1 + Math.sin(i / T * Math.PI * 2) * T * 0.085); for (let i = T; i >= 0; i -= 4) x.lineTo(i, y0 + T * 0.33 + Math.sin(i / T * Math.PI * 2) * T * 0.085); x.closePath(); x.fill(); } }
+      else if (e.padrao === 'ladrilho') { x.strokeStyle = c2; x.lineWidth = 6; x.strokeRect(0, 0, T, T); }
+      else if (e.padrao === 'ciclovia') { x.fillStyle = e.cor || '#b5553f'; x.fillRect(0, 0, T, T); x.fillStyle = '#f1efe6'; x.fillRect(0, 6, T, 12); x.fillRect(0, T - 18, T, 12); x.fillStyle = '#f2d24a'; x.fillRect(0, T / 2 - 5, T * 0.5, 10); }
+      const tex = new THREE.CanvasTexture(cp); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 4;
+      let g;
+      if (e.padrao === 'ciclovia' && !e.pts) { g = new THREE.PlaneGeometry(e.w, e.d); g.rotateX(-Math.PI / 2); tex.repeat.set(Math.max(1, Math.round(e.w / 4)), 1); }
+      else { const gr = (e.giro || 0) * RAD, cg = Math.cos(gr), sg = Math.sin(gr), pts = e.pts || [[-e.w / 2, -e.d / 2], [e.w / 2, -e.d / 2], [e.w / 2, e.d / 2], [-e.w / 2, e.d / 2]].map(([a, b]) => [e.u + a * cg - b * sg, e.v + a * sg + b * cg]);
+        const sh = new THREE.Shape(pts.map(q => new THREE.Vector2(q[0], q[1]))); if (e.furo) sh.holes.push(new THREE.Path(e.furo.map(q => new THREE.Vector2(q[0], q[1]))));
+        g = new THREE.ShapeGeometry(sh); g.rotateX(-Math.PI / 2); tex.repeat.set(1 / per, 1 / per); }
+      const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: tex })); m.receiveShadow = true;
+      if (e.padrao === 'ciclovia' && !e.pts) { m.position.set(e.u, e.y || 0.11, -e.v); if (e.giro) m.rotation.y = e.giro * RAD; } else m.position.y = e.y || 0.105;
+      cena.add(m);
+    } else if (e.tipo === 'jardim') {
+      /* O JARDIM: o gramado com a cerca viva em volta, o caminho que atravessa, os canteiros de flor, as árvores e os bancos */
+      caixa(e.w, 0.14, e.d, e.cor || '#6f9a55', e.u, 0.07, -e.v);
+      for (const [du, dv, w, d] of [[0, e.d / 2 - 0.4, e.w, 0.8], [0, -e.d / 2 + 0.4, e.w, 0.8], [e.w / 2 - 0.4, 0, 0.8, e.d], [-e.w / 2 + 0.4, 0, 0.8, e.d]]) caixa(w, 0.75, d, '#3f7a3f', e.u + du, 0.375, -(e.v + dv));
+      if (e.w >= 18 || e.d >= 18) { if (e.w >= e.d) caixa(2.4, 0.18, e.d, '#d9d3c5', e.u, 0.09, -e.v); else caixa(e.w, 0.18, 2.4, '#d9d3c5', e.u, 0.09, -e.v); }
+      const FL = ['#d8443a', '#f2c230', '#e98fb0', '#f4f1ea', '#8a5fc0', '#e8792e'];
+      for (let i = 0; i < Math.max(2, Math.round(e.w * e.d / 85)); i++) caixa(1.6 + rnd() * 1.8, 0.34, 1.2 + rnd() * 1.4, FL[Math.floor(rnd() * FL.length)], e.u + (rnd() - 0.5) * (e.w - 5), 0.22, -(e.v + (rnd() - 0.5) * (e.d - 5)));
+      for (let i = 0; i < (e.n || 0); i++) { const u = e.u + (rnd() - 0.5) * (e.w - 4), v = e.v + (rnd() - 0.5) * (e.d - 4), r = 2.2 + rnd() * 1.9;
+        caixa(0.6, 3, 0.6, '#6b5a45', u, 1.5, -v); const m = sombra(new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat(['#3f8a47', '#4a9a52', '#357a3e', '#5aa64f'][Math.floor(rnd() * 4)], { flatShading: true }))); m.position.set(u, 3 + r * 0.7, -v); cena.add(m); }
+      if (e.bancos !== false) { const hz = e.w >= e.d, n = Math.max(1, Math.round((hz ? e.w : e.d) / 12));
+        for (let i = 0; i < n; i++) for (const sgn of [-1, 1]) { const f = ((i + 0.5) / n - 0.5) * (hz ? e.w : e.d); if (hz) caixa(1.9, 0.5, 0.6, '#7a5a3a', e.u + f, 0.25, -(e.v + sgn * (e.d / 2 + 0.9))); else caixa(0.6, 0.5, 1.9, '#7a5a3a', e.u + sgn * (e.w / 2 + 0.9), 0.25, -(e.v + f)); } }
+    } else if (e.tipo === 'chafariz') {
+      const r = e.r || 4; for (const [rr, h, c] of [[r, 0.6, '#b9b5aa'], [r - 0.5, 0.64, '#5fa8d0'], [r * 0.3, 1.2, '#b9b5aa'], [r * 0.24, 1.26, '#7fc0e0'], [0.3, 2.6, '#c9c5ba']]) { const m = sombra(new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, h, 22), mat(c))); m.position.set(e.u, h / 2, -e.v); cena.add(m); }
+    } else if (e.tipo === 'poste') {
+      caixa(0.2, e.h || 5.5, 0.2, '#5c6165', e.u, (e.h || 5.5) / 2, -e.v); caixa(1.3, 0.14, 0.34, '#efe9c8', e.u, e.h || 5.5, -e.v);
+    } else if (e.tipo === 'banco') {
+      const m = caixa(1.9, 0.5, 0.6, '#7a5a3a', e.u, 0.25, -e.v); if (e.giro) m.rotation.y = e.giro * RAD;
+    } else if (e.tipo === 'ambulante') {
+      /* OS AMBULANTES da porta do estádio (dono, 16/11/2026: "pontos de venda como barraquinhas, churrasquinho, cachorro quente
+         e etc, como o outro jogo 3d fazia"): os cinco do jogo 3D antigo (cenario3d/js/ambulantes3d.js), em poucas peças.
+         `sabor`: 'pipoca' (o carrinho de vidro), 'cachorro' (o carrinho de inox com o guarda-sol amarelo e vermelho),
+         'espetinho' (a churrasqueira, o isopor e o toldo listrado), 'bebidas' (os isopores e o guarda-sol azul) ou 'camelo' (a
+         arara de camisas nas `cores` do clube, a mesa dos bonés e a bandeira). `giro` em graus; `escala` aumenta a peça inteira
+         (na cena vista de cima, do tamanho de verdade ela some). */
+      const g = (e.giro || 0) * RAD, cg = Math.cos(g), sg = Math.sin(g), K = e.escala || 1, em = (x, z) => [e.u + (x * cg + z * sg) * K, e.v + (x * sg - z * cg) * K];
+      const pc = (w, h, d, cor, x, y, z) => { const q = em(x, z), m = caixa(w * K, h * K, d * K, cor, q[0], y * K, -q[1]); m.rotation.y = g; return m; };
+      const sol = (x, z, r, c1, c2) => { const q = em(x, z); caixa(0.08 * K, 2.1 * K, 0.08 * K, '#d9d9d6', q[0], 1.05 * K, -q[1]);
+        const a = sombra(new THREE.Mesh(new THREE.ConeGeometry(r * K, 0.5 * K, 8), mat(c1, { flatShading: true }))); a.position.set(q[0], 2.3 * K, -q[1]); cena.add(a);
+        const b = sombra(new THREE.Mesh(new THREE.ConeGeometry(r * 0.45 * K, 0.32 * K, 8), mat(c2, { flatShading: true }))); b.position.set(q[0], 2.5 * K, -q[1]); cena.add(b); };
+      const toldo = (c1, c2) => { for (const [x, z] of [[-1.2, -0.9], [1.2, -0.9], [-1.2, 0.9], [1.2, 0.9]]) pc(0.08, 2.2, 0.08, '#d9d9d6', x, 1.1, z); for (let k = 0; k < 4; k++) pc(0.66, 0.08, 2.1, k % 2 ? c2 : c1, -0.99 + 0.66 * k, 2.24, 0); };
+      if (e.sabor === 'pipoca') { pc(1.1, 0.7, 0.7, '#c62828', 0, 0.75, 0); pc(1.0, 0.6, 0.6, '#e9f1f4', 0, 1.4, 0); pc(1.3, 0.1, 0.9, '#c62828', 0, 1.78, 0); pc(0.06, 0.5, 0.5, '#2a2a2a', -0.62, 0.3, 0); pc(0.06, 0.5, 0.5, '#2a2a2a', 0.62, 0.3, 0); }
+      else if (e.sabor === 'cachorro') { pc(1.5, 0.85, 0.75, '#c9ced2', 0, 0.55, 0); pc(1.4, 0.3, 0.1, '#e9f1f4', 0, 1.12, 0.3); pc(0.3, 0.2, 0.3, '#b23b2c', 0.4, 1.08, -0.1); sol(-0.2, -0.2, 1.4, '#f2c230', '#c62828'); }
+      else if (e.sabor === 'espetinho') { pc(1.2, 0.8, 0.5, '#2f2f31', 0, 0.5, 0); pc(1.05, 0.06, 0.36, '#d8492a', 0, 0.93, 0); pc(0.6, 0.5, 0.45, '#eef0ee', 1.2, 0.25, 0.1); pc(0.45, 0.45, 0.45, '#e9e9e4', -1.1, 0.45, -0.5); toldo(e.cor || '#c62828', '#f4f1ea'); }
+      else if (e.sabor === 'bebidas') { pc(0.7, 0.5, 0.5, '#eef0ee', -0.4, 0.45, 0); pc(0.7, 0.5, 0.5, '#2f6fb0', 0.4, 0.45, 0); pc(0.7, 0.45, 0.5, '#eef0ee', 0, 0.95, 0); pc(0.45, 0.45, 0.45, '#e9e9e4', 1.2, 0.45, -0.4); sol(0, -0.3, 1.45, '#2f6fb0', '#f4f1ea'); }
+      else { const cs = e.cores || ['#f2c230', '#1f8a3c']; pc(2.2, 0.06, 0.06, '#8d949a', 0, 1.7, 0); pc(0.06, 1.7, 0.06, '#8d949a', -1.1, 0.85, 0); pc(0.06, 1.7, 0.06, '#8d949a', 1.1, 0.85, 0);
+        for (let k = 0; k < 5; k++) pc(0.34, 0.6, 0.1, cs[k % cs.length], -0.84 + 0.42 * k, 1.36, 0);
+        pc(1.3, 0.75, 0.7, '#7a5a3a', 0.2, 0.375, -1.1); for (let k = 0; k < 3; k++) pc(0.28, 0.1, 0.28, cs[(k + 1) % cs.length], -0.2 + 0.42 * k, 0.8, -1.1);
+        pc(0.06, 3.2, 0.06, '#8d949a', -1.4, 1.6, -1.1); pc(0.9, 0.55, 0.05, cs[0], -0.93, 2.9, -1.1); }
     } else if (e.tipo === 'cupula') {
       const c = sombra(new THREE.Mesh(new THREE.CylinderGeometry(e.r, e.r, e.h, 30), mat(e.cor2 || '#c9c6bb'))); c.position.set(e.u, e.h / 2, -e.v); cena.add(c);
       const t = sombra(new THREE.Mesh(new THREE.ConeGeometry(e.r * 1.05, e.h * 0.5, 30), mat(e.cor || '#efeee8', { flatShading: true }))); t.position.set(e.u, e.h * 1.25, -e.v); cena.add(t);

@@ -56,7 +56,10 @@ function pegar(tipo, q) { return cv.toDataURL(tipo || 'image/png', q); }
 window.assar = async function (id, opc) {
   opc = opc || {};
   const ficha = FICHAS[id]; if (!ficha) throw new Error('sem ficha: ' + id);
-  const { scene, cena, coberturas } = montar(ficha);
+  /* (o estádio com os arredores padrão mostra em volta, na cena de dentro, o quarteirão dele: a calçada, os canteiros, as
+     árvores e os ambulantes — o mesmo desenho da cena de fora, sem as ruas, que ficam fora do quadro) */
+  const pad = ficha.arredores && ficha.arredores.padrao ? ficha.arredores : null;
+  const { scene, cena, coberturas } = montar(pad ? Object.assign({}, ficha, { entorno: pad.entorno, chao: Object.assign({}, ficha.chao, { cor: pad.corCalcadao }) }) : ficha);
   const s = escalaDe(ficha);
   const paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s], paraMetros = (x, y) => [(x - W / 2) / s, (H / 2 - y) / s];
   /* ---- de cima ---- */

@@ -386,7 +386,9 @@ ARREDORES PADRÃO (todo estádio fora da lista dos 21 dos arredores de verdade):
 por cima (grades, gradis, PM, bondes). O gerador faz os 9 quarteirões, as entradas, o gradil que conduz e o cordão da PM a
 partir da ficha: o MURO DO TERRENO desenhado nos `blocos` vira o contorno do que não se pisa, e os ângulos de `jogo` dizem
 onde fica cada portão. Ajustes na ficha, em `arredoresPadrao: { solido, margem, portoes, entradaDe, entorno, ... }` (a
-Arena Pantanal). `soFora: true` é do estádio em que os setores não se ligam por dentro: a briga da arquibancada abre aqui.
+Arena Pantanal). O quarteirão do estádio é uma praça desenhada pelo gerador (calçada, ciclovia, jardins, chafariz,
+estacionamento, ambulantes) e é também o que a cena de DENTRO mostra em volta do estádio: quem entra na lista tem de regravar
+as duas cenas, e o `entorno` desenhado à mão na ficha deixa de aparecer. `soFora: true` é do estádio em que os setores não se ligam por dentro: a briga da arquibancada abre aqui.
 
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra

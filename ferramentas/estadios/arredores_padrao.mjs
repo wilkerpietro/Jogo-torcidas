@@ -40,7 +40,7 @@
    com `entradaDe` ({ mandante1: n, .., visitante: n }), `tiras` (pisos a
    recortar a mais), `pisos` (pisos a mais, desenhados), `entorno`, `px`.
    ========================================================= */
-import { colunasDe, raioDe } from './estadio_lowpoly.mjs';
+import { colunasDe, raioDe, limites } from './estadio_lowpoly.mjs';
 /* QUEM JÁ TEM os arredores padrão (a lista cresce estádio a estádio, com a cena conferida; os 21 dos arredores de verdade
    não entram aqui: levam `arredores` com as ruas do mapa na própria ficha) */
 export const COM_PADRAO = new Set(['estadio-dutrinha', 'estadio-arena-pantanal', 'estadio-serejao', 'estadio-bezerrao', 'estadio-jonas-duarte', 'estadio-antonio-accyoly']);
@@ -68,11 +68,23 @@ function solidoDe(ficha) {
   return h.map(p => { const d = Math.hypot(p[0] - cu, p[1] - cv) || 1; return [p[0] + (p[0] - cu) / d * 1.2, p[1] + (p[1] - cv) / d * 1.2]; });
 }
 
+/* a meia largura e a meia altura do que a cena de DENTRO do estádio mostra (a mesma conta da bancada) */
+function meiaCenaDeDentro(ficha) {
+  const f = limites(ficha).fora, folga = ficha.folga == null ? 14 : ficha.folga, extra = ficha.fachada && ficha.fachada.pilares ? (ficha.fachada.pilares.pe || 9) + 3 : 0; let mu = 0, mv = 0;
+  for (let a = 0; a < 360; a += 2) { const r = raioDe(a, f); mu = Math.max(mu, Math.abs(Math.cos(a * RAD) * r)); mv = Math.max(mv, Math.abs(Math.sin(a * RAD) * r)); }
+  const s = Math.min(3072 / (2 * (mu + extra + folga)), 2048 / (2 * (mv + extra + folga))); return [1536 / s, 1024 / s];
+}
+function semente(n) { let s = n >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const dSeg = (px, py, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], q = dx * dx + dy * dy || 1e-9, t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / q)); return Math.hypot(px - a[0] - dx * t, py - a[1] - dy * t); };
+
 export function arredoresPadrao(ficha) {
   const o = ficha.arredoresPadrao === true ? {} : (ficha.arredoresPadrao || {});
   const solido = o.solido || solidoDe(ficha), margem = o.margem == null ? 12 : o.margem, fundo = o.fundo == null ? 62 : o.fundo, LARG = 10, CALC = 2.6, MEIA = LARG / 2 + CALC;
   let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9; for (const p of solido) { u0 = Math.min(u0, p[0]); u1 = Math.max(u1, p[0]); v0 = Math.min(v0, p[1]); v1 = Math.max(v1, p[1]); }
   u0 = Math.floor(u0 - margem); u1 = Math.ceil(u1 + margem); v0 = Math.floor(v0 - margem); v1 = Math.ceil(v1 + margem);
+  /* O QUARTEIRÃO DO ESTÁDIO PEGA TUDO O QUE A CENA DE DENTRO MOSTRA (dono, 16/11/2026: "a cena na hora do jogo vai deixar a
+     visão aproximada dentro do estádio sem mostrar as ruas"): as ruas ficam sempre fora do quadro de dentro */
+  { const [hu, hv] = meiaCenaDeDentro(ficha); u0 = Math.min(u0, Math.floor(-hu)); u1 = Math.max(u1, Math.ceil(hu)); v0 = Math.min(v0, Math.floor(-hv)); v1 = Math.max(v1, Math.ceil(hv)); }
   const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2, MU = (u1 - u0) / 2 + 2 * MEIA + fundo, MV = (v1 - v0) / 2 + 2 * MEIA + fundo, nomes = o.ruas || {};
   /* as quatro ruas, pelo eixo, até depois da beira da cena */
   const R = { cima: v1 + MEIA, baixo: v0 - MEIA, esquerda: u0 - MEIA, direita: u1 + MEIA };
@@ -118,7 +130,7 @@ export function arredoresPadrao(ficha) {
     pm.push([c.p[0] + c.t[0] * (ABRE + 4) + c.n[0] * 1.5, c.p[1] + c.t[1] * (ABRE + 4) + c.n[1] * 1.5]); }
   /* O CORDÃO: a zona da visitante vai, de cada lado da abertura dela, até a metade do caminho da abertura mandante mais
      próxima (no máximo 30% do contorno), e pega pelo menos um canto, que é por onde ela chega */
-  const eV = usadas.find(e => e.n === entradaDe.visitante), zona = { de: 0, ate: 0 };
+  const eV = usadas.find(e => e.n === entradaDe.visitante), zona = { de: 0, ate: 0 }, cordoes = [];
   if (eV) {
     const outras = usadas.filter(e => e !== eV), lim = dir => { let m = P * 0.3; for (const e of outras) { const d = ((dir * (e.s - eV.s)) % P + P) % P; if (d > 0) m = Math.min(m, d / 2); } return Math.max(18, m); };
     let a = lim(-1), b = lim(1);
@@ -130,10 +142,13 @@ export function arredoresPadrao(ficha) {
     for (const [s, sg] of [[zona.de, 1], [zona.ate, -1]]) { const c = noContorno(s);
       /* a grade de proteção atravessa a rua; o gradil atravessa o calçadão até o estádio */
       grades.push({ de: [c.p[0] + c.n[0] * (2 * MEIA - 0.4), c.p[1] + c.n[1] * (2 * MEIA - 0.4)], ate: [c.p[0] + c.n[0] * 0.3, c.p[1] + c.n[1] * 0.3] });
-      let d = 0; while (d < 90 && !dentroPoli(solido, c.p[0] - c.n[0] * d, c.p[1] - c.n[1] * d)) d += 0.5;
-      filas.push({ pts: [c.p, [c.p[0] - c.n[0] * (d + 1), c.p[1] - c.n[1] * (d + 1)]] });
+      /* (o gradil vai ao ponto MAIS PERTO do estádio, não reto pra dentro: num quarteirão largo, reto pra dentro ele passava ao
+         lado do estádio e fechava o funil da própria visitante — o Jonas Duarte) */
+      let perto = null; for (let k = 0; k < solido.length; k++) { const a = solido[k], b = solido[(k + 1) % solido.length], dx = b[0] - a[0], dy = b[1] - a[1], q = dx * dx + dy * dy || 1e-9, t = Math.max(0, Math.min(1, ((c.p[0] - a[0]) * dx + (c.p[1] - a[1]) * dy) / q)), x = a[0] + dx * t, y = a[1] + dy * t, dd = Math.hypot(c.p[0] - x, c.p[1] - y); if (!perto || dd < perto.d) perto = { d: dd, x, y }; }
+      const d = perto.d, fim = [perto.x + (perto.x - c.p[0]) / (d || 1) * 1.2, perto.y + (perto.y - c.p[1]) / (d || 1) * 1.2];
+      filas.push({ pts: [c.p, fim] }); cordoes.push([c.p, fim]);
       /* o efetivo, atrás da grade, do lado do mandante (`sg` aponta pra dentro da zona: a PM fica do outro lado) */
-      for (const [fn, ft] of [[MEIA, 6], [MEIA - 3.5, 9], [-Math.min(d, 8) / 2, 6]]) pm.push([c.p[0] + c.n[0] * fn - c.t[0] * sg * ft, c.p[1] + c.n[1] * fn - c.t[1] * sg * ft]); }
+      for (const [fn, ft] of [[MEIA, 6], [MEIA - 3.5, 9], [-3, 6]]) pm.push([c.p[0] + c.n[0] * fn - c.t[0] * sg * ft, c.p[1] + c.n[1] * fn - c.t[1] * sg * ft]); }
     pm.push([eV.c.p[0] + eV.c.n[0] * MEIA, eV.c.p[1] + eV.c.n[1] * MEIA]);
   }
   /* OS BONDES: as oito pontas de rua (duas em cada canto do quarteirão: a rua de cada lado continua até a beira da cena) */
@@ -148,11 +163,60 @@ export function arredoresPadrao(ficha) {
   for (const id of ['mandante1', 'mandante2', 'mandante3']) { const n = entradaDe[id]; if (n == null) continue; const g = portao(n), de = pegar([g.u, g.v], false); if (de) bondes[id] = { de, portao: n, exato: true }; }
   if (eV) for (const id of ['visitante1', 'visitante2']) { const de = pegar([eV.g.u, eV.g.v], true); if (de) bondes[id] = { de, portao: eV.n, exato: true }; }
   const quadra = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
+  /* ---- O QUARTEIRÃO DO ESTÁDIO NÃO FICA VAZIO (dono, 16/11/2026: "adicione elementos decorativos no quarteirão do estádio como
+     calçada ou concreto, grama, mais árvores, e pontos de venda como barraquinhas, churrasquinho, cachorro quente e etc, como
+     o outro jogo 3d fazia [...] não deixe o visual do quarteirão tão vazio assim"; e, vendo a primeira versão, de canteiros
+     quadrados com árvores: "preciso de mais detalhismo no quarteirão do estádio nas áreas que o estádio não ocupa [...] pode
+     ter calçadas, ciclovias, jardim maior, ou concreto também, ou piso de praça"). É uma praça em volta do estádio, sorteada
+     com a semente dele, que respeita os funis dos portões e os cordões:
+     · por dentro do gradil, a CALÇADA de ladrilho e a CICLOVIA vermelha, dando a volta no quarteirão, com os postes;
+     · em volta do estádio, o CALÇADÃO em anel, de ladrilho maior;
+     · na frente de cada portão, a pracinha de PEDRA PORTUGUESA, do gradil ao portão;
+     · a PRAÇA DO CHAFARIZ (piso xadrez, o chafariz, os bancos) e um ou dois ESTACIONAMENTOS, onde couberem;
+     · os JARDINS grandes (cerca viva, o caminho que atravessa, flores, árvores e bancos) no que sobra;
+     · os AMBULANTES na calçada (os cinco do jogo 3D antigo: pipoca, cachorro-quente, espetinho, bebidas e camelô), dois de
+       cada lado de cada portão e os outros espalhados, com árvores entre eles.
+     A barraca é obstáculo (recorte no chão); o resto se pisa. ---- */
+  const CAL = 4.4, CIC = 2.6, BORDA = CAL + 0.3 + CIC + 1.2, rnd = semente(o.semente || [...(ficha.id || 'x')].reduce((q, ch) => q * 31 + ch.charCodeAt(0) >>> 0, 7)), decor = [], barracas = [];
+  const inflado = d => solido.map(p => { const q = Math.hypot(p[0] - su, p[1] - sv) || 1; return [p[0] + (p[0] - su) / q * d, p[1] + (p[1] - sv) / q * d]; }), anel = inflado(7.5), folgado = inflado(9.5);
+  const funis = usadas.map(e => [e.c.p, [e.g.u, e.g.v]]);
+  const naPraca = (u, v) => { if (u < u0 + BORDA || u > u1 - BORDA || v < v0 + BORDA || v > v1 - BORDA || dentroPoli(folgado, u, v)) return false;
+    for (const f of funis) if (dSeg(u, v, f[0], f[1]) < 15) return false; for (const c of cordoes) if (dSeg(u, v, c[0], c[1]) < 4.5) return false; return true; };
+  const ocupados = [], cabe = (u, v, w, d) => { for (const fx of [-0.5, -0.25, 0, 0.25, 0.5]) for (const fy of [-0.5, 0, 0.5]) if (!naPraca(u + fx * w, v + fy * d)) return false;
+    return !ocupados.some(c => Math.abs(c.u - u) < (c.w + w) / 2 + 3.5 && Math.abs(c.v - v) < (c.d + d) / 2 + 3.5); };
+  const achar = (w, d, n) => { for (let k = 0; k < n; k++) { const u = u0 + BORDA + w / 2 + rnd() * Math.max(0, Wq - 2 * BORDA - w), v = v0 + BORDA + d / 2 + rnd() * Math.max(0, Hq - 2 * BORDA - d); if (cabe(u, v, w, d)) { const c = { u: +u.toFixed(1), v: +v.toFixed(1), w, d }; ocupados.push(c); return c; } } return null; };
+  /* o calçadão em anel em volta do estádio e a pracinha de pedra portuguesa de cada portão */
+  decor.push({ tipo: 'piso', pts: anel, furo: solido, padrao: 'ladrilho', passo: 3.2, cor: '#c2bcad', cor2: '#a8a293', y: 0.07 });
+  for (const e of usadas) { const ax = e.g.u - e.c.p[0], ay = e.g.v - e.c.p[1], L = Math.hypot(ax, ay) || 1, tx = ax / L, ty = ay / L, nx = -ty, ny = tx, a = [e.c.p[0] + tx * (CAL + 0.2), e.c.p[1] + ty * (CAL + 0.2)], b = [e.g.u + tx * 1.5, e.g.v + ty * 1.5];
+    decor.push({ tipo: 'piso', pts: [[a[0] + nx * 13, a[1] + ny * 13], [b[0] + nx * 9, b[1] + ny * 9], [b[0] - nx * 9, b[1] - ny * 9], [a[0] - nx * 13, a[1] - ny * 13]], padrao: 'pedra', passo: 2.2, cor: '#e4e0d4', cor2: '#77746d', y: 0.09 }); }
+  /* a calçada e a ciclovia, dando a volta por dentro do gradil */
+  for (const [u, v, w, d, giro] of [[cu, v1 - CAL / 2, Wq, CAL, 0], [cu, v0 + CAL / 2, Wq, CAL, 0], [u0 + CAL / 2, cv, CAL, Hq - 2 * CAL, 0], [u1 - CAL / 2, cv, CAL, Hq - 2 * CAL, 0]]) decor.push({ tipo: 'piso', u, v, w, d, padrao: 'ladrilho', passo: 2.2, cor: '#cdc8bb', cor2: '#b2ad9f', y: 0.1 });
+  { const r = CAL + 0.3 + CIC / 2; for (const [u, v, w, giro] of [[cu, v1 - r, Wq - 2 * (CAL + 0.3), 0], [cu, v0 + r, Wq - 2 * (CAL + 0.3), 0], [u0 + r, cv, Hq - 2 * (CAL + 0.3), 90], [u1 - r, cv, Hq - 2 * (CAL + 0.3), 90]]) decor.push({ tipo: 'piso', u, v, w, d: CIC, giro, padrao: 'ciclovia', y: 0.115 }); }
+  /* a praça do chafariz e os estacionamentos */
+  { const c = achar(22, 22, 500); if (c) { decor.push({ tipo: 'piso', u: c.u, v: c.v, w: 22, d: 22, padrao: 'xadrez', passo: 2.75, cor: '#ddd8cb', cor2: '#b7b1a2', y: 0.1 }, { tipo: 'chafariz', u: c.u, v: c.v, r: 4.2 });
+      for (const [du, dv, giro] of [[0, 8.6, 0], [0, -8.6, 0], [8.6, 0, 90], [-8.6, 0, 90]]) decor.push({ tipo: 'banco', u: c.u + du, v: c.v + dv, giro }); for (const [du, dv] of [[10, 10], [-10, 10], [10, -10], [-10, -10]]) decor.push({ tipo: 'poste', u: c.u + du, v: c.v + dv }); } }
+  for (let k = 0; k < 2; k++) { const deitado = rnd() < 0.5, c = achar(deitado ? 38 : 19, deitado ? 19 : 38, 260) || achar(deitado ? 19 : 38, deitado ? 38 : 19, 260); if (c) decor.push({ tipo: 'estacionamento', u: c.u, v: c.v, w: c.w, d: c.d, cheio: 0.3 + rnd() * 0.3 }); }
+  /* os jardins: primeiro os grandes, depois os que couberem */
+  { const alvo = Math.max(6, Math.min(20, Math.round((Wq * Hq) / 2300))); let n = 0;
+    for (const [w, d, tent] of [[44, 20, 120], [20, 40, 120], [34, 18, 160], [18, 30, 160], [26, 16, 220], [16, 24, 220], [20, 13, 300], [13, 18, 300], [13, 11, 400]]) for (let k = 0; k < 4 && n < alvo; k++) { const c = achar(w, d, tent); if (!c) break; n++;
+      decor.push({ tipo: 'jardim', u: c.u, v: c.v, w, d, n: Math.max(1, Math.round(w * d / 62)), cor: rnd() < 0.5 ? '#6f9a55' : '#79a45d' }); } }
+  /* os postes da ciclovia e as árvores e os ambulantes da calçada */
+  const SABORES = ['espetinho', 'cachorro', 'bebidas', 'pipoca', 'camelo'], cores = o.cores || ['#f2c230', '#1f8a3c']; let ns = Math.floor(rnd() * 5);
+  const naCalcada = (u, v) => { for (const f of funis) if (dSeg(u, v, f[0], f[1]) < 10.5) return false; for (const c of cordoes) if (dSeg(u, v, c[0], c[1]) < 4) return false; return !dentroPoli(solido, u, v); };
+  const barraca = s => { const c = noContorno(s), u = c.p[0] - c.n[0] * 2.4, v = c.p[1] - c.n[1] * 2.4; if (!naCalcada(u, v) || CANTOS.some(q => dist(q, s) < 5) || barracas.some(b => Math.hypot(b.u - u, b.v - v) < 6)) return false;
+    const sabor = SABORES[ns++ % 5]; barracas.push({ u, v }); decor.push({ tipo: 'ambulante', escala: 1.6, sabor, u: +u.toFixed(1), v: +v.toFixed(1), giro: Math.round(Math.atan2(c.t[1], c.t[0]) / RAD), cores, cor: ['#c62828', '#1f6a45', '#2f6fb0'][ns % 3] }); return true; };
+  for (const e of usadas) for (const ds of [-ABRE - 5.5, -ABRE - 12, ABRE + 5.5, ABRE + 12]) barraca(e.s + ds);
+  for (let s = 9, k = 0; s < P - 4; s += 11, k++) { const c = noContorno(s), perto = usadas.some(e => dist(e.s, s) < ABRE + 14);
+    if (k % 3 === 1 && !perto) { barraca(s); continue; }
+    const u = c.p[0] - c.n[0] * (CAL - 0.9), v = c.p[1] - c.n[1] * (CAL - 0.9); if (naCalcada(u, v) && !usadas.some(e => dist(e.s, s) < ABRE + 2) && !CANTOS.some(q => dist(q, s) < 5) && !barracas.some(b => Math.hypot(b.u - u, b.v - v) < 4)) decor.push({ tipo: 'arvores', u: +u.toFixed(1), v: +v.toFixed(1), w: 0.6, d: 0.6, n: 1 });
+    if (k % 2 === 0) { const pu = c.p[0] - c.n[0] * (BORDA - 0.5), pv = c.p[1] - c.n[1] * (BORDA - 0.5); if (naCalcada(pu, pv) && !CANTOS.some(q => dist(q, s) < 9)) decor.push({ tipo: 'poste', u: +pu.toFixed(1), v: +pv.toFixed(1) }); } }
+  const obstaculos = barracas.map(b => ({ pts: [[b.u - 2, b.v - 2], [b.u + 2, b.v - 2], [b.u + 2, b.v + 2], [b.u - 2, b.v + 2]], tira: true }));
   /* o miolo dos quatro quarteirões do meio de cada lado: as árvores do fundo dos quintais */
   const fq = 2 * MEIA + fundo * 0.72, quintais = [
     { tipo: 'arvores', u: cu, v: v1 + fq, w: Wq - 30, d: 12, n: Math.round(Wq / 16) }, { tipo: 'arvores', u: cu, v: v0 - fq, w: Wq - 30, d: 12, n: Math.round(Wq / 16) },
     { tipo: 'arvores', u: u0 - fq, v: cv, w: 12, d: Hq - 30, n: Math.round(Hq / 16) }, { tipo: 'arvores', u: u1 + fq, v: cv, w: 12, d: Hq - 30, n: Math.round(Hq / 16) }];
   return { osm: { ruas, areas: [], predios: [] }, padrao: true, soFora: !!ficha.soFora, quadro: Object.assign({ u: MU, v: MV, cu, cv }, o.px ? { px: o.px } : {}), vazado: 0.62, semente: o.semente || 11, corQuadra: o.corQuadra || '#8d887d',
-    reservas: [quadra], pisos: [{ pts: quadra, cor: o.corCalcadao || '#b3ad9f' }, ...(o.pisos || []), { pts: solido, tira: true }, ...(o.tiras || [])],
-    portoes, bondes, grades, filas: filas.concat(o.filas || []), pm: pm.concat(o.pm || []), entorno: quintais.concat(o.entorno || []), vista: o.vista || [cu - MU * 0.9, MU * 0.75, cv - MV * 1.5, cu, 0, cv] };
+    corCalcadao: o.corCalcadao || '#b3ad9f',
+    reservas: [quadra], pisos: [{ pts: quadra, cor: o.corCalcadao || '#b3ad9f' }, ...(o.pisos || []), { pts: solido, tira: true }, ...obstaculos, ...(o.tiras || [])],
+    portoes, bondes, grades, filas: filas.concat(o.filas || []), pm: pm.concat(o.pm || []), entorno: decor.concat(quintais, o.entorno || []), vista: o.vista || [cu - MU * 0.9, MU * 0.75, cv - MV * 1.5, cu, 0, cv] };
 }
