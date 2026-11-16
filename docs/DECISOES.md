@@ -14922,6 +14922,24 @@ Estimado: as alturas, as torres de luz e, principalmente, **as cores das duas cu
 
 As torcidas são escolha minha: a Falange Tricolor no meio da arquibancada de frente pra tribuna, a visitante na curva da esquerda. O Joia entrou nos arredores padrão. Briga e chegada testadas sem erros.
 
+## Bahia: o Barradão (dono, 16/11/2026)
+
+O dono, com duas fotos (uma do alto do canto da arquibancada e um postal aéreo): "vamos pro barradão."
+
+O Manoel Barradas, do Vitória, que já mandava nele nos dados (`fichas/estadio-barradao.mjs`). Medidas pelo satélite, desenho pelas fotos:
+
+- arquibancada em U, cavada na encosta, de três lados e cantos chanfrados (28 m de chanfro por fora, 6 por dentro; os cantos abrem em leque);
+- junto do campo, a faixa de cadeiras pretas na volta toda; acima dela, o degrau pintado de vermelho, com a faixa preta no alto;
+- o leão preto pintado no degrau das duas de trás do gol (com `pinta`: uma silhueta de perfil testada ponto a ponto);
+- a cabine vermelha no alto da lateral;
+- no quarto lado, a uns 40 m do campo, o prédio vermelho e preto da tribuna e dos vestiários, com o placar em cima, e as duas torres de luz.
+
+Estimado: as alturas (o U sobe uns 17 m); o desenho do leão, que é uma silhueta simples (a de verdade é mais detalhada); e as duas de trás do gol, que ficaram iguais e centradas (no satélite uma está 5 m mais perto do gol) e acabam 6 m antes na ponta do lado do prédio. O satélite mostra a figura escura nas duas de trás do gol, por isso o leão está nas duas.
+
+As torcidas: Os Imbatíveis no meio da lateral e a visitante atrás do gol da direita são escolha minha; a Camisa 12 ficou atrás do gol da esquerda, onde está a faixa dela na foto do dono.
+
+O Barradão é dos diferenciados: não entrou nos arredores padrão e o muro do terreno não foi desenhado; ficam para os arredores de verdade, casa a casa. Briga testada sem erros; a chegada das torcidas só dá para testar quando ele tiver a cena de fora.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -471,6 +471,17 @@ ENFEITE REPETIDO AO LONGO DO MURO DE FORA (pilastras, quadros, cobogó): o
 ajudante `muroDeFora(contorno, passo)` da mesma ficha percorre as retas e os
 arcos do retângulo de canto redondo e devolve os blocos já com o `giro`.
 
+FIGURA PINTADA NO DEGRAU (o leão do Barradão, 16/11/2026): desenhe a silhueta
+como uma lista de pontos numa caixa (40 × 20) e teste ponto em polígono dentro
+do `pinta`; `espelha` vira a figura no outro fundo. A escada corta a figura,
+como na foto.
+ARQUIBANCADA EM U DE CANTO CHANFRADO: três contornos de canto redondo (beira,
+fim das cadeiras, fundo) com `r` crescendo pra fora, anéis `reto`, e o ajudante
+`U(contorno, fundo1, canto, lateral, fundo2)` da ficha dele, que tira os ângulos
+das pontas dos lados retos. O lado aberto é um trecho `vazio`.
+O CONTORNO DO GRAMADO NO OPENSTREETMAP PODE INCLUIR A GRAMA DE FORA DO CAMPO (no
+Barradão, 40 m de grama até o prédio): o meio do campo é o do círculo central.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
