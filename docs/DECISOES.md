@@ -14573,6 +14573,18 @@ O dono: "Giulite Coutinho". Sem fotos desta vez.
 - **A cobertura que não fiz**: a foto do CAMPEÃO DOS CAMPEÕES foi tirada de baixo de um telhado de telha com treliça vermelha, sobre cadeiras cinza, na ponta norte da lateral do oeste. Os três satélites e a foto recente não mostram mais esse telhado (sobraram os tirantes atrás). Fiz como está hoje, sem telhado e sem cadeiras; se o dono quiser a versão coberta, é uma peça a mais.
 - **Conferido**: chão único, nenhum marcador fora, briga da Sangue Americano abrindo em `estadio-giulite-coutinho` sem erro de página.
 
+## Raulino de Oliveira lowpoly (Volta Redonda) e o canto chanfrado no gerador (dono, 16/11/2026)
+
+O dono: "Raulino de Oliveira e o Americano ganha estádio próprio". Fiz o Raulino primeiro; o do Americano vem em seguida, separado.
+
+- **Os dados**: nada mudou ainda; o Volta Redonda e o Americano continuam nele (18.230 lugares) até o Americano sair.
+- **De onde saiu**: só do satélite, bem nítido. Sem fotos do dono e sem mapa de setores.
+- **A ficha** (`fichas/estadio-raulino-de-oliveira.mjs`): estádio fechado em octógono, com a pista de atletismo em volta do gramado (`campo.pista`, com `corFosso` no calçado entre a pista e a arquibancada). As duas laterais cobertas de laje de concreto (`telhados` em polígono, com o pedaço que avança por cima dos cantos): a do leste com 15 m de fundo, a do oeste, a principal, com 26 m, deixando as fileiras de baixo descobertas. Os dois fundos e os quatro cantos descobertos, de cadeira laranja, com o bloco branco no meio de cada fundo e no meio do oeste. Por fora, as torres redondas das rampas nos cantos e a marquise da entrada.
+- **No gerador, o canto chanfrado** (`chanfro: true` num contorno `{ a, b, r }`): o canto vira uma reta de `(a, b - r)` a `(a - r, b)` no lugar do quarto de círculo. Vale pro raio, pro anel `reto` (o canto é percorrido pela reta) e pro `normal`. Sem `chanfro` nada muda, e nenhum estádio antigo foi reassado. Cada canto leva o seu `fora` chanfrado, todos com o mesmo trecho reto das laterais, e cada fundo é partido no meio (0° e 180°) pra casar com os dois cantos vizinhos; a altura sai da fundura (`inclinacao`).
+- **O que não se vê e é suposição minha**: as cadeiras debaixo das duas lajes (laranja, como as descobertas; no oeste, branco no meio), se há camarotes ou segundo lance debaixo delas, as bocas de acesso (não pus nenhuma), as alturas.
+- **As torcidas**: a Jovem do Voltaço no fundo norte e a visitante no fundo sul (escolha minha, sem fonte).
+- **Conferido**: chão único, nenhum marcador fora, briga da Jovem do Voltaço abrindo em `estadio-raulino-de-oliveira` sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

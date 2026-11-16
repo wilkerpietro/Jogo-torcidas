@@ -46,6 +46,9 @@ export function raioDe(ang, c) {
   const ax = Math.abs(dx), ay = Math.abs(dy), r = Math.min(c.r || 0, c.a, c.b);
   if (ax > 1e-9) { const t = c.a / ax; if (t * ay <= c.b - r + 1e-9) return t; }
   if (ay > 1e-9) { const t = c.b / ay; if (t * ax <= c.a - r + 1e-9) return t; }
+  /* CANTO CHANFRADO (`chanfro: true`; o Raulino de Oliveira, que é um octógono): o canto é uma reta de (a, b - r) a (a - r, b),
+     no lugar do quarto de círculo */
+  if (c.chanfro) return (c.a + c.b - r) / (ax + ay);
   const cx = c.a - r, cy = c.b - r, dc = ax * cx + ay * cy, cc = cx * cx + cy * cy - r * r;
   return dc + Math.sqrt(Math.max(0, dc * dc - cc));
 }
@@ -59,12 +62,15 @@ function paramDe(ang, c) {
   const ax = Math.abs(x), ay = Math.abs(y), sx = x < 0 ? -1 : 1, sy = y < 0 ? -1 : 1;
   if (ax <= ex + 1e-6) return { tipo: 'h', sy, t: ex ? x / ex : 0 };
   if (ay <= ey + 1e-6) return { tipo: 'v', sx, t: ey ? y / ey : 0 };
+  /* (no chanfro, `phi` é a fração do caminho pela reta do canto, de 0 a 90 graus) */
+  if (c.chanfro) return { tipo: 'c', sx, sy, phi: Math.max(0, Math.min(1, rr ? (ay - ey) / rr : 0)) * Math.PI / 2 };
   return { tipo: 'c', sx, sy, phi: Math.atan2(ay - ey, ax - ex) };
 }
 function pontoPor(pm, c) {
   const rr = Math.min(c.r || 0, c.a, c.b), ex = c.a - rr, ey = c.b - rr;
   if (pm.tipo === 'h') return [pm.t * ex, pm.sy * c.b];
   if (pm.tipo === 'v') return [pm.sx * c.a, pm.t * ey];
+  if (c.chanfro) { const f = pm.phi / (Math.PI / 2); return [pm.sx * (ex + rr * (1 - f)), pm.sy * (ey + rr * f)]; }
   return [pm.sx * (ex + rr * Math.cos(pm.phi)), pm.sy * (ey + rr * Math.sin(pm.phi))];
 }
 const mod360 = a => ((a % 360) + 360) % 360;
@@ -126,7 +132,7 @@ export function colunasDe(ficha, anel, t) {
      escada saía torta). Dois trechos vizinhos dividem a mesma linha de divisa, mesmo com fundos diferentes. */
   const normal = !!def(t.normal, anel.normal, false) && !curva(cd), memo = new Map();
   const peloNormal = ang => { let q = memo.get(ang); if (q) return q;
-    const pm = paramDe(ang, cd), a = pontoPor(pm, cd), nx = pm.tipo === 'h' ? 0 : pm.tipo === 'v' ? pm.sx : pm.sx * Math.cos(pm.phi), ny = pm.tipo === 'h' ? pm.sy : pm.tipo === 'v' ? 0 : pm.sy * Math.sin(pm.phi);
+    const pm = paramDe(ang, cd), a = pontoPor(pm, cd), ph = cd.chanfro ? Math.PI / 4 : pm.phi, nx = pm.tipo === 'h' ? 0 : pm.tipo === 'v' ? pm.sx : pm.sx * Math.cos(ph), ny = pm.tipo === 'h' ? pm.sy : pm.tipo === 'v' ? 0 : pm.sy * Math.sin(ph);
     const fora = s => { const x = a[0] + nx * s, y = a[1] + ny * s; return Math.hypot(x, y) - raioDe(Math.atan2(y, x) / RAD, cf); };
     let s0 = 0, s1 = 4; while (fora(s1) < 0 && s1 < 400) s1 *= 2;
     for (let k = 0; k < 40; k++) { const m = (s0 + s1) / 2; if (fora(m) < 0) s0 = m; else s1 = m; }

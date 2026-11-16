@@ -304,6 +304,13 @@ Boca em cima da escada: `vomitorios: { em: [0, 1] }` (meia boca em cada
 divisa; `[1]` no primeiro trecho, `[0]` no último). Gere os trechos com uma
 função e confira por código que o `ate` de um é o `de` do seguinte.
 
+ESTÁDIO EM OCTÓGONO (o Raulino de Oliveira): contorno `{ a, b, r, chanfro:
+true }`: o canto é uma reta de `(a, b - r)` a `(a - r, b)`. Use no anel
+`reto`. Cada canto com o seu `fora` chanfrado; em todos, `a - r` igual ao do
+contorno de dentro (as laterais saem retas); os fundos partidos em 0° e 180°
+pra casar com os dois cantos. Laje que avança por cima do canto: `telhados`
+com o polígono inteiro.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
