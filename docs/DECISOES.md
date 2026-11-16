@@ -14590,6 +14590,32 @@ O dono: "Raulino de Oliveira e o Americano ganha estádio próprio". Fiz o Rauli
 - **O que continua estimado**: as alturas e o desenho exato do bloco azul.
 - **Conferido**: chão único, nenhum marcador fora, briga da Jovem do Voltaço abrindo em `estadio-raulino-de-oliveira` sem erro de página.
 
+## Godofredo Cruz lowpoly (Americano); o Americano sai do Raulino de Oliveira (dono, 16/11/2026)
+
+O dono: "Raulino de Oliveira e o Americano ganha estádio próprio"; depois, com quatro fotos do estádio antigo: "Vamos pro estádio do americano de Campos".
+
+- **Qual estádio**: o Godofredo Cruz ANTIGO, do Parque Tamandaré, demolido em 2014. Eu tinha dado três opções (o novo, em obra; o antigo, com fotos dele; dividir o Ary de Oliveira e Souza); as fotos que ele mandou são do antigo.
+- **Os dados**: o Americano deixa o Raulino de Oliveira (que fica só com o Volta Redonda; a ficha dele foi assada de novo) e manda no **Godofredo Cruz**, `godofredo-cruz`, praça Subúrbio Carioca, bairro Campos dos Goytacazes I (o da sede da Império Americano), **9.000 lugares** (o limite da Defesa Civil de 2009, o último número oficial antes da demolição; há fontes com 12.300 e com 25.000). Mudaram `times.js`, `estadios.js`, `torcidas.js`, `cidades.js`, as cópias de `cenario3d/dados/`, o pacote `cenario3d/js/jogo.js`, as duas fontes em `dados/fonte/`, os dois importadores e a lista de gênero (`dados/genero.js` e o pacote).
+- **De onde saiu**: o estádio não existe mais no satélite de hoje. A planta saiu do acervo antigo de satélite (a edição de 2014 ainda mostra o estádio inteiro, a 1,1 m por ponto: dá a forma e as medidas, não o detalhe); o resto, das quatro fotos (uma de dentro, duas aéreas, uma por trás das abóbadas). **Uma das aéreas está espelhada**: descobri cruzando com a foto de trás das abóbadas (que tem letreiros legíveis) e confirmei no satélite.
+- **A ficha** (`fichas/estadio-godofredo-cruz.mjs`): oval de cadeira preta e muro branco, com a passagem de cimento e o alambrado branco em volta do gramado. OESTE (embaixo, a avenida): a principal, a mais funda (26 m), coberta pelas abóbadas de concreto (oito grandes atrás, a fila das pequenas na frente), em cima da armação branca de painéis pretos. NOROESTE: o leque descoberto, emendado nela. NORTE (à esquerda): sem arquibancada, o prédio baixo SAÍDAS DE EMERGÊNCIA de portas vermelhas e o muro em curva. LESTE (em cima): a comprida e rasa (8 m), com as placas no alto (AMERICANO CAMPEÃO DA TAÇA RIO 2002). SUL (à direita): a curva (12 m), que emenda nas duas; por fora, o prédio do clube e a piscina.
+- **No gerador**: as `abobadas` ganharam `concreto: true` (sem a treliça e os refletores da lona do Romeirão; os pilares vão com a cobertura), `fundo` (`false` deixa aberto atrás; um número fecha só até essa altura), `corFundo`, `corTesteira`, `corPilar`, `espPilar`. Sem essas opções nada muda.
+- **O que é estimado**: as alturas, o número de fileiras e de blocos (o satélite é grosso), o desenho das abóbadas. **Escolha minha**: a Império Americano na curva do sul e a visitante no leque do noroeste.
+- **Conferido**: chão único, nenhum marcador fora, briga da Império Americano abrindo em `estadio-godofredo-cruz` sem erro de página.
+
+## O que o OpenStreetMap tem em volta dos estádios (medido em 16/11/2026)
+
+O dono: "Dá pra mapear as ruas ao redor de cada estádio e pegar a altura certinha de cada casa né? O OpenStreetMap faz isso?". Medi num quadrado de uns 600 m em volta de três estádios, pela API principal (a Overpass não responde daqui):
+
+| Estádio | Ruas (com nome) | Contornos de prédio | Com altura ou andares |
+|---|---|---|---|
+| Independência | 73 (60) | 7 | 0 |
+| Raulino de Oliveira | 161 (78) | 39 | 1 |
+| Maracanã | 117 (30) | 168 | 1 |
+
+- **Ruas**: tem, com traçado e nome. Serve pra desenhar as ruas e os quarteirões de verdade em volta de cada estádio.
+- **Casas e prédios**: quase não tem contorno, e altura praticamente nenhuma. Os projetos que mostram cidade em 3D "puxada do mapa" funcionam bem onde voluntários desenharam prédio por prédio (Europa, centros de capitais) ou usam o 3D fotográfico do Google, que é pago e não pode ser copiado pra dentro do jogo.
+- **O caminho que sobra pra nós**: ruas do OpenStreetMap; quarteirões preenchidos com casas genéricas do tamanho que o satélite mostra; e só os prédios que marcam o lugar (torre, ginásio, clube, viaduto) feitos à mão, com a altura estimada por foto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

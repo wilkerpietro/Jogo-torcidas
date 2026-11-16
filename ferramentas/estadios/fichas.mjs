@@ -609,3 +609,4 @@ import conselheiroGalvao from './fichas/estadio-conselheiro-galvao.mjs'; FICHAS[
 import aryDeOliveiraESouza from './fichas/estadio-ary-de-oliveira-e-souza.mjs'; FICHAS[aryDeOliveiraESouza.id] = aryDeOliveiraESouza;
 import giuliteCoutinho from './fichas/estadio-giulite-coutinho.mjs'; FICHAS[giuliteCoutinho.id] = giuliteCoutinho;
 import raulinoDeOliveira from './fichas/estadio-raulino-de-oliveira.mjs'; FICHAS[raulinoDeOliveira.id] = raulinoDeOliveira;
+import godofredoCruz from './fichas/estadio-godofredo-cruz.mjs'; FICHAS[godofredoCruz.id] = godofredoCruz;

@@ -317,6 +317,16 @@ do meio dos fundos do Raulino é grená).
 LETREIRO EM CADEIRA (`texto` no trecho): um trecho só, de ponta a ponta, sem
 `escadaNaBorda` no meio; as bocas vão no pé (`f: 0`), nas pontas.
 
+ESTÁDIO DEMOLIDO OU REFORMADO (o Godofredo Cruz): o acervo antigo de satélite
+guarda edições desde 2014: `python3 -I tiles2.py <lon> <lat> 17 3 saida.jpg
+wb:10` (a edição 10 é a de fevereiro de 2014; só vai até o zoom 17, 1,1 m
+por ponto). Dá a planta e as medidas; o detalhe vem das fotos.
+FOTO AÉREA PODE VIR ESPELHADA: se duas aéreas do mesmo lado mostram a rua em
+lados opostos, uma está invertida. Desempate por uma foto com letreiro
+legível e pelo satélite.
+ABÓBADA DE CONCRETO: `abobadas` com `concreto: true`; `fundo: false` na fila
+da frente (senão a parede de trás dela corta a arquibancada).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

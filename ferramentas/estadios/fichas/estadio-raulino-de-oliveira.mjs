@@ -72,7 +72,7 @@ const TORRE = (u, v, y, w, alt) => [{ u: u - w / 2 + 0.3, v, w: 0.5, d: 0.5, h: 
   { u, v, w, d: 0.8, h: alt * 0.45, y: y + alt, cor: '#eef1f3', cobertura: true }];
 
 export default {
-  id: 'estadio-raulino-de-oliveira', nome: 'Raulino de Oliveira', clubes: ['volta-redonda', 'americano'], norte: 193.3, vazado: 0.3, folga: 24,
+  id: 'estadio-raulino-de-oliveira', nome: 'Raulino de Oliveira', clubes: ['volta-redonda'], norte: 193.3, vazado: 0.3, folga: 24,
   chao: { cor: '#7f7b74' },
   campo: { corMargem: '#4c8f4d', corFosso: '#8a8781', pista: { dentro: { a: 76.5, b: 39.4, r: 39.4 }, fora: { a: 82.8, b: 45, r: 45 }, cor: '#75726d', raias: 6 } },
   /* o corrimão branco na beira da arquibancada */
@@ -146,5 +146,5 @@ export default {
   ],
   jogo: { mandante1: [166, 194], mandante2: [235, 305], mandante3: [55, 125], visitante: [-14, 14], tunelMandante: 270, tunelVisitante: 0, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
-          torcidas: { jovem_do_voltaco: 'mandante1', imperio_americano: 'mandante1' } }
+          torcidas: { jovem_do_voltaco: 'mandante1' } }
 };

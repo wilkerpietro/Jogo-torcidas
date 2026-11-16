@@ -518,16 +518,20 @@ export function construir(THREE, ficha) {
       const est = perfil.map(([f, h]) => T.map(t => P(uc + t * mod * 0.485, pv(f), h + bojo * (1 - t * t))));
       for (let k = 0; k < est.length - 1; k++) for (let j = 0; j < T.length - 1; j++) R.quad(est[k][j], est[k + 1][j], est[k + 1][j + 1], est[k][j + 1], c);
       /* o arco da frente de cada módulo (a testeira) e o tímpano de treliça de trás */
-      for (let j = 0; j < T.length - 1; j++) { const a0 = est[0][j], a1 = est[0][j + 1]; R.quad(a0, a1, [a1[0], perfil[0][1] - 0.6, a1[2]], [a0[0], perfil[0][1] - 0.6, a0[2]], '#dfe2e4'); }
-      const ul = est[est.length - 1]; for (let j = 0; j < T.length - 1; j++) R.quad(ul[j], ul[j + 1], [ul[j + 1][0], 0.3, ul[j + 1][2]], [ul[j][0], 0.3, ul[j][2]], '#aab1b6');
+      for (let j = 0; j < T.length - 1; j++) { const a0 = est[0][j], a1 = est[0][j + 1]; R.quad(a0, a1, [a1[0], perfil[0][1] - 0.6, a1[2]], [a0[0], perfil[0][1] - 0.6, a0[2]], ab.corTesteira || '#dfe2e4'); }
+      /* (`fundo: false` deixa a casca aberta atrás; `fundo: altura` fecha só até essa altura, `corFundo` pinta) */
+      const ul = est[est.length - 1], bF = typeof ab.fundo === 'number' ? ab.fundo : 0.3; if (ab.fundo !== false) for (let j = 0; j < T.length - 1; j++) R.quad(ul[j], ul[j + 1], [ul[j + 1][0], bF, ul[j + 1][2]], [ul[j][0], bF, ul[j][2]], ab.corFundo || '#aab1b6');
     }
     /* a treliça da frente, com a fileira de refletores, e os pilares brancos de trás de cada divisa */
+    /* (`concreto: true`, as abóbadas de concreto do Godofredo Cruz: sem a treliça nem os refletores da frente) */
     const hf = perfil[0][1], vf = ab.vFrente, sg = ab.vFundo > ab.vFrente ? 1 : -1;
+    if (!ab.concreto) {
     caixa(ab.comp, 0.5, 0.5, '#8d949a', ab.u, hf - 0.4, -vf, coberturas); caixa(ab.comp, 0.5, 0.5, '#8d949a', ab.u, hf - 2.8, -(vf + sg * 1.6), coberturas);
     for (let k = 0; k <= n * 3; k++) caixa(0.35, 2.6, 0.35, '#8d949a', ab.u - ab.comp / 2 + ab.comp * k / (n * 3), hf - 1.6, -(vf + sg * 0.8), coberturas);
     for (let k = 0; k < n * 2; k++) caixa(2.2, 1.1, 0.7, '#22262a', ab.u - ab.comp / 2 + ab.comp * (k + 0.5) / (n * 2), hf - 3.2, -(vf - sg * 0.2), coberturas);
+    }
     for (let k = 0; k <= n; k++) { const f = ab.pilarEm == null ? 0.62 : ab.pilarEm, hp = perfil.reduce((q, [pf, ph]) => Math.abs(pf - f) < Math.abs(q[0] - f) ? [pf, ph] : q, perfil[0])[1];
-      caixa(0.8, hp, 0.8, '#f1f1ed', ab.u - ab.comp / 2 + mod * k, hp / 2, -pv(f)); }
+      caixa(ab.espPilar || 0.8, hp, ab.espPilar || 0.8, ab.corPilar || '#f1f1ed', ab.u - ab.comp / 2 + mod * k, hp / 2, -pv(f), ab.concreto ? coberturas : cena); }
   }
   /* ---- O ALAMBRADO e O MURO (dono, 15/11/2026: "adicionando cerca de alambrado ao redor do campo caso a arquibancada não
      seja colada no campo"; "um muro por de trás da arquibancada [...] pra mostrar pro jogador uma limitação da área de

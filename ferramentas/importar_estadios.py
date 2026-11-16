@@ -98,6 +98,8 @@ NOVOS = [
     {'nome': 'Conselheiro Galvão', 'mapa': 'suburbio-carioca', 'bairro': 'Madureira'},
     # 16/11/2026, o dono mandou as fotos do "Ary de Oliveira e Souza" — o Goytacaz sai do Raulino de Oliveira e manda nele.
     {'nome': 'Ary de Oliveira e Souza', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes II'},
+    # 16/11/2026, o dono: "o Americano ganha estádio próprio" — o Godofredo Cruz antigo (demolido em 2014), pelas fotos dele.
+    {'nome': 'Godofredo Cruz', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes I'},
 ]
 
 

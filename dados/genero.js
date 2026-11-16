@@ -104,7 +104,7 @@ TO.dados.genero = {
         "Estadio dos Aflitos", "Estadio Excursionistas",
         "Estadio Ituzaingó", "Estadio JJ Urquiza", "Estadio Laferrere",
         "Estadio Midland", "Estadio Primeiro de Maio",
-        "Bernardo Rubinger de Queiroz", "Joaquim Portugal", "Zama Maciel",
+        "Bernardo Rubinger de Queiroz", "Joaquim Portugal", "Zama Maciel", "Godofredo Cruz",
         "Estadio Sacachispas", "Estadio UAI Urquiza",
         "Estadio Villa Dálmine", "Ester Roa Rebolledo",
         "Etelvino Mendonça", "Etelvino Mendonca", "Eva Perón",
