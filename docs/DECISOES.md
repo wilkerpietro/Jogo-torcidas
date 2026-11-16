@@ -14830,6 +14830,14 @@ No gerador, a cobertura em anel ganhou `alturas: ang => [fora, dentro]` (a altur
 
 **Quem manda onde.** Remo e Paysandu mandam no Mangueirão: o Baenão e a Curuzu não entram no jogo. Sobre o Águia de Marabá o dono não respondeu; segue no Mangueirão, como está nos dados.
 
+## Mangueirão: a fachada de galerias abertas no lugar do bloco liso (dono, 16/11/2026)
+
+O dono, com duas fotos de fora: "veja como se constrói a fachada do estádio, voce fez só um bloco liso".
+
+Atrás do lance de cima eu tinha posto um piso alto com um paredão liso embaixo. Nas fotos a fachada não tem parede: são andares de galeria abertos, um em cima do outro. De fora se vê a beira branca de cada laje com a mureta, o vão escuro entre uma e outra, os pilares grossos recuados e, embaixo, o anel largo da rampa, que passa das colunas da cobertura e também é aberto por baixo. As colunas finas da cobertura ficam na frente de tudo, nascendo do anel da rampa.
+
+No gerador: `fachada.galerias` (`pisos`, `bordas`, `pilares`, `deck`, o fundo escuro) e `semParede` no trecho de piso alto, pra laje ficar solta. A aleta da cobertura ganhou `bico`, a ponta que passa da beira de fora. Vale pra qualquer estádio de concreto dessa época.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

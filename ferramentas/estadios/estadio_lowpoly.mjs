@@ -367,7 +367,8 @@ export function construir(THREE, ficha) {
           const p = (ang, c, h) => { const q = retoP ? pontoPor(paramDe(ang, cd), c) : ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
           A.quad(p(a0, cd), p(a0, cf), p(a1, cf), p(a1, cd), t.cor || CONCRETO);
           /* (a laje alta — a galeria de cima — ganha a parede de fora) */
-          if (t.alt > 1) Pm.quad(p(a0, cf, 0), p(a1, cf, 0), p(a1, cf), p(a0, cf), t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb');
+          /* (`semParede`: a laje fica solta, sem o paredão embaixo — quem fecha a frente é a fachada de galerias) */
+          if (t.alt > 1 && !t.semParede) Pm.quad(p(a0, cf, 0), p(a1, cf, 0), p(a1, cf), p(a0, cf), t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb');
         }
         continue;
       }
@@ -494,7 +495,8 @@ export function construir(THREE, ficha) {
        alt, cor }`: as treliças de aço deitadas por cima da laje, da beira de dentro à de fora, nos ângulos dados. */
     const al = cb.aletas;
     if (al) for (let i = 0; i < (inteiro ? n : n + 1); i++) { if (i % (al.cada || 1)) continue; const a = angs[i], e = al.esp || 0.4, c = al.cor || '#f4f4f0';
-      const pe = pu(a, al.de == null ? 0.3 : al.de, 0.15), topo = pu(a, 1, al.h == null ? 3 : al.h), beira = pu(a, 1, 0);
+      /* (`bico`: quanto a ponta da aleta passa da beira de fora, em fração da largura da cobertura) */
+      const pe = pu(a, al.de == null ? 0.3 : al.de, 0.15), topo = pu(a, 1 + (al.bico || 0), al.h == null ? 3 : al.h), beira = pu(a, 1, 0);
       barra(pe, topo, e, c, grupo); barra(beira, topo, e, c, grupo);
       if (al.coluna !== false) barra([beira[0], beira[1], al.base || 0], beira, e * 0.9, c, cena); }
     if (cb.trelicas) for (const a of cb.trelicas.angs) { const tr = cb.trelicas, e = tr.esp || 1.4, h0 = tr.alt == null ? 1.1 : tr.alt, c = tr.cor || '#e6e8ea';
@@ -692,6 +694,31 @@ export function construir(THREE, ficha) {
       m.rotation.order = 'YXZ'; m.rotation.y = -a * RAD + Math.PI / 2; m.rotation.x = -Math.atan2(Math.hypot(w1[0] - w0[0], w1[1] - w0[1]), alt);
       cena.add(m);
     }
+  }
+  /* ---- A FACHADA DE GALERIAS ABERTAS (o Mangueirão; dono, 16/11/2026, com duas fotos de fora: "veja como se constrói a
+     fachada do estádio, voce fez só um bloco liso"). Estádio de concreto dos anos 70 não tem parede por fora: tem ANDARES
+     DE GALERIA, um em cima do outro, abertos. De fora se vê a beira branca de cada laje com a mureta, o vão escuro entre
+     uma e outra, os pilares grossos recuados e, embaixo, o anel largo da rampa, também aberto por baixo.
+     `fachada.galerias: { dentro, fora, pisos: [altura, ...], bordas: [altura, ...] (só a beira, onde o piso já existe),
+     esp, guarda, cor, corPiso, corFundo, topo, pilares: { n, recuo, larg, h, cor }, deck: { fora, h, guarda, cor, corPiso,
+     corVao } }`. ---- */
+  if (fc.galerias) {
+    /* (malha própria: as do chão e das paredes já foram fechadas mais acima) */
+    const g = fc.galerias, passo = g.passo || 3, esp = g.esp == null ? 0.45 : g.esp, gd = g.guarda == null ? 1 : g.guarda, Gm = Malha();
+    const faixaV = (c, dr, h0, h1, cor) => { for (let a = 0; a < 360; a += passo) { const q0 = ponto(a, raioDe(a, c) + dr), q1 = ponto(a + passo, raioDe(a + passo, c) + dr);
+      Gm.quad(P(q0[0], q0[1], h0), P(q1[0], q1[1], h0), P(q1[0], q1[1], h1), P(q0[0], q0[1], h1), cor); } };
+    const laje = (c0, c1, h, cor) => { for (let a = 0; a < 360; a += passo) { const p = (ang, c) => { const q = ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h); };
+      Gm.quad(p(a, c0), p(a, c1), p(a + passo, c1), p(a + passo, c0), cor); } };
+    /* o fundo escuro das galerias (a sombra de dentro), encostado na parede de trás da arquibancada */
+    if (g.corFundo) faixaV(g.dentro, 0.25, 0, g.topo || Math.max(...(g.pisos || []), ...(g.bordas || [])), g.corFundo);
+    for (const h of g.pisos || []) { laje(g.dentro, g.fora, h, g.corPiso || '#cfccc2'); faixaV(g.fora, 0, h - esp, h + gd, g.cor || '#eeede7'); }
+    for (const h of g.bordas || []) faixaV(g.fora, 0.05, h - esp, h + gd, g.cor || '#eeede7');
+    if (g.pilares) { const pl = g.pilares, n = pl.n || 48, L = pl.larg || 1.6;
+      for (let i = 0; i < n; i++) { const a = 360 * (i + 0.5) / n, q = ponto(a, raioDe(a, g.fora) - (pl.recuo == null ? 3 : pl.recuo)); caixa(L, pl.h, L, pl.cor || '#d9d6cc', q[0], pl.h / 2, -q[1], cena); } }
+    if (g.deck) { const d = g.deck, gdd = d.guarda == null ? 1 : d.guarda;
+      laje(g.fora, d.fora, d.h, d.corPiso || '#d6d3c8');
+      faixaV(d.fora, 0, d.h - 0.7, d.h + gdd, d.cor || '#eeede7'); faixaV(d.fora, -0.3, 0, d.h - 0.7, d.corVao || '#3f4144'); }
+    if (!Gm.vazia) cena.add(Gm.malha());
   }
   /* ---- os refletores, o placar e as peças soltas ---- */
   for (const r of ficha.refletores || []) {

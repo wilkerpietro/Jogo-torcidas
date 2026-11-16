@@ -428,6 +428,12 @@ laterais, baixa nas pontas" e fiz quatro lajes com degrau entre elas; a foto de
 fora mostrou um anel contínuo em sela. Cobertura que muda de altura ao longo da
 volta é `alturas: ang => [fora, dentro]` num anel só, não vários anéis.
 
+FACHADA NÃO É PAREDE (o Mangueirão, 16/11/2026: "voce fez só um bloco liso"):
+antes de fechar o lado de fora, olhar uma foto de fora. Estádio de concreto
+antigo tem andares de galeria abertos: `fachada.galerias` (lajes com a beira
+branca, vão escuro, pilares recuados, o anel da rampa). Parede lisa só onde a
+foto mostra parede lisa.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

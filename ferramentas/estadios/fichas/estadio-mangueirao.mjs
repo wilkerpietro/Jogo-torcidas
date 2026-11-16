@@ -25,8 +25,10 @@
      cada lateral e desce nas pontas. Em cada divisa, a aleta branca em cima
      da coluna fina que vai até o chão; nas laterais, as treliças de aço por
      cima; as placas solares; e o TELÃO em cima da beira de cada ponta.
-   · POR FORA, as galerias de concreto (um anel de piso alto atrás do lance de
-     cima) com as colunas brancas finas da cobertura na beira, o nome do
+   · POR FORA, três andares de GALERIA ABERTA atrás do lance de cima (a beira
+     branca de cada laje, o vão escuro entre elas, os pilares recuados), as
+     colunas brancas finas da cobertura na frente, o anel largo da rampa
+     embaixo, o nome do
      estádio na fachada do OESTE, e o anel de concreto da esplanada com as
      duas marquises brancas das entradas (leste e oeste).
    LADO A E LADO B: o Lado A é o do leste (em cima), o da torcida do Remo; o
@@ -48,6 +50,7 @@ const L = { a: 103, b: 64, r: 64 };       /* o fundo do lance de baixo (12 m nas
 const BN = { a: 108, b: 69, r: 69 };      /* a faixa dos camarotes */
 const U = { a: 120, b: 95, r: 95 };       /* o fundo do lance de cima (26 m nas laterais, 12 nas pontas) */
 const GAL = { a: 124.5, b: 108, r: 108 };  /* a beira das galerias de fora, atrás do lance de cima */
+const DECK = { a: 139, b: 123, r: 123 };   /* a beira do anel da rampa, o primeiro andar, que passa das colunas */
 const TETO_D = { a: 99.5, b: 50.5, r: 50.5 }, TETO_F = { a: 128, b: 112, r: 112 };
 const VERM = '#c22a2e', AZUL = '#1f3f93', BRANCO = '#f1f1ec', CONC = '#d2cfc5', CONC2 = '#c6c3b9';
 /* a estrela de cinco pontas (a ponta pra cima), em metros a partir do meio dela */
@@ -84,7 +87,7 @@ const D1 = 53, D2 = 127, P1 = 22;
    a beira da frente mais clara e as três TRELIÇAS de aço deitadas por cima da laje; as placas solares escuras em volta. */
 const ALTURAS = ang => { const s = Math.abs(Math.sin(ang * RAD)); return [26, 21.5 + 11.5 * Math.pow(s, 1.5)]; };
 const LAJE = { dentro: TETO_D, fora: TETO_F, alturas: ALTURAS, h: 26, cor: '#eceae3', cor2: '#e2e0d8', corNervura: '#f6f6f2', larguraNervura: 0.3, beiral: [1.8, 1.4], corBeiral: '#f1f0ea',
-  aletas: { h: 3.4, de: 0.22, esp: 0.5, cor: '#f6f6f2' } };
+  aletas: { h: 3.6, de: 0.22, esp: 0.5, cor: '#f6f6f2', bico: 0.05, base: 5 } };
 const TETO = (de, ate, lateral) => lateral
   ? { ...LAJE, de, ate, n: 14, bordaDentro: { larg: 10, cor: '#f8f8f5' }, aneis: [{ f: 0.5, larg: 4.5, cor: '#55627a' }], trelicas: { angs: [(de + ate) / 2 - 21, (de + ate) / 2, (de + ate) / 2 + 21], esp: 1.5, alt: 1.3, cor: '#e9ebec' } }
   : { ...LAJE, de, ate, n: 12, aneis: [{ f: 0.42, larg: 5, cor: '#4a5870' }] };
@@ -94,7 +97,7 @@ const anelPts = (a, b, n = 72) => Array.from({ length: n }, (_, k) => [a * Math.
 export default {
   id: 'estadio-mangueirao', nome: 'Mangueirão', clubes: ['remo', 'paysandu', 'aguia-de-maraba'], norte: 178.2, vazado: 0.2, folga: 34,
   chao: { cor: '#63666a' },
-  vista: [150, 95, -235, 10, 8, -20],
+  vista: [120, 62, -215, 20, 9, -40],
   campo: { corMargem: '#4c9a4e', pista: { dentro: PISTA_D, fora: PISTA_F, cor: '#b04a3e', raias: 8 } },
   corMureta: '#e4e2da', corAlambrado: '#9aa0a4', alambrado: false, muro: false,
   aneis: [
@@ -124,10 +127,14 @@ export default {
       ] },
     /* as GALERIAS de fora, atrás do lance de cima: o piso alto por onde se chega às bocas, aberto até a cobertura, com as
        colunas da cobertura na beira (na foto de fora do dono, os três andares de galeria atrás das colunas) */
-    { dentro: U, fora: GAL, h: [13.5, 13.5], corredorFrente: 0, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 13.5, cor: '#cdcabf' }] }
+    { dentro: U, fora: GAL, h: [14, 14], corredorFrente: 0, trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 14, cor: '#cdcabf', semParede: true }] }
   ],
   coberturasAnel: [TETO(D1 - 12, D2 + 12, true), TETO(D1 + 168, D2 + 192, true), TETO(D2 + 12 - 180, D1 - 12, false), TETO(D2 + 12, D1 + 168, false)],
-  fachada: { cor: CONC2 },
+  /* A FACHADA (dono, 16/11/2026, com duas fotos de fora: "veja como se constrói a fachada do estádio, voce fez só um bloco
+     liso"): três andares de galeria abertos atrás das colunas da cobertura — a beira branca de cada laje, o vão escuro entre
+     elas, os pilares recuados — e, embaixo, o anel largo da rampa, que passa das colunas e é aberto por baixo. */
+  fachada: { cor: CONC2, galerias: { dentro: U, fora: GAL, pisos: [5, 9.5], bordas: [14], topo: 14, esp: 0.5, guarda: 1.1, cor: '#efeee8', corPiso: '#cdcabf', corFundo: '#45484c',
+    pilares: { n: 52, recuo: 3.2, larg: 1.7, h: 14, cor: '#d6d3c9' }, deck: { fora: DECK, h: 5, guarda: 1.1, cor: '#eceae3', corPiso: '#d4d1c6', corVao: '#3c3e41' } } },
   blocos: [
     /* os dois TELÕES, em cima da beira da cobertura das pontas */
     { u: 100.5, v: 0, w: 1.2, d: 22, h: 9, y: 21.4, cor: '#0f1114' }, { u: -100.5, v: 0, w: 1.2, d: 22, h: 9, y: 21.4, cor: '#0f1114' },
@@ -135,8 +142,8 @@ export default {
     { u: 0, v: 53.5, w: 5, d: 5, h: 2.6, cor: '#e9ebee' }, { u: 0, v: -53.5, w: 5, d: 5, h: 2.6, cor: '#e9ebee' },
     { u: -18, v: 48.6, w: 10, d: 1.8, h: 1.9, cor: '#dfe4ea' }, { u: 18, v: 48.6, w: 10, d: 1.8, h: 1.9, cor: '#dfe4ea' },
     /* o NOME DO ESTÁDIO na fachada do oeste (embaixo) */
-    { u: 0, v: -108.5, w: 0.6, d: 46, h: 2.6, y: 9.6, cor: '#2f6fb3', texto: 'ESTÁDIO OLÍMPICO DO PARÁ', corTexto: '#ffffff', textoFace: true, giro: -90 },
-    { u: 0, v: -108.5, w: 0.6, d: 40, h: 2.2, y: 6.8, cor: '#e9e8e2', texto: 'JORNALISTA  EDGAR  PROENÇA', corTexto: '#2b2f36', textoFace: true, giro: -90 },
+    { u: 0, v: -108.6, w: 0.6, d: 46, h: 2.0, y: 13.4, cor: '#2f6fb3', texto: 'ESTÁDIO OLÍMPICO DO PARÁ', corTexto: '#ffffff', textoFace: true, giro: -90 },
+    { u: 0, v: -108.6, w: 0.6, d: 40, h: 1.7, y: 8.95, cor: '#e9e8e2', texto: 'JORNALISTA  EDGAR  PROENÇA', corTexto: '#2b2f36', textoFace: true, giro: -90 },
     /* as duas marquises brancas das entradas, no anel da esplanada */
     { u: 0, v: 166, w: 20, d: 22, h: 0.5, y: 6, cor: '#f3f3ef' }, { u: 0, v: -166, w: 20, d: 22, h: 0.5, y: 6, cor: '#f3f3ef' }
   ],
