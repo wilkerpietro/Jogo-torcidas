@@ -458,6 +458,11 @@ verdade é a média; a diferença, dividida por dois, dá o deslocamento do topo
 CLUBE DE ESTÁDIO NOVO SEM DONO DITO: pergunte ao dono quem manda nele antes de
 mexer nos dados (no Zamith, a resposta tirou os dois clubes da Arena da Amazônia).
 
+ARQUIBANCADA VISTA POR TRÁS PARECE PRÉDIO (a Colina, 16/11/2026): numa foto de
+drone tirada de trás de uma arquibancada só aparecem a fachada e a beira do
+alto; os degraus ficam escondidos. O satélite decide: listras de escada e boca
+no meio são arquibancada. Diga ao dono que é leitura sua.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

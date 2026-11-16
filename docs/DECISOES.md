@@ -14893,6 +14893,21 @@ Estimado: a cor do degrau (cinza-azulado nas duas; na foto de drone uma está na
 
 O Zamith entrou nos arredores padrão. Briga e chegada testadas sem erros, pelo Amazonas e pelo Manaus.
 
+## Amazonas: o Estádio da Colina (dono, 16/11/2026)
+
+O dono, com cinco fotos (uma de drone, uma de dentro, dois postais aéreos e a fachada): "segue o estádio da colina."
+
+O Ismael Benigno, do São Raimundo e do Nacional, que já mandavam nele nos dados (`fichas/estadio-da-colina.mjs`). Estádio fechado nos quatro lados, colado na grama, todo azul-rei, de degrau claro sem cadeira e escadas azuis:
+
+- a lateral do oeste, a maior, com a cabine azul no alto e os bancos de reserva brancos na frente;
+- a de trás do gol do norte, a mais funda (18 m), com a boca no meio;
+- a do leste, do lado da Av. Presidente Dutra, mais estreita e íngreme, com as três caixas brancas de escada na frente;
+- a de trás do gol do sul, que pro estacionamento mostra o térreo de vidro e a faixa azul; no canto com a avenida, a torre azul da entrada.
+
+Estimado: as alturas, as torres de luz e o lugar do letreiro ESTÁDIO ISMAEL BENIGNO (ficou na parede da avenida, perto da torre). **O lado sul é uma leitura minha:** no satélite ele tem as mesmas listras azuis de escada e a boca no meio, como o do norte, então saiu como arquibancada; na foto de drone, tirada de trás dele, só aparece a fachada. Se for só um prédio de laje, é trocar um trecho da ficha.
+
+As torcidas são escolha minha: a da casa na lateral da cabine, com o apoio atrás do gol do sul, e a visitante atrás do gol do norte. A Colina entrou nos arredores padrão. Briga e chegada testadas sem erros, pelo São Raimundo e pelo Nacional (as duas travessias que o conferidor acusa são a corda no bico do funil de um portão, o falso positivo de sempre).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

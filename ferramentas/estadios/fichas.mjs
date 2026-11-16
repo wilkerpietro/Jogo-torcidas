@@ -621,3 +621,4 @@ import mangueirao from './fichas/estadio-mangueirao.mjs'; FICHAS[mangueirao.id] 
 import souza from './fichas/estadio-do-souza.mjs'; FICHAS[souza.id] = souza;
 import zinho from './fichas/estadio-zinho-de-oliveira.mjs'; FICHAS[zinho.id] = zinho;
 import zamith from './fichas/estadio-carlos-zamith.mjs'; FICHAS[zamith.id] = zamith;
+import colina from './fichas/estadio-da-colina.mjs'; FICHAS[colina.id] = colina;
