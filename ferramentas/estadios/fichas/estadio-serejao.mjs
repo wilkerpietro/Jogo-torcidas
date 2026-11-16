@@ -4,7 +4,14 @@
    dentro e uma do alto da principal. O campo corre de sudoeste a nordeste;
    no quadro o NOROESTE fica em cima e o NORDESTE à direita. Estádio OVAL,
    baixo, de um lance só em volta, com o gramado dez metros fora do meio do
-   oval, puxado pro lado da tribuna:
+   oval, puxado pro lado da tribuna. AS DUAS PONTAS SÃO MEIO-CÍRCULOS
+   INTEIROS (dono, 16/11/2026: "deu a impressão de que o campo tá torto em
+   relação ao espaço dele [...] revise o satélite e corrija"): na primeira
+   versão fiz o oval com canto de retângulo arredondado (raio 31 a 36 m num
+   oval de 50 de meia largura), sobrava espaço nos cantos e o campo parecia
+   fora do lugar. Remedi: o campo está alinhado com o estádio (meio grau de
+   diferença), o raio das pontas é a meia largura inteira e as quinas do
+   campo ficam a 4 m e meio da beira do gramado, do lado da tribuna:
    · EM VOLTA do gramado, a faixa de terra (a pista velha) com o alambrado,
      mais larga do lado de baixo.
    · EM CIMA (noroeste), a PRINCIPAL: duas faixas de cadeira, com o corredor
@@ -28,7 +35,7 @@
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
 /* o meio do oval, medido a partir do meio do campo */
-const CU = 0.6, CV = -9.8;
+const CU = 0.9, CV = -10.5;
 /* um contorno qualquer, dado pelos pontos: vira a lista de raios vistos do meio do campo */
 const POLI = (pts, a, b) => ({ forma: 'raios', a, b, raios: Array.from({ length: 720 }, (_, i) => { const t = i * 0.5 * RAD, dx = Math.cos(t), dy = Math.sin(t); let r = 0;
   for (let k = 0; k < pts.length; k++) { const [x1, y1] = pts[k], [x2, y2] = pts[(k + 1) % pts.length], ex = x2 - x1, ey = y2 - y1, den = dx * ey - dy * ex; if (Math.abs(den) < 1e-9) continue;
@@ -41,15 +48,16 @@ const OVAL = (a, b, r, cu = CU, cv = CV) => POLI(PTS(a, b, r, cu, cv), a + Math.
 /* um MURO por uma linha de pontos: um bloco fino girado em cada trecho */
 const MURO = (pts, h = 2.6, cor = '#cfcbc0') => pts.slice(1).map((b, i) => { const a = pts[i], du = b[0] - a[0], dv = b[1] - a[1];
   return { u: (a[0] + b[0]) / 2, v: (a[1] + b[1]) / 2, w: Math.hypot(du, dv) + 0.4, d: 0.4, h, cor, giro: Math.atan2(dv, du) / RAD }; });
-/* a beira da terra, o pé das arquibancadas, o corredor do meio da principal e o fundo */
-const GR = OVAL(82.8, 50, 31), I = OVAL(87.8, 55, 36), M = OVAL(98.1, 65.3, 46.3), F = OVAL(112.8, 77.4, 58, CU, CV + 3.35);
+/* a beira do gramado, o pé das arquibancadas, o corredor do meio da principal e o fundo: todos com as pontas em meio-círculo
+   (o raio é a meia largura). A beira do gramado tem o meio dela: a faixa de terra é mais larga do lado de baixo. */
+const GR = OVAL(87.8, 47.2, 47.2, CU, -7.7), I = OVAL(90, 54.5, 54.5), M = OVAL(100.5, 65, 65), F = OVAL(115.6, 77.15, 77.15, CU, CV + 3.65);
 const AM = '#e2c64a', AM2 = '#d4b63a', AZ = '#8798b3', AZ2 = '#a9b5c6', AZE = '#33466e', AZE2 = '#2a3a5c', CIM = '#8f8c85', CIM2 = '#86837c', ESC = '#d8c98a', MUR = '#6f6258';
 const BASE = { vomitorios: false, paredeAtras: true, corFachada: '#8a867e', corMureta: MUR, parapeito: 1.2, corEscada: ESC };
 const DEGRAU = { ...BASE, cor: CIM, cor2: CIM2, padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corEspelho: '#77746e', corredor: 44 };
 const CAD = (cor, cor2, mais) => ({ ...BASE, cor, cor2, padrao: 'mosaico', mistura: 0.4, corredor: 13.5, ...mais });
 /* as divisas, vistas do meio do campo */
-const P1 = A(77, 51), P2 = A(15, 60), P3 = A(-17, 60), P4 = A(-82.8, 51);                                                    /* a principal: azul, amarelo, azul */
-const O1 = A(-72.6, -60), O2 = A(-28.6, -66), O3 = A(-22, -66), O4 = A(22.4, -66), O5 = A(32.3, -66), O6 = A(65.2, -62);    /* o lado oposto: três blocos e dois vãos */
+const P1 = A(75.9, 58), P2 = A(14.7, 60), P3 = A(-16.1, 60), P4 = A(-83.3, 54);                                                    /* a principal: azul, amarelo, azul */
+const O1 = A(-72.5, -60), O2 = A(-28, -66), O3 = A(-22.1, -66), O4 = A(22.4, -66), O5 = A(31.4, -66), O6 = A(63.4, -62);    /* o lado oposto: três blocos e dois vãos */
 
 export default {
   id: 'estadio-serejao', nome: 'Serejão', clubes: ['brasiliense'], norte: 48.1, vazado: 0.3, folga: 30,
@@ -90,18 +98,18 @@ export default {
   refletores: [[-79, 88, 34], [-7, 86, 34], [65, 87, 34], [-68, -102, 34], [2, -102, 34], [70, -101, 34]],
   blocos: [
     /* a TRIBUNA no alto do bloco amarelo: a caixa azul de vidro, a laje plana que avança por cima das cadeiras e os pilares */
-    { u: 0.6, v: 76, w: 39, d: 8.5, h: 4.6, y: 12.4, cor: '#2f5aa0' }, { u: 0.6, v: 71.6, w: 39.4, d: 0.3, h: 1.2, y: 14.4, cor: '#1f3f78' },
-    { u: 0.6, v: 72.3, w: 41, d: 16.7, h: 0.9, y: 17.2, cor: '#d2d2cc', cobertura: true },
+    { u: 0.45, v: 76, w: 39, d: 8.5, h: 4.6, y: 12.4, cor: '#2f5aa0' }, { u: 0.45, v: 71.6, w: 39.4, d: 0.3, h: 1.2, y: 14.4, cor: '#1f3f78' },
+    { u: 0.45, v: 72.2, w: 40.9, d: 16.3, h: 0.9, y: 17.2, cor: '#d2d2cc', cobertura: true },
     ...[-18, -6, 7, 19].map(u => ({ u, v: 66.2, w: 0.5, d: 0.5, h: 6.2, y: 11, cor: '#c9c9c4' })),
     /* os bancos de reserva azuis, ao pé da principal (dois grandes e dois pequenos) */
-    { u: -14.7, v: 42.3, w: 7.3, d: 1.8, h: 2.2, cor: '#2c4f9e' }, { u: 14.7, v: 42.3, w: 7.3, d: 1.8, h: 2.2, cor: '#2c4f9e' },
-    { u: -4.8, v: 42.3, w: 2.4, d: 1.6, h: 2.1, cor: '#2c4f9e' }, { u: 2.2, v: 42.3, w: 2.4, d: 1.6, h: 2.1, cor: '#2c4f9e' },
+    { u: -17, v: 41.2, w: 6, d: 1.8, h: 2.2, cor: '#2c4f9e' }, { u: 13, v: 41.2, w: 6, d: 1.8, h: 2.2, cor: '#2c4f9e' },
+    { u: -5.2, v: 41.2, w: 2.4, d: 1.6, h: 2.1, cor: '#2c4f9e' }, { u: 1.5, v: 41.2, w: 2.4, d: 1.6, h: 2.1, cor: '#2c4f9e' },
     /* as três casinhas da faixa de terra, do lado oposto */
-    ...[-11, -0.4, 10].map(u => ({ u, v: -61.6, w: 2.2, d: 5, h: 2.4, cor: '#d9cfa6' })),
+    ...[-10.8, -0.3, 10].map(u => ({ u, v: -59.5, w: 2.2, d: 5, h: 2.4, cor: '#d9cfa6' })),
     /* o prédio dos vestiários, por trás do bloco do meio do lado oposto */
-    { u: -1.5, v: -90, w: 38, d: 12, h: 8.6, cor: '#8b8e90' }, { u: -1.5, v: -90, w: 39, d: 13, h: 0.5, y: 8.6, cor: '#6f7275' },
+    { u: -2.3, v: -89.2, w: 38.5, d: 12.3, h: 8.6, cor: '#8b8e90' }, { u: -2.3, v: -89.2, w: 39.5, d: 13.3, h: 0.5, y: 8.6, cor: '#6f7275' },
     /* O MURO oval do terreno, por fora do anel de asfalto (pelo satélite) */
-    ...MURO((p => [...p, p[0]])(PTS(136, 102, 80, 0, -8, 7)))
+    ...MURO((p => [...p, p[0]])(PTS(136, 102, 90, 0.9, -9, 9)))
   ],
   /* a câmera da foto aérea do dono: do alto, pelo lado oposto à tribuna */
   vista: [-70, 120, -200, 0, 0, -5],

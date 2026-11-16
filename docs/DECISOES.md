@@ -14698,6 +14698,7 @@ O dono, com cinco fotos (uma aérea antiga, a principal vista do gramado, duas d
 - **Fotos e satélite de épocas diferentes**: nas fotos a principal tem cadeira até embaixo; no satélite de hoje a faixa de baixo aparece escura. Fiz como nas fotos do dono.
 - **O que é estimado**: as alturas, as divisas dos blocos de cadeira, o tamanho da tribuna. **Escolhas minhas, sem fonte**: a Facção Brasiliense no bloco do meio do lado oposto à tribuna; a visitante na curva do nordeste.
 - **Conferido**: chão único, nenhum marcador fora, briga do Brasiliense abrindo em `estadio-serejao` sem erro de página.
+- **O oval corrigido** (dono, no mesmo dia: "deu a impressão de que o campo tá torto em relação ao espaço dele no Serejão, revise o satélite e corrija"): remedi com uma grade alinhada ao campo. O campo NÃO está girado em relação ao estádio (meio grau de diferença, dentro do erro da medida). O erro era o formato: fiz o oval com canto de retângulo arredondado (raio de 31 a 36 m), e as duas pontas são meio-círculos inteiros (o raio é a meia largura: 47 m na beira do gramado, 54,5 no pé das arquibancadas, 77 no fundo). Sobrava espaço nos cantos e o campo parecia fora do lugar. Agora as quinas do campo ficam a 4 m e meio da beira do gramado do lado da tribuna, como no satélite; a faixa de terra é mais larga do lado oposto; o meio do oval foi para 10,5 m do meio do campo.
 - **DF fechado**: Bezerrão (Gama e Ceilândia) e Serejão (Brasiliense).
 
 ## Descartado (decisão do dono, 17/08/2026)
