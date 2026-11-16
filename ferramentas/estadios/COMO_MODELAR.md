@@ -337,6 +337,10 @@ baixo: só faça dois lances com foto de perto (a principal do Antônio Accioly)
 O MURO DO TERRENO: o gerador só levanta muro na beira do chão andável. O muro de fora (o da rua, o do fundo do
 estacionamento) é `blocos`, pelo satélite; o dono sente falta dele na vista de cima.
 
+O CONTORNO DO GRAMADO NO OPENSTREETMAP dá o rumo do campo, mas o centro pode estar vários metros fora (8,7 m no Jonas
+Duarte, 10 m no Serra Dourada): confira as linhas do gramado no quadro e meça tudo a partir do meio de verdade.
+TRECHO COM `fora` MAIS FUNDO NUM ANEL `reto`: mantenha `a - r` igual ao do `fora` do anel, senão a emenda faz dente.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

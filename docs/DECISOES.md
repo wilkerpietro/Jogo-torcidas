@@ -14656,6 +14656,17 @@ O dono: "Antônio Accyoly"; e, no meio do levantamento, três fotos (duas de dro
 - **Nas vistas de conferência inclinadas** as cadeiras debaixo das coberturas saem cinza (é a sombra do telhado; a `cobertura` do trecho não tem `sombra: false`). Na vista de cima do jogo não há essa sombra.
 - **Conferido**: chão único, nenhum marcador fora, briga do Atlético-GO abrindo em `estadio-antonio-accyoly` sem erro de página.
 
+## Jonas Duarte lowpoly (Anápolis); Goiás fechado (dono, 16/11/2026)
+
+O dono: "Jonas Duarte agora"; e, no meio do levantamento, duas fotos de drone.
+
+- **Os dados**: nada mudou; o Anápolis já mandava nele (10.707 lugares). Usa o mapa padrão de arredores.
+- **De onde saiu**: a planta, do satélite; as cores e o jeito, das duas fotos. O rumo do campo veio do contorno do gramado no OpenStreetMap (25,8 graus), mas o contorno do mapa está 8,7 m fora do lugar ao longo do campo: centrei pelas linhas do gramado no satélite. Não achei mapa de setores.
+- **A ficha** (`fichas/estadio-jonas-duarte.mjs`): oval baixo de degrau de cimento claro, com as muretas e o muro de fora azuis. Em volta do gramado, a mureta azul e o anel de cimento (a pista velha), que é o primeiro anel, `passagem`. OESTE (em cima): a social, de cadeira azul e branca em blocos (`padrao: 'blocos'`), coberta na metade de trás (a `cobertura` do trecho), com as cabines no alto e os três bancos azuis ao pé. NORTE (à direita): a curva, com a boca de acesso e a caixa azul do placar. LESTE (embaixo): a de cimento descoberta. SUL (à esquerda): a outra curva, com as bocas e a escada listrada de vermelho, branco e azul no eixo.
+- **O que é estimado ou escolha minha**: as alturas, o desenho dos blocos de cadeira da social, o lugar das bocas (pelas marcas escuras do satélite), os postes de luz; a Independente do Anápolis na curva do sul e a visitante na curva do norte.
+- **Conferido**: chão único, nenhum marcador fora, briga do Anápolis abrindo em `estadio-jonas-duarte` sem erro de página.
+- **Goiás fechado**: Serra Dourada (Goiás e Vila Nova, com arredores de verdade), Antônio Accioly (Atlético-GO) e Jonas Duarte (Anápolis).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
