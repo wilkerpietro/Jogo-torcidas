@@ -94,7 +94,7 @@ TO.diaJogo.ponte = (function(){
     }
     if(tres && cv) cv.classList.remove('sobre-gl');
 
-    A.usarCena(local);
+    A.usarCena(local, (opc.config||{}).estadioLP);
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();

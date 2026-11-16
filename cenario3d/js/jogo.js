@@ -10629,6 +10629,12 @@ TO.dados.cenasFoto = {"praca": {"imagem": "img/cenas/praca.webp", "mascara": "19
    (ferramentas/estadios/, dados/estadios_cenas.js) entra como foto de cena */
 TO.dados.estadiosLowPoly = (typeof window !== 'undefined' && window.__ESTADIOS) || {};
 for(const id in TO.dados.estadiosLowPoly) TO.dados.cenasFoto[id] = TO.dados.estadiosLowPoly[id].foto;
+/* OS ARREDORES DE VERDADE (dono, 16/11/2026: "Cena de arredores fiel à realidade [...] e o acesso ao estádio também"): o
+   estádio que tem os quarteirões de verdade modelados (ferramentas/estadios/, dados/arredores_cenas.js) troca a cena
+   genérica de arredores pela dele — as ruas, os portões, de onde chega cada bonde. `soFora` marca o estádio em que não se
+   briga dentro ("tem estádio que naturalmente não dá pra brigar dentro, como o Independência, então a briga poderia
+   ocorrer somente do lado de fora"): a briga da arquibancada abre na rua. */
+TO.dados.arredoresReais = (typeof window !== 'undefined' && window.__ARREDORES) || {};
 ;
 
 /* ===== dados/cenas_editadas.js ===== */
@@ -45434,9 +45440,11 @@ TO.diaJogo.arredores = (function(){
   /* Troca a cena no ar. O combate chama isto antes de montar: encontro na
      rua abre a rua, encontro na praça abre a praça, e o resto do dia de
      jogo continua nos arredores. */
-  function usarCena(id){
+  function usarCena(id, estadio){
+    /* (os arredores do estádio que tem os quarteirões de verdade modelados entram no lugar da cena genérica) */
+    const reais = (TO.dados.arredoresReais || {})[estadio];
     const nova = (id && id !== 'arredores' && TO.dados.cenas)
-      ? TO.dados.cenas[id] : TO.dados.cenaArredores;
+      ? TO.dados.cenas[id] : (reais || TO.dados.cenaArredores);
     if(!nova || nova === D) { reconstruir(); return D; }
     D = nova;
     redimensionar();
@@ -54595,7 +54603,7 @@ TO.diaJogo.ponte = (function(){
     }
     if(tres && cv) cv.classList.remove('sobre-gl');
 
-    A.usarCena(local);
+    A.usarCena(local, (opc.config||{}).estadioLP);
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();
@@ -63417,8 +63425,11 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       if(!TO.feed.travado(e)) retomarTempo('decisao');
       return;
     }
-    const local = cenaDoEstadio(e, d);
-    const setores = SETORES_ESTADIO[local] || {mandante:3, visitante:3};
+    /* NO ESTÁDIO EM QUE NÃO SE BRIGA DENTRO (`soFora`), a briga da arquibancada abre na rua, nos arredores de verdade dele */
+    const dentro = cenaDoEstadio(e, d), fora = (TO.dados.arredoresReais || {})[dentro];
+    const soFora = !!(fora && fora.soFora);
+    const local = soFora ? 'arredores' : dentro;
+    const setores = soFora ? {mandante:3, visitante:2} : (SETORES_ESTADIO[local] || {mandante:3, visitante:3});
     const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
     const outroLado = d.somosCasa ? 'visitante' : 'mandante';
     /* mais torcidas que setores: as menores se juntam no último */
@@ -63490,7 +63501,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     abrirPalco({
       canvas: $('djPrincipal'),
       config:{escalacao:aptos, intencao:'atacar', paz:false, setores:true,
-              bondes, efetivoRival: delesT, local,
+              bondes, efetivoRival: delesT, local, estadioLP: soFora ? dentro : null,
               /* o caminho da invasão em 3D (vida3d.js monta o palco nele) */
               invasao3d: inv3d ? {via: via3d.via, rival: inv3d.id} : null,
               /* no estádio todo mundo estende faixa (dono, 09/09/2026) */
@@ -72574,6 +72585,13 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     if(!(m.config && m.config.assistir)) pararArquibancada();
     const o = opc(E());
     const local = String((m.config||{}).local || '');
+    /* OS ARREDORES DE VERDADE: a briga nos arredores abre nos quarteirões do estádio do mandante, se ele já tem */
+    if(m.config && (!local || local === 'arredores') && !m.config.estadioLP){
+      const e0 = E(), pj0 = (e0 && e0.proximoJogo) || null;
+      const mand = m.config.casaId || (m.dados && m.dados.casaId) || (pj0 ? (pj0.casa ? e0.torcida.clubeId : pj0.advId) : null);
+      const lp0 = mand && estadioLowPolyDe(mand);
+      if(lp0 && (TO.dados.arredoresReais || {})[lp0]) m.config.estadioLP = lp0;
+    }
     /* O PALCO NA CIDADE (o jogo 3D, 27/09/2026): a cena que tem lugar na
        praça em 3D — a reunião na sala da sede, a briga na casa de veraneio,
        a emboscada no posto e na estrada — roda o mesmo combate, e quem

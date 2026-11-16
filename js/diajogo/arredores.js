@@ -702,9 +702,11 @@ TO.diaJogo.arredores = (function(){
   /* Troca a cena no ar. O combate chama isto antes de montar: encontro na
      rua abre a rua, encontro na praça abre a praça, e o resto do dia de
      jogo continua nos arredores. */
-  function usarCena(id){
+  function usarCena(id, estadio){
+    /* (os arredores do estádio que tem os quarteirões de verdade modelados entram no lugar da cena genérica) */
+    const reais = (TO.dados.arredoresReais || {})[estadio];
     const nova = (id && id !== 'arredores' && TO.dados.cenas)
-      ? TO.dados.cenas[id] : TO.dados.cenaArredores;
+      ? TO.dados.cenas[id] : (reais || TO.dados.cenaArredores);
     if(!nova || nova === D) { reconstruir(); return D; }
     D = nova;
     imagem = null; imagemOk = false; imagemErro = false;

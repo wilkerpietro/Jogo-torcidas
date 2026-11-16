@@ -471,6 +471,17 @@ Arquibancada com MENOS degraus num trecho (atrás de um gol): o trecho leva
 um `dentro` mais pra fora e o `h` só da parte de cima; na frente dele, um
 trecho `passagem` no mesmo ângulo fecha o chão.
 
+## Os arredores de verdade (só nos estádios da lista do dono)
+
+1. `python3 ferramentas/estadios/osm_arredores.py <id> <lat> <lon> <norte> 250 210` (lat e lon do MEIO DO CAMPO; confira o
+   `norte` da ficha pelo contorno do gramado que o mapa traz: se as ruas saírem tortas no quadro, é o `norte`).
+2. Sobreponha as ruas ao satélite no quadro e meça onde ficam as fachadas; acerte a ficha antes de pôr portão.
+3. Na ficha, `arredores: { osm, quadro: { u, v, cu, cv }, limite, soFora, pisos, portoes, bondes, grades, filas, pm, muros,
+   predios, entorno, vista }` (o cabeçalho de `arredores.mjs` explica cada um; a do Independência é o exemplo).
+4. `ARREDORES=1 FICHA=... CONF=... node ferramentas/estadios/assar.js` pra conferir; sem `FICHA`, com `SO=<id>`, grava no jogo.
+   A linha tem de terminar em "caminho até o portão: todos".
+Procure a lista de portões e setores do estádio ANTES; o que a fonte não disser (o ponto na fachada), diga que é seu.
+
 ## O que conferir antes de entregar
 
 **Antes de desenhar** (a lição da Vila Belmiro, que precisou ser refeita):

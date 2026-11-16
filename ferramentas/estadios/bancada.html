@@ -10,6 +10,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { construir, marcadores, mascara, limites, raioDe } from './estadio_lowpoly.mjs';
 import { FICHAS } from './fichas.mjs';
+import { preparar, construirArredores, marcadoresArredores, mascaraArredores } from './arredores.mjs';
 /* UMA FICHA AVULSA, pra conferir sem mexer nas outras: bancada.html?ficha=/ferramentas/estadios/fichas/<id>.mjs
    (o arquivo exporta a ficha como `default`). É como quem modela um estádio novo testa o dele (assar.js, FICHA=...). */
 { const extra = new URLSearchParams(location.search).get('ficha');
@@ -89,6 +90,39 @@ window.assar = async function (id, opc) {
   const m = marcadores(ficha, paraPx, s);
   return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
 };
+/* OS ARREDORES DE VERDADE (dono, 16/11/2026): o estádio com os quarteirões em volta — as ruas do mapa, as casas do jogo 3D
+   antigo, os portões —, fotografado de cima na cena de arredores do jogo. A cobertura do estádio sai quase fechada: a briga
+   aqui é do lado de fora. */
+window.assarArredores = async function (id) {
+  const ficha = FICHAS[id]; if (!ficha || !ficha.arredores) throw new Error('sem arredores: ' + id);
+  /* (a cena tem a área da cena do estádio, 3072 × 2048, na proporção do quadro dos arredores) */
+  const ar = ficha.arredores, cu = ar.quadro.cu || 0, cq = ar.quadro.cv || 0;
+  const WA = ar.quadro.px || Math.round(Math.sqrt(W * H * ar.quadro.u / ar.quadro.v) / CEL) * CEL, s = WA / (2 * ar.quadro.u), HA = Math.round(2 * ar.quadro.v * s / CEL) * CEL;
+  const prep = preparar(ficha);
+  const casas = await import('/cenario3d/js/casas3d.js');
+  const { scene, cena, coberturas } = montar(Object.assign({}, ficha, { entorno: ar.entorno || [] }));
+  const fora = construirArredores(THREE, ficha, prep, casas); scene.add(fora.grupo);
+  const paraPx = (u, v) => [WA / 2 + (u - cu) * s, HA / 2 - (v - cq) * s], paraMetros = (x, y) => [(x - WA / 2) / s + cu, (HA / 2 - y) / s + cq];
+  tela(WA, HA);
+  const cam = new THREE.OrthographicCamera(-WA / 2 / s, WA / 2 / s, HA / 2 / s, -HA / 2 / s, 1, 1000);
+  cam.position.set(cu, 500, -cq); cam.up.set(0, 0, -1); cam.lookAt(cu, 0, -cq);
+  coberturas.visible = false; renderer.setClearColor(0x000000, 1); renderer.render(scene, cam); coberturas.visible = true;
+  const base = document.createElement('canvas'); base.width = WA; base.height = HA; const bx = base.getContext('2d'); bx.drawImage(cv, 0, 0);
+  cena.visible = false; fora.grupo.visible = false; renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, cam); cena.visible = true; fora.grupo.visible = true;
+  bx.globalAlpha = ar.vazado == null ? 0.6 : ar.vazado; bx.drawImage(cv, 0, 0); bx.globalAlpha = 1;
+  /* fora do limite da cena a cidade continua, mais escura: ali não se pisa */
+  if (ar.limite) { bx.beginPath(); bx.rect(0, 0, WA, HA); ar.limite.forEach((p, i) => { const q = paraPx(p[0], p[1]); if (i) bx.lineTo(q[0], q[1]); else bx.moveTo(q[0], q[1]); }); bx.closePath();
+    bx.fillStyle = 'rgba(22,22,26,0.46)'; bx.fill('evenodd'); }
+  const imagem = base.toDataURL('image/webp', 0.86);
+  tela(1280, 720);
+  const persp = new THREE.PerspectiveCamera(40, 1280 / 720, 1, 4000);
+  const olhar = (px, py, pz, ax, ay, az) => { persp.position.set(px, py, pz); persp.up.set(0, 1, 0); persp.lookAt(ax, ay, az); renderer.setClearColor(0xbcd7f0, 1); renderer.render(scene, persp); return pegar('image/jpeg', 0.86); };
+  const aerea = olhar(cu - ar.quadro.u * 1.25, ar.quadro.u * 0.95, -cq + ar.quadro.v * 1.7, cu, 0, -cq), aerea2 = olhar(cu + ar.quadro.u * 1.25, ar.quadro.u * 0.95, -cq - ar.quadro.v * 1.7, cu, 0, -cq);
+  const perto = ar.vista ? olhar(ar.vista[0], ar.vista[1], -ar.vista[2], ar.vista[3], ar.vista[4], -ar.vista[5]) : null;
+  return { id, largura: WA, altura: HA, escala: +s.toFixed(3), nome: ficha.nome, imagem, aerea, aerea2, perto, casas: fora.casas, falhas: fora.falhas, lotes: prep.lotes.length, soFora: !!ar.soFora,
+    mascara: mascaraArredores(prep, paraMetros, WA, HA, CEL), cena: marcadoresArredores(ficha, prep, paraPx) };
+};
 window.FICHAS = Object.keys(FICHAS);
+window.COM_ARREDORES = Object.keys(FICHAS).filter(id => FICHAS[id].arredores);
 window.pronto = true;
 </script>
