@@ -499,6 +499,19 @@ das pontas dos lados retos. O lado aberto é um trecho `vazio`.
 O CONTORNO DO GRAMADO NO OPENSTREETMAP PODE INCLUIR A GRAMA DE FORA DO CAMPO (no
 Barradão, 40 m de grama até o prédio): o meio do campo é o do círculo central.
 
+COBERTURA DE LONA EM ALMOFADAS (a Fonte Nova, 16/11/2026): na `coberturasAnel`,
+`bojo` com `almofadas: 3` (fileiras da boca à beira) e `recorte` (a beira de
+dentro recortada); `bordaFora` é o anel chato de concreto; `mastros` com `f` no
+terço de fora dá os postes com os tirantes; a passarela de luz é um `aneis` com
+`dh` negativo. Conte os vãos e as fileiras numa foto aérea.
+COBERTURA ALTA NO SATÉLITE OBLÍQUO sai deslocada inteira (12 m na Fonte Nova): a
+boca e a beira de fora deslocam igual; use os semieixos e centre no campo.
+ESTÁDIO EM FERRADURA: o lado aberto é `passagem` no anel de baixo e `vazio` nos de
+cima; as `galerias` da fachada levam `de` e `ate`. A cobertura pode dar a volta
+inteira mesmo assim (olhe uma foto de dentro virada pro lado aberto).
+CADEIRA QUE DE LONGE É UMA MANCHA DE COR (arena de cadeira colorida):
+`pisoPintado: true`, senão o concreto entre as cadeiras apaga a cor.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

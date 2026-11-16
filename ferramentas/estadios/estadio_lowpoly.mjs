@@ -480,13 +480,24 @@ export function construir(THREE, ficha) {
     const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
     /* AS FOLHAS (o Beira-Rio): com `bojo`, cada gomo é uma folha abaulada — a espinha do meio sobe `bojo` metros, e
        a luz pega um lado e o outro de cada folha de jeito diferente; `fenda` deixa um vão escuro entre as folhas */
-    if (cb.bojo) { const fen = (cb.fenda || 0) * vao / n / 2;
+    /* AS ALMOFADAS (a lona da Fonte Nova; dono, 16/11/2026, com as fotos de cima: "mais detalhes sobre a cobertura pra fazer de
+       forma mais detalhada"): com `almofadas: k`, cada gomo é cortado em k almofadas da beira de dentro à de fora — a lona
+       abaulada entre dois cabos radiais, presa embaixo nos cabos de volta, com a espinha subindo `bojo` no meio de cada uma e
+       descendo a 30% nas pontas. `recorte: m` puxa pra fora o meio da beira de dentro de cada gomo (a beira recortada). */
+    if (cb.bojo && cb.almofadas) { const k = cb.almofadas, b = cb.bojo, rec = (cb.recorte || 0) / prof, f0g = fd, f1g = 1 - ff;
+      for (let i = 0; i < n; i++) { const a0 = angs[i], a1 = angs[i + 1], am = (a0 + a1) / 2;
+        for (let j = 0; j < k; j++) { const g0 = f0g + (f1g - f0g) * j / k, g1 = f0g + (f1g - f0g) * (j + 1) / k, gm = (g0 + g1) / 2, m0 = j === 0 ? g0 + rec : g0;
+          const c = (i + j) % 2 ? (cb.cor2 || cb.cor || '#f4f3ee') : (cb.cor || '#f4f3ee');
+          R.quad(pt(a0, g0, 0), pt(a0, gm, 0), pt(am, gm, b), pt(am, m0, b * 0.3), c); R.quad(pt(a0, gm, 0), pt(a0, g1, 0), pt(am, g1, b * 0.3), pt(am, gm, b), c);
+          R.quad(pt(am, m0, b * 0.3), pt(am, gm, b), pt(a1, gm, 0), pt(a1, g0, 0), c); R.quad(pt(am, gm, b), pt(am, g1, b * 0.3), pt(a1, g1, 0), pt(a1, gm, 0), c); } }
+    } else if (cb.bojo) { const fen = (cb.fenda || 0) * vao / n / 2;
       for (let i = 0; i < n; i++) { const a0 = angs[i] + fen, a1 = angs[i + 1] - fen, am = (a0 + a1) / 2, c = i % 2 ? (cb.cor2 || cb.cor || '#f4f3ee') : (cb.cor || '#f4f3ee'), b = cb.bojo;
         R.quad(pt(a0, fd, 0), pt(a0, 1 - ff, 0), pt(am, 1 - ff, b), pt(am, fd, b * 0.4), c);
         R.quad(pt(am, fd, b * 0.4), pt(am, 1 - ff, b), pt(a1, 1 - ff, 0), pt(a1, fd, 0), c); }
     } else faixa(fd, 1 - ff, cb.cor || '#f4f3ee', cb.cor2);
     if (ff) faixa(1 - ff, 1, cb.bordaFora.cor); if (fd) faixa(0, fd, cb.bordaDentro.cor);
-    for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, 0.2);
+    /* (`dh` no anel: negativo pendura a faixa por baixo da cobertura — a passarela de luz da Fonte Nova) */
+    for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, an.dh == null ? 0.2 : an.dh);
     /* as nervuras entre os gomos */
     if (cb.nervuras !== false) for (let i = 0; i < (inteiro ? n : n + 1); i++) { const a = angs[i], e = cb.larguraNervura || 0.16; R.quad(pt(a - e, fd, 0.12), pt(a - e, 1 - ff, 0.12), pt(a + e, 1 - ff, 0.12), pt(a + e, fd, 0.12), cb.corNervura || '#cfcfc8'); }
     /* a borda de fora e a de dentro, de pé */
@@ -712,16 +723,18 @@ export function construir(THREE, ficha) {
   if (fc.galerias) {
     /* (malha própria: as do chão e das paredes já foram fechadas mais acima) */
     const g = fc.galerias, passo = g.passo || 3, esp = g.esp == null ? 0.45 : g.esp, gd = g.guarda == null ? 1 : g.guarda, Gm = Malha();
-    const faixaV = (c, dr, h0, h1, cor) => { for (let a = 0; a < 360; a += passo) { const q0 = ponto(a, raioDe(a, c) + dr), q1 = ponto(a + passo, raioDe(a + passo, c) + dr);
+    /* (`de`, `ate`: as galerias só num arco — a ferradura da Fonte Nova, aberta num dos fundos) */
+    const A0 = g.de || 0, A1 = g.ate == null ? A0 + 360 : g.ate;
+    const faixaV = (c, dr, h0, h1, cor) => { for (let a = A0; a < A1 - 1e-6; a += passo) { const q0 = ponto(a, raioDe(a, c) + dr), q1 = ponto(a + passo, raioDe(a + passo, c) + dr);
       Gm.quad(P(q0[0], q0[1], h0), P(q1[0], q1[1], h0), P(q1[0], q1[1], h1), P(q0[0], q0[1], h1), cor); } };
-    const laje = (c0, c1, h, cor) => { for (let a = 0; a < 360; a += passo) { const p = (ang, c) => { const q = ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h); };
+    const laje = (c0, c1, h, cor) => { for (let a = A0; a < A1 - 1e-6; a += passo) { const p = (ang, c) => { const q = ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h); };
       Gm.quad(p(a, c0), p(a, c1), p(a + passo, c1), p(a + passo, c0), cor); } };
     /* o fundo escuro das galerias (a sombra de dentro), encostado na parede de trás da arquibancada */
     if (g.corFundo) faixaV(g.dentro, 0.25, 0, g.topo || Math.max(...(g.pisos || []), ...(g.bordas || [])), g.corFundo);
     for (const h of g.pisos || []) { laje(g.dentro, g.fora, h, g.corPiso || '#cfccc2'); faixaV(g.fora, 0, h - esp, h + gd, g.cor || '#eeede7'); }
     for (const h of g.bordas || []) faixaV(g.fora, 0.05, h - esp, h + gd, g.cor || '#eeede7');
     if (g.pilares) { const pl = g.pilares, n = pl.n || 48, L = pl.larg || 1.6;
-      for (let i = 0; i < n; i++) { const a = 360 * (i + 0.5) / n, q = ponto(a, raioDe(a, g.fora) - (pl.recuo == null ? 3 : pl.recuo)); caixa(L, pl.h, L, pl.cor || '#d9d6cc', q[0], pl.h / 2, -q[1], cena); } }
+      for (let i = 0; i < n; i++) { const a = A0 + (A1 - A0) * (i + 0.5) / n, q = ponto(a, raioDe(a, g.fora) - (pl.recuo == null ? 3 : pl.recuo)); caixa(L, pl.h, L, pl.cor || '#d9d6cc', q[0], pl.h / 2, -q[1], cena); } }
     if (g.deck) { const d = g.deck, gdd = d.guarda == null ? 1 : d.guarda;
       laje(g.fora, d.fora, d.h, d.corPiso || '#d6d3c8');
       faixaV(d.fora, 0, d.h - 0.7, d.h + gdd, d.cor || '#eeede7'); faixaV(d.fora, -0.3, 0, d.h - 0.7, d.corVao || '#3f4144'); }

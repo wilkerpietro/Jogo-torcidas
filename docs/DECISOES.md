@@ -14960,6 +14960,28 @@ Na correção anterior a listra preta era um lance separado, embaixo do lance ve
 
 No gerador, `pisoPintado: true`: onde há cadeira em cima de degrau pintado (os três setores do meio da lateral), o piso leva a cor da cadeira, um tom abaixo, em vez do concreto. Sem isso a listra preta virava cinza salpicado debaixo das cadeiras.
 
+## Bahia: a Arena Fonte Nova (dono, 16/11/2026)
+
+O dono, com cinco fotos de dentro: "vamos pra fonte nova." E em seguida, com mais quatro (duas aéreas, uma do Dique e uma de dentro, olhando a lona): "mais detalhes sobre a cobertura pra fazer de forma mais detalhada".
+
+O estádio do Bahia, que já mandava nele nos dados (`fichas/estadio-arena-fonte-nova.mjs`). Medidas pelo satélite, desenho pelas fotos:
+
+- **A ferradura**, aberta no fundo sul, virado pro Dique do Tororó, em três níveis de cadeiras: embaixo o anel verde-água claro; no meio o nível estreito azul-esverdeado (azul-marinho no oeste), atrás da testeira cinza; em cima o nível verde, atrás da faixa cor de vinho dos anúncios, com um trecho sem cadeira no noroeste. Onde ela abre, a laje sobre pilares altos e a viga do letreiro ARENA FONTE NOVA; nas pontas, os painéis vermelhos de fora.
+- **A cobertura**, que dá a volta inteira, também por cima do lado aberto: o anel chato de concreto por fora, em cima dos pilares brancos; a lona branca em três fileiras de almofadas abauladas entre os cabos radiais (quarenta vãos), com a beira de dentro recortada; os mastros finos com os tirantes em cima; a passarela preta da luz pendurada por baixo; o telão grande no norte e o pequeno no sul.
+- **A fachada** de galerias abertas, de lajes brancas, só na ferradura.
+
+No gerador, por causa dela:
+
+- `almofadas: k` na cobertura em anel corta cada gomo em k almofadas da beira de dentro à de fora (a espinha sobe `bojo` no meio de cada uma e desce a 30% nas pontas); `recorte: m` puxa pra fora o meio da beira de dentro de cada gomo.
+- `dh` num anel de `aneis`: negativo pendura a faixa por baixo da cobertura.
+- `de`, `ate` nas `galerias` da fachada: as galerias só num arco.
+
+Estimado: as alturas (a cobertura a uns 39 m), a fundura de cada nível (os três somam 45 m; a cobertura esconde a arquibancada no satélite), o número de vãos e de fileiras de almofadas, onde acaba cada nível na boca da ferradura e o trecho sem cadeira. O satélite é oblíquo e mostra a cobertura 12 m deslocada; ficou centrada no campo.
+
+As torcidas são escolha minha: a Bamor atrás do gol do norte, a Terror Tricolor ao lado dela, e a visitante no canto do sudeste, embaixo, onde está a torcida de fora na foto de jogo do dono.
+
+A Fonte Nova é dos diferenciados: não entrou nos arredores padrão, e o muro do terreno e a esplanada do sul (as tendas, a escadaria, o edifício-garagem) ficam para os arredores de verdade. Briga testada sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
