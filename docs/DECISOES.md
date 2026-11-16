@@ -15009,6 +15009,20 @@ Estimado: as alturas, onde ficam as bocas e a cor das cadeiras debaixo da cobert
 
 As torcidas são escolha minha, pelas cores: a do Confiança (Trovão Azul) atrás do gol do sul, no azul; a do Sergipe (Esquadrão Colorado) atrás do gol do norte, no vermelho; a Jovem Confiança na lateral das cadeiras brancas; a visitante no meio da lateral do leste. O Batistão entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes.
 
+## Sergipe: o Etelvino Mendonça, do Itabaiana (dono, 16/11/2026)
+
+O dono, com uma foto de drone: "segue as imagens do estadio do itabaiana".
+
+O Mendonção, do Itabaiana, que já mandava nele nos dados (`fichas/estadio-etelvino-mendonca.mjs`). Oval inteiro de arquibancada baixa de cimento, de uns nove degraus, com a pista estreita de concreto ao pé da mureta:
+
+- o degrau pintado em blocos azuis e vermelhos alternados, de uns 13 m, na volta toda (`padrao: 'blocos'`);
+- do lado da avenida, a tribuna coberta pequena, de telhado azul-acinzentado;
+- o fundo do norte mais fundo, com o muro branco e o letreiro O MENDONÇÃO por fora, e as três coberturas brancas dos túneis ao pé dele.
+
+Estimado: as alturas, onde começa cada bloco de cor (a foto mostra a alternância, não a posição exata), a largura da tribuna e os postes de luz. As duas listras finas, azul e vermelha, do muro de fora não entraram.
+
+As torcidas são escolha minha: a Jovem Tricolor no meio da lateral de frente pra tribuna, a visitante atrás do gol do sul. O Mendonção entrou nos arredores padrão. Briga e chegada testadas sem erros (as duas travessias que o conferidor acusa são a corda no bico do funil de um portão, o falso positivo de sempre).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

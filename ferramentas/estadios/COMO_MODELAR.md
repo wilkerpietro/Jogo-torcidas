@@ -515,6 +515,10 @@ COR DE CADEIRA DEBAIXO DE COBERTURA: o nível de cima fica na sombra e parece de
 outra cor (na Fonte Nova li verde onde é o mesmo azul claro de baixo). Compare
 os níveis numa foto em que os dois estejam na mesma luz antes de dar cor nova.
 
+DEGRAU EM BLOCOS DE DUAS CORES ALTERNADAS (o Mendonção, 16/11/2026): `padrao:
+'blocos'` com `cor`, `cor2` e `bloco` — o bloco sai com 1,7 vez o número dado em
+metros (pra 13 m, `bloco: 7.6`); sem `blocoFileiras` a faixa vai do pé ao alto.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
