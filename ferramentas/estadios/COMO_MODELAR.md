@@ -304,6 +304,16 @@ Boca em cima da escada: `vomitorios: { em: [0, 1] }` (meia boca em cada
 divisa; `[1]` no primeiro trecho, `[0]` no último). Gere os trechos com uma
 função e confira por código que o `ate` de um é o `de` do seguinte.
 
+QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
+fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
+"fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
+torre, fundo", o sudeste ou o noroeste. Desempate por uma coisa que o
+satélite mostre só de um lado (boca de acesso, cor do degrau, telhado).
+DEGRAU PINTADO DE BRANCO parece telhado no satélite: confira se as escadas
+aparecem por cima (aparecem no degrau; o telhado as esconderia).
+ARQUIBANCADA ESPELHADA NA SOMBRA: não copie as bocas da gêmea; diga que não
+viu (o fundo sul do Giulite Coutinho não tem as bocas do norte).
+
 LADOS DE FUNDURA DIFERENTE NO MESMO ANEL (o Ary de Oliveira e Souza): cada
 trecho leva o seu `fora` e a sua `inclinacao`. Pra reta não sair torta, o
 `fora` de um lado tem de ter `a - r` (ou `b - r`) igual ao do contorno de
