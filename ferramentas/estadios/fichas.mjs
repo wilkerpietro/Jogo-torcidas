@@ -627,3 +627,4 @@ import barradao from './fichas/estadio-barradao.mjs'; FICHAS[barradao.id] = barr
 import fontenova from './fichas/estadio-arena-fonte-nova.mjs'; FICHAS[fontenova.id] = fontenova;
 import batistao from './fichas/estadio-batistao.mjs'; FICHAS[batistao.id] = batistao;
 import etelvino from './fichas/estadio-etelvino-mendonca.mjs'; FICHAS[etelvino.id] = etelvino;
+import reipele from './fichas/estadio-rei-pele.mjs'; FICHAS[reipele.id] = reipele;

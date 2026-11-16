@@ -519,6 +519,18 @@ DEGRAU EM BLOCOS DE DUAS CORES ALTERNADAS (o Mendonção, 16/11/2026): `padrao:
 'blocos'` com `cor`, `cor2` e `bloco` — o bloco sai com 1,7 vez o número dado em
 metros (pra 13 m, `bloco: 7.6`); sem `blocoFileiras` a faixa vai do pé ao alto.
 
+FORMATO QUE NÃO É OVAL NEM RETÂNGULO (o Rei Pelé, 16/11/2026: tiras retas atrás
+dos gols e uma lateral em arco de círculo): meça no quadro a beira de dentro e
+a de fora em vários `u`; se a fundura cresce pro meio, ajuste um círculo a cada
+beira (três pontos bastam) e monte o contorno por pontos, `forma: 'raios'`
+(ajudantes `POLI` e `D` da ficha dele). Arquibancada solta do resto vai em
+anéis próprios. Num contorno `raios` as colunas saem radiais: numa tira reta
+longe do centro as escadas ficam inclinadas (diga ao dono).
+DE QUE LADO FICA CADA COR: numa foto oblíqua, veja o que está à esquerda e à
+direita de quem olha (olhando pra -u, o lado de +v fica à direita) antes de
+decidir qual fundo é o da foto.
+TESTEIRA DE OUTRA COR NA BOCA DO TELHADO: `corFrente` na `cobertura` do trecho.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

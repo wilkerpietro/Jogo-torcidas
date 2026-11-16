@@ -15023,6 +15023,23 @@ Estimado: as alturas, onde começa cada bloco de cor (a foto mostra a alternânc
 
 As torcidas são escolha minha: a Jovem Tricolor no meio da lateral de frente pra tribuna, a visitante atrás do gol do sul. O Mendonção entrou nos arredores padrão. Briga e chegada testadas sem erros (as duas travessias que o conferidor acusa são a corda no bico do funil de um portão, o falso positivo de sempre).
 
+## Alagoas: o Rei Pelé (dono, 16/11/2026)
+
+O dono, com cinco imagens (três aéreas e dois quadros de um vídeo de drone): "alagoas, vamos pro rei pelé e depois o estádio de arapiraca. essas são as imagens do estádio rei pelé. aparentemente o formato dele é bem complexo". E depois, com mais um quadro do vídeo e a foto da entrada: "a arquibancada é um lado azul outro lado vermelha".
+
+O Trapichão, do CRB e do CSA, que já mandavam nele nos dados (`fichas/estadio-rei-pele.mjs`). O satélite destrinchou o formato. São duas arquibancadas diferentes em volta de uma pista bege em forma de D:
+
+- **O U de dois andares**, de telhado marrom em gomos com a testeira azul na boca: as duas de trás do gol são tiras retas de 21 m de fundura, e a lateral é um arco de círculo (164 m de raio por dentro) que chega a 37 m de fundura no meio. Embaixo, o lance descoberto de degrau cinza com a faixa de cadeiras; em cima, o lance coberto.
+- **A arquibancada reta**, de 138 m, solta do U, do outro lado: o lance de baixo descoberto, com as faixas de cor, e o de cima debaixo do mesmo telhado.
+- **As cores**: metade vermelha e metade azul, dividida no meio do campo, no U e na arquibancada reta. O vermelho fica do lado norte (conferido pelo quadro do vídeo: com o arco à esquerda e a reta à direita, o fundo de lá é o vermelho).
+- A grama é um retângulo de pontas redondas, 20 m mais comprida que o campo atrás de cada gol. Por fora, a torre de concreto e a cúpula branca do museu, e o letreiro ESTÁDIO REI PELÉ.
+
+O contorno do U é um polígono lido raio a raio (`forma: 'raios'`, ajudante `D(x, topo, cv, R)` na ficha): reto em cima, as duas tiras e o arco embaixo. No gerador, `corFrente` na `cobertura` do trecho pinta a testeira da beira da frente (a faixa azul).
+
+Estimado: as alturas; quanto de cada andar do U (o telhado esconde a divisa no satélite: 9 m embaixo e 12 em cima nos fundos, 15 e 22 no meio do arco); onde ficam as faixas de cor da arquibancada reta; as torres de luz; o lugar do letreiro (pus no meio do arco, por fora). As escadas das tiras de trás do gol saem inclinadas, porque o gerador puxa as colunas pro meio do campo; a tira em si está no lugar.
+
+As torcidas são escolha minha, pelas cores: a do CRB (Comando Alvirrubro) atrás do gol do lado vermelho, a do CSA (Mancha Azul) atrás do gol do lado azul, a Garra no meio do arco, a visitante na arquibancada reta. O Rei Pelé entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

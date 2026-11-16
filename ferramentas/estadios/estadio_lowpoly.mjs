@@ -427,6 +427,8 @@ export function construir(THREE, ficha) {
           const RR = cb.opaca ? Ro : R;
           RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, -cb.larg, hc - cai), q(a0, -cb.larg, hc - cai), tom);
           RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, av, hc - 1.4), q(a0, av, hc - 1.4), cb.corBorda || tom);
+          /* `corFrente` (o Rei Pelé): a testeira da beira da FRENTE, de outra cor (a faixa azul na boca do telhado marrom) */
+          if (cb.corFrente) { const hfr = hc - cai, af = cb.altFrente || 1.3; RR.quad(q(a0, -cb.larg, hfr), q(a1, -cb.larg, hfr), q(a1, -cb.larg, hfr - af), q(a0, -cb.larg, hfr - af), cb.corFrente); }
           /* a treliça de cada módulo */
           if (cb.trelica !== false && i % 2 === 0) { const w0 = pc(a0, av), w1 = pc(a0, -cb.larg);
             const m = sombra(new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(w1[0] - w0[0], w1[1] - w0[1]), 0.5, 0.35), mat(cb.corTrelica || '#8a8f93')));
