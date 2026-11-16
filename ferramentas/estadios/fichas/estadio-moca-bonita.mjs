@@ -19,12 +19,13 @@
      (No satélite os blocos da social aparecem vermelhos e brancos, e eu tinha
      feito assim; as fotos do dono mostram cadeira amarela. Valem as fotos.)
    · À DIREITA (norte), a CURVA de cimento, que emenda na social e na
-     arquibancada do leste, com as três caixas de acesso por fora.
+     arquibancada do leste.
    · EMBAIXO (leste), a arquibancada comprida de degrau de cimento cinza, com
      as três escadas amarelas, a mureta e o muro de trás brancos com os
      quadros vermelhos.
-   · À ESQUERDA (sul), a outra CURVA de cimento, solta das duas laterais (os
-     vãos dos cantos são de chão), com o muro branco atrás.
+   · À ESQUERDA (sul), a outra CURVA de cimento, com as escadinhas amarelas,
+     solta das duas laterais (os vãos dos cantos são de chão), com o muro
+     branco atrás.
    AS TORCIDAS (escolhas minhas, sem fonte): a Super Bangu (e a Ultras
    Madureira, quando o Madureira manda) no meio da arquibancada do leste; a
    visitante na curva do sul. */
@@ -58,8 +59,9 @@ export default {
         SOCIAL(31.7, 14, true), SOCIAL(14, 0, true), SOCIAL(0, -14, true), SOCIAL(-14, -28, true), SOCIAL(-28, -43.3, true), SOCIAL(-43.3, -55, true),
         /* o canto sudoeste, de chão */
         CHAO(A(-55, 53), SUL0),
-        /* À ESQUERDA (sul): a curva de cimento */
-        CIMENTO(SUL0, 180, { fora: F_SUL, h: [1, 4.8], fileiras: 10, escadaNaBorda: false }), CIMENTO(180, SUL1, { fora: F_SUL, h: [1, 4.8], fileiras: 10, corEscada: '#8a8783' }),
+        /* À ESQUERDA (sul): a curva de cimento, com as escadinhas amarelas (dono, 16/11/2026: "Faltou as escadinhas amarelas na
+           arquibancada do lado esquerdo") */
+        CIMENTO(SUL0, SUL1, { fora: F_SUL, h: [1, 4.8], fileiras: 10, corredor: 24, escadaNaBorda: false }),
         /* o canto sudeste, de chão */
         CHAO(SUL1, L0 + 360)
       ] },
@@ -87,8 +89,6 @@ export default {
     ...[[-5.8, 61.5], [5.8, 61.5], [-5.8, 66.5], [5.8, 66.5]].map(([u, v]) => ({ u, v, w: 0.25, d: 0.25, h: 3, y: 13.7, cor: '#4a4c50', cobertura: true })),
     /* os prédios do clube atrás da social */
     { u: -34, v: 67, w: 24, d: 9, h: 7, cor: '#b9b7b0' }, { u: 30, v: 67, w: 22, d: 9, h: 7, cor: '#a9a9a4' },
-    /* as três caixas de acesso, por fora da curva norte */
-    { u: 82, v: 41, w: 4.5, d: 3.5, h: 4.6, cor: BR, giro: 26 }, { u: 94.5, v: -1, w: 4.5, d: 3.5, h: 4.6, cor: BR }, { u: 78.5, v: -46, w: 4.5, d: 3.5, h: 4.6, cor: BR, giro: -30 },
     /* a casinha do canto sudeste */
     { u: -57.5, v: -45.5, w: 6, d: 6, h: 3.5, cor: '#9a968e' }
   ],
