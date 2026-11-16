@@ -426,6 +426,8 @@ export function construir(THREE, ficha) {
           const tom = cb.listras && i % 2 ? (cb.cor2 || '#e9e9e4') : (cb.cor || '#f1f1ec');
           const RR = cb.opaca ? Ro : R;
           RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, -cb.larg, hc - cai), q(a0, -cb.larg, hc - cai), tom);
+          /* `corBaixo` (a laje do Rei Pelé): a face de baixo de outra cor (o concreto cinza visto de dentro, debaixo do marrom) */
+          if (cb.corBaixo) RR.quad(q(a0, av, hc - 0.3), q(a1, av, hc - 0.3), q(a1, -cb.larg, hc - cai - 0.3), q(a0, -cb.larg, hc - cai - 0.3), cb.corBaixo);
           RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, av, hc - 1.4), q(a0, av, hc - 1.4), cb.corBorda || tom);
           /* `corFrente` (o Rei Pelé): a testeira da beira da FRENTE, de outra cor (a faixa azul na boca do telhado marrom) */
           if (cb.corFrente) { const hfr = hc - cai, af = cb.altFrente || 1.3; RR.quad(q(a0, -cb.larg, hfr), q(a1, -cb.larg, hfr), q(a1, -cb.larg, hfr - af), q(a0, -cb.larg, hfr - af), cb.corFrente); }

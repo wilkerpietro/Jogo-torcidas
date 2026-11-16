@@ -5,25 +5,29 @@
    164 graus, saiu do contorno do gramado no OpenStreetMap.
    No quadro a lateral em ARCO fica EMBAIXO e a arquibancada RETA em cima.
    São DUAS arquibancadas diferentes em volta de uma pista bege em forma de D:
-   · o U de dois andares, de telhado marrom em gomos e testeira azul: as duas de
-     trás do gol são TIRAS RETAS de 21 m de fundura (vão de v = 99 até virar), e
-     a lateral de baixo é um ARCO de círculo (164 m de raio por dentro), que
-     chega a 37 m de fundura no meio. Embaixo, o lance descoberto de degrau
-     cinza com a faixa de cadeiras; em cima, o lance coberto, com as cadeiras
-     nas primeiras fileiras;
+   · o U de TRÊS níveis, debaixo de uma laje de concreto em balanço, marrom por
+     cima e de beira azul: as duas de trás do gol são TIRAS RETAS de 21 m de
+     fundura (vão de v = 99 até virar), e a lateral de baixo é um ARCO de
+     círculo (164 m de raio por dentro), que chega a 37 m de fundura no meio.
+     Junto da pista, o lance baixo atrás do muro branco; em cima do muro das
+     bocas, o segundo lance; e o lance grande de cima, coberto, com as cadeiras
+     nas primeiras fileiras e a galeria de pilares no alto (pelas cinco imagens
+     de dentro que o dono mandou depois: "Veja essas imagens pra entender
+     melhor o jeito do estádio");
    · UMA METADE VERMELHA E A OUTRA AZUL, dividida no meio do campo: as cadeiras
      e as faixas são vermelhas do lado esquerdo (norte, o do CRB) e azuis do
      direito (sul, o do CSA), no U e na arquibancada reta;
    · do outro lado, solta do U, a arquibancada RETA de 138 m: o lance de baixo
-     descoberto, de degrau cinza com as faixas de cor, e o de cima
+     descoberto, de degrau cinza com as ESCADAS PINTADAS (vermelhas nas pontas,
+     azuis, brancas no meio), a parede escura do letreiro, e o de cima
      debaixo do mesmo telhado marrom;
    · a grama é um retângulo de pontas redondas, 20 m mais comprida que o campo
      atrás de cada gol; a pista bege fecha reta do lado da arquibancada reta e
      em arco do lado do U;
    · por fora, no canto, a torre de concreto e a cúpula branca do museu.
-   ESTIMADO: as alturas; QUANTO DE CADA ANDAR DO U (o telhado esconde a divisa no
-   satélite, que ainda sai deslocado: pus 9 m embaixo e 12 em cima nos fundos, 15
-   e 22 no meio do arco); onde ficam as faixas de cor da arquibancada reta; as
+   ESTIMADO: as alturas; QUANTO DE CADA NÍVEL DO U (a laje esconde as divisas no
+   satélite: pus 4, 5 e 12 m nos fundos e 7, 8 e 22 no meio do arco); o fosso
+   entre o muro da pista e a grade do lance baixo não entrou; as
    torres de luz; onde fica o letreiro (pus no meio do arco, por fora). As escadas das tiras de trás do gol saem inclinadas (o gerador puxa as
    colunas pro meio do campo); a tira em si está no lugar.
    AS TORCIDAS (escolha minha): a do CRB atrás do gol da esquerda, a do CSA
@@ -41,17 +45,19 @@ const POLI = (pts, a, b) => ({ forma: 'raios', a, b, raios: Array.from({ length:
 const D = (x, topo, cv, R, n = 40) => { const pts = [[x, topo], [-x, topo]];
   for (let i = 0; i <= n; i++) { const u = -x + 2 * x * i / n; pts.push([u, cv - Math.sqrt(R * R - u * u)]); }
   return POLI(pts, x, Math.max(topo, R - cv)); };
-/* a pista (fecha reta em v = 54,4), a beira do U (as tiras continuam até v = 99), a divisa dos dois andares e o fundo do U */
-const PISTA = D(87.7, 54.4, 117, 164), BEIRA = D(87.7, 99, 117, 164), MEIO = D(96.7, 99, 120, 182), FUNDO = D(109, 99, 127.4, 211.8);
+/* a pista (fecha reta em v = 54,4), a beira do U (as tiras continuam até v = 99), as divisas dos TRÊS níveis e o fundo do U */
+const PISTA = D(87.7, 54.4, 117, 164), BEIRA = D(87.7, 99, 117, 164), M1 = D(92, 99, 120.9, 174.6), MEIO = D(96.7, 99, 120, 182), FUNDO = D(109, 99, 127.4, 211.8);
 /* os ângulos (vistos do meio do campo) onde cada tira de trás do gol começa em cima e vira arco embaixo */
 const TIRA = A(98, 99), VIRA = -A(98, -30) + 360;   /* 45,3 e 17 graus */
 const DEGRAU = { cor: CINZA, cor2: CINZA2, padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 14, vomitorios: false };
 /* o telhado marrom em gomos, de testeira azul; `larg` é quanto ele avança do fundo pra frente */
-const TELHA = larg => ({ h: 21, larg, avanco: 0.8, cai: 1.4, cor: MARROM, cor2: MARROM2, listras: true, corFrente: AZUL, corTrelica: '#8a8f93', corPilar: '#a9a59a' });
+/* (é uma LAJE de concreto em balanço, sem treliça, em cima dos pilares da galeria do alto: marrom por cima, de sujeira) */
+const TELHA = larg => ({ h: 23.5, larg, avanco: 0.8, cai: 1.2, cor: MARROM, cor2: MARROM2, listras: true, corFrente: AZUL, altFrente: 1.6, corBaixo: '#8f9296', trelica: false, corPilar: '#d9d9d4' });
 /* UMA METADE VERMELHA E A OUTRA AZUL (dono, 16/11/2026, com mais um quadro do vídeo: "a arquibancada é um lado azul outro
    lado vermelha"): do meio do campo pra esquerda as cadeiras são vermelhas (o lado do CRB), pra direita azuis (o do CSA) */
-const EMBAIXO = cor => ({ ...DEGRAU, faixaTopo: { n: 4, cor } });
-const EMCIMA = (larg, cor) => ({ ...DEGRAU, faixaBase: { n: 5, cor }, paredeAtras: true, corFachada: CONC, parapeito: 1.4, cobertura: TELHA(larg) });
+const EMBAIXO = cor => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, faixaTopo: { n: 2, cor } });
+const NOMEIO = cor => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, padrao: 'fracoes', fracoes: [[0.62, cor], [1, CINZA]], espelhoPintado: true });
+const EMCIMA = (larg, cor) => ({ ...DEGRAU, corredor: 0, escadaNaBorda: true, faixaBase: { n: 5, cor }, paredeAtras: true, corFachada: CONC, parapeito: 1.4, cobertura: TELHA(larg) });
 /* os trechos do U: a tira da direita, o vão de cima (a arquibancada reta fica ali, em outro anel), a tira da esquerda e o
    arco, em cinco pedaços (o telhado é mais fundo no meio) */
 const U = (tira, arco) => [
@@ -62,6 +68,8 @@ const U = (tira, arco) => [
     .map(([de, ate, k, verm]) => ({ de, ate, ...arco(k, verm) }))];
 /* a arquibancada reta: de u = -68 a u = 70, a frente na beira da pista */
 const RETA = b => ({ a: 70, b, r: 0.5 }), R0 = A(70, 54.4), R1 = A(-68, 54.4);
+/* as escadas pintadas da arquibancada reta: onde fica cada uma (em u) e a cor */
+const ESC = [[64, VERM], [46, AZUL], [28, AZUL], [10, '#eeeeea'], [-8, '#eeeeea'], [-26, AZUL], [-44, AZUL], [-62, VERM]];
 
 export default {
   id: 'estadio-rei-pele', nome: 'Rei Pelé', clubes: ['crb', 'csa'], norte: 164.1, vazado: 0.3, folga: 26,
@@ -74,29 +82,43 @@ export default {
       trechos: [{ de: 0, ate: 360, tipo: 'passagem', cor: '#4f9a55' }] },
     { dentro: { a: 75, b: 39.5, r: 25 }, fora: PISTA, h: [0.12, 0.12], fileiras: 2, corredorFrente: 0,
       trechos: [{ de: 0, ate: 360, tipo: 'passagem', cor: '#cdbf9e' }] },
-    /* o U, EMBAIXO: o lance descoberto */
-    { dentro: BEIRA, fora: MEIO, h: [1.4, 6.6], fileiras: 12, corredorFrente: 1.2,
+    /* o U, EMBAIXO: o lance baixo, descoberto, atrás do muro branco da pista */
+    { dentro: BEIRA, fora: M1, h: [1.6, 4], fileiras: 6, corredorFrente: 1.2,
       trechos: U(v => EMBAIXO(v ? VERM : AZUL), (k, v) => EMBAIXO(v ? VERM : AZUL)) },
-    /* o U, EM CIMA: o lance coberto, debaixo do telhado marrom */
-    { dentro: MEIO, fora: FUNDO, h: [8.4, 16.2], fileiras: 14, corredorFrente: 1.2, corMureta: '#e9e9e4',
+    /* o U, NO MEIO: o segundo lance, em cima do muro branco das bocas */
+    { dentro: M1, fora: MEIO, h: [5.8, 9], fileiras: 7, corredorFrente: 1.2, corMureta: '#eeeeea',
+      trechos: U(v => NOMEIO(v ? VERM : AZUL), (k, v) => NOMEIO(v ? VERM : AZUL)) },
+    /* o U, EM CIMA: o lance grande, debaixo da laje, com a galeria de pilares no alto */
+    { dentro: MEIO, fora: FUNDO, h: [11.2, 18.8], fileiras: 14, corredorFrente: 1.2, corMureta: '#e9e9e4',
       trechos: U(v => EMCIMA(15, v ? VERM : AZUL_ESC), (k, v) => EMCIMA([17, 22, 26][k], v ? VERM : AZUL_ESC)) },
-    /* a arquibancada RETA, do outro lado: o lance de baixo, descoberto, com as faixas de cor */
+    /* a arquibancada RETA, do outro lado: o lance de baixo, de degrau cinza, com as ESCADAS PINTADAS — vermelhas nas pontas,
+       azuis, e brancas no meio (pelas imagens de dentro; eu tinha lido faixas ao comprido no satélite) */
     { dentro: RETA(54.4), fora: RETA(70), reto: true, h: [1.4, 8], fileiras: 16, corredorFrente: 1.2,
       trechos: [
-        ...[[R0, 90, AZUL], [90, R1, VERM]].map(([de, ate, c]) => ({ de, ate, ...DEGRAU, padrao: 'fracoes',
-          fracoes: [[0.24, CINZA], [0.32, c], [0.58, CINZA], [0.66, c], [0.86, CINZA], [1, c]], corredor: 15 })),
+        { de: R0, ate: A(ESC[0][0] + 1.3, 54.4), ...DEGRAU, corredor: 0 },
+        /* (cada escada é um trecho estreito, de 2,6 m, com o degrau pintado: a escada do gerador, de 1,3 m, sumia de longe) */
+        ...ESC.flatMap(([u, c], i) => [
+          { de: A(u + 1.3, 54.4), ate: A(u - 1.3, 54.4), ...DEGRAU, cor: c, cor2: c, mistura: 0, espelhoPintado: true, corredor: 0 },
+          { de: A(u - 1.3, 54.4), ate: A(i + 1 < ESC.length ? ESC[i + 1][0] + 1.3 : -68, 54.4), ...DEGRAU, corredor: 0 }]),
         { de: R1, ate: R0 + 360, tipo: 'vazio' }] },
-    /* e o lance de cima dela, debaixo do mesmo telhado marrom */
+    /* e o lance de cima dela, escuro, debaixo do telhado de beira vermelha */
     { dentro: RETA(70), fora: RETA(88.8), reto: true, h: [9.6, 17.6], fileiras: 18, corredorFrente: 1.2, corMureta: '#e9e9e4',
       trechos: [
-        { de: A(70, 70), ate: A(-68, 70), ...DEGRAU, corredor: 15, paredeAtras: true, corFachada: CONC, parapeito: 1.4, cobertura: { ...TELHA(21), h: 22.5, pelaColuna: true } },
+        { de: A(70, 70), ate: A(-68, 70), ...DEGRAU, cor: '#62656c', cor2: '#585b62', corredor: 15, paredeAtras: true, corFachada: CONC, parapeito: 1.4, corMureta: '#3a3d42',
+          cobertura: { ...TELHA(21), h: 22.5, corFrente: VERM, corPilar: '#a9a59a', pelaColuna: true } },
         { de: A(-68, 70), ate: A(70, 70) + 360, tipo: 'vazio' }] }
   ],
   fachada: { cor: CONC },
-  refletores: [[-84, -86, 45], [84, -86, 45], [-84, 106, 45], [84, 106, 45]],
+  refletores: [[-50, 93, 50], [-17, 93, 50], [17, 93, 50], [50, 93, 50], [-62, -80, 42], [62, -80, 42]],
   blocos: [
     /* os bancos de reserva, na pista, ao pé do arco */
     { u: -22, v: -41.6, w: 16, d: 2.4, h: 2.2, cor: '#e9e9e4' }, { u: 22, v: -41.6, w: 16, d: 2.4, h: 2.2, cor: '#e9e9e4' }, { u: 0, v: -42.4, w: 8, d: 2, h: 2.2, cor: '#c2343c' },
+    /* o letreiro na parede escura entre os dois lances da arquibancada reta, virado pro campo */
+    { u: 1, v: 69.65, w: 0.4, d: 44, h: 1.5, y: 8.05, cor: '#3a3d42', texto: 'ESTÁDIO REI PELÉ', corTexto: '#d9d9d4', textoFace: true, giro: -90, textoLargura: 0.9, textoAltura: 0.6 },
+    /* o placar, no canto, em cima da ponta da tira de trás do gol do lado vermelho */
+    { u: -103, v: 84, w: 3, d: 13, h: 8, y: 24, cor: '#1c1d20' }, { u: -101.4, v: 84, w: 0.2, d: 11.6, h: 6.6, y: 24.7, cor: '#2b3550' },
+    /* a torre de concreto ao lado do ginásio, atrás da ponta da arquibancada reta */
+    { u: 76, v: 104, w: 7, d: 7, h: 32, cor: '#b3ada0' },
     /* o letreiro da entrada, na faixa branca do lado de fora do arco */
     { u: 0, v: -85.2, w: 0.4, d: 44, h: 3, y: 3.2, cor: '#f1f1ee', texto: 'ESTÁDIO REI PELÉ', corTexto: '#1f5fc0', textoFace: true, giro: -90, textoLargura: 0.92, textoAltura: 0.6 },
     /* a torre de concreto e a cúpula branca do museu, por fora, no canto do arco com a tira da direita */

@@ -15040,6 +15040,19 @@ Estimado: as alturas; quanto de cada andar do U (o telhado esconde a divisa no s
 
 As torcidas são escolha minha, pelas cores: a do CRB (Comando Alvirrubro) atrás do gol do lado vermelho, a do CSA (Mancha Azul) atrás do gol do lado azul, a Garra no meio do arco, a visitante na arquibancada reta. O Rei Pelé entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes.
 
+## Rei Pelé corrigido pelas imagens de dentro (dono, 16/11/2026)
+
+O dono, com cinco quadros de um vídeo feito do lance de cima do arco: "Veja essas imagens pra entender melhor o jeito do estádio."
+
+O que elas mostraram e as aéreas escondiam:
+
+- **O U tem três níveis, não dois.** Junto da pista, o lance baixo atrás do muro branco; em cima do muro das bocas, o segundo lance; e o lance grande de cima, coberto, com a galeria de pilares no alto. O lance de baixo que eu tinha feito foi dividido em dois anéis, com o muro branco entre eles (4, 5 e 12 m de fundura nos fundos; 7, 8 e 22 no meio do arco).
+- **A cobertura do U é uma laje de concreto** em balanço, de beira azul, sem treliça: marrom por cima (sujeira), cinza por baixo. No gerador, `corBaixo` na `cobertura` do trecho pinta a face de baixo.
+- **Na arquibancada reta, as faixas de cor são as escadas pintadas**: vermelhas nas pontas, azuis, brancas no meio. Eu tinha lido faixas ao comprido no satélite. Cada escada virou um trecho estreito de degrau pintado (a escada do gerador, de 1,3 m, sumia de longe). O lance de cima dela é escuro, a beira do telhado é vermelha, e o letreiro ESTÁDIO REI PELÉ fica na parede escura entre os dois lances.
+- O placar fica no canto, em cima da ponta de uma das de trás do gol; as quatro torres de luz ficam atrás da arquibancada reta; há uma torre de concreto ao lado do ginásio.
+
+Não entrou: o fosso entre o muro da pista e a grade do lance baixo. Briga e chegada testadas de novo, sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

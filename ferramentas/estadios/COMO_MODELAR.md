@@ -531,6 +531,14 @@ direita de quem olha (olhando pra -u, o lado de +v fica à direita) antes de
 decidir qual fundo é o da foto.
 TESTEIRA DE OUTRA COR NA BOCA DO TELHADO: `corFrente` na `cobertura` do trecho.
 
+O QUE SÓ A FOTO DE DENTRO MOSTRA (o Rei Pelé, 16/11/2026): quantos NÍVEIS há
+debaixo de uma cobertura (do satélite pareciam dois, eram três, com um muro
+entre os de baixo); se a cobertura é laje ou telha com treliça (`trelica:
+false`, `corBaixo`); e se uma faixa de cor é ao comprido ou é ESCADA pintada
+(no satélite as duas parecem riscos). Peça ou procure uma antes de fechar.
+ESCADA PINTADA QUE PRECISA APARECER: um trecho estreito (2,6 m) de degrau da cor,
+com `espelhoPintado`, entre dois trechos comuns.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
