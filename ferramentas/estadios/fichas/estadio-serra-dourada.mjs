@@ -24,6 +24,7 @@
    AS TORCIDAS (escolhas minhas, sem fonte): a da casa (a Força Jovem Goiás
    ou o Esquadrão Vilanovense, conforme quem manda) no meio da arquibancada
    de cima do oeste; a visitante na ponta norte da de cima do leste. */
+import OSM from '../arredores/estadio-serra-dourada.osm.mjs';
 const RAD = Math.PI / 180;
 const E = (a, b, cu = 0, cv = 0) => ({ forma: 'elipse', a, b, cu, cv });
 /* a beira da arquibancada, o fundo do anel de baixo, o fundo da faixa dos camarotes e o contorno de fora */
@@ -96,5 +97,49 @@ export default {
   ],
   jogo: { mandante1: [78, 104], mandante2: [240, 290], mandante3: [118, 146], visitante: [302, 327], tunelMandante: 91, tunelVisitante: 314, folgaPM: 4,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
-          torcidas: { forca_jovem_goias: 'mandante1', esquadrao_vilanovense: 'mandante1' } }
+          torcidas: { forca_jovem_goias: 'mandante1', esquadrao_vilanovense: 'mandante1' } },
+  /* OS ARREDORES DE VERDADE (dono, 16/11/2026: "Cadê as ruas ao redor do Serra dourada? Goiás e vila nova vão mandar todos os
+     jogos lá"). O estádio fica no meio de um estacionamento: não há quarteirão de casas dentro do quadro. O que há, pelo mapa
+     e pelo satélite: a esplanada em anel em volta do estádio, com a rua de serviço que dá a volta; em cima (oeste), a
+     esplanada do eixo, que sobe até a Avenida Fued José Sebba entre os dois estacionamentos grandes; à direita (norte), o
+     estacionamento dos eventos; embaixo à direita, a Goiânia Arena; à esquerda (sul), a mata. As ruas do estacionamento são
+     as de serviço do OpenStreetMap.
+     OS PORTÕES E QUEM VEM DE ONDE são escolhas minhas (não achei a lista de portões): a torcida da casa chega pela esplanada
+     do oeste e pelos dois estacionamentos de cima e entra pelos portões do oeste (o do meio e o do sudoeste); a visitante
+     chega pelo estacionamento do norte e entra pelo portão do nordeste, ao pé da ponta norte da arquibancada do leste. Os
+     cordões cortam a esplanada em anel a noroeste e a leste. */
+  arredores: {
+    osm: OSM, servico: true, quadro: { u: 250, v: 250, cu: 20, cv: 50 }, vazado: 0.62, semente: 5, corQuadra: '#a39a86',
+    pisos: [
+      /* os estacionamentos (o contorno é do mapa) */
+      ...OSM.areas.filter(a => a.tipo === 'amenity=parking').map(a => ({ pts: a.pts, cor: '#77777a' })),
+      /* a esplanada em anel em volta do estádio e a do eixo, do oeste */
+      { pts: Array.from({ length: 72 }, (_, i) => [-8 + 192 * Math.cos(i * 5 * RAD), -3 + 186 * Math.sin(i * 5 * RAD)]), cor: '#b9b3a4' },
+      { pts: [[-24, 150], [24, 150], [24, 300], [-24, 300]], cor: '#c2bcad' },
+      /* as ligações: a travessa entre os dois estacionamentos de cima e a que vai ao estacionamento do norte */
+      { pts: [[-160, 216], [160, 216]], larg: 12, cor: '#8a8a8c' }, { pts: [[150, 0], [268, 0]], larg: 16, cor: '#8a8a8c' },
+      /* (o estádio não é chão) */
+      { pts: Array.from({ length: 72 }, (_, i) => [-8 + 141.6 * Math.cos(i * 5 * RAD), -3 + 134.6 * Math.sin(i * 5 * RAD)]), tira: true }
+    ],
+    portoes: [
+      { n: 1, nome: 'PORTÃO OESTE', u: -8, v: 136.5, dir: [0, -1], larg: 12 },
+      { n: 2, nome: 'PORTÃO SUDOESTE', u: -92, v: 111.5, dir: [0.56, -0.83], larg: 10 },
+      { n: 3, nome: 'VISITANTE', u: 95.5, v: -101.5, dir: [-0.69, 0.72], larg: 10, cor: '#7a2f2f' }
+    ],
+    bondes: { mandante1: { de: [0, 290], portao: 1, exato: true }, mandante2: { de: [-150, 250], portao: 2, exato: true }, mandante3: { de: [120, 262], portao: 1, exato: true },
+              visitante1: { de: [262, 30], portao: 3, exato: true }, visitante2: { de: [262, -24], portao: 3, exato: true } },
+    grades: [{ de: [100.5, 83.5], ate: [139, 116] }, { de: [16.5, -135.5], ate: [25, -186] }],
+    filas: [{ pts: [[-16, 138], [-16, 150]] }, { pts: [[0, 138], [0, 150]] }, { pts: [[90, -106], [84, -114]] }, { pts: [[101, -97], [108, -103]] }],
+    pm: [[112, 96], [128, 110], [20, -160], [-8, 160], [60, 150], [-70, 150], [150, -20], [150, 20], [110, -120], [-110, 130]],
+    predios: { 'Goiânia Arena': { h: 22, cor: '#cfd3cc', corTeto: '#e3e6e0' } },
+    entorno: [
+      /* à mão, pelo satélite: a mata do sul e as árvores em volta, os carros nos estacionamentos, os galpões e o pátio atrás do
+         estádio (leste) */
+      { tipo: 'arvores', u: -205, v: 30, w: 44, d: 150, n: 22 }, { tipo: 'arvores', u: -200, v: -120, w: 50, d: 120, n: 18 }, { tipo: 'arvores', u: 168, v: 70, w: 26, d: 60, n: 8 },
+      { tipo: 'arvores', u: -124, v: 4, w: 12, d: 60, n: 8 }, { tipo: 'arvores', u: 60, v: 196, w: 60, d: 14, n: 5 }, { tipo: 'arvores', u: -70, v: 196, w: 60, d: 14, n: 5 },
+      { tipo: 'estacionamento', u: -150, v: 262, w: 120, d: 34, cheio: 0.25 }, { tipo: 'estacionamento', u: 130, v: 262, w: 120, d: 34, cheio: 0.25 }, { tipo: 'estacionamento', u: 250, v: 40, w: 30, d: 110, cheio: 0.3 },
+      { tipo: 'predio', u: -20, v: -176, w: 50, d: 12, h: 5, cor: '#d9d6cc' }, { tipo: 'predio', u: -40, v: -230, w: 16, d: 40, h: 6, cor: '#b9b6ad' }
+    ],
+    vista: [-40, 150, 420, 0, 0, 40]
+  }
 };

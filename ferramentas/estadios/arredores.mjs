@@ -19,8 +19,12 @@
      portoes   [{ n, nome, u, v, dir: [du, dv] }]: onde fica cada portão e pra
                que lado se entra;
      bondes    { mandante1: { de: [u, v], portao: n }, .. }: de onde cada
-               bonde chega (o ponto encosta sozinho na rua mais perto) e por
+               bonde chega (o ponto encosta sozinho na rua mais perto; com
+               `exato: true` fica onde foi posto, se ali se anda) e por
                qual portão entra;
+     servico   true: as ruas de serviço do mapa (as do estacionamento) também
+               entram, sem calçada e sem casa (o Serra Dourada, que fica no
+               meio de um estacionamento);
      grades    [{ de, ate }] (o cordão que separa a visitante), filas
                [{ pts }] (o gradil de organizar fila), pm [[u, v], ..];
      predios   { 'nome no mapa': { h, cor } }: a altura dos prédios que o
@@ -45,7 +49,7 @@ export function preparar(ficha) {
   const via = new Uint8Array(GW * GH), ocup = new Uint8Array(GW * GH), piso = new Uint8Array(GW * GH);
   const cel = (u, v) => { const i = Math.floor(u - x0), j = Math.floor(v - y0); return i < 0 || j < 0 || i >= GW || j >= GH ? -1 : j * GW + i; };
   const calc = ar.calcada == null ? 2.6 : ar.calcada;
-  const ruas = osm.ruas.filter(r => VIAS.has(r.tipo) && !(ar.semRua || []).includes(r.nome)).map(r => Object.assign({}, r, { larg: (ar.largura && ar.largura[r.nome]) || r.larg }))
+  const ruas = osm.ruas.filter(r => (VIAS.has(r.tipo) || (ar.servico && r.tipo === 'service')) && !(ar.semRua || []).includes(r.nome)).map(r => Object.assign({}, r, { larg: (ar.largura && ar.largura[r.nome]) || r.larg }))
     .sort((a, b) => b.larg - a.larg);
   const pintarFaixa = (pts, meia, valor, alvo) => { for (let k = 0; k < pts.length - 1; k++) { const ax = pts[k][0], ay = pts[k][1], bx = pts[k + 1][0], by = pts[k + 1][1];
       const i0 = Math.max(0, Math.floor(Math.min(ax, bx) - meia - x0)), i1 = Math.min(GW - 1, Math.ceil(Math.max(ax, bx) + meia - x0));
@@ -55,7 +59,7 @@ export function preparar(ficha) {
     for (let j = Math.max(0, Math.floor(b0 - y0)); j <= Math.min(GH - 1, Math.ceil(b1 - y0)); j++) for (let i = Math.max(0, Math.floor(a0 - x0)); i <= Math.min(GW - 1, Math.ceil(a1 - x0)); i++)
       if (dentroPoli(pts, x0 + i + 0.5, y0 + j + 0.5)) alvo[j * GW + i] = valor; };
   /* as vias: 2 = calçada, 1 = asfalto */
-  for (const r of ruas) pintarFaixa(r.pts, r.larg / 2 + calc, 2, via);
+  for (const r of ruas) if (r.tipo !== 'service') pintarFaixa(r.pts, r.larg / 2 + calc, 2, via);
   for (const r of ruas) pintarFaixa(r.pts, r.larg / 2, 1, via);
   /* onde não cabe casa: as vias, o estádio, os prédios e as áreas do mapa, e o que a ficha reservar */
   for (let q = 0; q < via.length; q++) if (via[q]) ocup[q] = 1;
@@ -70,7 +74,7 @@ export function preparar(ficha) {
   const rnd = semente(ar.semente || 7), lotes = [];
   const cabe = (fu, fv, tx, ty, nx, ny, w, d) => { for (let a = 0.5; a < d; a += 1) for (let b = -w / 2 + 0.5; b < w / 2; b += 1) { const q = cel(fu + tx * b + nx * a, fv + ty * b + ny * a); if (q < 0 || ocup[q]) return false; } return true; };
   const marcar = (fu, fv, tx, ty, nx, ny, w, d) => { for (let a = 0; a <= d; a += 0.5) for (let b = -w / 2; b <= w / 2; b += 0.5) { const q = cel(fu + tx * b + nx * a, fv + ty * b + ny * a); if (q >= 0) ocup[q] = 2; } };
-  for (const r of ruas) { if (r.tipo === 'pedestrian' || r.ponte || r.tunel) continue;
+  for (const r of ruas) { if (r.tipo === 'pedestrian' || r.tipo === 'service' || r.ponte || r.tunel) continue;
     const eixo = r.tipo !== 'residential' && r.tipo !== 'living_street';
     for (const lado of [1, -1]) { let s = rnd() * 3;
       for (let k = 0; k < r.pts.length - 1; k++) { const ax = r.pts[k][0], ay = r.pts[k][1], bx = r.pts[k + 1][0], by = r.pts[k + 1][1], L = Math.hypot(bx - ax, by - ay); if (L < 1) continue;
@@ -110,8 +114,8 @@ export function construirArredores(THREE, ficha, prep, casasMod) {
   /* o chão dos quarteirões */
   { const m = new THREE.Mesh(new THREE.PlaneGeometry((MU + 60) * 2, (MV + 60) * 2), mat(ar.corQuadra || '#8d887d')); m.rotation.x = -Math.PI / 2; m.position.set(cu, 0.0, -cv); m.receiveShadow = true; grupo.add(m); }
   /* as calçadas, o asfalto e a faixa do meio das ruas maiores */
-  for (const r of ruas) faixa(r.pts, r.larg / 2 + calc, 0.05, r.tipo === 'pedestrian' ? '#c9c2b0' : '#b9b5aa');
-  for (const r of ruas) if (r.tipo !== 'pedestrian') faixa(r.pts, r.larg / 2, 0.09, r.larg >= 10 ? '#4f5054' : '#57585c');
+  for (const r of ruas) if (r.tipo !== 'service') faixa(r.pts, r.larg / 2 + calc, 0.05, r.tipo === 'pedestrian' ? '#c9c2b0' : '#b9b5aa');
+  for (const r of ruas) if (r.tipo !== 'pedestrian') faixa(r.pts, r.larg / 2, r.tipo === 'service' ? 0.085 : 0.09, r.tipo === 'service' ? '#646569' : r.larg >= 10 ? '#4f5054' : '#57585c');
   for (const r of ruas) { if (r.larg < 10) continue; let s = 2;
     for (let k = 0; k < r.pts.length - 1; k++) { const ax = r.pts[k][0], ay = r.pts[k][1], bx = r.pts[k + 1][0], by = r.pts[k + 1][1], L = Math.hypot(bx - ax, by - ay) || 1, tx = (bx - ax) / L, ty = (by - ay) / L, nx = -ty * 0.11, ny = tx * 0.11;
       for (; s + 3 < L; s += 7) { const u0 = ax + tx * s, v0 = ay + ty * s, u1 = ax + tx * (s + 3), v1 = ay + ty * (s + 3); C.quad(P(u0 + nx, v0 + ny, 0.11), P(u1 + nx, v1 + ny, 0.11), P(u1 - nx, v1 - ny, 0.11), P(u0 - nx, v0 - ny, 0.11), '#d9c36a'); }
@@ -159,7 +163,7 @@ export function construirArredores(THREE, ficha, prep, casasMod) {
     for (const sg of [-1, 1]) caixa(0.7, 4, 0.7, '#e9ebe6', g.u + tx * sg * larg / 2, 2, g.v + ty * sg * larg / 2);
     /* (a viga é larga e o nome vai deitado em cima dela, grande: é de cima que a cena é vista) */
     caixa(larg + 1.4, 1.5, 3, cor, g.u, 4.25, g.v, giro);
-    letreiro(g.nome || ('PORTÃO ' + g.n), g.u, g.v, 5.06, tx, ty, larg + 1, 2.5, '#f4f5f0');
+    letreiro(g.nome || ('PORTÃO ' + g.n), g.u, g.v, 5.06, tx, ty, larg + 1, Math.min(2.5, (larg + 1) / 5), '#f4f5f0');
     for (let k = 0; k < 4; k++) { const f = (k + 0.5) / 4 - 0.5; caixa(0.9, 1.1, 0.5, '#3b3e42', g.u + tx * f * (larg - 1.4) + du * 1.2, 0.55, g.v + ty * f * (larg - 1.4) + dv * 1.2, giro); } }
   /* os muros da ficha (a rua de serviço, o fundo dos lotes) */
   for (const m of ar.muros || []) for (let k = 0; k < m.pts.length - 1; k++) { const a = m.pts[k], b = m.pts[k + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]); caixa(L, m.h || 2.6, m.esp || 0.4, m.cor || '#d9d6cc', (a[0] + b[0]) / 2, (m.h || 2.6) / 2, (a[1] + b[1]) / 2, Math.atan2(b[1] - a[1], b[0] - a[0])); }
@@ -172,7 +176,7 @@ export function marcadoresArredores(ficha, prep, paraPx) {
   const ar = prep.ar, px = (u, v) => { const p = paraPx(u, v); return { x: Math.round(p[0]), y: Math.round(p[1]) }; }, par = (u, v) => { const p = paraPx(u, v); return [Math.round(p[0]), Math.round(p[1])]; };
   const portao = n => (ar.portoes || []).find(g => g.n === n), ROT = { mandante1: '1º ESCALÃO MANDANTE', mandante2: '2º ESCALÃO MANDANTE', mandante3: '3º ESCALÃO MANDANTE', visitante1: '1º ESCALÃO VISITANTE', visitante2: '2º ESCALÃO VISITANTE' };
   const entradas = [], spawns = [], idDe = n => 'ent_p' + n;
-  for (const id of ['mandante1', 'mandante2', 'mandante3', 'visitante1', 'visitante2']) { const b = ar.bondes[id]; if (!b) continue; const g = portao(b.portao), lado = id.startsWith('m') ? 'mandante' : 'visitante', q = prep.naRua(b.de[0], b.de[1]);
+  for (const id of ['mandante1', 'mandante2', 'mandante3', 'visitante1', 'visitante2']) { const b = ar.bondes[id]; if (!b) continue; const g = portao(b.portao), lado = id.startsWith('m') ? 'mandante' : 'visitante', q = b.exato && prep.andavel(b.de[0], b.de[1]) ? b.de : prep.naRua(b.de[0], b.de[1]);
     if (!entradas.find(e => e.id === idDe(g.n))) { const dl = Math.hypot(g.dir[0], g.dir[1]) || 1;
       entradas.push(Object.assign({ id: idDe(g.n), rot: 'ENTRADA ' + (lado === 'visitante' ? 'VISITANTE' : ROT[id]) + ' · ' + (g.nome || 'PORTÃO ' + g.n), lado, raio: 34, dir: [+(g.dir[0] / dl).toFixed(2), +(-g.dir[1] / dl).toFixed(2)] }, px(g.u, g.v))); }
     spawns.push(Object.assign({ id, rot: ROT[id], lado }, px(q[0], q[1]), id === 'mandante1' ? { jogador: true } : {}, { entrada: idDe(g.n) })); }
