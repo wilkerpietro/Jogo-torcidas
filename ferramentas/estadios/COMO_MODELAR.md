@@ -332,6 +332,11 @@ do projeto ANTES de desenhar o que se vê de cima; do satélite só sai a planta
 ESTÁDIO QUASE REDONDO: contornos `{ forma: 'elipse', a, b, cu, cv }`; o anel que dá a volta inteira com cadeira vai em blocos
 de ângulo igual (36 de 10 graus), gerados por função.
 
+FAIXA ESCURA AO PÉ DE UMA ARQUIBANCADA NUMA FOTO DE LONGE pode ser o muro dela (arquibancada elevada), não um lance de
+baixo: só faça dois lances com foto de perto (a principal do Antônio Accioly).
+O MURO DO TERRENO: o gerador só levanta muro na beira do chão andável. O muro de fora (o da rua, o do fundo do
+estacionamento) é `blocos`, pelo satélite; o dono sente falta dele na vista de cima.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
