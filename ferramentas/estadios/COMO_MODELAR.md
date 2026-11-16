@@ -296,6 +296,17 @@ FOTO ANTIGA CONTRA SATÉLITE NOVO: quando as fotos do dono e o satélite
 mostram épocas diferentes (cadeira na foto, bloco pintado no satélite), diga
 qual é qual e o que foi feito; não escolha calado.
 
+LADOS DE FUNDURA DIFERENTE NO MESMO ANEL (o Ary de Oliveira e Souza): cada
+trecho leva o seu `fora` e a sua `inclinacao`. Pra reta não sair torta, o
+`fora` de um lado tem de ter `a - r` (ou `b - r`) igual ao do contorno de
+dentro. No canto entre um lado raso e um fundo, parta o lado raso no meio
+(em 0°, 90°, 180° ou 270°, onde os dois contornos dão o mesmo ponto): a
+metade de lá usa o fundo raso, a de cá já usa o fundo do lado fundo; o canto
+usa o do lado fundo. Com `inclinacao`, a curva sobe sozinha de uma altura à
+outra.
+FOTO DE DRONE: antes de ler os lados, ache em cada foto o norte pelo
+satélite (rua, telhado, casas). Muro visto por fora esconde degrau baixo.
+
 ### O alambrado e o muro (nascem sozinhos)
 
 - O **alambrado** corre pela beira de dentro do PRIMEIRO anel: do chão onde

@@ -77,6 +77,8 @@ CLUBE_TROCADO = {
 # e manda no Joaquim Portugal (a Arena Sicredi, em São João del-Rei).
 # 15/11/2026, o dono: "Vamos pro do Mamoré" — o Mamoré sai do Estádio Regional e manda no Bernardo Rubinger de Queiroz.
 # 15/11/2026, o dono: "vamos pro da URT agora" — o Estádio Regional (nome genérico do protótipo) vira o Zama Maciel, o da URT.
+# 16/11/2026, o dono mandou as fotos do "Ary de Oliveira e Souza" — o Goytacaz sai do Raulino de Oliveira e manda no
+# Ary de Oliveira e Souza (o Aryzão, em Campos dos Goytacazes).
 # 16/11/2026, o dono: "Vamos pro estádio de Madureira agora" — o Madureira sai da Moça Bonita (que fica só com o Bangu)
 # e manda no Conselheiro Galvão (o Aniceto Moscoso, no bairro de Madureira).
 # 15/11/2026, o dono: "vamos pro estádio do XV" — o XV de Piracicaba sai do Jorge Ismael de Biasi
@@ -97,7 +99,7 @@ ESTADIO_CORRIGIDO = {
  'caxias':'Estadio Centenario','ypiranga-rs':'Colosso da Lagoa','pelotas':'Boca do Lobo',
  'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
  'treze':'Amigão','sousa':'Almeidão','sergipe':'Batistão','madureira':'Conselheiro Galvão',
- 'goytacaz':'Raulino de Oliveira','americano':'Raulino de Oliveira',
+ 'goytacaz':'Ary de Oliveira e Souza','americano':'Raulino de Oliveira',
  'portuguesa':'Canindé','sao-jose':"Passo d'Areia",
 }
 

@@ -9334,12 +9334,13 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 4,
+   "quantidadeEstadios": 5,
    "estadios": [
     "Moca Bonita",
     "Conselheiro Galvão",
     "Giulite Coutinho",
-    "Raulino de Oliveira"
+    "Raulino de Oliveira",
+    "Ary de Oliveira e Souza"
    ],
    "rodovias": [
     "Rodovia Sudeste 2"

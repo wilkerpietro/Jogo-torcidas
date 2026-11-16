@@ -606,3 +606,4 @@ import saoJanuario from './fichas/estadio-sao-januario.mjs'; FICHAS[saoJanuario.
 import niltonSantos from './fichas/estadio-nilton-santos.mjs'; FICHAS[niltonSantos.id] = niltonSantos;
 import mocaBonita from './fichas/estadio-moca-bonita.mjs'; FICHAS[mocaBonita.id] = mocaBonita;
 import conselheiroGalvao from './fichas/estadio-conselheiro-galvao.mjs'; FICHAS[conselheiroGalvao.id] = conselheiroGalvao;
+import aryDeOliveiraESouza from './fichas/estadio-ary-de-oliveira-e-souza.mjs'; FICHAS[aryDeOliveiraESouza.id] = aryDeOliveiraESouza;

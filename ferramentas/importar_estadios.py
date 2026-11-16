@@ -96,6 +96,8 @@ NOVOS = [
     {'nome': 'Zama Maciel', 'mapa': 'interior-de-minas', 'bairro': 'Patos de Minas I'},
     # 16/11/2026, o dono: "Vamos pro estádio de Madureira agora" — o Madureira sai da Moça Bonita e manda no Conselheiro Galvão.
     {'nome': 'Conselheiro Galvão', 'mapa': 'suburbio-carioca', 'bairro': 'Madureira'},
+    # 16/11/2026, o dono mandou as fotos do "Ary de Oliveira e Souza" — o Goytacaz sai do Raulino de Oliveira e manda nele.
+    {'nome': 'Ary de Oliveira e Souza', 'mapa': 'suburbio-carioca', 'bairro': 'Campos dos Goytacazes II'},
 ]
 
 
