@@ -10,7 +10,7 @@
    · no meio, o nível estreito, o ÚNICO de outro tom: azul mais fechado, atrás
      da testeira cinza;
    · em cima, o mesmo azul claro de baixo, atrás da faixa cor de vinho dos
-     anúncios; um trecho do noroeste sem cadeira, só o degrau claro.
+     anúncios, na ferradura inteira.
    · no fundo sul, a laje sobre pilares altos onde a ferradura abre, e a viga do
      letreiro ARENA FONTE NOVA; nas duas pontas da ferradura, os painéis
      vermelhos de fora.
@@ -25,7 +25,7 @@
    ESTIMADO: as alturas (a cobertura a uns 39 m), a fundura de cada nível (os
    três somam 45 m; a cobertura esconde a arquibancada no satélite), o número
    de vãos (quarenta) e de fileiras de almofadas (três), onde acaba cada nível
-   na boca da ferradura e o trecho sem cadeira do noroeste. O satélite é oblíquo:
+   na boca da ferradura. O satélite é oblíquo:
    a cobertura sai 12 m deslocada, e ficou centrada no campo.
    O MURO DO TERRENO e a esplanada do sul (as tendas, a escadaria, o
    edifício-garagem) não entraram: a Fonte Nova é dos diferenciados, que levam
@@ -62,13 +62,12 @@ export default {
       trechos: [
         { de: -AB2, ate: AB2, tipo: 'vazio' },
         { de: AB2, ate: 360 - AB2, ...CADEIRA(MEIO, MEIO2, { vomitorios: { f: 0, cada: 1 } }) }] },
-    /* EM CIMA: o mesmo azul claro de baixo, atrás da faixa cor de vinho; o trecho sem cadeira do noroeste */
+    /* EM CIMA: o mesmo azul claro de baixo, atrás da faixa cor de vinho, na ferradura inteira (o trecho sem cadeira que eu
+       tinha posto no noroeste saiu — dono, 16/11/2026: "coloque as cadeiras azuis no noroeste do nível de cima") */
     { dentro: C(28), fora: C(45), h: [20, 31.5], fileiras: 19, corredorFrente: 1.4, corMureta: VINHO,
       trechos: [
         { de: -AB2, ate: AB2, tipo: 'vazio' },
-        { de: AB2, ate: 205, ...CADEIRA(AGUA, AGUA2, { vomitorios: { f: 0.06, cada: 2 } }) },
-        { de: 205, ate: 255, cor: '#d6d6d0', cor2: '#cbcbc5', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 12, vomitorios: { f: 0.06, cada: 2 } },
-        { de: 255, ate: 360 - AB2, ...CADEIRA(AGUA, AGUA2, { vomitorios: { f: 0.06, cada: 2 } }) }] }
+        { de: AB2, ate: 360 - AB2, ...CADEIRA(AGUA, AGUA2, { vomitorios: { f: 0.06, cada: 2 } }) }] }
   ],
   /* a fachada: as galerias abertas, de lajes brancas, só na ferradura */
   fachada: { cor: CONC, galerias: { de: AB2, ate: 360 - AB2, dentro: C(45), fora: GALERIA, pisos: [7, 13, 19, 25], bordas: [31], topo: 31, esp: 0.6, guarda: 1.3,

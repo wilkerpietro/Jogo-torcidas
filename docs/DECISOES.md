@@ -14988,6 +14988,12 @@ O dono, com mais uma foto de dentro: "perceba que só o anel central da arena fo
 
 Eu tinha lido três cores: verde-água embaixo, azul no meio (com um trecho azul-marinho no oeste) e verde em cima. São duas: o azul claro (verde-água) nos níveis de baixo e de cima, e um azul mais fechado no anel do meio, inteiro. O trecho azul-marinho saiu; o verde do nível de cima era a sombra da cobertura nas fotos.
 
+## Fonte Nova: cadeiras no noroeste do nível de cima (dono, 16/11/2026)
+
+O dono: "coloque as cadeiras azuis no noroeste do nível de cima."
+
+O trecho sem cadeira que eu tinha posto no noroeste do nível de cima (lido em duas fotos de dentro, com a posição no chute) saiu. O nível de cima tem agora o azul claro na ferradura inteira.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
