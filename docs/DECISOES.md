@@ -14952,6 +14952,14 @@ O dono, com mais uma foto (a lateral vista do fundo): "o desenho do leão ficou 
 
 **As torcidas.** Os Imbatíveis atrás do gol do lado leste (o da direita no quadro), a visitante atrás do outro gol, no extremo oeste. A Camisa 12 foi pra lateral, perto do fundo da casa (escolha minha; antes estava no fundo que agora é da visitante, por causa da faixa dela na primeira foto).
 
+## Barradão: a listra preta é só pintura (dono, 16/11/2026)
+
+O dono: "voce interpretou como se a listra preta fosse um anel inferior mas é só cor diferente mesmo, com as escadas contínuas."
+
+Na correção anterior a listra preta era um lance separado, embaixo do lance vermelho: cada um com as suas escadas, e um degrau de muro entre os dois. Agora o U é **uma arquibancada só**, do muro vermelho até o alto (35 m de fundura, de 2,8 a 18,6 m), com as escadas subindo direto. A listra preta de baixo (os primeiros 22% da subida), a faixa preta do alto (dos 87% pra cima) e o leão são só pintura, feita no `pinta` dos trechos. As divisas dos setores foram passadas pra beira de dentro da arquibancada inteira, na mesma proporção.
+
+No gerador, `pisoPintado: true`: onde há cadeira em cima de degrau pintado (os três setores do meio da lateral), o piso leva a cor da cadeira, um tom abaixo, em vez do concreto. Sem isso a listra preta virava cinza salpicado debaixo das cadeiras.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

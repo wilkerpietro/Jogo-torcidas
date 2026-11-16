@@ -9,9 +9,11 @@
    Arquibancada em U, cavada na encosta, de três lados e cantos chanfrados (por
    fora o chanfro tem 28 m, por dentro 6, e os cantos abrem em leque), em cima
    de um muro vermelho:
-   · os DEGRAUS DE BAIXO PINTADOS DE PRETO, uns 8 m, na volta toda (dono,
-     16/11/2026: "veja como existe uma listra preta nos degraus de baixo");
-   · acima deles o degrau VERMELHO, com outra faixa preta no alto; no meio da
+   · UMA arquibancada só, do muro até o alto, com as escadas contínuas; os
+     degraus de baixo (uns 8 m) são PINTADOS DE PRETO na volta toda (dono,
+     16/11/2026: "veja como existe uma listra preta nos degraus de baixo" e
+     "é só cor diferente mesmo, com as escadas contínuas");
+   · acima da listra o degrau VERMELHO, com outra faixa preta no alto; no meio da
      lateral, as cadeiras vermelhas e, no alto, o prédio vermelho da cabine,
      de três andares, com o letreiro ESTÁDIO MANOEL BARRADAS;
    · nas duas de trás do gol, o LEÃO preto pintado no degrau: de perfil, virado
@@ -39,12 +41,14 @@
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
 const VERM = '#c9353a', VERM2 = '#bd2f34', PRETO = '#232427', PRETO2 = '#2c2d31', MURO_V = '#b3262b', GRADE = '#d9cdb4';
-/* a beira da grama, o fim dos degraus pretos e o fundo do U */
-const I = { a: 64.5, b: 49, r: 6 }, M = { a: 73, b: 57.5, r: 9 }, O = { a: 99.5, b: 83.6, r: 28 };
-/* a faixa preta do alto começa a 83% da subida do degrau vermelho */
-const ALTO = 0.83;
-/* O LEÃO: o contorno no setor dele (`x` de uma escada à outra, da esquerda pra direita de quem olha do campo; `y` do pé do
-   degrau vermelho até a faixa preta do alto) */
+/* a beira da grama (o pé do muro vermelho) e o fundo do U: UMA arquibancada só, do muro até o alto, com as escadas contínuas.
+   A listra preta de baixo e a faixa preta do alto são só PINTURA (dono, 16/11/2026: "voce interpretou como se a listra preta
+   fosse um anel inferior mas é só cor diferente mesmo, com as escadas contínuas"). */
+const I = { a: 64.5, b: 49, r: 6 }, O = { a: 99.5, b: 83.6, r: 28 };
+/* da subida da arquibancada: a listra preta vai até 22%, a faixa preta do alto começa em 87% */
+const BAIXO = 0.22, ALTO = 0.87;
+/* O LEÃO: o contorno no setor dele (`x` de uma escada à outra, da esquerda pra direita de quem olha do campo; `y` da listra
+   preta de baixo até a faixa preta do alto) */
 const LEAO = [[0.149, 0.944], [0.21, 0.972], [0.416, 0.979], [0.484, 0.943], [0.533, 0.824], [0.562, 0.703], [0.596, 0.606], [0.652, 0.536], [0.749, 0.491],
   [0.828, 0.451], [0.876, 0.394], [0.917, 0.326], [0.892, 0.609], [0.818, 0.636], [0.828, 0.697], [0.848, 0.726], [0.959, 0.731], [0.949, 0.675], [0.972, 0.356],
   [0.955, 0.244], [0.879, 0], [0.781, 0], [0.786, 0], [0.811, 0.128], [0.791, 0.172], [0.74, 0.175], [0.706, 0.135], [0.679, 0.001], [0.674, 0], [0.583, 0],
@@ -53,25 +57,24 @@ const LEAO = [[0.149, 0.944], [0.21, 0.972], [0.416, 0.979], [0.484, 0.943], [0.
   [0.172, 0.525], [0.164, 0.642], [0.163, 0.747], [0.169, 0.786], [0.209, 0.795], [0.216, 0.835], [0.157, 0.838], [0.152, 0.894]];
 const noLeao = (x, y) => { let c = false; for (let i = 0, j = LEAO.length - 1; i < LEAO.length; j = i++) { const [xi, yi] = LEAO[i], [xj, yj] = LEAO[j];
   if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
-/* a pintura do degrau vermelho: a faixa preta no alto e, no setor do leão, a figura */
+/* a pintura: a listra preta embaixo, a faixa preta no alto e, no setor do leão, a figura no vermelho do meio */
 const pinta = leao => (x, y, rnd) => { const s = rnd() < 0.1;
-  if (y > ALTO || (leao && noLeao(x, (y - 0.004) / ALTO))) return s ? PRETO2 : PRETO; return s ? VERM2 : VERM; };
-/* os degraus pretos de baixo e o degrau vermelho de cima (sem cadeira, pintados por inteiro) */
-const PRETOS = { cor: PRETO, cor2: PRETO2, padrao: 'mosaico', mistura: 0.15, semCadeiras: true, espelhoPintado: true, corredor: 0, escadaNaBorda: true, corEscada: GRADE,
-  vomitorios: false, corMureta: MURO_V, corPiso: '#3a3b40' };
+  if (y < BAIXO || y > ALTO || (leao && noLeao(x, (y - BAIXO + 0.004) / (ALTO - BAIXO)))) return s ? PRETO2 : PRETO; return s ? VERM2 : VERM; };
+/* o degrau pintado (sem cadeira) e, com `cadeiras`, o do meio da lateral (cadeira da cor da pintura, em cima do degrau pintado) */
 const DEGRAU = (leao, mais) => ({ cor: VERM, cor2: VERM2, padrao: 'mosaico', mistura: 0.1, pinta: pinta(leao), semCadeiras: true, espelhoPintado: true, corredor: 0,
-  escadaNaBorda: true, corEscada: GRADE, vomitorios: false, parapeito: 1.2, corFachada: PRETO, corLado: PRETO, corPiso: '#3a3b40', corMureta: PRETO, ...mais });
+  escadaNaBorda: true, corEscada: GRADE, vomitorios: false, parapeito: 1.2, corFachada: PRETO, corLado: PRETO, corPiso: '#3a3b40', corMureta: MURO_V, ...mais });
+const CADEIRAS = { semCadeiras: false, espelhoPintado: false, pisoPintado: true };
 /* os trechos do U num anel `reto`. As duas de trás do gol têm quatro setores entre as escadas, nas mesmas alturas de `v` (as
-   divisas em -21,3, 7,8 e 29,1, tiradas da foto e do satélite); `fundo(i)` dá o trecho de cada um (i de 0 a 3, do lado da lateral
-   pro lado do prédio) e `lateral` a lista dos trechos da lateral, por faixa de `u` */
-const DIV = [-21.3, 7.8, 29.1];
+   divisas na beira de dentro em -18,9, 6,9 e 25,8, tiradas da foto e do satélite); `fundo(i)` dá o trecho de cada um (i de 0 a
+   3, do lado da lateral pro lado do prédio) e `lateral` a lista dos trechos da lateral, por faixa de `u` */
+const DIV = [-18.9, 6.9, 25.8];
 const U = (c, fundo, canto, lateral) => { const s = c.a - c.r, t = c.b - c.r, vs = [-t, ...DIV, t], out = [];
-  for (let i = 0; i < 4; i++) out.push({ de: A(c.a, vs[i]) - (vs[i] < 0 ? 360 : 0), ate: A(c.a, vs[i + 1]) - (vs[i + 1] < 0 ? 360 : 0), ...fundo(i, 'direita') });
+  for (let i = 0; i < 4; i++) out.push({ de: A(c.a, vs[i]) - (vs[i] < 0 ? 360 : 0), ate: A(c.a, vs[i + 1]) - (vs[i + 1] < 0 ? 360 : 0), ...fundo(i) });
   out.push({ de: A(c.a, t), ate: A(-c.a, t), tipo: 'vazio' });
-  for (let i = 3; i >= 0; i--) out.push({ de: A(-c.a, vs[i + 1]), ate: A(-c.a, vs[i]), ...fundo(i, 'esquerda') });
+  for (let i = 3; i >= 0; i--) out.push({ de: A(-c.a, vs[i + 1]), ate: A(-c.a, vs[i]), ...fundo(i) });
   out.push({ de: A(-c.a, -t), ate: A(-s, -c.b), ...canto });
-  for (const [u0, u1, tr] of lateral(s)) out.push({ de: A(u0, -c.b), ate: A(u1, -c.b), ...tr });
-  out.push({ de: A(s, -c.b), ate: A(c.a, -t) - 360 + 360, ...canto });
+  for (const [u0, u1, tr] of lateral) out.push({ de: A(u0, -c.b), ate: A(u1, -c.b), ...tr });
+  out.push({ de: A(s, -c.b), ate: A(c.a, -t), ...canto });
   return out; };
 
 export default {
@@ -83,15 +86,12 @@ export default {
     /* a grama em volta do campo, até o muro vermelho */
     { dentro: { a: 58, b: 38, r: 1 }, fora: I, h: [0.12, 0.12], fileiras: 2, corredorFrente: 0,
       trechos: [{ de: 0, ate: 360, tipo: 'passagem', cor: '#4f9a55' }] },
-    /* os DEGRAUS PRETOS de baixo, em cima do muro vermelho */
-    { dentro: I, fora: M, reto: true, h: [2.8, 6.4], fileiras: 8, corredorFrente: 1.2,
-      trechos: U(I, () => PRETOS, { ...PRETOS, escadaNaBorda: false }, s => [[-s, -28, PRETOS], [-28, 0, PRETOS], [0, 28, PRETOS], [28, s, PRETOS]]) },
-    /* o DEGRAU VERMELHO, acima deles: o leão no segundo setor de cada fundo, as cadeiras vermelhas no meio da lateral */
-    { dentro: M, fora: O, reto: true, h: [6.6, 18.6], fileiras: 28, corredorFrente: 0,
-      trechos: U(M, i => DEGRAU(i === 1), DEGRAU(false, { escadaNaBorda: false }),
-        s => [[-s, -44, DEGRAU(false)], [-44, -28, DEGRAU(false)],
-              [-28, -9.5, DEGRAU(false, { semCadeiras: false, espelhoPintado: false })], [-9.5, 9.5, DEGRAU(false, { semCadeiras: false, espelhoPintado: false })],
-              [9.5, 28, DEGRAU(false, { semCadeiras: false, espelhoPintado: false })], [28, 44, DEGRAU(false)], [44, s, DEGRAU(false)]]) }
+    /* A ARQUIBANCADA, em cima do muro vermelho: o leão no segundo setor de cada fundo, as cadeiras no meio da lateral */
+    { dentro: I, fora: O, reto: true, h: [2.8, 18.6], fileiras: 36, corredorFrente: 1.2,
+      trechos: U(I, i => DEGRAU(i === 1), DEGRAU(false, { escadaNaBorda: false }),
+        [[-58.5, -40.2, DEGRAU(false)], [-40.2, -25.6, DEGRAU(false)],
+         [-25.6, -8.7, DEGRAU(false, CADEIRAS)], [-8.7, 8.7, DEGRAU(false, CADEIRAS)], [8.7, 25.6, DEGRAU(false, CADEIRAS)],
+         [25.6, 40.2, DEGRAU(false)], [40.2, 58.5, DEGRAU(false)]]) }
   ],
   fachada: { cor: PRETO },
   refletores: [[-30, 62, 45], [34, 66, 45], [-36, -93, 42], [46, -96, 42]],

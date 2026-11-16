@@ -333,13 +333,17 @@ export function construir(THREE, ficha) {
            saía tracejada de branco e cinza. Com `corEscada` (a escada pintada), a cor cheia e o degrau um tom abaixo. */
         if (escada) { const ce = t.corEscada || ficha.corEscada || '#c9c7be'; q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, ce); q4(i, i + 1, f0 + df / 2, f1, hk, tomL(ce, 0.92)); }
         else {
-          const base = t.semCadeiras ? corDe(i, k) : CONCRETO, degrau = tomL(base, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
+          /* `pisoPintado: true` (a lateral do Barradão): cadeira em cima de degrau PINTADO — o piso leva a cor da cadeira, um tom
+             abaixo, em vez do concreto (a listra pintada no degrau continua onde há cadeira). A cor é sorteada aqui e a cadeira,
+             mais abaixo, usa a mesma. */
+          const cad = !t.semCadeiras && t.pisoPintado && !G.sobreVomitorio(i, k) ? corDe(i, k) : null;
+          const base = t.semCadeiras ? corDe(i, k) : (cad ? tomL(cad, 0.8) : CONCRETO), degrau = tomL(base, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
           q4(i, i + 1, f0, f1, hk, degrau);
           /* `espelhoPintado: true` (o tobogã do Souza): arquibancada de cimento pintada por inteiro, o espelho leva a cor do
              degrau em vez do concreto — sem isso o desenho pintado nos degraus sai desbotado visto de frente */
           if (t.semCadeiras && t.espelhoPintado) corCad = base;
           if (G.sobreVomitorio(i, k)) q4(i, i + 1, f0, f0 + df * 0.42, hk + 1, G.vomParapeito);   /* o parapeito em cima da boca */
-          else if (!t.semCadeiras) { const c = corDe(i, k), luz = 0.9 + 0.1 * k / N; corCad = c;
+          else if (!t.semCadeiras) { const c = cad || corDe(i, k), luz = 0.9 + 0.1 * k / N; corCad = c;
             q4(i + 0.12, i + 0.88, f0 + df * 0.10, f0 + df * 0.58, hk + 0.45, tomL(c, luz * 0.94));     /* o assento */
             q4(i + 0.12, i + 0.88, f0 + df * 0.58, f0 + df * 0.80, hk + 0.9, tomL(c, Math.min(1.25, luz * 1.1))); } /* o encosto */
         }

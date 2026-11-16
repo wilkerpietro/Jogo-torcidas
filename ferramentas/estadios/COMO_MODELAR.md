@@ -486,6 +486,12 @@ como uma tira entre os dois; dê a ela a cor do lance de baixo (`corMureta`).
 LISTRA PINTADA NO DEGRAU NÃO É CADEIRA: cadeira escura em piso claro sai cinza
 salpicado; pra listra aparecer, `semCadeiras` com `espelhoPintado` e `corPiso`
 escuro.
+FAIXA DE OUTRA COR NA ARQUIBANCADA NÃO É OUTRO LANCE (o Barradão; o dono: "é só
+cor diferente mesmo, com as escadas contínuas"): se as escadas da foto sobem
+direto de uma cor pra outra, é UM anel só e a faixa vai no `pinta` (por fração
+da subida). Dois anéis só quando há muro, corredor ou mudança de inclinação
+entre as duas partes. Onde há cadeira em cima do degrau pintado,
+`pisoPintado: true`.
 ARQUIBANCADA EM U DE CANTO CHANFRADO: três contornos de canto redondo (beira,
 fim das cadeiras, fundo) com `r` crescendo pra fora, anéis `reto`, e o ajudante
 `U(contorno, fundo1, canto, lateral, fundo2)` da ficha dele, que tira os ângulos
