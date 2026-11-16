@@ -15061,6 +15061,14 @@ Eu tinha levado os três níveis e a laje alta pela volta toda do U. Relendo as 
 
 A cobertura do U deixou de ser a marquise de cada trecho (que só sabe uma altura por trecho e fazia degraus) e virou uma `coberturasAnel` só, do alto de uma tira ao alto da outra, com `alturas` variando ao longo da volta. No gerador, `corBaixo` também vale na cobertura em anel (a face de baixo cinza). O placar desceu pra cima da laje baixa.
 
+## Alagoas: o Fumeirão, primeira versão só pelo satélite (16/11/2026)
+
+O dono pediu "depois o estádio de arapiraca" e ainda não mandou fotos. O Coaracy da Mata Fonseca, do ASA, que já mandava nele nos dados, saiu só do satélite (`fichas/estadio-fumeirao.mjs`): quatro arquibancadas retas em volta da grama — a lateral principal de 120 m coberta de telha clara, com a tribuna no meio; a outra lateral descoberta, com três bocas; a de trás do gol que emenda nela pelo canto; e a de trás do outro gol, mais curta e solta.
+
+Estimado, quase tudo: as alturas, as cores (degrau de cimento cinza, muros brancos de barra preta, pelas cores do ASA), se a de trás do gol mais curta é coberta (li como descoberta) e as torres de luz. As torcidas são escolha minha: a Mancha Negra no meio da lateral descoberta, a visitante atrás do gol da arquibancada curta. Fica à espera das fotos do dono pra corrigir.
+
+O Fumeirão entrou nos arredores padrão. Briga e chegada testadas sem erros (as duas travessias acusadas são a corda no bico do funil de um portão).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
