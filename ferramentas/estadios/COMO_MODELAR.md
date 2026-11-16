@@ -281,6 +281,21 @@ O TAMANHO DO QUADRO sai do `fora` do ÚLTIMO anel: o anel maior (o que vai
 mais longe do centro) tem de ser o último da lista, senão a foto corta a
 arquibancada e os marcadores caem fora (o Alfredo de Castilho).
 
+ESTÁDIO DE ARQUIBANCADAS SOLTAS COM A GRADE NA MURETA (o Conselheiro Galvão):
+o alambrado nasce no PRIMEIRO anel. Se o primeiro anel é a margem larga de
+`passagem` (o Zama Maciel), a grade sai rente ao campo. Quando a foto mostra a
+grade em cima da mureta do pé da arquibancada, faça o primeiro anel ser uma
+`passagem` estreita (1,8 m) que começa na linha da mureta e dá a volta toda:
+a cerca nasce na beira de dentro dela (`alambrado: { cor, corBase }` pinta a
+grade e a mureta), o muro de fora se levanta sozinho onde não há arquibancada
+e ela ainda liga os lances soltos num chão só. Os lances começam no fundo
+dessa passagem.
+DEGRAU PINTADO (sem cadeira) visto de frente sai cinza se não levar
+`corEspelho`: ponha a cor da pintura, um tom abaixo.
+FOTO ANTIGA CONTRA SATÉLITE NOVO: quando as fotos do dono e o satélite
+mostram épocas diferentes (cadeira na foto, bloco pintado no satélite), diga
+qual é qual e o que foi feito; não escolha calado.
+
 ### O alambrado e o muro (nascem sozinhos)
 
 - O **alambrado** corre pela beira de dentro do PRIMEIRO anel: do chão onde

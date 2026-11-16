@@ -9334,9 +9334,10 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 4,
    "estadios": [
     "Moca Bonita",
+    "Conselheiro Galvão",
     "Giulite Coutinho",
     "Raulino de Oliveira"
    ],

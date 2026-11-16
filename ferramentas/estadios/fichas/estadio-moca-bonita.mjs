@@ -1,5 +1,5 @@
-/* MOÇA BONITA (Proletário Guilherme da Silveira, Bangu e Madureira, Rio de
-   Janeiro) — pelo satélite e pelas cinco fotos que o dono mandou (16/11/2026:
+/* MOÇA BONITA (Proletário Guilherme da Silveira, Bangu, Rio de Janeiro; o
+   Madureira saiu daqui em 16/11/2026 e manda no Conselheiro Galvão) — pelo satélite e pelas cinco fotos que o dono mandou (16/11/2026:
    "Veja mais imagens pra produzir melhor"): duas aéreas, a arquibancada do
    leste de frente e duas da tribuna. O campo corre quase norte-sul; no quadro
    o OESTE fica em cima e o NORTE à direita. Não achei mapa de setores.
@@ -26,9 +26,8 @@
    · À ESQUERDA (sul), a outra CURVA de cimento, com as escadinhas amarelas,
      solta das duas laterais (os vãos dos cantos são de chão), com o muro
      branco atrás.
-   AS TORCIDAS (escolhas minhas, sem fonte): a Super Bangu (e a Ultras
-   Madureira, quando o Madureira manda) no meio da arquibancada do leste; a
-   visitante na curva do sul. */
+   AS TORCIDAS (escolhas minhas, sem fonte): a Super Bangu no meio da
+   arquibancada do leste; a visitante na curva do sul. */
 const RAD = Math.PI / 180;
 const A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360;
 const CIM = '#77767a', CIM2 = '#828185', VM = '#c8372d', AM = '#e3c23a', AZ = '#2f4f9e', BR = '#eeece6';
@@ -44,7 +43,7 @@ const CHAO = (de, ate) => ({ de, ate, tipo: 'passagem', cor: '#8a857b' });
 const L0 = A(-55, -53) - 360, SUL0 = 151, SUL1 = 212;
 
 export default {
-  id: 'estadio-moca-bonita', nome: 'Moça Bonita', clubes: ['bangu', 'madureira'], norte: 358.6, vazado: 0.3, folga: 22,
+  id: 'estadio-moca-bonita', nome: 'Moça Bonita', clubes: ['bangu'], norte: 358.6, vazado: 0.3, folga: 22,
   chao: { cor: '#817d74' },
   campo: { corMargem: '#4f8f52' },
   corMureta: BR,
@@ -105,5 +104,5 @@ export default {
   ],
   jogo: { mandante1: [258, 282], mandante2: [100, 125], mandante3: [-20, 20], visitante: [166, 194], tunelMandante: 270, tunelVisitante: 180, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
-          torcidas: { super_bangu: 'mandante1', ultras_madureira: 'mandante1' } }
+          torcidas: { super_bangu: 'mandante1' } }
 };

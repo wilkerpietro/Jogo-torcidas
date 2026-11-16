@@ -94,6 +94,8 @@ NOVOS = [
     {'nome': 'Bernardo Rubinger de Queiroz', 'mapa': 'interior-de-minas', 'bairro': 'Patos de Minas II'},
     # o Estádio Regional (nome genérico do protótipo, em Patos de Minas) vira o Zama Maciel, o da URT.
     {'nome': 'Zama Maciel', 'mapa': 'interior-de-minas', 'bairro': 'Patos de Minas I'},
+    # 16/11/2026, o dono: "Vamos pro estádio de Madureira agora" — o Madureira sai da Moça Bonita e manda no Conselheiro Galvão.
+    {'nome': 'Conselheiro Galvão', 'mapa': 'suburbio-carioca', 'bairro': 'Madureira'},
 ]
 
 
