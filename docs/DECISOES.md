@@ -14643,6 +14643,18 @@ O dono, depois de eu ter separado os dois (commit desfeito): "Vamos agrupar os d
 - **Os arredores de verdade** (o dono, depois de eu ter deixado pra depois: "Cadê as ruas ao redor do Serra dourada? Goiás e vila nova vão mandar todos os jogos lá"): o estádio fica no meio de um estacionamento, sem quarteirão de casas no quadro (500 x 500 m). A cena tem a esplanada em anel em volta do estádio, a do eixo do oeste até a Avenida Fued José Sebba, os estacionamentos (contorno do mapa), as ruas de serviço do OpenStreetMap, a Goiânia Arena (contorno do mapa, altura minha) e a mata do sul. No gerador, `arredores.servico: true` traz as ruas de serviço (sem calçada e sem casa) e `bondes.<id>.exato: true` deixa o bonde onde foi posto. **Os portões e de onde vem cada lado são escolhas minhas** (não achei a lista de portões): a casa chega pelo oeste e entra pelos portões do oeste e do sudoeste; a visitante chega pelo estacionamento do norte e entra pelo portão do nordeste; dois cordões cortam a esplanada em anel. Aqui se briga dentro também (sem `soFora`). Conferido: os cinco bondes com caminho até o portão, e o jogo troca a cena genérica pela dele sem erro de página.
 - **Conferido**: chão único, nenhum marcador fora, briga do Goiás abrindo em `estadio-serra-dourada` sem erro de página.
 
+## Antônio Accioly lowpoly (Atlético-GO) (dono, 16/11/2026)
+
+O dono: "Antônio Accyoly"; e, no meio do levantamento, três fotos (duas de drone e uma de trás do gol).
+
+- **Os dados**: nada mudou; o Atlético-GO já mandava nele (10.000 lugares; o nome nos dados está escrito "Antonio Accyoly", e deixei). Não entra na lista dos arredores de verdade: usa o mapa padrão.
+- **De onde saiu**: a planta e as coberturas, do satélite de hoje (as quatro arquibancadas cobertas); as cores e o jeito de cada uma, das fotos, que são de antes das coberturas. O centro e o rumo do campo, do contorno do gramado no OpenStreetMap (rumo 55,6 graus). Não achei mapa de setores.
+- **A ficha** (`fichas/estadio-antonio-accyoly.mjs`): quatro arquibancadas retas coladas no campo, de cadeira branca com escadas e muros vermelhos, e a faixa vermelha em volta do gramado (o primeiro anel, `passagem`, que liga as quatro). NOROESTE (em cima): a principal, de dois lances (o de baixo vermelho, o de cima branco), com as cabines no alto e a cobertura grande. NORDESTE (à direita): atrás do gol, oito blocos, coberta só na metade de trás. SUDOESTE (à esquerda): atrás do gol, quatro blocos, toda coberta. SUDESTE (embaixo): a lateral comprida e rasa, elevada em cima do muro bege, com a passagem ao pé. Duas torres de refletores atrás de cada gol. As coberturas são a `cobertura` do trecho (telha em módulos, treliça e pilares de trás).
+- **Qual lado é qual nas fotos**: a principal (a de dois lances) aparece à esquerda numa foto e à direita na outra; pelas torres de refletores atrás do gol e pelo telhado maior do satélite, ela é a do noroeste.
+- **O que não sei**: as cores debaixo das coberturas de hoje (usei as das fotos), as alturas, e os setores: pus a Dragões Atleticanos atrás do gol do sudoeste e a visitante atrás do gol do nordeste.
+- **Nas vistas de conferência inclinadas** as cadeiras debaixo das coberturas saem cinza (é a sombra do telhado; a `cobertura` do trecho não tem `sombra: false`). Na vista de cima do jogo não há essa sombra.
+- **Conferido**: chão único, nenhum marcador fora, briga do Atlético-GO abrindo em `estadio-antonio-accyoly` sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
