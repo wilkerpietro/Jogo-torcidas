@@ -463,6 +463,14 @@ drone tirada de trás de uma arquibancada só aparecem a fachada e a beira do
 alto; os degraus ficam escondidos. O satélite decide: listras de escada e boca
 no meio são arquibancada. Diga ao dono que é leitura sua.
 
+ARQUIBANCADA PINTADA POR SETOR (o Joia da Princesa, 16/11/2026): um trecho por
+setor, com `escadaNaBorda: true`, `corredor: 0` e `espelhoPintado: true`; os
+ajudantes `VM`, `BR` e `VD` da ficha dele encurtam a lista. Anote de que foto
+saiu a cor de cada setor e diga ao dono quais são chute.
+ENFEITE REPETIDO AO LONGO DO MURO DE FORA (pilastras, quadros, cobogó): o
+ajudante `muroDeFora(contorno, passo)` da mesma ficha percorre as retas e os
+arcos do retângulo de canto redondo e devolve os blocos já com o `giro`.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

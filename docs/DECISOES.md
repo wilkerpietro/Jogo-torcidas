@@ -14908,6 +14908,20 @@ Estimado: as alturas, as torres de luz e o lugar do letreiro ESTÁDIO ISMAEL BEN
 
 As torcidas são escolha minha: a da casa na lateral da cabine, com o apoio atrás do gol do sul, e a visitante atrás do gol do norte. A Colina entrou nos arredores padrão. Briga e chegada testadas sem erros, pelo São Raimundo e pelo Nacional (as duas travessias que o conferidor acusa são a corda no bico do funil de um portão, o falso positivo de sempre).
 
+## Nordeste, Bahia: o Joia da Princesa (dono, 16/11/2026)
+
+O dono, com cinco fotos (duas de drone, uma de dentro, a tribuna e a fachada): "vamos começar o Nordeste pela Bahia no estádio Joia da Princesa".
+
+O estádio do Fluminense de Feira, que já mandava nele nos dados (`fichas/estadio-joia-da-princesa.mjs`). Oval inteiro de arquibancada de cimento, de 203 × 128 m por fora, com um pátio largo de concreto entre a grama e a mureta branca:
+
+- o degrau pintado por setor de vermelho, branco e verde (quinze trechos, um por setor, cada um com a escada na divisa);
+- a tribuna no meio de uma lateral: três blocos de cadeira debaixo da laje branca de beira verde, com a caixa-d'água vermelha em cima e os bancos de reserva verdes ao pé;
+- no alto do muro, a fileira de quadros vermelhos e verdes; por fora, a fachada de pilastras com o quadro pintado embaixo e o cobogó em cima (um ajudante na ficha percorre o contorno de fora de 6,4 em 6,4 m e põe a pilastra, o quadro, o cobogó e o quadro do alto).
+
+Estimado: as alturas, as torres de luz e, principalmente, **as cores das duas curvas e dos lados da tribuna**: a foto de dentro mostra bem só a lateral de frente pra tribuna (verde no meio, branco, vermelho nas pontas), e a pintura muda de uma foto pra outra. O oval está 3,7 m fora do meio do gramado no satélite; na ficha ficou centrado. O satélite da Esri não tem Feira de Santana, e o do Google é antigo e escuro: as cores saíram todas das fotos.
+
+As torcidas são escolha minha: a Falange Tricolor no meio da arquibancada de frente pra tribuna, a visitante na curva da esquerda. O Joia entrou nos arredores padrão. Briga e chegada testadas sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
