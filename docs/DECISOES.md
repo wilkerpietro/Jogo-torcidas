@@ -15069,6 +15069,18 @@ Estimado, quase tudo: as alturas, as cores (degrau de cimento cinza, muros branc
 
 O Fumeirão entrou nos arredores padrão. Briga e chegada testadas sem erros (as duas travessias acusadas são a corda no bico do funil de um portão).
 
+## Fumeirão refeito pelas fotos (dono, 16/11/2026)
+
+O dono, com seis fotos (três aéreas, uma panorâmica, uma de dentro e um postal): "Segue as fotos do fumeirao pra você aprimorar." Depois, com a panorâmica de novo: "Observe que tem uma curva com arquibancada." E com o postal: "A arquibancada das cabines de imprensa tem dois lances de arquibancada".
+
+O que a versão do satélite tinha errado, e como ficou:
+
+- **A lateral principal não é coberta e tem dois lances.** Os panos claros que eu li como telha são o degrau. São dois lances: o de baixo, estreito, junto do campo, e o de cima, maior, atrás da faixa branca, em duas metades, com o bloco branco das cabines de imprensa no meio.
+- **A lateral das bocas dobra em curva, com arquibancada, e continua atrás do gol do lado da entrada.** Numa passada intermediária eu tirei a arquibancada desse fundo, porque nas aéreas só se veem as placas de publicidade e a fachada; a panorâmica de dentro mostra o degrau fazendo a curva. Ficou num anel próprio, de canto redondo (8 m por dentro), com a curva em leque.
+- **As cores**: degrau pintado de azul-ardósia, escadas amarelas, muro branco, placas de publicidade no alto; as três caixas brancas das bocas na lateral oposta à principal; a fachada branca com o letreiro ESTÁDIO MUNICIPAL COARACY DA MATA FONSECA pra rua.
+
+A Mancha Negra no meio da lateral das bocas e a visitante atrás do gol da arquibancada curta são escolha minha. Estimado: as alturas, o tom do azul, o número de escadas da lateral principal, o tamanho do bloco das cabines, as cores das placas e as torres de luz. Briga e chegada testadas de novo, sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

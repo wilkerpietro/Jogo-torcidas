@@ -546,6 +546,18 @@ altura do meio e a das pontas). E NÃO LEVE UM NÍVEL PELA VOLTA TODA SEM OLHAR
 CADA LADO: o lance de cima pode existir só na lateral; atrás dos gols, no lugar
 dele, uma galeria (`tipo: 'passagem'` com `alt`).
 
+O QUE O SATÉLITE E A AÉREA ENGANAM EM ESTÁDIO PEQUENO (o Fumeirão, 16/11/2026,
+feito sem foto e corrigido três vezes): degrau claro em panos parece TELHA;
+pintura do degrau não se vê; dois lances com uma faixa branca no meio parecem um
+só; e ARQUIBANCADA VISTA POR TRÁS SOME atrás das placas de publicidade (numa
+aérea tirada de fora só aparecem as placas e a fachada). Sem foto de dentro,
+diga ao dono que a versão é provisória; e não tire uma arquibancada que o
+satélite mostra só porque uma aérea de fora não a mostra.
+ARQUIBANCADA QUE DOBRA NUM CANTO SÓ: anel próprio com contorno de canto redondo
+(`r` igual à curva) e um trecho pro canto, em leque; as outras, de canto vivo,
+ficam noutro anel. PLACAS DE PUBLICIDADE EM FILA: o ajudante `PLACAS(u0, v0, u1,
+v1, y)` da ficha dele.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
