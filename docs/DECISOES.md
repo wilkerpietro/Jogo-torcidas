@@ -14703,6 +14703,19 @@ O dono, com cinco fotos (uma aérea antiga, a principal vista do gramado, duas d
 - **As torcidas do Serejão** (dono: "facção brasiliense atrás do gol escanteio nordeste e o visitante no escanteio sudoeste"): a Facção Brasiliense foi para a curva do nordeste e a visitante para a curva do sudoeste. Deixou de ser escolha minha.
 - **DF fechado**: Bezerrão (Gama e Ceilândia) e Serejão (Brasiliense).
 
+## Arena Pantanal lowpoly (Cuiabá) (dono, 16/11/2026)
+
+O dono: "vamos pro Mato Grosso agora, Arena Pantanal e depois o Dutrinha"; no meio do levantamento, fotos de dentro e de fora, duas aéreas, o corte do projeto, o esquema das arquibancadas removíveis, o mapa de setores do clube e, depois, o mapa de assentos numerado.
+
+- **Os dados**: nada mudou; a Arena Pantanal (44.000) é só do Cuiabá. Não está na lista dos arredores de verdade: usa o mapa padrão.
+- **De onde saiu**: a planta e o rumo (campo de sul a norte, 9,9 graus), do satélite e do OpenStreetMap; o resto, das imagens do dono. O contorno do gramado no mapa está 5 m e 4 m fora do lugar; centrei pelas frentes das arquibancadas. No satélite as coberturas aparecem deslocadas uns 10 m pela altura: os comprimentos e a posição dos pilares saíram das fotos e do mapa de assentos.
+- **A ficha** (`fichas/estadio-arena-pantanal.mjs`): quatro arquibancadas soltas com os cantos abertos. Cada uma tem três lances de cadeira azul em mosaico: o de baixo, descoberto; o do meio, curto, na frente dos camarotes de vidro; o de cima, por cima do segundo andar de camarotes, debaixo da cobertura. Oeste e leste são as laterais (bancos ao pé da do oeste); norte e sul, as de trás do gol, mais estreitas. Cada uma tem a cobertura plana branca com a viga-caixão branca por cima da beira de dentro, apoiada em dois pilares grandes; em cada canto ficam dois pilares lado a lado, e em dois cantos o telão entre eles. Por fora, a fachada de tela dourada em painéis (alta nas retas, baixa nos quatro cantos curvos), a grade do terreno e a pista vermelha de caminhada.
+- **O lance do meio** (dono: "tem lances de arquibancada no meio que correspondem a um camarote. aplique isso também"): na primeira versão eu tinha feito só a faixa de vidro entre os dois lances, sem cadeira. Entrou o lance curto nas quatro.
+- **Os tamanhos pelo mapa de assentos** (dono: "refaça o mapa do estádio pro tamanho de cada setor ficar condizente a isso"): na primeira versão os lances de uma mesma arquibancada tinham o mesmo comprimento. Pelo mapa, o de baixo é mais curto que o de cima: laterais com 120 m embaixo e 134 a 143 m em cima (6 blocos por lance); as de trás do gol com 72 m embaixo e 92 a 99 m em cima (5 blocos); o lance de cima abre pra trás.
+- **As torcidas**: a visitante atrás do gol do norte, pelo mapa do clube (Norte Superior). A Raça Cuiabana atrás do gol do sul é **escolha minha**: reportagens dizem que a torcida da casa ocupa o Leste e o Sul, sem dizer onde fica a organizada.
+- **O que é estimado**: as alturas (do corte do projeto, sem cota), as fundezas dos lances, a posição exata dos pilares, em quais dois cantos fica o telão.
+- **Conferido**: chão único, nenhum marcador fora, briga do Cuiabá abrindo em `estadio-arena-pantanal` sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

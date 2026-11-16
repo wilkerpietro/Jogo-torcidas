@@ -615,3 +615,4 @@ import antonioAccyoly from './fichas/estadio-antonio-accyoly.mjs'; FICHAS[antoni
 import jonasDuarte from './fichas/estadio-jonas-duarte.mjs'; FICHAS[jonasDuarte.id] = jonasDuarte;
 import bezerrao from './fichas/estadio-bezerrao.mjs'; FICHAS[bezerrao.id] = bezerrao;
 import serejao from './fichas/estadio-serejao.mjs'; FICHAS[serejao.id] = serejao;
+import arenaPantanal from './fichas/estadio-arena-pantanal.mjs'; FICHAS[arenaPantanal.id] = arenaPantanal;

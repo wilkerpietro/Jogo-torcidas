@@ -370,6 +370,13 @@ FOTO TIRADA DO GRAMADO ESCONDE OS DEGRAUS DE BAIXO (o muro e o ângulo raso): n�
 campo. Se o satélite mostra a faixa de baixo escura e a de cima clara, é cimento embaixo e cadeira em cima (o Serejão; eu
 tinha descartado o satélite como "outra época" e o dono corrigiu). Satélite e foto só são "de épocas diferentes" com prova.
 
+ARENA DE ARQUIBANCADAS SOLTAS E VÁRIOS LANCES (a Arena Pantanal): procure o MAPA DE ASSENTOS numerado antes de desenhar; ele
+diz quantos blocos tem cada lance e qual é mais comprido (o de baixo costuma ser mais curto que o de cima). Cada lance é um
+anel; laterais e fundos em anéis separados; o lance de cima que abre pra trás leva o `fora` mais largo que o `dentro`. Entre
+o lance de baixo e o de cima costuma haver o lance curto dos camarotes: não troque por uma faixa de vidro. Cobertura plana
+grande tapa o lance de cima no satélite e aparece deslocada: comprimentos e pilares saem das fotos, não da beira do telhado.
+Fachada, grade e pista em curva: os ajudantes `PTS` e `FAIXA` da ficha da Arena Pantanal (um bloco girado por trecho).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
