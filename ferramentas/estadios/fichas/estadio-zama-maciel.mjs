@@ -29,7 +29,7 @@ const BR = '#e9e9e4', LARANJA = '#e0782f', AZUL = '#2f5fa8';
 const PAINEIS = Array.from({ length: 22 }, (_, i) => ({ u: -28 + i * 3.8 + 1.9, v: -46.4, w: 3.7, d: 0.4, h: 1.6, y: 5, cor: i % 2 ? AZUL : LARANJA }));
 
 export default {
-  id: 'estadio-zama-maciel', nome: 'Zama Maciel', clubes: ['urt'], norte: 96, vazado: 0.3, folga: 26,
+  id: 'estadio-zama-maciel', nome: 'Zama Maciel', clubes: ['urt'], norte: 354, vazado: 0.3, folga: 26,
   chao: { cor: '#7e7a72' },
   campo: { corMargem: '#4f9353' },
   corMureta: BR,

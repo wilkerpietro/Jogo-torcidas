@@ -163,6 +163,11 @@ telhado e um pilar redondo em cada pé (`pilar: false` tira). Os pés ficam
 de FORA da beira do telhado. E `alambrado: false, muro: false` só nas arenas
 de cadeira colada no campo: estádio com pista em volta leva os dois.
 
+FAIXA PRETA RENTE AO CAMPO NA FOTO AÉREA = PLACA DE PUBLICIDADE, não
+alambrado (Moça Bonita; dono, 16/11/2026: "São placas de publicidade, você
+entendeu errado"). Placa é `bloco` baixo (0,9 m) e não mexe no chão andável;
+o alambrado continua na beira das arquibancadas.
+
 O ESPELHO DO DEGRAU (a face de pé entre as fileiras): com cadeira, ele sai
 sozinho no tom da cadeira da fileira (São Januário; antes era sempre
 concreto e a arquibancada vista de frente ficava cinza). Num trecho sem
