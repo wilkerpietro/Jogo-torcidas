@@ -514,6 +514,10 @@ CADEIRA QUE DE LONGE É UMA MANCHA DE COR (arena de cadeira colorida):
 COR DE CADEIRA DEBAIXO DE COBERTURA: o nível de cima fica na sombra e parece de
 outra cor (na Fonte Nova li verde onde é o mesmo azul claro de baixo). Compare
 os níveis numa foto em que os dois estejam na mesma luz antes de dar cor nova.
+SOMBRA EM CONCRETO BRANCO SAI AZUL NA FOTO (o Almeidão, 17/11/2026: fiz azul a
+lateral da cobertura, que é do mesmo concreto da outra). Arquibancada que só
+aparece na sombra NÃO ganha cor própria: fica da cor da vizinha que está no sol,
+a menos que uma foto com sol nela mostre outra coisa.
 
 DEGRAU EM BLOCOS DE DUAS CORES ALTERNADAS (o Mendonção, 16/11/2026): `padrao:
 'blocos'` com `cor`, `cor2` e `bloco` — o bloco sai com 1,7 vez o número dado em

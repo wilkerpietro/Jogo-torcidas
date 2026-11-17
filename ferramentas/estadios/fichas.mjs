@@ -632,3 +632,4 @@ import fumeirao from './fichas/estadio-fumeirao.mjs'; FICHAS[fumeirao.id] = fume
 import lacerdao from './fichas/estadio-lacerdao.mjs'; FICHAS[lacerdao.id] = lacerdao;
 import cornelio from './fichas/estadio-cornelio-de-barros.mjs'; FICHAS[cornelio.id] = cornelio;
 import amigao from './fichas/estadio-amigao.mjs'; FICHAS[amigao.id] = amigao;
+import almeidao from './fichas/estadio-almeidao.mjs'; FICHAS[almeidao.id] = almeidao;

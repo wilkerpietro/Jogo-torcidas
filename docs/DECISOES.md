@@ -15177,6 +15177,23 @@ O dono, com uma foto de perto de um dos fundos: "As arquibancadas do amigão nã
 
 Estimado: quantos pilares e onde (a foto mostra um pedaço de um fundo), a altura do corredor (no meio) e o desenho dos losangos. Briga e chegada testadas de novo, sem erros.
 
+## Paraíba: o Almeidão (dono, 17/11/2026)
+
+O dono: "Ficou muito bom, vamos pro Almeidão em João Pessoa que é muito similar", e em seguida, com duas aéreas (uma de cima e uma oblíqua): "Veja as imagens". Depois da primeira versão: "A arquibancada do lado coberto do almeidão é da cor da outra, foi só a sombra que te deu essa impressão".
+
+O José Américo de Almeida Filho, onde o Botafogo/PB e o Sousa já mandavam nos dados (`fichas/estadio-almeidao.mjs`). Irmão do Amigão: oval em elipse, com a pista de terra e a bacia de grama, duas arquibancadas grandes em meia-lua nas laterais, num lance só, e os dois fundos inacabados. As diferenças:
+
+- as duas laterais são do **mesmo concreto branco**, com as bocas quadradas escuras. Na primeira versão eu fiz a da cobertura azul: nas duas fotos ela está na sombra da cobertura e do sol baixo, e a sombra no concreto branco sai azulada. É o segundo engano desse tipo (o primeiro foi o verde do nível de cima da Fonte Nova);
+- a **cobertura** fica por cima do alto de uma lateral, de uma ponta até passar do meio: escura, em balanço, de nervuras claras, mais alta na frente (uma `coberturasAnel` num arco, com as elipses do alto da arquibancada até fora dela);
+- a outra lateral tem, no meio, a **rampa larga** que desce pra grama;
+- os fundos têm mais mato que os do Amigão, sem a casinha nem o muro de losangos.
+
+Qual metade é coberta saiu da foto de cima girada sobre o satélite, que batem sem espelhar.
+
+Estimado: as alturas, a fundura da lateral da cobertura (o telhado a esconde no satélite; pus igual à outra, 35 m), as bocas, os pilares dos fundos (como no Amigão) e as três torres de luz. As torcidas são escolha minha: a da casa no meio da lateral da cobertura, com apoio na ponta dela e na outra lateral; a visitante na outra lateral, do lado oposto.
+
+O Almeidão entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes. Um reparo de ferramenta: o roteiro de fechamento quebrava com a barra de "Botafogo/PB" no nome da torcida; o teste foi rodado à mão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

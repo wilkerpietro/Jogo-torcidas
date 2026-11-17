@@ -78,7 +78,7 @@ export const COM_PADRAO = new Set([
   /* Pernambuco */
   'estadio-lacerdao', 'estadio-cornelio-de-barros',
   /* a Paraíba */
-  'estadio-amigao'
+  'estadio-amigao', 'estadio-almeidao'
 ]);
 const RAD = Math.PI / 180;
 const dentroPoli = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
