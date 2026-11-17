@@ -558,6 +558,12 @@ ARQUIBANCADA QUE DOBRA NUM CANTO SÓ: anel próprio com contorno de canto redond
 ficam noutro anel. PLACAS DE PUBLICIDADE EM FILA: o ajudante `PLACAS(u0, v0, u1,
 v1, y)` da ficha dele.
 
+MARGEM DE GRAMA OU AREIA MAIOR DE UM LADO (o Lacerdão, 17/11/2026): a beira comum
+é a do lado estreito; do lado largo entra um anel `passagem` só naquele trecho
+(os outros `vazio`), e as arquibancadas daquele lado começam na beira dele.
+TRIBUNA COBERTA COM PILAR NA FRENTE: a `cobertura` só põe pilar atrás; os da
+frente são `blocos` finos em fila.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

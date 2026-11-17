@@ -15081,6 +15081,23 @@ O que a versão do satélite tinha errado, e como ficou:
 
 A Mancha Negra no meio da lateral das bocas e a visitante atrás do gol da arquibancada curta são escolha minha. Estimado: as alturas, o tom do azul, o número de escadas da lateral principal, o tamanho do bloco das cabines, as cores das placas e as torres de luz. Briga e chegada testadas de novo, sem erros.
 
+## Pernambuco: o Lacerdão, do Central (dono, 17/11/2026)
+
+O dono, com quatro fotos (duas aéreas e duas de dentro): "Pra Pernambuco, como já fizemos o estádio dos três grandes de Pernambuco vamos pro Lacerdão, do Central. Veja as 4 fotos pra entender o formato do estádio."
+
+O Luiz José de Lacerda, em Caruaru, onde o Central já mandava nos dados (`fichas/estadio-lacerdao.mjs`). Quatro lados diferentes:
+
+- **A principal**, numa lateral, de 116 m: junto da faixa de areia, a geral descoberta, de degrau claro; atrás e acima dela, a tribuna coberta, de cadeiras em blocos brancos e pretos, debaixo do telhado cinza de beira alaranjada, com os pilares na frente e a faixa da torcida na mureta.
+- **A outra lateral**, de degrau preto com escadas brancas, a metade do lado dos camarotes debaixo de um telhado escuro.
+- **Atrás de um gol**, a de degrau preto com as faixas brancas e o trapézio branco no meio.
+- **Atrás do outro gol**, sem arquibancada: o prédio branco e comprido dos camarotes, de dois andares, colado no campo.
+
+Qual fundo é qual saiu das fotos de dentro: com a principal em frente e à esquerda, a de trás do gol preta e branca fica à direita; no satélite é o fundo da tira clara e estreita, e o prédio dos camarotes é o outro, mais fundo. A grama tem margem de 6 m de um lado e 14 do outro (a areia): a faixa de areia é um anel de passagem só daquele lado.
+
+Estimado: as alturas; quanto é geral e quanto é tribuna (o telhado esconde a divisa no satélite: 7,5 e 18 m); o desenho das faixas brancas da de trás do gol; a pintura da outra lateral (na aérea ela tem desenhos brancos que não dá pra ler); os blocos de cor das cadeiras; as torres de luz. As torcidas são escolha minha: a Comando Alvinegro na geral, a visitante atrás do gol.
+
+O Lacerdão entrou nos arredores padrão. Briga e chegada testadas sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
