@@ -45,13 +45,33 @@ export const AJUSTES = {
   /* Vila Belmiro: a Avenida Senador Pinheiro Machado tem o canal no meio, e o mapa não traz as pontes; as duas que ficam
      perto do estádio (na Rua Delfino Stockler de Lima e na altura da Rua Marechal José Olintho de Carvalho) entram à mão */
   'estadio-vila-belmiro': { pisos: [{ pts: [[12, 214], [0, 252]], larg: 9, cor: '#8a8a8c' }, { pts: [[200, 116], [204, 148]], larg: 9, cor: '#8a8a8c' }] },
-  /* Castelão: a cena é a do Fortaleza em casa (a TUF e a JGT); a visitante, a "dos jogos do Fortaleza". A do Ceará em casa
-     (a Cearamor, e a Aliança entrando com a MOFI) espera o jogo saber trocar a cena pelo mandante do dia. */
-  'estadio-castelao': { sel: { 'chegada:visitante': { de: 'visitante', nota: 'jogos do Fortaleza' }, 'entrada:visitante': { de: 'visitante', nota: 'jogos do Fortaleza' } } },
-  /* Mangueirão: o dono não marcou chegada da casa; o Remo nasce onde nasce a visitante dos jogos do Paysandu, e a visitante
-     dos jogos do Remo, nos pontos dela ("padrão que voce entendeu") */
-  'estadio-mangueirao': { sel: { 'chegada:mandante': { de: 'visitante', nota: 'Paysandu é mandante' }, 'chegada:visitante': { de: 'visitante', nota: 'mando do Remo' },
-                                 'entrada:visitante': { de: 'visitante', nota: 'Paysandu 2' } } }
+  /* OS ESTÁDIOS DE DOIS CLUBES (dono, 17/11/2026: "classico no estadio de dois clubes cada um usa a sua entrada, a aliança
+     entra junto com a mofi"; "padrão que voce entendeu"; no Maracanã, "mesmas do flamengo. no Fla Flu crie mais entradas e
+     chegadas pra distinguir"). A cena de base é a do primeiro clube em casa; cada variante (`<mandante>` ou
+     `<mandante>@<visitante>`, no clássico) diz, pelos índices das marcas do dono, quem nasce onde e entra por qual portão. */
+  /* Castelão: 0 entrada TUF (= Aliança, 4), 1 JGT (= MOFI, 3), 2 Cearamor (= a da visitante nos jogos do Fortaleza, 6), 5 a
+     da visitante nos jogos do Ceará; chegadas 7 visitante (Ceará em casa), 8 visitante (Fortaleza em casa), 9 Cearamor,
+     10 MOFI, 11 Aliança, 12 TUF, 13 JGT */
+  'estadio-castelao': { unir: 30, sel: { chM: [12, 13], enM: [0, 1], chV: [8], enV: [6] },
+    variantes: {
+      'ceara': { sel: { chM: [9, 10, 11], enM: [2, 3, 3], chV: [7], enV: [5] }, torcidas: { cearamor: 'mandante1', mofi: 'mandante2', alianca: 'mandante3' } },
+      'fortaleza@ceara': { sel: { chM: [12, 13], enM: [0, 1], chV: [9, 10], enV: [2, 3] }, torcidas: { leoes_da_tuf: 'mandante1', jovem_garra_tricolor: 'mandante2' } },
+      'ceara@fortaleza': { sel: { chM: [9, 10, 11], enM: [2, 3, 3], chV: [12, 13], enV: [0, 1] }, torcidas: { cearamor: 'mandante1', mofi: 'mandante2', alianca: 'mandante3' } } } },
+  /* Mangueirão: entradas 0 e 1 do Remo (a 1 = a da visitante nos jogos do Paysandu, 4), 2 e 3 do Paysandu (a 3 = a da
+     visitante nos jogos do Remo, 5); chegadas 6 e 8 do lado do Remo (a visitante quando o Paysandu manda), 7 e 9 do lado do
+     Paysandu (a visitante quando o Remo manda) */
+  'estadio-mangueirao': { unir: 30, sel: { chM: [6, 8], enM: [0, 1], chV: [7, 9], enV: [5] },
+    variantes: {
+      'paysandu': { sel: { chM: [7, 9], enM: [2, 3], chV: [6, 8], enV: [4] }, torcidas: { terror_bicolor: 'mandante1', faccao_jovem_paysandu: 'mandante2' } },
+      'remo@paysandu': { sel: { chM: [6, 8], enM: [0, 1], chV: [7, 9], enV: [2, 3] }, torcidas: { remista: 'mandante1', pavilhao_6: 'mandante2' } },
+      'paysandu@remo': { sel: { chM: [7, 9], enM: [2, 3], chV: [6, 8], enV: [0, 1] }, torcidas: { terror_bicolor: 'mandante1', faccao_jovem_paysandu: 'mandante2' } } } },
+  /* Maracanã: o Fluminense usa as marcas do Flamengo; no Fla×Flu, o clube de fora chega pela Avenida Rei Pelé, do lado da
+     estação, e entra pelo nordeste (marcas minhas, 10 a 12) */
+  'estadio-maracana': { sel: { chM: [8, 9], enM: [0, 1], chV: [3, 4], enV: [2] },
+    extras: [{ k: 'chegada', de: 'flaflu', u: 121.4, v: 215.1 }, { k: 'chegada', de: 'flaflu', u: 77.2, v: 259.4 }, { k: 'entrada', de: 'flaflu', u: 100, v: 150 }],
+    variantes: {
+      'flamengo@fluminense': { sel: { chM: [8, 9], enM: [0, 1], chV: [10, 11], enV: [12] } },
+      'fluminense@flamengo': { sel: { chM: [8, 9], enM: [0, 1], chV: [10, 11], enV: [12] } } } }
 };
 const dentroPoli = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
 const VIAS = new Set(['trunk', 'primary', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'residential', 'living_street', 'unclassified', 'pedestrian', 'service']);
@@ -73,21 +93,28 @@ export function arredoresDasMarcas(ficha, osmLev, M, o = {}) {
   const osm = giro ? Object.assign({}, osmLev, { norte: ficha.norte,
     ruas: osmLev.ruas.map(r => Object.assign({}, r, { pts: r.pts.map(gira) })), trilhos: (osmLev.trilhos || []).map(r => Object.assign({}, r, { pts: r.pts.map(gira) })),
     predios: osmLev.predios.map(r => Object.assign({}, r, { pts: r.pts.map(gira) })), areas: osmLev.areas.map(r => Object.assign({}, r, { pts: r.pts.map(gira) })) }) : osmLev;
-  const pontos = M.pontos.map(p => Object.assign({}, p, (([u, v]) => ({ u, v }))(gira([p.u, p.v]))));
+  const pontos = [...M.pontos, ...(o.extras || [])].map(p => Object.assign({}, p, (([u, v]) => ({ u, v }))(gira([p.u, p.v]))));
   const corte = M.corte.map(gira);
   let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9; for (const p of corte) { u0 = Math.min(u0, p[0]); u1 = Math.max(u1, p[0]); v0 = Math.min(v0, p[1]); v1 = Math.max(v1, p[1]); }
   const quadro = { u: r1((u1 - u0) / 2), v: r1((v1 - v0) / 2), cu: r1((u0 + u1) / 2), cv: r1((v0 + v1) / 2) };
+  /* (o corte de mais de quatro cantos o dono desenhou de propósito: o quadro é o retângulo dele, e o polígono é o limite do
+     que se pisa; fora dele a cena fica escurecida) */
+  const limite = corte.length > 4 ? corte : null;
 
   /* O SÓLIDO e o meio dele */
   const solido = o.solido || solidoDe(ficha), su = solido.reduce((q, p) => q + p[0], 0) / solido.length, sv = solido.reduce((q, p) => q + p[1], 0) / solido.length;
 
   /* AS MARCAS de cada lado, na ordem em que o dono marcou */
   const casa = o.casa || ficha.clubes[0];
-  const escolhe = (k, lado) => { const f = o.sel && o.sel[k + ':' + lado];
-    if (f) return pontos.filter(p => p.k === k && p.de === f.de && (!f.nota || (p.nota || '').includes(f.nota)));
-    return pontos.filter(p => p.k === k && (lado === 'visitante' ? p.de === 'visitante' : p.de === casa)); };
-  const chM = escolhe('chegada', 'mandante'), enM = escolhe('entrada', 'mandante'), chV = escolhe('chegada', 'visitante'), enV = escolhe('entrada', 'visitante');
-  if (!chM.length || !enM.length || !chV.length || !enV.length) throw new Error(ficha.id + ': faltam marcas (chegada/entrada da casa ou da visitante)');
+  /* (`sel`: { chM, enM, chV, enV } com os índices das marcas na lista do dono — os estádios de dois clubes, em que a mesma
+     marca serve a papéis diferentes conforme quem manda o jogo) */
+  const escolhe = (sel, k, lado) => { if (sel && sel[k]) return sel[k].map(i => pontos[i]);
+    const tipo = k[0] === 'c' ? 'chegada' : 'entrada';
+    return pontos.filter(p => p.k === tipo && (lado === 'visitante' ? p.de === 'visitante' : p.de === casa)); };
+  const papeis = sel => { const r = { chM: escolhe(sel, 'chM', 'mandante'), enM: escolhe(sel, 'enM', 'mandante'), chV: escolhe(sel, 'chV', 'visitante'), enV: escolhe(sel, 'enV', 'visitante') };
+    if (!r.chM.length || !r.enM.length || !r.chV.length || !r.enV.length || [...r.chM, ...r.enM, ...r.chV, ...r.enV].some(p => !p)) throw new Error(ficha.id + ': faltam marcas (chegada/entrada da casa ou da visitante)');
+    return r; };
+  const base = papeis(o.sel), variantes = Object.fromEntries(Object.entries(o.variantes || {}).map(([k, v]) => [k, Object.assign({}, v, { papeis: papeis(v.sel) })]));
 
   /* O CHÃO fora das ruas: o terreno do estádio do mapa (a esplanada), os estacionamentos e o calçadão em volta do sólido; o
      estádio e os prédios do mapa não são chão */
@@ -107,7 +134,7 @@ export function arredoresDasMarcas(ficha, osmLev, M, o = {}) {
     ...(o.tiras || []).map(t => ({ pts: t, tira: true }))
   ];
   let h = 0; for (const ch of ficha.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const ar = Object.assign({ osm, servico: true, quadro, vazado: 0.62, semente: h % 97 + 1, marcas: true, pisos, predios: o.predios || {}, entorno: o.entorno || [],
+  const ar = Object.assign({ osm, servico: true, quadro, ...(limite ? { limite } : {}), vazado: 0.62, semente: h % 97 + 1, marcas: true, pisos, predios: o.predios || {}, entorno: o.entorno || [],
     vista: [quadro.cu - quadro.u * 0.25, 170, quadro.cv + quadro.v * 1.1, quadro.cu, 0, quadro.cv] }, o.soFora ? { soFora: true } : {});
 
   /* OS PORTÕES: de cada entrada marcada, anda-se em direção ao meio do campo pelo chão até ele acabar — é a parede do
@@ -116,28 +143,63 @@ export function arredoresDasMarcas(ficha, osmLev, M, o = {}) {
   const P = preparar(Object.assign({}, ficha, { arredores: ar }));
   const noChao = (u, v) => { if (P.andavel(u, v)) return [u, v]; for (let r = 1; r <= 20; r++) for (let a = 0; a < 360; a += 15) { const x = u + Math.cos(a * RAD) * r, y = v + Math.sin(a * RAD) * r; if (P.andavel(x, y)) return [x, y]; } return null; };
   const portoes = [], porMarca = new Map(), acessos = [];
+  /* dois pontos ligados pelo chão (na malha de 1 m da planta)? */
+  const comp = new Map();
+  /* (com o corpo, não só com o pé: uma fresta de 1 m entre um prédio e a arquibancada liga na malha de 1 m, mas o boneco não
+     passa — São Januário; conta como chão só o que tem chão também a 1,5 m pros quatro lados) */
+  const corpo = (u, v) => P.andavel(u, v) && P.andavel(u + 1.5, v) && P.andavel(u - 1.5, v) && P.andavel(u, v + 1.5) && P.andavel(u, v - 1.5);
+  const ligados = (a, b) => { if (!corpo(b[0], b[1])) return false; const ch = (u, v) => Math.floor(u) + ',' + Math.floor(v), alvo = ch(b[0], b[1]);
+    let marca = comp.get(ch(a[0], a[1])); if (marca == null) { marca = comp.size + 1; const fila = [[Math.floor(a[0]), Math.floor(a[1])]]; comp.set(ch(a[0], a[1]), marca);
+      while (fila.length) { const [u, v] = fila.pop(); for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = u + du, y = v + dv, c = x + ',' + y;
+          if (!comp.has(c) && corpo(x + 0.5, y + 0.5)) { comp.set(c, marca); fila.push([x, y]); } } } }
+    return comp.get(alvo) === marca; };
+  const marcaDoPortao = [];
   const portao = (p, nome, cor) => { if (porMarca.has(p)) return porMarca.get(p);
-    const n = portoes.length + 1, ini = noChao(p.u, p.v);
+    /* (entradas que o dono disse serem a mesma, a menos de `unir` metros uma da outra, viram um portão só) */
+    if (o.unir) { const j = marcaDoPortao.findIndex(q => Math.hypot(q.u - p.u, q.v - p.v) < o.unir); if (j >= 0) { porMarca.set(p, j + 1); return j + 1; } }
+    const n = portoes.length + 1, ini = noChao(p.u, p.v); marcaDoPortao.push(p);
     let g;
     if (ini) { const L = Math.hypot(ini[0], ini[1]) || 1, du = -ini[0] / L, dv = -ini[1] / L; let k = 0; while (k < L && P.andavel(ini[0] + du * (k + 0.5), ini[1] + dv * (k + 0.5))) k += 0.5;
       /* (se o chão acabou antes do estádio — o terreno em volta dele não é esplanada no mapa —, abre-se um acesso da rua até a
          parede, nessa mesma direção, e o portão fica na parede) */
       let w = k; while (w < L && !dentroPoli(solido, ini[0] + du * w, ini[1] + dv * w)) w += 0.5;
-      if (w - k > 4) { acessos.push({ pts: [[r1(ini[0] + du * Math.max(0, k - 2)), r1(ini[1] + dv * Math.max(0, k - 2))], [r1(ini[0] + du * (w - 1)), r1(ini[1] + dv * (w - 1))]], larg: 9, cor: '#c2bcad' }); k = w; }
+      /* (se o chão junto da parede, nessa direção, já se liga ao lugar da marca — dando a volta num prédio, por exemplo —,
+         o portão vai pra parede sem abrir acesso nenhum) */
+      if (w - k > 4 && ligados(ini, [ini[0] + du * (w - 1.5), ini[1] + dv * (w - 1.5)])) k = w;
+      else if (w - k > 4) { acessos.push({ pts: [[r1(ini[0] + du * Math.max(0, k - 2)), r1(ini[1] + dv * Math.max(0, k - 2))], [r1(ini[0] + du * (w - 1)), r1(ini[1] + dv * (w - 1))]], larg: 9, cor: '#c2bcad' }); k = w; }
       g = { u: r1(ini[0] + du * Math.max(0, k - 1.5)), v: r1(ini[1] + dv * Math.max(0, k - 1.5)), dir: [+du.toFixed(2), +dv.toFixed(2)] }; }
     else { const q = maisPerto(solido, p.u, p.v, su, sv); g = { u: r1(q.u + q.nx * 1.5), v: r1(q.v + q.ny * 1.5), dir: [+(-q.nx).toFixed(2), +(-q.ny).toFixed(2)] }; }
     portoes.push(Object.assign({ n, nome }, g, { larg: 9 }, cor ? { cor } : {}));
     porMarca.set(p, n); return n; };
-  enM.forEach((p, i) => portao(p, 'ENTRADA ' + (i + 1)));
-  const pv = portao(enV[0], 'VISITANTE', '#7a2f2f');
+  /* (nos estádios de dois clubes os portões servem a papéis diferentes conforme o mandante: levam número, não papel) */
+  const neutro = Object.keys(variantes).length > 0;
+  base.enM.forEach((p, i) => portao(p, neutro ? null : 'ENTRADA ' + (i + 1)));
+  base.enV.forEach(p => portao(p, neutro ? null : 'VISITANTE', neutro ? null : '#7a2f2f'));
+  for (const v of Object.values(variantes)) [...v.papeis.enM, ...v.papeis.enV].forEach(p => portao(p, null));
+  for (const g of portoes) if (!g.nome) g.nome = 'PORTÃO ' + g.n;
   const ult = (l, i) => l[Math.min(i, l.length - 1)];
-  const bondes = {};
-  for (let i = 0; i < 3; i++) bondes['mandante' + (i + 1)] = { de: [ult(chM, i).u, ult(chM, i).v], portao: porMarca.get(ult(enM, i)) };
-  for (let i = 0; i < 2; i++) bondes['visitante' + (i + 1)] = { de: [ult(chV, i).u, ult(chV, i).v], portao: pv };
+  const bondesDe = r => { const b = {};
+    for (let i = 0; i < 3; i++) b['mandante' + (i + 1)] = { de: [ult(r.chM, i).u, ult(r.chM, i).v], portao: porMarca.get(ult(r.enM, i)) };
+    for (let i = 0; i < 2; i++) b['visitante' + (i + 1)] = { de: [ult(r.chV, i).u, ult(r.chV, i).v], portao: porMarca.get(ult(r.enV, i)) };
+    return b; };
+  const bondes = bondesDe(base);
+
+  /* O SETOR DE CADA ESCALÃO NUMA VARIANTE: o trecho da arquibancada atrás do portão dele, com a largura que o setor tem na
+     ficha; dois escalões no mesmo portão ficam lado a lado (é a conta que pôs os setores das fichas, 17/11/2026) */
+  const setoresDe = b => { const j = ficha.jogo || {}, A = (u, v) => (Math.atan2(v, u) / RAD + 360) % 360, out = {}, usados = [];
+    const larg = k => j[k] ? j[k][1] - j[k][0] : 30, ang = k => { const g = portoes.find(q => q.n === b[k].portao); return A(g.u, g.v); };
+    const ocupa = (a, w) => usados.some(([c, x]) => Math.abs(((a - c + 540) % 360) - 180) < (w + x) / 2 + 1);
+    for (const [k, kj] of [['visitante1', 'visitante'], ['mandante1', 'mandante1'], ['mandante2', 'mandante2'], ['mandante3', 'mandante3']]) {
+      const w = larg(kj), g = ang(k); let c = g;
+      for (let d = 0; d < 180 && ocupa(c, w); d += 2) { c = g + d; if (!ocupa(c, w)) break; c = g - d; }
+      usados.push([c, w]); c = (c % 360 + 360) % 360; let a = c - w / 2, z = c + w / 2; if (z > 360) { a -= 360; z -= 360; } out[kj] = [Math.round(a), Math.round(z)]; }
+    return out; };
+  const saidaVariantes = Object.fromEntries(Object.entries(variantes).map(([k, v]) => { const b = bondesDe(v.papeis);
+    return [k, { bondes: b, jogo: Object.assign(setoresDe(b), v.torcidas ? { torcidas: v.torcidas } : {}) }]; }));
 
   /* A POLÍCIA: um posto de cada lado de cada portão, 6 m pra fora */
   const pm = []; for (const g of portoes) { const tx = -g.dir[1], ty = g.dir[0]; for (const k of [-1, 1]) pm.push([r1(g.u - g.dir[0] * 6 + tx * k * 8), r1(g.v - g.dir[1] * 6 + ty * k * 8)]); }
 
   ar.pisos.push(...acessos);
-  return Object.assign(ar, { portoes, bondes, grades: [], filas: [], pm });
+  return Object.assign(ar, { portoes, bondes, grades: [], filas: [], pm }, neutro ? { variantes: saidaVariantes } : {});
 }

@@ -123,7 +123,7 @@ export default {
     { tipo: 'grama', u: -205, v: -40, w: 70, d: 110, cor: '#3f8a52' }, { tipo: 'predio', u: 30, v: 220, w: 160, d: 30, h: 9, cor: '#a5583f' },
     { tipo: 'rua', de: [230, -250], ate: [230, 250], larg: 24 }, { tipo: 'casas', u: 0, v: -200, nu: 18, nv: 2, passo: 15 }
   ],
-  jogo: { mandante1: [19, 49], mandante2: [83, 113], mandante3: [121, 151], visitante: [204, 234], tunelMandante: 0, tunelVisitante: 180, folgaPM: 5,
+  jogo: { mandante1: [172, 202], mandante2: [67, 97], mandante3: [99, 129], visitante: [5, 35], tunelMandante: 0, tunelVisitante: 180, folgaPM: 5,
           fracao: { mandante1: 0.35, mandante2: 0.3, mandante3: 0.3, visitante1: 0.4, visitante2: 0.45, visitante3: 0.35 },
           torcidas: { furia_jovem_botafogo: 'mandante1', torcida_jovem_botafogo: 'mandante2' } }
 };

@@ -45453,7 +45453,7 @@ TO.diaJogo.arredores = (function(){
      jogo continua nos arredores. */
   function usarCena(id, estadio){
     /* (os arredores do estádio que tem os quarteirões de verdade modelados entram no lugar da cena genérica) */
-    const reais = (TO.dados.arredoresReais || {})[estadio];
+    const AR = TO.dados.arredoresReais || {}, reais = AR[estadio] || AR[String(estadio || '').split('@')[0]];
     const nova = (id && id !== 'arredores' && TO.dados.cenas)
       ? TO.dados.cenas[id] : (reais || TO.dados.cenaArredores);
     if(!nova || nova === D) { reconstruir(); return D; }
@@ -63660,7 +63660,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
        se ele tiver, ou nos arredores padrão. A marca vem dos arredores de verdade (o Independência) ou da ficha do próprio
        estádio (dono, 16/11/2026, a Arena Pantanal: "é impossível brigar na arquibancada, só nos arredores, porque um setor
        não se conecta ao outro"). */
-    const dentro = cenaDoEstadio(e, d), fora = (TO.dados.arredoresReais || {})[dentro];
+    const dentro = cenaDoEstadio(e, d), fora = (TO.dados.arredoresReais || {})[dentro] || (TO.dados.arredoresReais || {})[String(dentro).split('@')[0]];
     const soFora = !!((fora && fora.soFora) || ((TO.dados.estadiosLowPoly || {})[dentro] || {}).soFora);
     const local = soFora ? 'arredores' : dentro;
     const setores = soFora ? {mandante:3, visitante:2} : (SETORES_ESTADIO[local] || {mandante:3, visitante:3});
@@ -72497,12 +72497,21 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
      vale o mandante dela; `proximoJogo` fica só de reserva. */
   /* (o estádio low-poly do clube mandante, se ele já foi modelado) */
   const estadioLowPolyDe = clubeId => { const LP = TO.dados.estadiosLowPoly || {};
-    for(const id in LP) if((LP[id].clubes || []).includes(clubeId)) return id; return null; };
+    for(const id in LP) if(!id.includes('@') && (LP[id].clubes || []).includes(clubeId)) return id; return null; };
+  /* OS ESTÁDIOS DE DOIS CLUBES (dono, 17/11/2026: "classico no estadio de dois clubes cada um usa a sua entrada"): a cena
+     do estádio tem variantes pelo mandante (`<id>@<mandante>`) e, no clássico, pelo visitante também
+     (`<id>@<mandante>@<visitante>`); sem variante pra partida, vale a do estádio. */
+  const varianteDoEstadio = (tabela, lp, mand, adv) => {
+    if(!lp || !tabela) return lp;
+    if(mand && adv && tabela[lp + '@' + mand + '@' + adv]) return lp + '@' + mand + '@' + adv;
+    if(mand && tabela[lp + '@' + mand]) return lp + '@' + mand;
+    return lp; };
   function cenaDoEstadio(e, d){
     const pj0 = e.proximoJogo || null;
     const mandante = (d && d.casaId) || (pj0 ? (pj0.casa ? e.torcida.clubeId : pj0.advId) : null);
+    const visitante = (d && d.foraId) || (pj0 ? (pj0.casa ? pj0.advId : e.torcida.clubeId) : null);
     const lp = mandante && estadioLowPolyDe(mandante);
-    if(lp) return lp;
+    if(lp) return varianteDoEstadio(TO.dados.estadiosLowPoly, lp, mandante, visitante);
     const casa = d && d.casaId && TO.mundo.time ? TO.mundo.time(d.casaId) : null;
     if(casa && casa.capacidade) return faixaDoEstadio(casa.capacidade);
     const pj = e.proximoJogo || {};
@@ -72823,8 +72832,9 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     if(m.config && (!local || local === 'arredores') && !m.config.estadioLP){
       const e0 = E(), pj0 = (e0 && e0.proximoJogo) || null;
       const mand = m.config.casaId || (m.dados && m.dados.casaId) || (pj0 ? (pj0.casa ? e0.torcida.clubeId : pj0.advId) : null);
+      const adv0 = m.config.foraId || (m.dados && m.dados.foraId) || (pj0 ? (pj0.casa ? pj0.advId : e0.torcida.clubeId) : null);
       const lp0 = mand && estadioLowPolyDe(mand);
-      if(lp0 && (TO.dados.arredoresReais || {})[lp0]) m.config.estadioLP = lp0;
+      if(lp0 && (TO.dados.arredoresReais || {})[lp0]) m.config.estadioLP = varianteDoEstadio(TO.dados.arredoresReais, lp0, mand, adv0);
     }
     /* O PALCO NA CIDADE (o jogo 3D, 27/09/2026): a cena que tem lugar na
        praça em 3D — a reunião na sala da sede, a briga na casa de veraneio,

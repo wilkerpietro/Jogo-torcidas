@@ -795,6 +795,11 @@ ruas que passam entre o estádio e os prédios do clube, e o portão ia parar do
 certo é sair da marca e andar pelo chão em direção ao meio do campo até o chão acabar. E quando o terreno em volta do
 estádio não é chão no mapa (o clube, um terreno sem nome), o portão para na rua: abra um acesso da rua até a parede.
 
+LIGADO PRO PÉ NÃO É LIGADO PRO CORPO (São Januário, 17/11/2026): qualquer conta de "esse chão chega naquele" feita na
+malha de 1 m da planta precisa exigir chão também a 1,5 m pros lados, senão uma fresta de 1 m entre um prédio e a
+arquibancada passa por caminho. E todo trecho de arquibancada entra no sólido pela borda de fora — o trecho que passa pelo
+ângulo zero (de −25 a 25 graus) não dava coluna e ficava fora.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

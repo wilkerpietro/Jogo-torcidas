@@ -35,8 +35,9 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
     if (fs.existsSync(saidaA)) { try { dadosA = JSON.parse(fs.readFileSync(saidaA, 'utf8').match(/window\.__ARREDORES = (\{[\s\S]*\});/)[1]); } catch (e) { dadosA = {}; } }
     const com = await pg.evaluate(() => window.COM_ARREDORES);
     for (const id of ids.filter(i => com.includes(i))) {
-      const t0 = Date.now(), r = await pg.evaluate(id => window.assarArredores(id), id), arq = 'arredores_' + id.replace(/-/g, '_') + '.webp';
-      if (!FICHA) fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
+      /* (a variante de um estádio de dois clubes — `<id>@<mandante>` — usa a imagem do estádio: os portões são os mesmos) */
+      const t0 = Date.now(), r = await pg.evaluate(id => window.assarArredores(id), id), arq = 'arredores_' + id.split('@')[0].replace(/-/g, '_') + '.webp';
+      if (!FICHA && !id.includes('@')) fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
       dadosA[id] = Object.assign({ nome: r.nome, escala: r.escala, imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), largura: r.largura, altura: r.altura, celula: 8,
         poligonos: { caminhavel: [], bloqueio: [] }, mascara: r.mascara }, r.soFora ? { soFora: true } : {}, r.cena);
       if (CONF) { fs.mkdirSync(CONF, { recursive: true }); fs.writeFileSync(path.join(CONF, id + '_arredores.webp'), bin(r.imagem)); for (const k of ['aerea', 'aerea2', 'perto']) if (r[k]) fs.writeFileSync(path.join(CONF, id + '_arredores_' + k + '.jpg'), bin(r[k])); }
@@ -65,8 +66,8 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
   for (const id of ids) {
     const t0 = Date.now();
     const r = await pg.evaluate(id => window.assar(id), id);
-    const arq = id.replace(/-/g, '_') + '.webp';
-    if (!FICHA) fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
+    const arq = id.split('@')[0].replace(/-/g, '_') + '.webp';
+    if (!FICHA && !id.includes('@')) fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
     /* (`soFora`: a ficha do estádio em que os setores não se ligam por dentro; a briga da arquibancada abre nos arredores) */
     dados[id] = { nome: r.nome, clubes: r.clubes, ...(r.soFora ? { soFora: true } : {}), escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
                   foto: { imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), mascara: r.mascara }, cena: r.cena };

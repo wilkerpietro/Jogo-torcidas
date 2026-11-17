@@ -20,7 +20,12 @@ import { arredoresPadrao, COM_PADRAO } from './arredores_padrao.mjs';
    tem marcas na prancheta ganha o dela, montado por arredores_marcas.mjs com as ruas do mapa (arredores/<id>.osm.mjs) */
 { const { MARCAS } = await import('./marcas_do_dono.mjs'), { arredoresDasMarcas, AJUSTES } = await import('./arredores_marcas.mjs');
   for (const [id, M] of Object.entries(MARCAS)) { const f = FICHAS[id]; if (!f || f.arredores) continue;
-    const osm = (await import('./arredores/' + id + '.osm.mjs')).default; f.arredores = arredoresDasMarcas(f, osm, M, AJUSTES[id] || {}); } }
+    const osm = (await import('./arredores/' + id + '.osm.mjs')).default; f.arredores = arredoresDasMarcas(f, osm, M, AJUSTES[id] || {});
+    /* AS VARIANTES DOS ESTÁDIOS DE DOIS CLUBES (`<id>@<mandante>` e, no clássico, `<id>@<mandante>@<visitante>`): o mesmo
+       estádio e os mesmos portões, com outros bondes e outros setores; o jogo escolhe pela partida */
+    for (const [k, v] of Object.entries(f.arredores.variantes || {})) {
+      const vid = id + '@' + k, ar = Object.assign({}, f.arredores, { bondes: v.bondes }); delete ar.variantes;
+      FICHAS[vid] = Object.assign({}, f, { id: vid, variante: true, jogo: Object.assign({}, f.jogo, v.jogo), arredores: ar }); } } }
 /* OS ARREDORES PADRÃO (os 9 quarteirões, as grades e a PM): a ficha que pede `arredoresPadrao` e não tem `arredores` próprio
    ganha o dela, montado por arredores_padrao.mjs */
 for (const f of Object.values(FICHAS)) if ((f.arredoresPadrao || COM_PADRAO.has(f.id)) && !f.arredores) f.arredores = arredoresPadrao(f);

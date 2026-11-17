@@ -51,7 +51,9 @@ export const FICHAS = {
       { tipo: 'predio', u: 232, v: 95, w: 44, d: 26, h: 9, cor: '#c9c6bb', cor2: '#aaa79c' }
     ],
     /* a torcida do mandante atrás do gol norte; a visitante atrás do gol sul */
-    jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 240], tunelMandante: 180, tunelVisitante: 0 }
+    jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 240], tunelMandante: 180, tunelVisitante: 0,
+            /* (a cena de base é a do Fortaleza em casa; a do Ceará é a variante `@ceara`, arredores_marcas.mjs) */
+            torcidas: { leoes_da_tuf: 'mandante1', jovem_garra_tricolor: 'mandante2' } }
   },
 
   /* ILHA DO RETIRO (Sport) — pela planta de setores, pelas fotos e pelas
@@ -215,7 +217,7 @@ export const FICHAS = {
       { tipo: 'casas', u: 246, v: -60, nu: 4, nv: 12, passo: 15 }, { tipo: 'casas', u: -250, v: 60, nu: 4, nv: 10, passo: 15 },
       { tipo: 'predio', u: 240, v: 70, w: 22, d: 24, h: 46 }, { tipo: 'predio', u: 262, v: 112, w: 20, d: 22, h: 58 }, { tipo: 'predio', u: -244, v: -40, w: 22, d: 22, h: 40 }
     ],
-    jogo: { mandante1: [147, 190], mandante2: [120, 145], mandante3: [80, 118], visitante: [227, 261], tunelMandante: 0, tunelVisitante: 223 }
+    jogo: { mandante1: [158, 201], mandante2: [121, 146], mandante3: [81, 119], visitante: [-12, 22], tunelMandante: 0, tunelVisitante: 223 }
   },
 
   /* MORUMBI (São Paulo) — pelas fotos do dono (14/11/2026). Oval sem
@@ -306,7 +308,7 @@ export const FICHAS = {
       { tipo: 'arvores', u: -150, v: 40, w: 40, d: 120, n: 9 }, { tipo: 'arvores', u: 150, v: -84, w: 44, d: 30, n: 7 },
       { tipo: 'estacionamento', u: -20, v: -160, w: 200, d: 60 }, { tipo: 'estacionamento', u: 10, v: 160, w: 180, d: 60 }
     ],
-    jogo: { mandante1: [132, 188], mandante2: [211, 261], mandante3: [272, 322], visitante: [-2, 26], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5 }
+    jogo: { mandante1: [137, 193], mandante2: [213, 261], mandante3: [263, 313], visitante: [-4, 24], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5 }
   },
 
   /* ARRUDA (Santa Cruz) — pela planta e pelas fotos do dono (14/11/2026).
@@ -420,7 +422,7 @@ export const FICHAS = {
       { tipo: 'rua', de: [-300, -214], ate: [300, -214], larg: 10 }, { tipo: 'rua', de: [-172, -260], ate: [-172, 260], larg: 10 }
     ],
     /* a torcida do Grêmio na Geral (o gol norte); a visitante na quina sudeste */
-    jogo: { mandante1: [121, 161], mandante2: [197, 237], mandante3: [239, 279], visitante: [26, 58], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5, fracao: { mandante1: 0.2 } }
+    jogo: { mandante1: [121, 161], mandante2: [198, 238], mandante3: [240, 280], visitante: [32, 64], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5, fracao: { mandante1: 0.2 } }
   },
 
   /* BEIRA-RIO (Internacional) — pelas plantas de setores e pelas fotos do

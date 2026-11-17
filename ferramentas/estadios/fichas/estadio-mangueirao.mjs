@@ -169,5 +169,6 @@ export default {
   ],
   jogo: { mandante1: [134, 174], mandante2: [81, 121], mandante3: [49, 79], visitante: [274, 309], tunelMandante: 90, tunelVisitante: 318, folgaPM: 3,
           fracao: { mandante1: 0.52, mandante2: 0.52, mandante3: 0.55, visitante1: 0.53, visitante2: 0.53, visitante3: 0.53 },
-          torcidas: { remista: 'mandante1', pavilhao_6: 'mandante3', terror_bicolor: 'mandante2', faccao_jovem_paysandu: 'mandante3' } }
+          /* (a cena de base é a do Remo em casa; a do Paysandu é a variante `@paysandu`, arredores_marcas.mjs) */
+          torcidas: { remista: 'mandante1', pavilhao_6: 'mandante2' } }
 };

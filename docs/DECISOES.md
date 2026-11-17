@@ -15592,6 +15592,43 @@ escritos à mão). Os 22 diferenciados têm agora cena de fora com as ruas de ve
   o cordão e a polícia de verdade. **A 2ª rodada**: a prancheta passou a mostrar as cenas desenhadas no lugar dos mapas do
   levantamento, com as marcas da 1ª rodada já postas; o dono corrige em cima delas e marca "conferi".
 
+## Arredores de verdade: a 2ª rodada de marcas e a cena pelo mandante do dia (17/11/2026)
+
+O dono conferiu os vinte estádios em cima das cenas desenhadas ("pronto, conferi"). Nove ficaram como estavam; onze
+mudaram: Maracanã (a visitante passou a chegar pela Avenida Maracanã e entrar pelo leste; o Flamengo ficou com duas
+entradas), Nilton Santos (casa e visitante trocaram de lado; a visitante ganhou três chegadas), Arena da Baixada, Arruda,
+Couto Pereira, Arena do Grêmio, Mineirão, Neo Química Arena, Ilha do Retiro, São Januário e Vila Belmiro.
+
+- **O corte poligonal vale como desenhado**: na Arena da Baixada o corte ficou menor; no Arruda (seis cantos) e no Couto
+  Pereira (cinco) o dono desenhou polígono. O quadro da cena é o retângulo que contém o corte; com mais de quatro cantos,
+  o polígono é o limite do que se pisa, e fora dele a cena fica escurecida.
+- **Os setores acompanharam as entradas novas** (Grêmio, Maracanã, Mineirão, Neo Química, Nilton Santos, São Januário).
+- **Três defeitos meus achados no caminho**: (1) o sólido do estádio não contava o trecho de arquibancada que passa pelo
+  ângulo zero (de −25 a 25 graus) — o chão dos arredores entrava no anel de cima do Arruda e o portão 1 caía dentro da
+  arquibancada; agora a borda de fora de cada trecho entra no sólido (vale também pros arredores padrão, na próxima vez
+  que forem assados); (2) quando o chão acaba antes da parede, o portão ia pra parede se ela estivesse ligada pelo chão
+  ao lugar da marca — mas a ligação era medida na malha de 1 m, e em São Januário uma fresta de 1 m entre um prédio e a
+  curva "ligava": o portão ficava numa bolsa onde o boneco não cabe, e no jogo o 2º escalão não tinha caminho. A ligação
+  agora exige chão a 1,5 m pros quatro lados; (3) no Nilton Santos o portão 2 parava na frente de dois prédios, a 60 m
+  da parede: agora vai pra parede quando o chão junto dela se liga à marca dando a volta.
+- **A cena pelo mandante do dia** (dono: "classico no estadio de dois clubes cada um usa a sua entrada, a aliança entra
+  junto com a mofi"; Maracanã: "mesmas do flamengo. no Fla Flu crie mais entradas e chegadas pra distinguir"). O estádio
+  de dois clubes tem uma imagem só, com todos os portões (as entradas que o dono disse serem a mesma viram um portão
+  só), e variantes que trocam quem nasce onde, por qual portão entra e em que setor senta: `estadio-castelao@ceara`
+  (o Ceará em casa: Cearamor, MOFI e Aliança, a Aliança pelo portão da MOFI), `@fortaleza@ceara` e `@ceara@fortaleza`
+  (o Clássico-Rei, cada um pelas suas entradas); `estadio-mangueirao@paysandu`, `@remo@paysandu` e `@paysandu@remo`; e o
+  Fla×Flu, `estadio-maracana@flamengo@fluminense` e `@fluminense@flamengo`, em que o clube de fora chega pela Avenida Rei
+  Pelé, do lado da estação, e entra por um portão a nordeste (**chegadas e entrada minhas**, como o dono pediu). A cena de
+  base é a do primeiro clube em casa contra um visitante de fora. Os setores de cada variante são calculados atrás dos
+  portões dela; as organizadas de cada clube vão pros escalões dele (TUF e JGT; Cearamor, MOFI e Aliança; Remista e
+  Pavilhão 6; Terror Bicolor e Facção Jovem).
+- **No jogo** (`cenario3d/js/jogo.js`): o estádio do mandante continua sendo achado pelo clube, e a cena — a de dentro
+  e a de fora — passa a ser a variante da partida (`<id>@<mandante>@<visitante>`, senão `<id>@<mandante>`, senão o
+  estádio). Variante sem cena de fora cai na do estádio. Conferido: as dez combinações (Ceará e Fortaleza contra si e
+  contra um terceiro, Paysandu e Remo, Fla×Flu dos dois lados, Fluminense contra um terceiro) abrem a cena certa, com as
+  organizadas certas, sem erro de página; e nas onze cenas de fora (base e variantes) todo bonde tem caminho.
+- **Conferido também**: os vinte estádios com caminho de todos os bondes, na assadeira e no jogo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

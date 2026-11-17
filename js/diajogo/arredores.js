@@ -712,7 +712,8 @@ TO.diaJogo.arredores = (function(){
      jogo continua nos arredores. */
   function usarCena(id, estadio){
     /* (os arredores do estádio que tem os quarteirões de verdade modelados entram no lugar da cena genérica) */
-    const reais = (TO.dados.arredoresReais || {})[estadio];
+    /* (a variante de um estádio de dois clubes, `<id>@<mandante>`, cai no estádio se não tiver cena própria) */
+    const AR = TO.dados.arredoresReais || {}, reais = AR[estadio] || AR[String(estadio || '').split('@')[0]];
     const nova = (id && id !== 'arredores' && TO.dados.cenas)
       ? TO.dados.cenas[id] : (reais || TO.dados.cenaArredores);
     if(!nova || nova === D) { reconstruir(); return D; }

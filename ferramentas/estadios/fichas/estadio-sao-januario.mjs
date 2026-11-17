@@ -103,7 +103,7 @@ export default {
     { tipo: 'rua', de: [-170, -92], ate: [190, -92], larg: 12 }, { tipo: 'casas', u: 0, v: -112, nu: 18, nv: 1, passo: 15 },
     { tipo: 'casas', u: -150, v: -40, nu: 2, nv: 4, passo: 15 }
   ],
-  jogo: { mandante1: [255, 285], mandante2: [197, 219], mandante3: [165, 195], visitante: [60, 76], tunelMandante: 95, tunelVisitante: 48, folgaPM: 4,
+  jogo: { mandante1: [255, 285], mandante2: [197, 219], mandante3: [165, 195], visitante: [47, 63], tunelMandante: 95, tunelVisitante: 48, folgaPM: 4,
           fracao: { mandante1: 0.45, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { forca_jovem_vasco: 'mandante1' } }
 };

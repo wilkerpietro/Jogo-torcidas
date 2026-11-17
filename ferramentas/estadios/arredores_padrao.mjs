@@ -101,7 +101,10 @@ export function solidoDe(ficha) {
   /* (as arquibancadas pelo desenho de verdade, coluna a coluna: o teste de chão de um lance `reto` sobra em cunha nas pontas) */
   for (const anel of ficha.aneis || []) for (const t of anel.trechos) { if (t.tipo === 'vazio') continue;
     if (t.tipo === 'passagem') { for (let a = t.de; a <= t.ate; a += 3) { const r = raioDe(a, t.fora || anel.fora); pts.push([Math.cos(a * RAD) * r, Math.sin(a * RAD) * r]); } continue; }
-    const G = colunasDe(ficha, anel, t); for (const a of G.angs) { pts.push(G.pos(a, 0)); pts.push(G.pos(a, 1)); } }
+    const G = colunasDe(ficha, anel, t); for (const a of G.angs) { pts.push(G.pos(a, 0)); pts.push(G.pos(a, 1)); }
+    /* (e a borda de fora do trecho, de 3 em 3 graus: o trecho que passa pelo zero, de -25 a 25, não dava coluna nenhuma — o
+       anel de cima do Arruda ficava fora do sólido e o chão dos arredores entrava nele) */
+    for (let a = t.de; a <= t.ate; a += 3) { const r = raioDe(a, t.fora || anel.fora); pts.push([Math.cos(a * RAD) * r, Math.sin(a * RAD) * r]); } }
   for (const b of ficha.blocos || []) { if ((b.h || 0) + (b.y || 0) < 1 || b.cobertura) continue; const g = (b.giro || 0) * RAD, c = Math.cos(g), s = Math.sin(g);
     for (const [x, z] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) pts.push([b.u + x * b.w * c + z * b.d * s, b.v + x * b.w * s - z * b.d * c]); }
   /* (as arquibancadas retas avulsas, os telhados em polígono e as passarelas também são estádio) */

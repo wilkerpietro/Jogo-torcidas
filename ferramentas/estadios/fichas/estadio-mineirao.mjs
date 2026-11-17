@@ -157,7 +157,7 @@ export default {
   ],
   /* a Máfia Azul (e a Galoucura, quando o Atlético manda) no lance de baixo do fundo sul, o Amarelo; a visitante no lance de
      cima da ponta norte da lateral oeste, o Roxo Superior do portão A; os outros bondes da casa no lance de baixo do leste */
-  jogo: { mandante1: [31, 61], mandante2: [76, 106], mandante3: [-15, 5], visitante: [197, 217], tunelMandante: 180, tunelVisitante: 54, folgaPM: 5,
+  jogo: { mandante1: [32, 62], mandante2: [75, 105], mandante3: [323, 343], visitante: [206, 226], tunelMandante: 180, tunelVisitante: 54, folgaPM: 5,
           fracao: { mandante1: 0.28, mandante2: 0.15, mandante3: 0.15, visitante1: 0.66, visitante2: 0.74, visitante3: 0.58 },
           torcidas: { mafia_azul: 'mandante1', galoucura: 'mandante1' } }
 };

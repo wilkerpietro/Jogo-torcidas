@@ -135,7 +135,8 @@ export default {
      Rua Ubaldino do Amaral). Aqui só se briga do lado de fora (`soFora`, dono).
      AS CHEGADAS E AS ENTRADAS SÃO AS MARCAS DO DONO, em ordem ("entrada 1 é a da torcida do primeiro escalão"; "chegada 1
      vai pra entrada 1"), com o portão levado até a parede ("ajuste a entrada pra perto da parede do estadio"):
-     · 1º escalão: nasce na Rua Maria Clara, desce a Agostinho Leão Júnior e entra pela ENTRADA 1, na Rua Amâncio Moro;
+     · 1º escalão: nasce na Avenida Agostinho Leão Júnior (2ª rodada; na 1ª era a Rua Maria Clara) e entra pela ENTRADA 1,
+       na Rua Amâncio Moro;
      · 2º e 3º: nascem na Rua Barão de Guaraúna e entram pela ENTRADA 2, na Rua Mauá, na ponta da curva;
      · visitante: nasce na travessa do outro lado da Ubaldino do Amaral, desce a Rua Floriano Essenfelder e a rua de
        serviço do terreno do clube e entra pela ENTRADA VISITANTE, no alto da curva.
@@ -144,7 +145,9 @@ export default {
      estacionamento e o pátio da entrada da visitante. O contorno do terreno e do estacionamento é do mapa; a altura dos
      prédios é minha. */
   arredores: {
-    osm: OSM, servico: true, soFora: true, quadro: { u: 297.5, v: 250, cu: 29.5, cv: 57 }, vazado: 0.62, semente: 23,
+    osm: OSM, servico: true, soFora: true, quadro: { u: 207.1, v: 202, cu: -11.5, cv: 61 },
+    /* (o corte da 2ª rodada, de cinco cantos: o que fica fora dele escurece e não se pisa) */
+    limite: [[-205.1, 225.8], [-218.6, -140.3], [195.6, -141], [163.1, 244.7], [-156.4, 263]], vazado: 0.62, semente: 23,
     /* (o mapa dá a largura pelo tipo da rua; a Amâncio Moro e a Mauá passam coladas no estádio e são mais estreitas) */
     largura: { 'Rua Amâncio Moro': 12, 'Rua Mauá': 9 },
     pisos: [
@@ -160,8 +163,8 @@ export default {
       { n: 2, nome: 'ENTRADA 2', u: -60, v: -77.6, dir: [0.24, 0.97], larg: 9 },
       { n: 3, nome: 'VISITANTE', u: -77.2, v: 69.9, dir: [0.45, -0.89], larg: 9, cor: '#7a2f2f' }
     ],
-    bondes: { mandante1: { de: [251, 168], portao: 1 }, mandante2: { de: [135, -126], portao: 2 }, mandante3: { de: [141, -146], portao: 2 },
-              visitante1: { de: [-77, 266], portao: 3 }, visitante2: { de: [-71, 250], portao: 3 } },
+    bondes: { mandante1: { de: [155, 200], portao: 1 }, mandante2: { de: [135, -126], portao: 2 }, mandante3: { de: [141, -146], portao: 2 },
+              visitante1: { de: [-98, 248], portao: 3 }, visitante2: { de: [-92, 240], portao: 3 } },
     grades: [], filas: [],
     pm: [[126, 20], [126, -2], [-70, -86], [-50, -86], [-90, 80], [-66, 88]],
     predios: { 'Edifício Dom Diego': { h: 38, cor: '#d9d5c9', corTeto: '#b9b6ad' }, 'Santuário Nossa Senhora do Perpétuo Socorro': { h: 16, cor: '#e3dccb', corTeto: '#a8553f' } },
