@@ -673,8 +673,10 @@ por acaso na primeira prova).
 ANEL DE CIMA EM BLOCOS COM FENDAS (a Arena das Dunas, correção do dono): o
 ajudante `BLOCOS(angs, mais)` da ficha dela — um trecho por vão, com `fecha` e
 um `vazio` estreito de cada lado; por baixo, um anel `passagem` do mesmo
-contorno faz o piso que aparece nas fendas. O `arco` das `petalas` desce pela
-fenda até o contorno `pe`.
+contorno faz o piso que aparece nas fendas. NÃO desce arco pela fenda: a faixa
+translúcida entre duas pétalas fica só na cobertura (eu pus um arco descendo
+até a arquibancada e o dono mandou tirar; num recorte de perto, uma faixa da
+cobertura vista de baixo parece uma peça que desce).
 FAIXAS ENTRE DOIS ANÉIS (os camarotes das Dunas): o muro da frente de cada anel
 vai do chão até 1,1 m acima do primeiro degrau, e o que fica na frente esconde
 o de trás. Empilhe anéis estreitos, cada um um pouco mais pra fora e mais alto

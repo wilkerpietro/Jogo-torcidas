@@ -15288,6 +15288,12 @@ Qual lado é qual saiu das fotos: o prédio vermelho que aparece por trás da la
 
 Estimado: a largura das fendas e quanto o bloco estreita; a forma do arco e onde ele pisa; as alturas de cada faixa dos camarotes; quantas portas tem a faixa do leste (sete, só no trecho reto). As cadeiras dos camarotes ficam atrás do parapeito e quase não aparecem de baixo. Briga e chegada testadas de novo sem erros.
 
+## Arena das Dunas: sem arco na fenda (dono, 17/11/2026)
+
+O dono, ao ver a prova com os arcos: "Não desce arco nenhum, fica só a fenda mesmo. Corrija isso." Eu tinha lido nos recortes a faixa translúcida entre duas pétalas como uma treliça que descia até o meio da arquibancada.
+
+Saíram os arcos da ficha e a opção `arco` das `petalas` no gerador (a seção anterior a descreve; ela não existe mais). Ficam a fenda em V entre os blocos do anel de cima, com o piso de concreto no fundo, e a faixa clara entre as pétalas, só na cobertura. Briga testada de novo sem erros; o lado de fora não mudou.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

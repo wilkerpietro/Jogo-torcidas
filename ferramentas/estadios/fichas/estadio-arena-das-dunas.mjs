@@ -10,8 +10,9 @@
    · o anel de BAIXO dá a volta inteira no campo, sem pista, de cantos redondos;
    · nas DUAS LATERAIS, por cima dele, o anel de CIMA, que acompanha a curva e
      acaba antes dos cantos. Ele é em BLOCOS, um por pétala, mais estreitos no
-     fundo: entre um e outro fica a fenda em V por onde desce o ARCO da
-     cobertura (a treliça branca de painéis translúcidos). No OESTE, entre os
+     fundo: entre um e outro fica a fenda em V, debaixo da faixa translúcida
+     que separa duas pétalas (não desce arco nenhum por ela: eu tinha posto
+     um, e o dono mandou tirar). No OESTE, entre os
      dois anéis, fica o lance dos CAMAROTES (o vão escuro, a laje branca com as
      cadeiras, o vidro) e a fileira corrida da frente do anel de cima; no
      LESTE, só a faixa lisa de concreto com as portas (o dono corrigiu, com
@@ -66,8 +67,6 @@ const OESTE = [196, 213.6, 230.3, 247.7, 270, 292.3, 309.7, 326.4, 340], SUL = [
 const ALT_LESTE = ang => { const d = Math.abs(90 - ang); return d < 14 ? [7, 32, 35] : d < 35 ? [7, 31, 34] : d < 52 ? [7, 29.5, 32.2] : [7, 21, 23.5]; };
 const ALT_OESTE = ang => { const d = Math.abs(270 - ang); return d < 25 ? [7, 37, 41] : d < 40 ? [7, 35.5, 39] : d < 55 ? [7, 32, 35.2] : [7, 23, 26]; };
 const PETALA = { cor: BRANCO, cor2: BRANCO2, corBaixo: '#f6f7f6', bojo: 2.2 }, FORMA = { fenda: 0.05, curva: 2.05, corFenda: '#c6cdd1' };
-/* o arco de cada divisa: pisa no corredor da frente dos blocos (nas laterais) ou na esplanada (nos cantos) */
-const ARCO = hLado => ({ pe: R(5.7), h: ang => { const a = ((ang % 360) + 360) % 360, d = Math.min(Math.abs(a - 90), Math.abs(a - 270)); return d < 50 ? hLado : 10.4; }, cor: '#ffffff', cor2: '#eef2f4', corBorda: '#9aa2a8' });
 
 /* AS ESCADAS DE FORA: em cada divisa de pétala, a escada larga que desce do pódio pro chão (dois lances, em degraus de caixa) */
 const raioE = (ang, c) => { const dx = Math.cos(ang * RAD), dy = Math.sin(ang * RAD), k = dx * dx / (c.a * c.a) + dy * dy / (c.b * c.b), b = -2 * dy * c.cv / (c.b * c.b), q = c.cv * c.cv / (c.b * c.b) - 1;
@@ -104,7 +103,7 @@ export default {
         { de: -C0, ate: C0, ...ESPLANADA }, { de: C0, ate: C1, tipo: 'passagem', cor: '#e2e2dd', h: [15.5, 15.5], corMureta: '#cfd0cb' },
         { de: C1, ate: 360 - C1, ...ESPLANADA }, { de: 360 - C1, ate: 360 - C0, tipo: 'passagem', cor: '#e2e2dd', corMureta: '#e6e6e1' }
       ] },
-    /* O ANEL DE CIMA, em BLOCOS: um por pétala, mais estreito no fundo, com a fenda em V por onde desce o arco da cobertura */
+    /* O ANEL DE CIMA, em BLOCOS: um por pétala, mais estreito no fundo, com a fenda em V entre um e outro */
     { dentro: R(4.6), fora: U1, h: [17.4, 27.6], fileiras: 15, corredorFrente: 2.2,
       trechos: [
         { de: -C0, ate: C0, tipo: 'vazio' },
@@ -119,8 +118,8 @@ export default {
   fachada: { cor: '#cfcfc9' },
   refletores: [],
   coberturasAnel: [
-    { ...PETALA, dentro: BOCA, fora: FORA, angulos: LESTE, alturas: ALT_LESTE, petalas: { ...FORMA, opacaDe: 0.7, crista: 0.3, testeira: 3.2, arco: ARCO(15.7) } },
-    { ...PETALA, dentro: BOCA, fora: FORA, angulos: OESTE, alturas: ALT_OESTE, petalas: { ...FORMA, opacaDe: 0.55, crista: 0.3, testeira: 3.6, arco: ARCO(17.5) } },
+    { ...PETALA, dentro: BOCA, fora: FORA, angulos: LESTE, alturas: ALT_LESTE, petalas: { ...FORMA, opacaDe: 0.7, crista: 0.3, testeira: 3.2 } },
+    { ...PETALA, dentro: BOCA, fora: FORA, angulos: OESTE, alturas: ALT_OESTE, petalas: { ...FORMA, opacaDe: 0.55, crista: 0.3, testeira: 3.6 } },
     { ...PETALA, bojo: 1.6, dentro: { a: 101, b: 82, forma: 'elipse' }, fora: { a: 124, b: 99, cv: -6, forma: 'elipse' }, angulos: NORTE, alturas: () => [7, 15, 17.4],
       petalas: { ...FORMA, opacaDe: 0.5, crista: 0.35, testeira: 2.4 } },
     { ...PETALA, bojo: 0.9, dentro: { a: 126, b: 100, cv: -6, forma: 'elipse' }, fora: { a: 137.5, b: 110, cv: -6, forma: 'elipse' }, angulos: SUL, alturas: () => [6.9, 9.4, 10.4],
