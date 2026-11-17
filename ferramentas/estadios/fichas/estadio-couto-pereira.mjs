@@ -20,6 +20,7 @@
    · AS DUAS CURVAS: os três lances de cadeira branca com as divisas verdes;
      as pontas coladas na social são de cadeira escura; a marquise verde
      cobre o alto do lance de cima. */
+import OSM from '../arredores/estadio-couto-pereira.osm.mjs';
 const BR = '#eceeea', BR2 = '#dfe2dd';                  /* a cadeira branca */
 const VD = '#2f9a84', VD2 = '#288a76';                  /* a cadeira verde */
 const ESC = '#2a4a52', ESC2 = '#223f47';                /* a cadeira escura (a social e as pontas das curvas) */
@@ -63,8 +64,11 @@ const MARQUISE = (f0, f1) => ({ y: 22, h: 0.5, cor: '#5f9a8e', pontos: [...arco(
 /* as treliças do telhado da Mauá */
 const TRELICAS = Array.from({ length: 13 }, (_, i) => ({ u: -62 + i * 9.6, v: 73, w: 0.9, d: 14, h: 0.6, y: 25.6, cor: '#5a5c5f', cobertura: true }));
 
+/* o terreno do clube e o estacionamento, pelo contorno do mapa */
+const TERRENO = OSM.areas.find(a => a.tipo === 'leisure=stadium').pts, PATIO = OSM.areas.find(a => a.tipo === 'amenity=parking').pts;
+
 export default {
-  id: 'estadio-couto-pereira', nome: 'Couto Pereira', clubes: ['coritiba'], norte: 309, vazado: 0.38, folga: 20,
+  id: 'estadio-couto-pereira', nome: 'Couto Pereira', clubes: ['coritiba'], norte: 309.4, vazado: 0.38, folga: 20,
   corEscada: DIVISA,
   chao: { cor: '#8d8981' },
   campo: { corMargem: '#3f8f4b' },
@@ -80,7 +84,7 @@ export default {
     /* O LANCE DO MEIO das curvas; o lance de cima da Mauá e o da social */
     { dentro: C[2], fora: C[3], reto: true, h: [6.6, 10], fileiras: 7, corredorFrente: 0,
       trechos: [...curvas(56, BRANCO, ESCURO), ...MAUA_CIMA,
-        { ...SOCIAL(58.5, 78), h: [7.5, 17], cor: ESC, cor2: ESC2, padrao: 'mosaico', mistura: 0.3, corredor: 13, corEscada: '#9fb3ad', vomitorios: false, paredeAtras: true, corFachada: '#e3e6e2' }] },
+        { ...SOCIAL(58.5, 75), h: [7.5, 17], cor: ESC, cor2: ESC2, padrao: 'mosaico', mistura: 0.3, corredor: 13, corEscada: '#9fb3ad', vomitorios: false, paredeAtras: true, corFachada: '#e3e6e2' }] },
     /* A SEGUNDA GALERIA, só nas curvas */
     { dentro: C[3], fora: C[4], reto: true, h: [10.1, 10.1], fileiras: 2, corredorFrente: 0,
       trechos: curvas(62, GALERIA(10.1), GALERIA(10.1)) },
@@ -100,9 +104,9 @@ export default {
     { u: -4.5, v: 78.2, w: 117, d: 4, h: 24, cor: '#dfe3df' },
     { u: -67, v: 60, w: 4, d: 3.4, h: 40, cor: '#eceeea', cobertura: true }, { u: 58, v: 60, w: 4, d: 3.4, h: 40, cor: '#eceeea', cobertura: true },
     /* SOCIAL: o telhado claro (a frente mais escura), a fileira de luzes na beira e o prédio de trás */
-    { u: -9, v: -75, w: 106, d: 16, h: 0.8, y: 24, cor: '#cfcdc8', cobertura: true }, { u: -9, v: -61.5, w: 106, d: 11, h: 0.8, y: 24, cor: '#a9a8a3', cobertura: true },
+    { u: -9, v: -71.8, w: 106, d: 9.6, h: 0.8, y: 24, cor: '#cfcdc8', cobertura: true }, { u: -9, v: -61.5, w: 106, d: 11, h: 0.8, y: 24, cor: '#a9a8a3', cobertura: true },
     { u: -9, v: -56.4, w: 100, d: 0.6, h: 0.9, y: 24.8, cor: '#eef0f1', cobertura: true },
-    { u: -9, v: -80.5, w: 106, d: 5, h: 23, cor: '#e3e6e2' },
+    { u: -9, v: -75.8, w: 106, d: 1.6, h: 23, cor: '#e3e6e2' },
     /* os bancos de reserva, do lado da Mauá */
     { u: -11, v: 42.4, w: 9, d: 1.6, h: 1.8, cor: '#e9eeea' }, { u: 11, v: 42.4, w: 9, d: 1.6, h: 1.8, cor: '#e9eeea' }
   ],
@@ -119,9 +123,56 @@ export default {
     /* à esquerda: a rua e as casas */
     { tipo: 'rua', de: [-130, -220], ate: [-130, 220], larg: 9 }, { tipo: 'casas', u: -154, v: 0, nu: 2, nv: 12, passo: 14 }
   ],
-  /* a Império Alviverde e a Dragões Alviverdes no lance de cima da Mauá; a visitante no lance de cima da curva do sudeste
-     (escolhas minhas, sem fonte); o outro bonde da casa na curva do noroeste */
-  jogo: { mandante1: [82, 100], mandante2: [112, 128], mandante3: [-15, 15], visitante: [166, 194], tunelMandante: 91, tunelVisitante: 180, folgaPM: 5,
-          fracao: { mandante1: 0.7, mandante2: 0.7, mandante3: 0.45, visitante1: 0.85, visitante2: 0.85, visitante3: 0.85 },
-          torcidas: { imperio_alviverde: 'mandante1', dragoes_alviverdes: 'mandante2' } }
+  /* OS SETORES SEGUEM AS ENTRADAS QUE O DONO MARCOU (17/11/2026: "se baseie invertendo a sua ordem pelo que eu defini"): a
+     Império Alviverde (1º escalão) na curva da Rua Amâncio Moro, atrás da entrada 1; a Dragões Alviverdes (2º) na curva do
+     outro lado, na parte de baixo (a Curva Mauá do mapa), e o 3º escalão na ponta da reta da Rua Mauá, as duas atrás da
+     entrada 2; a visitante na parte de cima dessa mesma curva (o Setor Visitante do mapa), atrás da entrada dela. */
+  jogo: { mandante1: [-15, 15], mandante2: [186, 206], mandante3: [224, 244], visitante: [149, 171], tunelMandante: 91, tunelVisitante: 180, folgaPM: 5,
+          fracao: { mandante1: 0.7, mandante2: 0.7, mandante3: 0.6, visitante1: 0.85, visitante2: 0.85, visitante3: 0.85 },
+          torcidas: { imperio_alviverde: 'mandante1', dragoes_alviverdes: 'mandante2' } },
+  /* OS ARREDORES DE VERDADE (dono, 17/11/2026). O CORTE é o que o dono marcou na prancheta, endireitado ("endireite"): de
+     268 m a sudeste a 327 m a noroeste do meio do campo, de 193 m a nordeste (além da Rua Mauá) a 307 m a sudoeste (além da
+     Rua Ubaldino do Amaral). Aqui só se briga do lado de fora (`soFora`, dono).
+     AS CHEGADAS E AS ENTRADAS SÃO AS MARCAS DO DONO, em ordem ("entrada 1 é a da torcida do primeiro escalão"; "chegada 1
+     vai pra entrada 1"), com o portão levado até a parede ("ajuste a entrada pra perto da parede do estadio"):
+     · 1º escalão: nasce na Rua Maria Clara, desce a Agostinho Leão Júnior e entra pela ENTRADA 1, na Rua Amâncio Moro;
+     · 2º e 3º: nascem na Rua Barão de Guaraúna e entram pela ENTRADA 2, na Rua Mauá, na ponta da curva;
+     · visitante: nasce na travessa do outro lado da Ubaldino do Amaral, desce a Rua Floriano Essenfelder e a rua de
+       serviço do terreno do clube e entra pela ENTRADA VISITANTE, no alto da curva.
+     SÃO PROVISÓRIAS: o dono vai marcar de novo em cima desta cena; o gradil, o cordão e a polícia ficam pra depois disso
+     (só há um posto em cada portão). O terreno do clube é desenhado mas não se pisa, fora as ruas de serviço, o
+     estacionamento e o pátio da entrada da visitante. O contorno do terreno e do estacionamento é do mapa; a altura dos
+     prédios é minha. */
+  arredores: {
+    osm: OSM, servico: true, soFora: true, quadro: { u: 297.5, v: 250, cu: 29.5, cv: 57 }, vazado: 0.62, semente: 23,
+    /* (o mapa dá a largura pelo tipo da rua; a Amâncio Moro e a Mauá passam coladas no estádio e são mais estreitas) */
+    largura: { 'Rua Amâncio Moro': 12, 'Rua Mauá': 9 },
+    pisos: [
+      /* o terreno do clube: desenhado, mas não se pisa (o piso entra e o recorte tira) */
+      { pts: TERRENO, cor: '#aaa597' }, { pts: TERRENO, tira: true },
+      /* o estacionamento (contorno do mapa) e o pátio da entrada da visitante, no fim da rua de serviço */
+      { pts: PATIO, cor: '#77777a' }, { pts: [[-98, 64], [-58, 64], [-58, 92], [-98, 92]], cor: '#b9b3a4' },
+      /* (o estádio e a sede não são chão) */
+      { pts: arco(77.4, 0, 360), tira: true }, { pts: [[-66, 60], [57, 60], [57, 81.5], [-66, 81.5]], tira: true }, { pts: [[26, 69], [76, 69], [76, 107], [26, 107]], tira: true }
+    ],
+    portoes: [
+      { n: 1, nome: 'ENTRADA 1', u: 118.2, v: 9, dir: [-1, 0], larg: 9 },
+      { n: 2, nome: 'ENTRADA 2', u: -60, v: -77.6, dir: [0.24, 0.97], larg: 9 },
+      { n: 3, nome: 'VISITANTE', u: -77.2, v: 69.9, dir: [0.45, -0.89], larg: 9, cor: '#7a2f2f' }
+    ],
+    bondes: { mandante1: { de: [251, 168], portao: 1 }, mandante2: { de: [135, -126], portao: 2 }, mandante3: { de: [141, -146], portao: 2 },
+              visitante1: { de: [-77, 266], portao: 3 }, visitante2: { de: [-71, 250], portao: 3 } },
+    grades: [], filas: [],
+    pm: [[126, 20], [126, -2], [-70, -86], [-50, -86], [-90, 80], [-66, 88]],
+    predios: { 'Edifício Dom Diego': { h: 38, cor: '#d9d5c9', corTeto: '#b9b6ad' }, 'Santuário Nossa Senhora do Perpétuo Socorro': { h: 16, cor: '#e3dccb', corTeto: '#a8553f' } },
+    entorno: [
+      /* à mão, pelo mapa e pelo que a ficha já tinha: a sede de telhado branco e o prédio do clube atrás da reta de cima, os
+         carros do estacionamento, as árvores do terreno e as do cemitério luterano */
+      { tipo: 'predio', u: 51, v: 88, w: 50, d: 38, h: 9, cor: '#e6e6e2' }, { tipo: 'predio', u: -4, v: 90.5, w: 25, d: 5, h: 8, cor: '#b5b3aa' },
+      { tipo: 'estacionamento', u: 96, v: 118, w: 40, d: 60, cheio: 0.5 },
+      { tipo: 'arvores', u: -128, v: 60, w: 30, d: 70, n: 12 }, { tipo: 'arvores', u: -118, v: -30, w: 12, d: 60, n: 6 },
+      { tipo: 'arvores', u: 285, v: 150, w: 180, d: 120, n: 46 }
+    ],
+    vista: [-60, 170, 330, 20, 0, 40]
+  }
 };

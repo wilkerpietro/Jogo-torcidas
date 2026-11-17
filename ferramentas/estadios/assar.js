@@ -46,6 +46,8 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
         const fecha = (a, b) => { const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3); for (let k = 0; k <= n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n; for (const [dx, dy] of [[0, 0], [5, 0], [-5, 0], [0, 5], [0, -5]]) { const i = Math.floor((y + dy) / 8) * C + Math.floor((x + dx) / 8); if (i >= 0 && i < m.length) m[i] = 0; } } };
         for (const g of r.cena.grades) fecha([g.de.x, g.de.y], [g.ate.x, g.ate.y]);
         for (const f of r.cena.filas) for (let k = 0; k < f.pontos.length - 1; k++) fecha(f.pontos[k], f.pontos[k + 1]);
+        /* (onde o corpo cabe, como no jogo: o disco de 5 px no meio da célula encosta nas quatro vizinhas) */
+        { const o = m.slice(); for (let i = 0; i < m.length; i++) if (o[i]) { const c = i % C; if ((c > 0 && !o[i - 1]) || (c < C - 1 && !o[i + 1]) || (i >= C && !o[i - C]) || (i + C < m.length && !o[i + C])) m[i] = 0; } }
         const faltam = [];
         for (const sp of r.cena.spawns) { const e = r.cena.entradas.find(x => x.id === sp.entrada), alvo = Math.floor(e.y / 8) * C + Math.floor(e.x / 8), ini = Math.floor(sp.y / 8) * C + Math.floor(sp.x / 8), visto = new Uint8Array(C * R), f = [ini]; visto[ini] = 1; let achou = false;
           if (!m[ini]) { faltam.push(sp.id + ' (nasce fora do chão)'); continue; }

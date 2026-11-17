@@ -15494,6 +15494,67 @@ O dono pediu uma página com os mapas do levantamento de cada estádio diferenci
 - **A ordem do trabalho.** O dono marca; eu leio as marcas do estádio dado como pronto e faço os arredores
   dele — um estádio por vez, como sempre.
 
+## Arredores de verdade: as regras do dono depois de marcar os vinte estádios (17/11/2026)
+
+O dono marcou os vinte estádios na prancheta (`marcas/<id-da-ficha>` no banco do artefato “Marcação dos Arredores”) e
+respondeu às minhas dúvidas. Valem para todos:
+
+- **Escalão é a organizada do clube, por ordem.** Marca sem recado está na ordem: “entrada 1 é a da torcida do primeiro
+  escalão”. A 1ª chegada vai para a 1ª entrada, a 2ª para a 2ª, e assim vai. Com menos marcas que escalões, o 2º e o 3º
+  saem juntos do segundo ponto (com uma marca só, os três do mesmo ponto).
+- **Visitante**: a entrada é “sempre única por jogo”. A 3ª chegada da visitante só vale “em caso de times com 3 torcidas”.
+- **A entrada fica perto da parede do estádio** (“ajuste a entrada pra perto da parede do estadio”): onde a marca caiu na
+  grade do terreno, eu levo o portão até a parede.
+- **O setor de cada torcida na arquibancada segue as marcas** (“se baseie invertendo a sua ordem pelo que eu defini”):
+  onde a ficha tinha escolha minha que não bate com a entrada marcada, vale a marca (Mineirão, Arena MRV, São Januário,
+  Vila Belmiro, Aflitos; em menor grau Morumbi e Couto Pereira).
+- **Clássico nos estádios de dois clubes** (Maracanã, Castelão, Mangueirão): “cada um usa a sua entrada”, não as marcas
+  de visitante. No Castelão “a aliança entra junto com a mofi”. No Maracanã o Fluminense usa as mesmas chegadas e
+  entradas do Flamengo; para o Fla×Flu eu crio chegadas e entradas a mais, para distinguir os dois.
+- **Mangueirão** (não havia chegada da casa): o Remo nasce nos pontos da visitante em jogo do Paysandu (leste e
+  nordeste) e o Paysandu nos da visitante em jogo do Remo (oeste e sudoeste).
+- **Castelão**: a entrada do Ceará sem recado (norte) é a da Cearamor; os pares anotados como “mesma” são um portão só.
+- **Corte**: “endireite” — vira o retângulo que contém os quatro cantos; a cena acaba ali.
+- **Grades, cordão e polícia**: “desenhe o ideal de acordo com o que eu marquei”.
+- **Prédios à mão**: “nada por enquanto” além do que o mapa e o satélite derem.
+- **Só se briga do lado de fora** (`soFora`, como o Independência): Neo Química Arena, Allianz Parque, Nilton Santos
+  (Engenhão) e Couto Pereira.
+- **Fonte Nova**: a chegada da visitante colada na fachada está certa.
+
+**A ordem do trabalho mudou** (o dono: “Era melhor desenhar todos os mapas pra depois refazermos os spawns e entradas,
+não?”). É: o mapa do levantamento só tinha o gramado, sem a parede do estádio. Então (1) desenho as vinte cenas com o
+corte endireitado e as marcas de agora como chegadas e portões **provisórios**; (2) as cenas desenhadas entram na
+prancheta no lugar dos mapas, com as marcas já postas, e o dono corrige; (3) com as marcas finais fecho gradil, cordão,
+polícia e setores.
+
+## Couto Pereira: a primeira cena de arredores pelas marcas do dono (17/11/2026)
+
+O primeiro dos vinte, por ser de rua de bairro e com o rumo da ficha já certo (309,4°, o do mapa).
+
+- **A cena** (`fichas/estadio-couto-pereira.mjs`, `arredores`): o quadro é o corte do dono, endireitado — 595 × 500 m,
+  da Rua Maria Clara e do cemitério luterano até além da Rua Floriano Essenfelder, e da Rua Mauá até além da Ubaldino
+  do Amaral. As ruas são as do mapa (as de serviço também); as casas, as do jogo 3D antigo (477); o terreno do clube é
+  desenhado mas não se pisa, fora o estacionamento, as ruas de serviço e o pátio da entrada da visitante. Só se briga do
+  lado de fora (`soFora`, dono).
+- **Chegadas e entradas** (as marcas do dono, em ordem, com o portão levado até a parede): o 1º escalão chega pela Rua
+  Maria Clara e entra pela ENTRADA 1, na Rua Amâncio Moro; o 2º e o 3º chegam pela Rua Barão de Guaraúna e entram pela
+  ENTRADA 2, na Rua Mauá, na ponta da curva; a visitante desce a Floriano Essenfelder e a rua de serviço do clube até a
+  entrada dela, no alto da curva do outro lado. **São provisórias**: o dono vai marcar de novo em cima da cena desenhada.
+- **Os setores seguem as entradas** (dono: "se baseie invertendo a sua ordem pelo que eu defini"): a Império Alviverde
+  passou pra curva da Amâncio Moro; a Dragões Alviverdes e o 3º escalão, pra curva do outro lado (a Curva Mauá do mapa);
+  a visitante, pro alto dessa curva (o Setor Visitante do mapa). Antes, as duas da casa estavam na reta e a visitante
+  na curva errada.
+- **A ficha conferida com o mapa**: o rumo foi a 309,4°; a social coberta (a reta da Rua Mauá) acaba em 75 m, não em
+  80: a rua passa colada nela.
+- **A rua de serviço prendia o bonde.** No jogo, a visitante nascia e não saía do lugar: a rua de serviço, de 5 m e sem
+  calçada, ficava (na escala da cena, 4,6 px por metro) mais estreita que o corpo do boneco, e o caminho até o portão
+  não chegava a ela. Agora se anda numa faixa de pelo menos 9 m em volta de toda rua de serviço (o asfalto desenhado
+  continua com a largura do mapa), e o teste da assadeira passou a exigir que o corpo caiba, como o jogo — antes ele
+  dizia "caminho até o portão: todos" num caso em que o jogo não andava. O Serra Dourada e o Independência foram
+  assados de novo com isso.
+- **Conferido no jogo**: os cinco bondes com caminho; o 2º e o 3º escalão e os dois bondes visitantes entram e aparecem
+  no setor deles; o 1º escalão (o do jogador) entra pela ENTRADA 1; sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

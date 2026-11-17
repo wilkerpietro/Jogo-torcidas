@@ -60,7 +60,9 @@ export function preparar(ficha) {
       if (dentroPoli(pts, x0 + i + 0.5, y0 + j + 0.5)) alvo[j * GW + i] = valor; };
   /* as vias: 2 = calçada, 1 = asfalto */
   for (const r of ruas) if (r.tipo !== 'service') pintarFaixa(r.pts, r.larg / 2 + calc, 2, via);
-  for (const r of ruas) pintarFaixa(r.pts, r.larg / 2, 1, via);
+  /* (a rua de serviço não tem calçada: com 5 m, na escala da cena, o corpo do boneco não cabia nela e o bonde ficava preso;
+     anda-se numa faixa de pelo menos 9 m — o asfalto desenhado continua com a largura do mapa) */
+  for (const r of ruas) pintarFaixa(r.pts, r.tipo === 'service' ? Math.max(r.larg / 2, ar.servicoMeia || 4.5) : r.larg / 2, 1, via);
   /* onde não cabe casa: as vias, o estádio, os prédios e as áreas do mapa, e o que a ficha reservar */
   for (let q = 0; q < via.length; q++) if (via[q]) ocup[q] = 1;
   for (const a of osm.areas) if (/stadium|pitch|park|parking|wood|railway/.test(a.tipo) && a.pts.length > 3) pintarPoli(a.pts, 1, ocup);

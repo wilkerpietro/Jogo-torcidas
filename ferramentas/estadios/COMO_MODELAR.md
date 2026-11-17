@@ -778,6 +778,12 @@ têm rumo redondo ou errado (a tabela está nas decisões). Confira se o
 gramado achado é o do estádio e não um de treino ao lado (os Aflitos, a Ilha
 do Retiro): compare com as coordenadas do estádio.
 
+O CAMINHO TEM DE CABER O CORPO, NÃO SÓ O PÉ (Couto Pereira, 17/11/2026): o jogo só anda numa célula de 8 px se o
+disco do boneco (5 px de raio) couber nela, ou seja, se a célula e as quatro vizinhas forem chão. Uma rua de serviço de
+5 m, sem calçada, numa cena de 4,6 px por metro, vira uma fileira de células soltas: a assadeira achava caminho e o
+bonde ficava parado onde nasceu. Hoje a rua de serviço tem pelo menos 9 m andáveis e o teste da assadeira exige o corpo.
+Mesmo assim, em cena nova, rode a chegada no jogo (p_rota) e olhe se TODOS os bondes entram, não só o do jogador.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

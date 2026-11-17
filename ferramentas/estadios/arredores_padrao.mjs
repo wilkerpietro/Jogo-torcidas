@@ -96,7 +96,7 @@ function casco(pts) {
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
 /* o sólido do estádio: tudo o que a ficha põe em pé (as arquibancadas, os muros, os prédios, os postes) */
-function solidoDe(ficha) {
+export function solidoDe(ficha) {
   const pts = [];
   /* (as arquibancadas pelo desenho de verdade, coluna a coluna: o teste de chão de um lance `reto` sobra em cunha nas pontas) */
   for (const anel of ficha.aneis || []) for (const t of anel.trechos) { if (t.tipo === 'vazio') continue;
