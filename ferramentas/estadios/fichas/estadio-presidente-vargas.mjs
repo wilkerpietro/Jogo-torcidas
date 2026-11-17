@@ -13,8 +13,7 @@
    os FERROS DE PROTEÇÃO brancos, e cada boca é uma caixa cor de areia com a
    escada em Y — uma desce pelo meio, duas sobem pelos lados. Na beira do
    gramado, o ALAMBRADO DE VIDRO; no alto da arquibancada, a GRADE de arame;
-   por fora, os painéis cinza com a faixa azul e o vão escuro dos pilares
-   embaixo (pelas fotos da rua que o dono mandou depois: eu tinha posto uma
+   por fora, os painéis cinza com a faixa azul (pelas fotos da rua que o dono mandou depois: eu tinha posto uma
    beira azul no alto e um muro azul de listra laranja, das fotos de 2011).
    · EMBAIXO, no meio, a TRIBUNA: o telhado de aço, inclinado, com a frente no
      alto (e nela o letreiro O PV TAMBÉM É SEU. PRESERVE O ESTÁDIO.) e o fundo
@@ -73,10 +72,11 @@ export default {
     { dentro: { a: 55.5, b: 37, r: 0.5 }, fora: C(0), reto: true, h: [0.12, 0.12], fileiras: 2, corredorFrente: 0,
       trechos: [{ de: 0, ate: 360, tipo: 'passagem', cor: '#4f9a55' }] },
     /* O MURO DE FORA (dono, 17/11/2026, com duas fotos da rua: "O estádio por fora tem essa fachada"): os painéis cinza, a
-       faixa azul, outra fiada cinza e, embaixo, o vão aberto e escuro dos pilares. São quatro muros finos, um na frente do
+       faixa azul e o cinza de novo, até o chão (o vão aberto dos pilares, no térreo, eu tinha feito como uma faixa escura; o
+       dono: "Não entendi essa faixa preta na fachada de fora" — saiu). São três muros finos, um na frente do
        outro e cada um mais baixo (o muro da frente de cada um sobe 1 m acima dele e encosta no de trás do anterior: leva a cor
        do anterior e fica mais baixo que ele, senão as duas cores brigam na mesma parede). A grade de arame fica no alto. */
-    ...[[21.5, 10.9, PAINEL, PAINEL], [21.8, 6.2, FAIXA, PAINEL], [22.1, 4.6, PAINEL, FAIXA], [22.4, 3.1, '#3b3e41', PAINEL]].map(([d, alto, cor, frente]) => ({ dentro: C(d), fora: C(d + 0.3), reto: true, h: [alto - 0.1, alto], fileiras: 1, corredorFrente: 0,
+    ...[[21.5, 10.9, PAINEL, PAINEL], [21.8, 6.2, FAIXA, PAINEL], [22.1, 4.6, PAINEL, FAIXA]].map(([d, alto, cor, frente]) => ({ dentro: C(d), fora: C(d + 0.3), reto: true, h: [alto - 0.1, alto], fileiras: 1, corredorFrente: 0,
       trechos: [{ de: 0, ate: 360, cor, cor2: cor, padrao: 'mosaico', mistura: 0, semCadeiras: true, espelhoPintado: true, corredor: 0, vomitorios: false,
         paredeAtras: true, corFachada: cor, corLado: cor, parapeito: 0, corMureta: frente }] }))
   ],

@@ -15335,6 +15335,10 @@ O dono, com três fotos (uma de perto da arquibancada e duas da rua): "Faça o v
 
 Estimado: a altura do vidro (1,5 m em cima de um muro de 2 m) e de cada faixa da fachada; os pilares do vão de baixo não foram desenhados um a um. Briga e chegada testadas de novo sem erros.
 
+## Presidente Vargas: sem a faixa escura no pé da fachada (dono, 17/11/2026)
+
+O dono: "Não entendi essa faixa preta na fachada de fora." Era o vão aberto e sombreado dos pilares do térreo, que eu tinha feito como uma faixa escura de 3 m; lida de fora, parecia uma listra pintada. Saiu: o muro de fora fica cinza até o chão, com a faixa azul (três muros finos, não quatro). Briga testada de novo sem erros; os arredores foram regravados com caminho até todos os portões.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
