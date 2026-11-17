@@ -582,6 +582,14 @@ continua retangular; tape os dois cantos com blocos na altura do pé do lance.
 "FORMATO DE TRIÂNGULO" DITO PELO DONO: antes de escolher o que é triangular
 (parede, planta, pintura), procure a foto de FRENTE daquele lance.
 
+ARQUIBANCADA BAIXA ATRÁS DE MURO NÃO APARECE NA AÉREA (o Cornélio de Barros,
+17/11/2026): o lado que parece só "muro e bancos de reserva" pode ter seis
+degraus de cimento; procure a sombra em degraus no satélite e uma foto tirada
+do outro lado antes de deixar o lado vazio.
+TRÊS SETORES DA CASA NO MESMO LADO DÃO TRÊS PORTÕES COLADOS e os bondes cruzam o
+funil do vizinho (dez travessias no teste de chegada): espalhe os setores por
+lados diferentes quando houver arquibancada.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

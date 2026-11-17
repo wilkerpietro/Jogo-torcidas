@@ -15121,6 +15121,23 @@ Eu tinha lido "parte superior em formato de triângulo" como as paredes laterais
 
 No gerador, `fecha: k` no trecho: o lance fecha pra trás em volta do meio dele (a fileira do fundo com `k` vezes a largura da da frente). O trapézio que já existia (o `fora` com `a` menor) fecha em volta do meio do campo, e a tribuna não fica no meio. Como a marquise do trecho acompanharia o trapézio, o telhado retangular foi feito com `blocos`. O chão andável continua retangular: os dois cantos que o triângulo deixa são paredes brancas na altura do pé da tribuna.
 
+## Pernambuco: o Cornélio de Barros (dono, 17/11/2026)
+
+O dono, com três fotos aéreas (uma de dia, vazio, e duas de noite): "Tudo certo, vamos pro Cornélio de Barros." E depois, com mais uma foto: "A outra lateral também tem uma arquibancada".
+
+O Cornélio de Barros Muniz e Sá, em Salgueiro, onde o Salgueiro e o Ypiranga/PE já mandavam nos dados (`fichas/estadio-cornelio-de-barros.mjs`):
+
+- **A lateral grande**, de 114 m por 20 de fundura, de degrau azul-claro com as escadas creme e a caixa branca da boca no meio.
+- **Atrás de um gol**, a outra, de 85 m por 15, de degrau claro, em cima da galeria de pilares de tijolo que dá pra rua. As duas não se tocam no canto.
+- **A lateral da torre**: a arquibancada baixa, de seis degraus de cimento, dos dois lados da torre das cabines (três andares, branca de faixas azuis), com o muro branco por trás e os bancos de reserva de cobertura azul na frente. Na primeira passada eu a tinha deixado sem arquibancada: nas três aéreas ela fica escondida atrás do muro.
+- **Atrás do outro gol**, só o muro baixo azul-claro e branco, com a praça por trás.
+
+O contorno do gramado no OpenStreetMap pega o terreno inteiro e fica 9 m fora do meio do campo; o meio e o rumo (147,5 graus) saíram das linhas do campo no satélite.
+
+Estimado: as alturas, a cor do degrau da de trás do gol, a galeria de tijolo e as torres de luz. Na foto do estádio cheio há mais um lance pequeno num canto, que não entrou. As torcidas são escolha minha: a da casa no meio da lateral grande, com apoio na mesma lateral e na arquibancada baixa da torre; a visitante atrás do gol. Com os três setores da casa na lateral grande, os três portões ficavam colados e os bondes cruzavam o funil do vizinho (dez travessias no teste); com um deles na lateral da torre, sobraram as duas de sempre.
+
+O Cornélio de Barros entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
