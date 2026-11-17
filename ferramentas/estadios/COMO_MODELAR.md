@@ -743,6 +743,12 @@ São Luís é `estadio-castelao-ma`. O jogo acha a cena pelo clube (`clubes`).
 COBERTURA OU ARQUIBANCADA NO SATÉLITE: uma sombra corrida do lado de dentro de um
 anel escuro diz que a beira de dentro dele é ALTA, ou seja, que é cobertura.
 
+MARQUISE QUE PASSA PRA FORA DA ARQUIBANCADA (o Albertão, 17/11/2026): duas
+`coberturasAnel` — da boca até a beira da bacia (transparente na vista de cima)
+e da beira da bacia até a beira de fora (`opaca: true`). As alturas das duas
+têm de se encontrar na beira da bacia: `alturas(ang)` com a mesma conta nas
+duas (o ajudante `NA_BEIRA` da ficha dele).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

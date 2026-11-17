@@ -15381,6 +15381,22 @@ Estimado: as alturas (a marquise a 26 m); tudo o que fica debaixo da marquise; s
 
 Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). O Imperatriz, que nos dados ainda manda no Castelão, passa pro Frei Epifânio quando a ficha dele for feita.
 
+## Piauí: Albertão (dono, 17/11/2026)
+
+O segundo dos três estádios que o dono pediu por último. É o Estádio Governador Alberto Tavares Silva, do Ríver, em Teresina; a ficha é `fichas/estadio-albertao.mjs`. O dono não mandou fotos: saiu do satélite (Google, nítido) e de uma aérea do acervo livre da Wikimedia, sem data, que ficou fora do repositório. O rumo do campo (163,8 graus) saiu do gramado no OpenStreetMap.
+
+**O estádio.** Uma bacia oval de um lance só, de volta inteira, descoberta, em volta de um gramado oval com o fosso e o muro por fora:
+
+- as cadeiras claras, quase brancas, com o amarelo no meio das duas laterais e o azulado na curva do sul;
+- **a marquise** de concreto escuro, de nervuras, na lateral do oeste: cobre o fundo da bacia e avança 35 m pra fora dela, numa meia-lua que afina até sumir nas duas curvas; a beira de dentro fica a 25 m e a de fora a 20;
+- quatro torres de luz altas, nos cantos, fora da bacia.
+
+A marquise são duas `coberturasAnel`: a de cima das cadeiras sai transparente na vista de cima do jogo, a de fora delas (`opaca`) sai inteira; as alturas das duas se encontram na beira da bacia (`alturas`).
+
+Estimado: as alturas (o alto da bacia a 16,5 m); onde começa e acaba cada cor (o satélite de hoje mostra tudo desbotado; a aérea antiga tem as cores mais vivas); a marquise por baixo e o que há atrás dela (uma parede curva; as rampas e as aletas da fachada não foram desenhadas); as cabines. O pórtico da entrada, que a aérea mostra longe do estádio, não entrou. As torcidas são escolha minha: a Esporão do Galo na curva do norte, a visitante na do sul.
+
+O Albertão entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

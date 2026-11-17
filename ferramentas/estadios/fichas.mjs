@@ -640,3 +640,4 @@ import arenaDasDunas from './fichas/estadio-arena-das-dunas.mjs'; FICHAS[arenaDa
 import presidenteVargas from './fichas/estadio-presidente-vargas.mjs'; FICHAS[presidenteVargas.id] = presidenteVargas;
 import junco from './fichas/estadio-junco.mjs'; FICHAS[junco.id] = junco;
 import castelaoMa from './fichas/estadio-castelao-ma.mjs'; FICHAS[castelaoMa.id] = castelaoMa;
+import albertao from './fichas/estadio-albertao.mjs'; FICHAS[albertao.id] = albertao;
