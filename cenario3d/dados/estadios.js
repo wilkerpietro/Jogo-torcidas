@@ -1,4 +1,4 @@
-/* ESTADIOS — 74 pracas de jogo, com o bairro de cada uma
+/* ESTADIOS — 75 pracas de jogo, com o bairro de cada uma
    GERADO por ferramentas/importar_estadios.py — nao editar a mao.
    Fonte: legado/unity/data.js (prototipo antigo). */
 TO.dados.estadios = [
@@ -30,7 +30,7 @@ TO.dados.estadios = [
   {"id": "brinco-de-ouro", "nome": "Brinco de Ouro", "mapa": "regiao-de-campinas", "bairro": "Distrito Industrial", "capacidade": 29108, "mandantes": ["guarani"]},
   {"id": "caninde", "nome": "Canindé", "mapa": "sao-paulo", "bairro": "Canindé", "capacidade": 21004, "mandantes": ["portuguesa"]},
   {"id": "carlos-zamith", "nome": "Carlos Zamith", "mapa": "manaus", "bairro": "Sâo José Operário", "capacidade": 5000, "mandantes": ["amazonas", "manaus"]},
-  {"id": "castelao", "nome": "Castelão", "mapa": "maranhao", "bairro": "Jórdoa", "capacidade": 40149, "mandantes": ["sampaio-correa", "moto-club", "imperatriz"]},
+  {"id": "castelao", "nome": "Castelão", "mapa": "maranhao", "bairro": "Jórdoa", "capacidade": 40149, "mandantes": ["sampaio-correa", "moto-club"]},
   {"id": "colosso-da-lagoa", "nome": "Colosso da Lagoa", "mapa": "interior-do-rs", "bairro": "Erechim", "capacidade": 22000, "mandantes": ["ypiranga-rs"]},
   {"id": "conselheiro-galvao", "nome": "Conselheiro Galvão", "mapa": "suburbio-carioca", "bairro": "Madureira", "capacidade": 5014, "mandantes": ["madureira"]},
   {"id": "cornelio-de-barros", "nome": "Cornélio de Barros", "mapa": "interior-de-pe", "bairro": "Salgueiro I", "capacidade": 12070, "mandantes": ["salgueiro", "ypiranga-pe"]},
@@ -51,6 +51,7 @@ TO.dados.estadios = [
   {"id": "estadio-do-souza", "nome": "Estádio do Souza", "mapa": "belem", "bairro": "Terra Firme", "capacidade": 8000, "mandantes": ["tuna-luso"]},
   {"id": "etelvino-mendonca", "nome": "Etelvino Mendonca", "mapa": "sergipe", "bairro": "Itabaiana I", "capacidade": 11224, "mandantes": ["itabaiana"]},
   {"id": "frasqueirao", "nome": "Frasqueirão", "mapa": "rio-grande-do-norte", "bairro": "Ponta Negra", "capacidade": 15082, "mandantes": ["abc"]},
+  {"id": "frei-epifanio", "nome": "Frei Epifânio", "mapa": "maranhao", "bairro": "Imperatriz", "capacidade": 10000, "mandantes": ["imperatriz"]},
   {"id": "fumeirao", "nome": "Fumeirão", "mapa": "alagoas", "bairro": "Arapiraca I", "capacidade": 15332, "mandantes": ["asa"]},
   {"id": "germano-kruger", "nome": "Germano Kruger", "mapa": "interior-do-pr", "bairro": "Ponta Grossa I", "capacidade": 10632, "mandantes": ["operario-pr"]},
   {"id": "giulite-coutinho", "nome": "Giulite Coutinho", "mapa": "suburbio-carioca", "bairro": "Nova Iguaçu", "capacidade": 13544, "mandantes": ["america"]},

@@ -15397,6 +15397,24 @@ Estimado: as alturas (o alto da bacia a 16,5 m); onde começa e acaba cada cor (
 
 O Albertão entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
 
+## Maranhão: Frei Epifânio, e o Imperatriz sai do Castelão (dono, 17/11/2026)
+
+O terceiro dos três estádios que o dono pediu por último ("Castelão, Albertão e Frei Epifânio"). É o Estádio Municipal Frei Epifânio d'Abadia, em Imperatriz; a ficha é `fichas/estadio-frei-epifanio.mjs`.
+
+**Os dados.** O dono listou o Frei Epifânio entre os estádios que faltam; nos dados, o Imperatriz mandava no Castelão de São Luís. Entendi que ele passa a mandar no estádio da cidade dele, como o Sousa e o Águia de Marabá antes. O Imperatriz manda agora no Frei Epifânio (`frei-epifanio`, mapa do Maranhão, bairro Imperatriz, 10.000 lugares; as fontes vão de 10 a 12 mil) em `dados/times.js`, `dados/torcidas.js` (a Força Jovem Cavalina), `dados/estadios.js` (75 praças), `dados/cidades.js`, nas duas fontes de `dados/fonte/` e nas tabelas de `importar_planilha.py` e `importar_estadios.py`; as cópias de `cenario3d/dados/` e o pacote `cenario3d/js/jogo.js` levaram a mesma troca. O Castelão de São Luís fica com o Sampaio Corrêa e o Moto Club.
+
+**O estádio**, sem fotos do dono: pelo satélite (Google, nítido) e por uma aérea do acervo livre da Wikimedia, sem data, que ficou fora do repositório. O rumo do campo (50 graus) saiu do gramado no OpenStreetMap. Quatro arquibancadas coladas no gramado, de cadeiras azul-claras:
+
+- **a lateral descoberta**, de 100 m por 15, que dobra em curva nos dois cantos e emenda com as de trás dos gols;
+- **atrás do gol da entrada**, a de 16 m de fundura; por trás dela, pra rua, a fachada: a parede clara com os painéis cor de vinho e o letreiro ESTÁDIO FREI EPIFÂNIO no meio;
+- **atrás do outro gol**, a mais rasa (11 m);
+- **a lateral coberta**, solta das outras: o telhado branco de 110 m, as cadeiras azuis com o bloco vermelho no meio e as cabines no alto;
+- quatro torres de luz brancas, nos cantos.
+
+Estimado: as alturas (a lateral descoberta a 7,5 m, o telhado a 13); o tom das cadeiras (desbotadas no satélite; ficou o azul da aérea); o tamanho do bloco vermelho e das cabines; os painéis da fachada. As torcidas são escolha minha: a Força Jovem Cavalina no meio da lateral descoberta, a visitante atrás do gol oposto à entrada.
+
+O Frei Epifânio entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). Com ele, todos os estádios dos dados têm ficha, menos o Romeirão, que ainda não foi feito.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

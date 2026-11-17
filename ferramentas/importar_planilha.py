@@ -93,6 +93,8 @@ CLUBE_TROCADO = {
 # Mangueirão (que fica com o Remo e o Paysandu) e manda no Zinho de Oliveira, em Marabá.
 # 16/11/2026, o dono: "inicie pelo estádio carlos zamith" e, perguntado quem manda nele, "Amazonas, Manaus" — os dois
 # saem da Arena da Amazônia (que fica sem clube e sai da lista) e mandam no Carlos Zamith.
+# 17/11/2026, o dono: "vamos pros últimos estádios que faltam, os do Maranhão/Piauí. Castelão, Albertão e Frei Epifânio" — o
+# Imperatriz sai do Castelão de São Luís (que fica com o Sampaio Corrêa e o Moto Club) e manda no Frei Epifânio, em Imperatriz.
 # 17/11/2026, o dono, com as fotos do Marizão: "Vamos pro estádio do Sousa, ele vai ter estádio próprio agora" — o Sousa sai do
 # Almeidão (que fica só com o Botafogo/PB) e manda no Marizão (o Antônio Mariz, em Sousa).
 ESTADIO_CORRIGIDO = {
@@ -106,7 +108,7 @@ ESTADIO_CORRIGIDO = {
  'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Limeirão','xv-de-piracicaba':'Barão de Serra Negra',
  'noroeste':'Alfredo de Castilho','ituano':'Novelli Júnior','iguatu':'Arena Romeirão','maringa':'Willie Davids',
  'caxias':'Estadio Centenario','ypiranga-rs':'Colosso da Lagoa','pelotas':'Boca do Lobo',
- 'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
+ 'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Frei Epifânio',
  'treze':'Amigão','sousa':'Marizão','sergipe':'Batistão','madureira':'Conselheiro Galvão',
  'goytacaz':'Ary de Oliveira e Souza','americano':'Godofredo Cruz',
  'portuguesa':'Canindé','sao-jose':"Passo d'Areia",

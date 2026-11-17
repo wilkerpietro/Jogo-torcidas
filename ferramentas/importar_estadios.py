@@ -106,6 +106,8 @@ NOVOS = [
     {'nome': 'Carlos Zamith', 'mapa': 'manaus', 'bairro': 'Sâo José Operário'},
     # 17/11/2026, o dono: "Vamos pro estádio do Sousa, ele vai ter estádio próprio agora" — o Sousa sai do Almeidão e manda no Marizão.
     {'nome': 'Marizão', 'mapa': 'paraiba', 'bairro': 'Sousa'},
+    # 17/11/2026, o dono lista o Frei Epifânio entre os estádios que faltam — o Imperatriz sai do Castelão de São Luís e manda nele.
+    {'nome': 'Frei Epifânio', 'mapa': 'maranhao', 'bairro': 'Imperatriz'},
 ]
 
 

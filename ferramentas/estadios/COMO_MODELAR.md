@@ -749,6 +749,13 @@ e da beira da bacia até a beira de fora (`opaca: true`). As alturas das duas
 têm de se encontrar na beira da bacia: `alturas(ang)` com a mesma conta nas
 duas (o ajudante `NA_BEIRA` da ficha dele).
 
+ARQUIBANCADAS DE FUNDURAS DIFERENTES NUM ANEL RETO (o Frei Epifânio,
+17/11/2026): a beira de dentro é uma só; cada trecho leva o `fora` dele (e o
+`h`), e os cantos em curva usam o `fora` do lado com que emendam.
+ESTÁDIO NOVO NA LISTA (`dados/estadios.js`): a lista segue o NOME, não o id;
+ponha a linha depois do vizinho de nome (o Frei Epifânio depois do
+Frasqueirão), nos três lugares: `dados/`, `cenario3d/dados/` e o pacote.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

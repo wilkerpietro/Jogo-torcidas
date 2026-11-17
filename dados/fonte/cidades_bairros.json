@@ -5662,10 +5662,11 @@
    "temPraia": true,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Castelão",
-    "Albertão"
+    "Albertão",
+    "Frei Epifânio"
    ],
    "rodovias": [
     "Rodovia Nordeste 1",

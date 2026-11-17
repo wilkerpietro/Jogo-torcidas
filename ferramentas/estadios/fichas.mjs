@@ -641,3 +641,4 @@ import presidenteVargas from './fichas/estadio-presidente-vargas.mjs'; FICHAS[pr
 import junco from './fichas/estadio-junco.mjs'; FICHAS[junco.id] = junco;
 import castelaoMa from './fichas/estadio-castelao-ma.mjs'; FICHAS[castelaoMa.id] = castelaoMa;
 import albertao from './fichas/estadio-albertao.mjs'; FICHAS[albertao.id] = albertao;
+import freiEpifanio from './fichas/estadio-frei-epifanio.mjs'; FICHAS[freiEpifanio.id] = freiEpifanio;
