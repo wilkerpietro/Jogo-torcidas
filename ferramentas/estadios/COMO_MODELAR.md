@@ -606,6 +606,15 @@ TRAVESSIA ACUSADA PELO CONFERIDOR: olhe o tamanho do passo (`cruza.js` imprime o
 dois pontos). Passo de mais de 100 px entre duas amostras cortando o bico de um
 funil é a corda da amostragem, não travessia; passo curto é de verdade.
 
+CORREDOR HORIZONTAL NÃO É DIVISA DE ANDAR (o Amigão, 17/11/2026; o dono: "visto de
+longe parece diferença de andares"): faixa clara no meio de uma arquibancada,
+com as bocas em cima, é um corredor de circulação num lance só. Um anel, a faixa
+no `pinta` (por fração da subida), `vomitorios.f` logo acima dela. Dois anéis só
+com muro alto entre as partes, visto numa foto de perto.
+PEÇAS ESPALHADAS NUMA CURVA (os pilares dos fundos do Amigão): gere os `blocos`
+na ficha, com o ponto no ângulo e na fração entre as duas elipses (os ajudantes
+`raio` e `PT` da ficha dele, que valem pra elipse fora do meio).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

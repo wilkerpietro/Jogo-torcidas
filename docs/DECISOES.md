@@ -15167,6 +15167,16 @@ Estimado: as alturas (as laterais sobem uns 17 m), a divisa dos dois lances, ond
 
 O Amigão entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes. O conferidor acusa doze travessias de gradil, todas em passos de mais de 100 px entre duas amostras, no bico dos funis inclinados dos portões de canto: é o falso positivo de sempre.
 
+## Amigão: um lance só, e os pilares dos fundos (dono, 17/11/2026)
+
+O dono, com uma foto de perto de um dos fundos: "As arquibancadas do amigão não tem dois andares, são só corredores horizontais pra facilitar o trânsito dos torcedores. É porque visto de longe parece diferença de andares mesmo. Adicione os pilares que ficam atrás dos gols pra dar um realismo maior."
+
+**Um lance só.** Eu tinha feito as laterais em dois anéis, com um degrau de altura e a mureta branca entre eles. Agora são um anel só, de degrau contínuo do pé ao alto (de 2,4 a 17,6 m), com as escadas subindo direto; o corredor horizontal do meio é uma faixa clara pintada no `pinta` do trecho, e as bocas abrem logo acima dele. Debaixo da cobertura, o degrau é azul do corredor pra cima. É o mesmo engano do Barradão (faixa que parece outro lance).
+
+**Os fundos inacabados**, pela foto de perto: a terra em degraus com mato, também num lance só e mais baixa; os tocos de concreto das fundações em cinco fileiras que acompanham a curva (três do pé ao corredor, duas do corredor pro alto); o caminho branco do corredor; a casinha branca; e, por fora, o muro de losangos azul-marinho e vermelhos, feito em duas fiadas de quadros desencontrados. Os pilares e os quadros são `blocos` gerados na ficha, com o ponto calculado sobre as elipses.
+
+Estimado: quantos pilares e onde (a foto mostra um pedaço de um fundo), a altura do corredor (no meio) e o desenho dos losangos. Briga e chegada testadas de novo, sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
