@@ -48091,6 +48091,14 @@ TO.diaJogo.combate = (function(){
         ax = d.x + sg*mp.nx*140; ay = d.y + sg*mp.ny*140; ramo='apartado';
         /* (o alvo anda junto com ele: sem isto o passo desistia em 0,8 s, como de um alvo inalcançável) */
         d.acomodado=false; d.melhorDist=undefined; d.semGanho=0;
+      } else if(recua && D.assentos && !d.doJogador && (gp = vadiagem(J, d))){
+        /* O RIVAL QUE RECUA VADIA (dono, 17/11/2026: "Quando um rival recuar, ele não recua pro seu ponto de spawn, fica
+           vadiando em alguma área ao redor do estádio, é visualmente feio eles agrupados recuados sem fazer nada"): no mapa
+           com o estádio, o bonde dele vai pra um canto em volta do estádio, longe da briga, e lá cada um anda pro seu
+           lugar, espalhado; de tempos em tempos o canto muda */
+        ramo = 'vadia';
+        if(U.dist(d.x, d.y, gp.x, gp.y) < 150){ ax = gp.x + d._vad.dx; ay = gp.y + d._vad.dy; }
+        else { campo = gp.campo; usarCampo = true; }
       } else if(recua){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -48327,7 +48335,7 @@ TO.diaJogo.combate = (function(){
             dirx=gx/gd; diry=gy/gd;
           }
         }
-        if(recua && !d.fugindo){
+        if(recua && !d.fugindo && ramo !== 'vadia'){
           const s=D.spawns.find(x=>x.id===d.spawn);
           if(s && U.dist(d.x,d.y,s.x,s.y)<40){dirx=0;diry=0;}
         }
@@ -48363,7 +48371,7 @@ TO.diaJogo.combate = (function(){
       /* (quem é do bonde do jogador e ficou pra trás aperta o passo até alcançar o líder: os dois andam na mesma
          velocidade, e sem isso quem saiu atrasado chegava na briga depois de o líder já ter caído sozinho) */
       const alcancando = d.doJogador && lider && !d.lider && !d.entrando && !recua && U.dist2(d.x,d.y,lider.x,lider.y) > 100*100;
-      const vel=P.velocidade*(d.fugindo||d._cacando||d.fugaBomba?1.25:recua?1.15:passeio?0.5:alcancando?1.22:1);
+      const vel=P.velocidade*(d.fugindo||d._cacando||d.fugaBomba?1.25:ramo==='vadia'?(U.dist(d.x,d.y,(gp||d).x,(gp||d).y)<150?0.45:0.9):recua?1.15:passeio?0.5:alcancando?1.22:1);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
            a 8 px mantém micromovimento que, com 60 discos na tela,
@@ -48719,7 +48727,10 @@ TO.diaJogo.combate = (function(){
          portão do estádio segue valendo — ali sumir é entrar no jogo */
       const naPonta = e && (fugaPelaEntrada() || e.x <= 60 || e.y <= 60 ||
                             e.x >= A.W - 60 || e.y >= A.H - 60);
-      if(naPonta && rumoAoInimigo(d.x, d.y, e, ini) < FUGA_PRA_CIMA){
+      /* NO MAPA COM O ESTÁDIO, QUEM CORRE VAI PRO PORTÃO DELE (dono, 17/11/2026: "o 'eles correram' deve ser eles fugindo pro
+         portão deles, entrando na arquibancada"): mesmo com a briga no caminho, o campo dá a volta nela; só sem rota é que
+         cai nas outras bocas */
+      if(naPonta && (D.assentos || rumoAoInimigo(d.x, d.y, e, ini) < FUGA_PRA_CIMA)){
         const c = A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
         if(!c.passo(d.x,d.y).semRota)
           return {destino:{x:e.x, y:e.y, raio:e.raio||34, entrada:e.id}, campo:c};
@@ -48755,6 +48766,37 @@ TO.diaJogo.combate = (function(){
   }
   /* usada pelos testes e pelo editor: só o destino, sem o campo */
   function alvoDeFuga(J, d){ const r=rotaDeFuga(J,d); return r && r.destino; }
+  /* O CANTO EM QUE O BONDE RECUADO VADIA (17/11/2026): um por bonde (um campo de rota só), escolhido entre pontos de chão a
+     300 a 700 px de onde o bonde está, do lado contrário ao da briga e o mais longe dela; troca a cada 10 a 16 s. Cada um
+     tem o seu lugar em volta do canto (até 110 px), que também muda de vez em quando: é isso que espalha o bolo. */
+  function vadiagem(J, d){
+    J.vadia = J.vadia || {};
+    const ini = centroDoInimigo(J, d.lado);
+    let v = J.vadia[d.spawn];
+    if(!v || J.t > v.ate){
+      const meus = J.discos.filter(o=>o.vivo && o.spawn===d.spawn);
+      const cx = meus.reduce((q,o)=>q+o.x,0)/(meus.length||1), cy = meus.reduce((q,o)=>q+o.y,0)/(meus.length||1);
+      let melhor = null, mq = -Infinity;
+      for(let k=0;k<48;k++){
+        const a = Math.random()*Math.PI*2, r = 300 + Math.random()*400, x = cx + Math.cos(a)*r, y = cy + Math.sin(a)*r;
+        if(x < 40 || y < 40 || x > A.W-40 || y > A.H-40 || !A.caminhavel(x, y)) continue;
+        const longe = ini ? U.dist(x, y, ini.x, ini.y) : r, contra = ini ? ((x-cx)*(cx-ini.x) + (y-cy)*(cy-ini.y)) / ((r||1)*(U.dist(cx,cy,ini.x,ini.y)||1)) : 0;
+        const q = longe + contra*120;
+        if(q > mq){ mq = q; melhor = {x, y}; }
+      }
+      if(!melhor) return null;
+      const qx = Math.round(melhor.x/64)*64, qy = Math.round(melhor.y/64)*64;
+      const campo = A.campoDoPonto('vadia:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades);
+      if(campo.passo(d.x, d.y).semRota) return null;
+      v = J.vadia[d.spawn] = {x:qx, y:qy, campo, ate: J.t + 10 + Math.random()*6};
+    }
+    if(!d._vad || J.t > d._vad.ate){
+      for(let k=0;k<12;k++){ const a = Math.random()*Math.PI*2, r = 20 + Math.random()*90, dx = Math.cos(a)*r, dy = Math.sin(a)*r;
+        if(A.caminhavel(v.x+dx, v.y+dy)){ d._vad = {dx, dy, ate: J.t + 4 + Math.random()*5}; break; } }
+      if(!d._vad || J.t > d._vad.ate) d._vad = {dx:0, dy:0, ate: J.t + 3};
+    }
+    return v;
+  }
 
   /* QUEM CORRE NÃO SOME (o dono, 07/10/2026: "Quando uma torcida corre
      agora, em todas as cenas de fuga não existirá mais o boneco sumir da
@@ -63663,7 +63705,9 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     const dentro = cenaDoEstadio(e, d), fora = (TO.dados.arredoresReais || {})[dentro] || (TO.dados.arredoresReais || {})[String(dentro).split('@')[0]];
     const soFora = !!((fora && fora.soFora) || ((TO.dados.estadiosLowPoly || {})[dentro] || {}).soFora);
     const local = soFora ? 'arredores' : dentro;
-    const setores = soFora ? {mandante:3, visitante:2} : (SETORES_ESTADIO[local] || {mandante:3, visitante:3});
+    /* (três bondes de cada lado também na rua: a terceira torcida visitante não se junta mais à segunda — dono, 17/11/2026, o
+       Ceará no Castelão: "a torcida do ceará spawna com as torcidas misturadas, isso não pode acontecer") */
+    const setores = soFora ? {mandante:3, visitante:3} : (SETORES_ESTADIO[local] || {mandante:3, visitante:3});
     const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
     const outroLado = d.somosCasa ? 'visitante' : 'mandante';
     /* mais torcidas que setores: as menores se juntam no último */

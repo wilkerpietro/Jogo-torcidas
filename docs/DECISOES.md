@@ -15650,6 +15650,47 @@ caminhos de verdade de cada bonde até o portão dele:
   dão direto no asfalto). Tudo isso é escolha minha, sem marca do dono.
 - **Conferido**: as 27 cenas (19 estádios e 8 variantes) com caminho de todos os bondes na assadeira e no jogo.
 
+## Briga nos arredores: o 3º bonde visitante, quem corre entra e o rival recuado vadia (dono, 17/11/2026)
+
+O dono, testando na bancada da chegada: "num jogo fortaleza x ceará a torcida do ceará spawna com as torcidas
+misturadas, isso não pode acontecer"; "quando ocorrer uma briga nos arredores, o 'eles correram' deve ser eles fugindo pro
+portão deles, entrando na arquibancada. Quando um rival recuar, ele não recua pro seu ponto de spawn, fica vadiando em
+alguma área ao redor do estádio, é visualmente feio eles agrupados recuados sem fazer nada" (com o print do bonde
+recuado parado em bolo no meio da rua).
+
+- **As torcidas misturadas**: na rua o jogo só tinha dois bondes visitantes, e a terceira organizada do visitante (a
+  Aliança, do Ceará) se juntava à segunda (a MOFI) — as duas nasciam no mesmo bolo. Agora toda cena de fora tem o 3º bonde
+  visitante, que só se enche quando o visitante vem com três torcidas (a regra do dono: "a chegada visitante 3 vai ser só
+  em caso de times com 3 torcidas"), e o jogo deixa três bondes de cada lado na rua. Nos arredores de verdade ele nasce
+  na 3ª chegada marcada ou, sem ela, 15 m atrás da última; no clássico do Castelão a Aliança nasce no ponto dela e entra
+  pelo portão da MOFI; nos arredores padrão, mais pra dentro da mesma rua; no Independência, no Serra Dourada e no Couto
+  Pereira, à mão.
+- **"Eles correram"**: no mapa com o estádio, quem debanda vai sempre pro portão dele (o campo de rota dá a volta na
+  briga) e aparece na arquibancada; antes, se o portão ficava do lado do inimigo, ele corria pra outro lado e parava lá.
+- **O recuo do rival** (a minha leitura da frase do dono: o problema é o bolo parado; o rival recuado deve ficar
+  vadiando em volta do estádio): no mapa com o estádio, o bonde do rival que recua escolhe um canto de chão a 300 a 700 px
+  dele, do lado contrário ao da briga, e cada um anda devagar pro seu lugar em volta desse canto, espalhado até 110 px; o
+  canto muda a cada 10 a 16 s e o lugar de cada um, a cada 4 a 9 s. O recuo do jogador (R) continua voltando ao ponto
+  de saída.
+- **Conferido** (Couto Pereira, briga de rua): mandando o rival recuar, os 30 foram pra dois cantos diferentes, andando,
+  espalhados; fazendo ele debandar, os 30 entraram pelo portão deles e a cena acabou; sem erro de página.
+- **Todas as cenas de fora foram assadas de novo** (as 69 padrão, as 22 de verdade e as 8 variantes) com o 3º bonde
+  visitante. Um tropeço meu: a borda dos trechos no sólido do estádio, que eu tinha posto pra todos os arredores, mexeu
+  nos portões dos arredores padrão, e no Santa Cruz (Ribeirão Preto) o funil da visitante fechou — no jogo, a visitante
+  ficava sem caminho (com a cena de antes, chegava). A borda ficou só nos arredores de verdade; os padrão voltaram ao
+  sólido de antes. Conferido no jogo: Santa Cruz, Vila Capanema, Willie Davids e Castelão de São Luís com os seis bondes
+  ligados ao portão. (A assadeira ainda acusa falta de caminho nos três últimos: com a espessura de corpo que ela passou
+  a exigir, os funis estreitos do gerador padrão contam como fechados, e no jogo não são.)
+- **A decoração fiel** (dono: "decorar as ruas e os espaços conforme eles realmente são na realidade, veja se consegue
+  ficar captando do street view"): daqui não há acesso ao Street View. O dono vai usar outra sessão, com o Google Maps no
+  navegador, pra levantar cada estádio (`docs/PROMPT-STREET-VIEW.md`: os pontos com coordenadas — portões e chegadas —,
+  o que descrever em cada um e um .zip de prints, que fica fora do repositório). Do lado de cá entram o satélite e o que
+  o OpenStreetMap tem e a cena ainda não usa (número de faixas, calçadas, semáforos, faixas de pedestre, pontos de
+  ônibus, andares dos prédios). O piloto é o Couto Pereira.
+- **O protótipo 3D** (dono: "eu quero fazer um protótipo 3d dos arredores e dos estádios pra ver se fica legal"): a
+  bancada exporta a cena de fora inteira em .glb (`ferramentas/estadios/exportar3d.js <id> <saída.glb>`), pra ser vista
+  girando numa página à parte.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

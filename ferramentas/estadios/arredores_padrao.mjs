@@ -96,15 +96,16 @@ function casco(pts) {
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
 /* o sólido do estádio: tudo o que a ficha põe em pé (as arquibancadas, os muros, os prédios, os postes) */
-export function solidoDe(ficha) {
+export function solidoDe(ficha, borda) {
   const pts = [];
   /* (as arquibancadas pelo desenho de verdade, coluna a coluna: o teste de chão de um lance `reto` sobra em cunha nas pontas) */
   for (const anel of ficha.aneis || []) for (const t of anel.trechos) { if (t.tipo === 'vazio') continue;
     if (t.tipo === 'passagem') { for (let a = t.de; a <= t.ate; a += 3) { const r = raioDe(a, t.fora || anel.fora); pts.push([Math.cos(a * RAD) * r, Math.sin(a * RAD) * r]); } continue; }
     const G = colunasDe(ficha, anel, t); for (const a of G.angs) { pts.push(G.pos(a, 0)); pts.push(G.pos(a, 1)); }
-    /* (e a borda de fora do trecho, de 3 em 3 graus: o trecho que passa pelo zero, de -25 a 25, não dava coluna nenhuma — o
-       anel de cima do Arruda ficava fora do sólido e o chão dos arredores entrava nele) */
-    for (let a = t.de; a <= t.ate; a += 3) { const r = raioDe(a, t.fora || anel.fora); pts.push([Math.cos(a * RAD) * r, Math.sin(a * RAD) * r]); } }
+    /* (e, nos arredores de verdade, a borda de fora do trecho, de 3 em 3 graus: o trecho que passa pelo zero, de -25 a 25, não
+       dava coluna nenhuma — o anel de cima do Arruda ficava fora do sólido e o chão dos arredores entrava nele. Os arredores
+       padrão ficam com o sólido de antes: mudar o sólido mexe nos portões, e no Santa Cruz o funil da visitante fechou) */
+    if (borda) for (let a = t.de; a <= t.ate; a += 3) { const r = raioDe(a, t.fora || anel.fora); pts.push([Math.cos(a * RAD) * r, Math.sin(a * RAD) * r]); } }
   for (const b of ficha.blocos || []) { if ((b.h || 0) + (b.y || 0) < 1 || b.cobertura) continue; const g = (b.giro || 0) * RAD, c = Math.cos(g), s = Math.sin(g);
     for (const [x, z] of [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]) pts.push([b.u + x * b.w * c + z * b.d * s, b.v + x * b.w * s - z * b.d * c]); }
   /* (as arquibancadas retas avulsas, os telhados em polígono e as passarelas também são estádio) */
@@ -228,7 +229,9 @@ export function arredoresPadrao(ficha) {
     const naHorizontal = Math.abs(q.p[1] - R.cima) < 1 || Math.abs(q.p[1] - R.baixo) < 1;
     return k ? [q.p[0] + (naHorizontal ? Math.sign(cu - q.p[0]) * 26 * k : 0), q.p[1] + (naHorizontal ? 0 : Math.sign(cv - q.p[1]) * 26 * k)] : q.p; };
   for (const id of ['mandante1', 'mandante2', 'mandante3']) { const n = entradaDe[id]; if (n == null) continue; const g = portao(n), de = pegar([g.u, g.v], false); if (de) bondes[id] = { de, portao: n, exato: true }; }
-  if (eV) for (const id of ['visitante1', 'visitante2']) { const de = pegar([eV.g.u, eV.g.v], true); if (de) bondes[id] = { de, portao: eV.n, exato: true }; }
+  /* (o 3º bonde visitante, pra quem vem com três torcidas — dono, 17/11/2026: "a chegada visitante 3 vai ser só em caso de
+     times com 3 torcidas"; sem ele, a terceira se juntava à segunda e as duas nasciam misturadas) */
+  if (eV) for (const id of ['visitante1', 'visitante2', 'visitante3']) { const de = pegar([eV.g.u, eV.g.v], true); if (de) bondes[id] = { de, portao: eV.n, exato: true }; }
   const quadra = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]];
   /* ---- O QUARTEIRÃO DO ESTÁDIO NÃO FICA VAZIO (dono, 16/11/2026: "adicione elementos decorativos no quarteirão do estádio como
      calçada ou concreto, grama, mais árvores, e pontos de venda como barraquinhas, churrasquinho, cachorro quente e etc, como

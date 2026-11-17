@@ -55,7 +55,7 @@ export const AJUSTES = {
   'estadio-castelao': { unir: 30, sel: { chM: [12, 13], enM: [0, 1], chV: [8], enV: [6] },
     variantes: {
       'ceara': { sel: { chM: [9, 10, 11], enM: [2, 3, 3], chV: [7], enV: [5] }, torcidas: { cearamor: 'mandante1', mofi: 'mandante2', alianca: 'mandante3' } },
-      'fortaleza@ceara': { sel: { chM: [12, 13], enM: [0, 1], chV: [9, 10], enV: [2, 3] }, torcidas: { leoes_da_tuf: 'mandante1', jovem_garra_tricolor: 'mandante2' } },
+      'fortaleza@ceara': { sel: { chM: [12, 13], enM: [0, 1], chV: [9, 10, 11], enV: [2, 3, 3] }, torcidas: { leoes_da_tuf: 'mandante1', jovem_garra_tricolor: 'mandante2' } },
       'ceara@fortaleza': { sel: { chM: [9, 10, 11], enM: [2, 3, 3], chV: [12, 13], enV: [0, 1] }, torcidas: { cearamor: 'mandante1', mofi: 'mandante2', alianca: 'mandante3' } } } },
   /* Mangueirão: entradas 0 e 1 do Remo (a 1 = a da visitante nos jogos do Paysandu, 4), 2 e 3 do Paysandu (a 3 = a da
      visitante nos jogos do Remo, 5); chegadas 6 e 8 do lado do Remo (a visitante quando o Paysandu manda), 7 e 9 do lado do
@@ -102,7 +102,7 @@ export function arredoresDasMarcas(ficha, osmLev, M, o = {}) {
   const limite = corte.length > 4 ? corte : null;
 
   /* O SÓLIDO e o meio dele */
-  const solido = o.solido || solidoDe(ficha), su = solido.reduce((q, p) => q + p[0], 0) / solido.length, sv = solido.reduce((q, p) => q + p[1], 0) / solido.length;
+  const solido = o.solido || solidoDe(ficha, true), su = solido.reduce((q, p) => q + p[0], 0) / solido.length, sv = solido.reduce((q, p) => q + p[1], 0) / solido.length;
 
   /* AS MARCAS de cada lado, na ordem em que o dono marcou */
   const casa = o.casa || ficha.clubes[0];
@@ -180,7 +180,10 @@ export function arredoresDasMarcas(ficha, osmLev, M, o = {}) {
   const ult = (l, i) => l[Math.min(i, l.length - 1)];
   const bondesDe = r => { const b = {};
     for (let i = 0; i < 3; i++) b['mandante' + (i + 1)] = { de: [ult(r.chM, i).u, ult(r.chM, i).v], portao: porMarca.get(ult(r.enM, i)) };
-    for (let i = 0; i < 2; i++) b['visitante' + (i + 1)] = { de: [ult(r.chV, i).u, ult(r.chV, i).v], portao: porMarca.get(ult(r.enV, i)) };
+    /* (o 3º bonde visitante só se enche quando o visitante vem com três torcidas: "a chegada visitante 3 vai ser só em caso de
+       times com 3 torcidas"; sem marca própria, nasce na última chegada da visitante, 15 m atrás dela) */
+    for (let i = 0; i < 3; i++) { const c = ult(r.chV, i), atras = i >= r.chV.length ? 15 : 0, L = Math.hypot(c.u, c.v) || 1;
+      b['visitante' + (i + 1)] = { de: [r1(c.u + c.u / L * atras), r1(c.v + c.v / L * atras)], portao: porMarca.get(ult(r.enV, i)) }; }
     return b; };
   const bondes = bondesDe(base);
 

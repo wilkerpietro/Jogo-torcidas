@@ -164,7 +164,7 @@ export default {
       { n: 3, nome: 'VISITANTE', u: -77.2, v: 69.9, dir: [0.45, -0.89], larg: 9, cor: '#7a2f2f' }
     ],
     bondes: { mandante1: { de: [155, 200], portao: 1 }, mandante2: { de: [135, -126], portao: 2 }, mandante3: { de: [141, -146], portao: 2 },
-              visitante1: { de: [-98, 248], portao: 3 }, visitante2: { de: [-92, 240], portao: 3 } },
+              visitante1: { de: [-98, 248], portao: 3 }, visitante2: { de: [-92, 240], portao: 3 }, visitante3: { de: [-104, 262], portao: 3 } },
     grades: [], filas: [],
     pm: [[126, 20], [126, -2], [-70, -86], [-50, -86], [-90, 80], [-66, 88]],
     predios: { 'Edifício Dom Diego': { h: 38, cor: '#d9d5c9', corTeto: '#b9b6ad' }, 'Santuário Nossa Senhora do Perpétuo Socorro': { h: 16, cor: '#e3dccb', corTeto: '#a8553f' } },

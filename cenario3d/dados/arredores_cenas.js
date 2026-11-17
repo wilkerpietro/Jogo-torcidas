@@ -57,6 +57,14 @@ window.__ARREDORES = {
     "x": 1561,
     "y": 2176,
     "entrada": "ent_p8"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1443,
+    "y": 2427,
+    "entrada": "ent_p8"
    }
   ],
   "entradas": [
@@ -342,6 +350,11 @@ window.__ARREDORES = {
     "x": 1561,
     "y": 2176,
     "raio": 34
+   },
+   {
+    "x": 1443,
+    "y": 2427,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -477,6 +490,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2472,
     "y": 1628,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2472,
+    "y": 1085,
     "entrada": "ent_p3"
    }
   ],
@@ -673,6 +694,11 @@ window.__ARREDORES = {
     "x": 2472,
     "y": 1628,
     "raio": 34
+   },
+   {
+    "x": 2472,
+    "y": 1085,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -809,6 +835,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2591,
     "y": 441,
+    "entrada": "ent_pI"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2208,
+    "y": 2326,
     "entrada": "ent_pI"
    }
   ],
@@ -1209,6 +1243,11 @@ window.__ARREDORES = {
     "x": 2591,
     "y": 441,
     "raio": 34
+   },
+   {
+    "x": 2208,
+    "y": 2326,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -1344,6 +1383,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 586,
     "y": 76,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 295,
+    "y": 586,
     "entrada": "ent_p4"
    }
   ],
@@ -1744,6 +1791,11 @@ window.__ARREDORES = {
     "x": 586,
     "y": 76,
     "raio": 34
+   },
+   {
+    "x": 295,
+    "y": 586,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -1879,6 +1931,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2624,
     "y": 496,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2191,
+    "y": 2273,
     "entrada": "ent_p4"
    }
   ],
@@ -2279,6 +2339,11 @@ window.__ARREDORES = {
     "x": 2624,
     "y": 496,
     "raio": 34
+   },
+   {
+    "x": 2191,
+    "y": 2273,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -2414,6 +2479,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2566,
     "y": 511,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2122,
+    "y": 2325,
     "entrada": "ent_p4"
    }
   ],
@@ -2814,6 +2887,11 @@ window.__ARREDORES = {
     "x": 2566,
     "y": 511,
     "raio": 34
+   },
+   {
+    "x": 2122,
+    "y": 2325,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -2949,6 +3027,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2598,
     "y": 1917,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2207,
+    "y": 59,
     "entrada": "ent_p4"
    }
   ],
@@ -3349,6 +3435,11 @@ window.__ARREDORES = {
     "x": 2598,
     "y": 1917,
     "raio": 34
+   },
+   {
+    "x": 2207,
+    "y": 59,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -3484,6 +3575,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 55,
     "y": 428,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 427,
+    "y": 2256,
     "entrada": "ent_p4"
    }
   ],
@@ -3884,6 +3983,11 @@ window.__ARREDORES = {
     "x": 55,
     "y": 428,
     "raio": 34
+   },
+   {
+    "x": 427,
+    "y": 2256,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -4019,6 +4123,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2156,
     "y": 69,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2420,
+    "y": 533,
     "entrada": "ent_p4"
    }
   ],
@@ -4419,6 +4531,11 @@ window.__ARREDORES = {
     "x": 2156,
     "y": 69,
     "raio": 34
+   },
+   {
+    "x": 2420,
+    "y": 533,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -4554,6 +4671,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2189,
     "y": 64,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2441,
+    "y": 505,
     "entrada": "ent_p4"
    }
   ],
@@ -4954,6 +5079,11 @@ window.__ARREDORES = {
     "x": 2189,
     "y": 64,
     "raio": 34
+   },
+   {
+    "x": 2441,
+    "y": 505,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -5089,6 +5219,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 520,
     "y": 66,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 261,
+    "y": 519,
     "entrada": "ent_p4"
    }
   ],
@@ -5489,6 +5627,11 @@ window.__ARREDORES = {
     "x": 520,
     "y": 66,
     "raio": 34
+   },
+   {
+    "x": 261,
+    "y": 519,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -5624,6 +5767,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 72,
     "y": 1816,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 560,
+    "y": 73,
     "entrada": "ent_p4"
    }
   ],
@@ -6024,6 +6175,11 @@ window.__ARREDORES = {
     "x": 72,
     "y": 1816,
     "raio": 34
+   },
+   {
+    "x": 560,
+    "y": 73,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -6159,6 +6315,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2137,
     "y": 71,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2403,
+    "y": 537,
     "entrada": "ent_p4"
    }
   ],
@@ -6559,6 +6723,11 @@ window.__ARREDORES = {
     "x": 2137,
     "y": 71,
     "raio": 34
+   },
+   {
+    "x": 2403,
+    "y": 537,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -6694,6 +6863,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 561,
     "y": 2327,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 282,
+    "y": 1838,
     "entrada": "ent_p4"
    }
   ],
@@ -7094,6 +7271,11 @@ window.__ARREDORES = {
     "x": 561,
     "y": 2327,
     "raio": 34
+   },
+   {
+    "x": 282,
+    "y": 1838,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -7229,6 +7411,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 539,
     "y": 2265,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 271,
+    "y": 1796,
     "entrada": "ent_p4"
    }
   ],
@@ -7629,6 +7819,11 @@ window.__ARREDORES = {
     "x": 539,
     "y": 2265,
     "raio": 34
+   },
+   {
+    "x": 271,
+    "y": 1796,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -7764,6 +7959,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2595,
     "y": 1837,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2133,
+    "y": 2100,
     "entrada": "ent_p4"
    }
   ],
@@ -8164,6 +8367,11 @@ window.__ARREDORES = {
     "x": 2595,
     "y": 1837,
     "raio": 34
+   },
+   {
+    "x": 2133,
+    "y": 2100,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -8299,6 +8507,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2638,
     "y": 1818,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2196,
+    "y": 68,
     "entrada": "ent_p4"
    }
   ],
@@ -8699,6 +8915,11 @@ window.__ARREDORES = {
     "x": 2638,
     "y": 1818,
     "raio": 34
+   },
+   {
+    "x": 2196,
+    "y": 68,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -8834,6 +9055,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 486,
     "y": 2337,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 245,
+    "y": 1913,
     "entrada": "ent_p4"
    }
   ],
@@ -9234,6 +9463,11 @@ window.__ARREDORES = {
     "x": 486,
     "y": 2337,
     "raio": 34
+   },
+   {
+    "x": 245,
+    "y": 1913,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -9369,6 +9603,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2136,
     "y": 64,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2386,
+    "y": 503,
     "entrada": "ent_p4"
    }
   ],
@@ -9769,6 +10011,11 @@ window.__ARREDORES = {
     "x": 2136,
     "y": 64,
     "raio": 34
+   },
+   {
+    "x": 2386,
+    "y": 503,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -9904,6 +10151,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 63,
     "y": 488,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 490,
+    "y": 245,
     "entrada": "ent_p4"
    }
   ],
@@ -10304,6 +10559,11 @@ window.__ARREDORES = {
     "x": 63,
     "y": 488,
     "raio": 34
+   },
+   {
+    "x": 490,
+    "y": 245,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -10439,6 +10699,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 55,
     "y": 2019,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 429,
+    "y": 2232,
     "entrada": "ent_p4"
    }
   ],
@@ -10839,6 +11107,11 @@ window.__ARREDORES = {
     "x": 55,
     "y": 2019,
     "raio": 34
+   },
+   {
+    "x": 429,
+    "y": 2232,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -10974,6 +11247,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 541,
     "y": 2353,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 272,
+    "y": 1881,
     "entrada": "ent_p4"
    }
   ],
@@ -11374,6 +11655,11 @@ window.__ARREDORES = {
     "x": 541,
     "y": 2353,
     "raio": 34
+   },
+   {
+    "x": 272,
+    "y": 1881,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -11509,6 +11795,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2148,
     "y": 2376,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2365,
+    "y": 1997,
     "entrada": "ent_p4"
    }
   ],
@@ -11909,6 +12203,11 @@ window.__ARREDORES = {
     "x": 2148,
     "y": 2376,
     "raio": 34
+   },
+   {
+    "x": 2365,
+    "y": 1997,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -12044,6 +12343,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2449,
     "y": 489,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2023,
+    "y": 2449,
     "entrada": "ent_p4"
    }
   ],
@@ -12444,6 +12751,11 @@ window.__ARREDORES = {
     "x": 2449,
     "y": 489,
     "raio": 34
+   },
+   {
+    "x": 2023,
+    "y": 2449,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -12579,6 +12891,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 477,
     "y": 64,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 240,
+    "y": 478,
     "entrada": "ent_p4"
    }
   ],
@@ -12979,6 +13299,11 @@ window.__ARREDORES = {
     "x": 477,
     "y": 64,
     "raio": 34
+   },
+   {
+    "x": 240,
+    "y": 478,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -13114,6 +13439,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2194,
     "y": 2299,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2428,
+    "y": 1890,
     "entrada": "ent_p4"
    }
   ],
@@ -13514,6 +13847,11 @@ window.__ARREDORES = {
     "x": 2194,
     "y": 2299,
     "raio": 34
+   },
+   {
+    "x": 2428,
+    "y": 1890,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -13649,6 +13987,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2491,
     "y": 1864,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1975,
+    "y": 2158,
     "entrada": "ent_p4"
    }
   ],
@@ -14049,6 +14395,11 @@ window.__ARREDORES = {
     "x": 2491,
     "y": 1864,
     "raio": 34
+   },
+   {
+    "x": 1975,
+    "y": 2158,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -14184,6 +14535,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 498,
     "y": 63,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 64,
+    "y": 1736,
     "entrada": "ent_p4"
    }
   ],
@@ -14584,6 +14943,11 @@ window.__ARREDORES = {
     "x": 498,
     "y": 63,
     "raio": 34
+   },
+   {
+    "x": 64,
+    "y": 1736,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -14719,6 +15083,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2415,
     "y": 2028,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 501,
+    "y": 2464,
     "entrada": "ent_p4"
    }
   ],
@@ -15119,6 +15491,11 @@ window.__ARREDORES = {
     "x": 2415,
     "y": 2028,
     "raio": 34
+   },
+   {
+    "x": 501,
+    "y": 2464,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -15254,6 +15631,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 529,
     "y": 2220,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 266,
+    "y": 1760,
     "entrada": "ent_p4"
    }
   ],
@@ -15654,6 +16039,11 @@ window.__ARREDORES = {
     "x": 529,
     "y": 2220,
     "raio": 34
+   },
+   {
+    "x": 266,
+    "y": 1760,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -15789,6 +16179,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2602,
     "y": 478,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2185,
+    "y": 2299,
     "entrada": "ent_p4"
    }
   ],
@@ -16189,6 +16587,11 @@ window.__ARREDORES = {
     "x": 2602,
     "y": 478,
     "raio": 34
+   },
+   {
+    "x": 2185,
+    "y": 2299,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -16324,6 +16727,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 72,
     "y": 1695,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 559,
+    "y": 74,
     "entrada": "ent_p4"
    }
   ],
@@ -16724,6 +17135,11 @@ window.__ARREDORES = {
     "x": 72,
     "y": 1695,
     "raio": 34
+   },
+   {
+    "x": 559,
+    "y": 74,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -16859,6 +17275,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2171,
     "y": 56,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2380,
+    "y": 423,
     "entrada": "ent_p4"
    }
   ],
@@ -17259,6 +17683,11 @@ window.__ARREDORES = {
     "x": 2171,
     "y": 56,
     "raio": 34
+   },
+   {
+    "x": 2380,
+    "y": 423,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -17394,6 +17823,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2681,
     "y": 1811,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2259,
+    "y": 62,
     "entrada": "ent_p4"
    }
   ],
@@ -17794,6 +18231,11 @@ window.__ARREDORES = {
     "x": 2681,
     "y": 1811,
     "raio": 34
+   },
+   {
+    "x": 2259,
+    "y": 62,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -17929,6 +18371,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2203,
     "y": 2237,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2660,
+    "y": 525,
     "entrada": "ent_p4"
    }
   ],
@@ -18329,6 +18779,11 @@ window.__ARREDORES = {
     "x": 2203,
     "y": 2237,
     "raio": 34
+   },
+   {
+    "x": 2660,
+    "y": 525,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -18464,6 +18919,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 64,
     "y": 493,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 495,
+    "y": 2218,
     "entrada": "ent_p4"
    }
   ],
@@ -18864,6 +19327,11 @@ window.__ARREDORES = {
     "x": 64,
     "y": 493,
     "raio": 34
+   },
+   {
+    "x": 495,
+    "y": 2218,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -18999,6 +19467,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2151,
     "y": 2258,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2422,
+    "y": 1783,
     "entrada": "ent_p4"
    }
   ],
@@ -19399,6 +19875,11 @@ window.__ARREDORES = {
     "x": 2151,
     "y": 2258,
     "raio": 34
+   },
+   {
+    "x": 2422,
+    "y": 1783,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -19534,6 +20015,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 466,
     "y": 2285,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 234,
+    "y": 1879,
     "entrada": "ent_p4"
    }
   ],
@@ -19934,6 +20423,11 @@ window.__ARREDORES = {
     "x": 466,
     "y": 2285,
     "raio": 34
+   },
+   {
+    "x": 234,
+    "y": 1879,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -20069,6 +20563,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2275,
     "y": 64,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2520,
+    "y": 494,
     "entrada": "ent_p4"
    }
   ],
@@ -20469,6 +20971,11 @@ window.__ARREDORES = {
     "x": 2275,
     "y": 64,
     "raio": 34
+   },
+   {
+    "x": 2520,
+    "y": 494,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -20604,6 +21111,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2759,
     "y": 559,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2271,
+    "y": 2145,
     "entrada": "ent_p4"
    }
   ],
@@ -21004,6 +21519,11 @@ window.__ARREDORES = {
     "x": 2759,
     "y": 559,
     "raio": 34
+   },
+   {
+    "x": 2271,
+    "y": 2145,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -21139,6 +21659,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 561,
     "y": 2351,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 282,
+    "y": 1862,
     "entrada": "ent_p4"
    }
   ],
@@ -21539,6 +22067,11 @@ window.__ARREDORES = {
     "x": 561,
     "y": 2351,
     "raio": 34
+   },
+   {
+    "x": 282,
+    "y": 1862,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -21674,6 +22207,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 599,
     "y": 78,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 301,
+    "y": 599,
     "entrada": "ent_p4"
    }
   ],
@@ -22074,6 +22615,11 @@ window.__ARREDORES = {
     "x": 599,
     "y": 78,
     "raio": 34
+   },
+   {
+    "x": 301,
+    "y": 599,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -22209,6 +22755,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 528,
     "y": 2243,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 266,
+    "y": 1783,
     "entrada": "ent_p4"
    }
   ],
@@ -22609,6 +23163,11 @@ window.__ARREDORES = {
     "x": 528,
     "y": 2243,
     "raio": 34
+   },
+   {
+    "x": 266,
+    "y": 1783,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -22744,6 +23303,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2022,
     "y": 79,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2321,
+    "y": 603,
     "entrada": "ent_p4"
    }
   ],
@@ -23144,6 +23711,11 @@ window.__ARREDORES = {
     "x": 2022,
     "y": 79,
     "raio": 34
+   },
+   {
+    "x": 2321,
+    "y": 603,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -23279,6 +23851,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2557,
     "y": 1816,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2049,
+    "y": 77,
     "entrada": "ent_p4"
    }
   ],
@@ -23679,6 +24259,11 @@ window.__ARREDORES = {
     "x": 2557,
     "y": 1816,
     "raio": 34
+   },
+   {
+    "x": 2049,
+    "y": 77,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -23814,6 +24399,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2659,
     "y": 536,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2192,
+    "y": 2243,
     "entrada": "ent_p4"
    }
   ],
@@ -24214,6 +24807,11 @@ window.__ARREDORES = {
     "x": 2659,
     "y": 536,
     "raio": 34
+   },
+   {
+    "x": 2192,
+    "y": 2243,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -24349,6 +24947,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2646,
     "y": 1809,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2202,
+    "y": 68,
     "entrada": "ent_p4"
    }
   ],
@@ -24749,6 +25355,11 @@ window.__ARREDORES = {
     "x": 2646,
     "y": 1809,
     "raio": 34
+   },
+   {
+    "x": 2202,
+    "y": 68,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -24884,6 +25495,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 69,
     "y": 1709,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 532,
+    "y": 1974,
     "entrada": "ent_p4"
    }
   ],
@@ -25284,6 +25903,11 @@ window.__ARREDORES = {
     "x": 69,
     "y": 1709,
     "raio": 34
+   },
+   {
+    "x": 532,
+    "y": 1974,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -25419,6 +26043,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2112,
     "y": 2252,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2402,
+    "y": 1744,
     "entrada": "ent_p4"
    }
   ],
@@ -25819,6 +26451,11 @@ window.__ARREDORES = {
     "x": 2112,
     "y": 2252,
     "raio": 34
+   },
+   {
+    "x": 2402,
+    "y": 1744,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -25954,6 +26591,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2608,
     "y": 623,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2067,
+    "y": 2262,
     "entrada": "ent_p4"
    }
   ],
@@ -26354,6 +26999,11 @@ window.__ARREDORES = {
     "x": 2608,
     "y": 623,
     "raio": 34
+   },
+   {
+    "x": 2067,
+    "y": 2262,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -26489,6 +27139,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 579,
     "y": 75,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2549,
+    "y": 579,
     "entrada": "ent_p4"
    }
   ],
@@ -26889,6 +27547,11 @@ window.__ARREDORES = {
     "x": 579,
     "y": 75,
     "raio": 34
+   },
+   {
+    "x": 2549,
+    "y": 579,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -27024,6 +27687,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2638,
     "y": 1753,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2139,
+    "y": 76,
     "entrada": "ent_p4"
    }
   ],
@@ -27424,6 +28095,11 @@ window.__ARREDORES = {
     "x": 2638,
     "y": 1753,
     "raio": 34
+   },
+   {
+    "x": 2139,
+    "y": 76,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -27559,6 +28235,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 507,
     "y": 2228,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 255,
+    "y": 1787,
     "entrada": "ent_p4"
    }
   ],
@@ -27959,6 +28643,11 @@ window.__ARREDORES = {
     "x": 507,
     "y": 2228,
     "raio": 34
+   },
+   {
+    "x": 255,
+    "y": 1787,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -28094,6 +28783,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2593,
     "y": 485,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2170,
+    "y": 243,
     "entrada": "ent_p4"
    }
   ],
@@ -28494,6 +29191,11 @@ window.__ARREDORES = {
     "x": 2593,
     "y": 485,
     "raio": 34
+   },
+   {
+    "x": 2170,
+    "y": 243,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -28629,6 +29331,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2253,
     "y": 2170,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2525,
+    "y": 1694,
     "entrada": "ent_p4"
    }
   ],
@@ -29029,6 +29739,11 @@ window.__ARREDORES = {
     "x": 2253,
     "y": 2170,
     "raio": 34
+   },
+   {
+    "x": 2525,
+    "y": 1694,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -29164,6 +29879,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2548,
     "y": 462,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2147,
+    "y": 232,
     "entrada": "ent_p4"
    }
   ],
@@ -29564,6 +30287,11 @@ window.__ARREDORES = {
     "x": 2548,
     "y": 462,
     "raio": 34
+   },
+   {
+    "x": 2147,
+    "y": 232,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -29699,6 +30427,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 558,
     "y": 2328,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 72,
+    "y": 558,
     "entrada": "ent_p4"
    }
   ],
@@ -30099,6 +30835,11 @@ window.__ARREDORES = {
     "x": 558,
     "y": 2328,
     "raio": 34
+   },
+   {
+    "x": 72,
+    "y": 558,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -30234,6 +30975,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 558,
     "y": 72,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 281,
+    "y": 558,
     "entrada": "ent_p4"
    }
   ],
@@ -30634,6 +31383,11 @@ window.__ARREDORES = {
     "x": 558,
     "y": 72,
     "raio": 34
+   },
+   {
+    "x": 281,
+    "y": 558,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -30769,6 +31523,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2003,
     "y": 2355,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2296,
+    "y": 1843,
     "entrada": "ent_p4"
    }
   ],
@@ -31169,6 +31931,11 @@ window.__ARREDORES = {
     "x": 2003,
     "y": 2355,
     "raio": 34
+   },
+   {
+    "x": 2296,
+    "y": 1843,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -31304,6 +32071,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 57,
     "y": 445,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 444,
+    "y": 225,
     "entrada": "ent_p4"
    }
   ],
@@ -31704,6 +32479,11 @@ window.__ARREDORES = {
     "x": 57,
     "y": 445,
     "raio": 34
+   },
+   {
+    "x": 444,
+    "y": 225,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -31839,6 +32619,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 439,
     "y": 2392,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 221,
+    "y": 2010,
     "entrada": "ent_p4"
    }
   ],
@@ -32239,6 +33027,11 @@ window.__ARREDORES = {
     "x": 439,
     "y": 2392,
     "raio": 34
+   },
+   {
+    "x": 221,
+    "y": 2010,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -32374,6 +33167,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 1943,
     "y": 74,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2226,
+    "y": 569,
     "entrada": "ent_p4"
    }
   ],
@@ -32774,6 +33575,11 @@ window.__ARREDORES = {
     "x": 1943,
     "y": 74,
     "raio": 34
+   },
+   {
+    "x": 2226,
+    "y": 569,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -32909,6 +33715,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2594,
     "y": 545,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2119,
+    "y": 2297,
     "entrada": "ent_p4"
    }
   ],
@@ -33309,6 +34123,11 @@ window.__ARREDORES = {
     "x": 2594,
     "y": 545,
     "raio": 34
+   },
+   {
+    "x": 2119,
+    "y": 2297,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -33444,6 +34263,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2620,
     "y": 1817,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2160,
+    "y": 67,
     "entrada": "ent_p4"
    }
   ],
@@ -33844,6 +34671,11 @@ window.__ARREDORES = {
     "x": 2620,
     "y": 1817,
     "raio": 34
+   },
+   {
+    "x": 2160,
+    "y": 67,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -33930,7 +34762,7 @@ window.__ARREDORES = {
  "estadio-arena-das-dunas": {
   "nome": "Arena das Dunas",
   "escala": 5.668,
-  "imagem": "img/cenas/arredores_estadio_arena_das_dunas.webp?v=8af120e4",
+  "imagem": "img/cenas/arredores_estadio_arena_das_dunas.webp?v=22c9ae91",
   "largura": 2672,
   "altura": 2360,
   "celula": 8,
@@ -33979,6 +34811,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2621,
     "y": 1966,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2277,
+    "y": 51,
     "entrada": "ent_p4"
    }
   ],
@@ -34379,6 +35219,11 @@ window.__ARREDORES = {
     "x": 2621,
     "y": 1966,
     "raio": 34
+   },
+   {
+    "x": 2277,
+    "y": 51,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -34514,6 +35359,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2492,
     "y": 1935,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2032,
+    "y": 70,
     "entrada": "ent_p4"
    }
   ],
@@ -34914,6 +35767,11 @@ window.__ARREDORES = {
     "x": 2492,
     "y": 1935,
     "raio": 34
+   },
+   {
+    "x": 2032,
+    "y": 70,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -35049,6 +35907,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2577,
     "y": 1905,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2154,
+    "y": 64,
     "entrada": "ent_p4"
    }
   ],
@@ -35449,6 +36315,11 @@ window.__ARREDORES = {
     "x": 2577,
     "y": 1905,
     "raio": 34
+   },
+   {
+    "x": 2154,
+    "y": 64,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -35584,6 +36455,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2236,
     "y": 51,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2581,
+    "y": 1996,
     "entrada": "ent_p4"
    }
   ],
@@ -35984,6 +36863,11 @@ window.__ARREDORES = {
     "x": 2236,
     "y": 51,
     "raio": 34
+   },
+   {
+    "x": 2581,
+    "y": 1996,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -36119,6 +37003,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2432,
     "y": 431,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2056,
+    "y": 2474,
     "entrada": "ent_p4"
    }
   ],
@@ -36519,6 +37411,11 @@ window.__ARREDORES = {
     "x": 2432,
     "y": 431,
     "raio": 34
+   },
+   {
+    "x": 2056,
+    "y": 2474,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -36654,6 +37551,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2031,
     "y": 2361,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2306,
+    "y": 1880,
     "entrada": "ent_p4"
    }
   ],
@@ -37054,6 +37959,11 @@ window.__ARREDORES = {
     "x": 2031,
     "y": 2361,
     "raio": 34
+   },
+   {
+    "x": 2306,
+    "y": 1880,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -37189,6 +38099,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2621,
     "y": 519,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2169,
+    "y": 2277,
     "entrada": "ent_p4"
    }
   ],
@@ -37589,6 +38507,11 @@ window.__ARREDORES = {
     "x": 2621,
     "y": 519,
     "raio": 34
+   },
+   {
+    "x": 2169,
+    "y": 2277,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -37726,6 +38649,14 @@ window.__ARREDORES = {
     "x": 805,
     "y": 85,
     "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 692,
+    "y": 24,
+    "entrada": "ent_p3"
    }
   ],
   "entradas": [
@@ -37818,6 +38749,11 @@ window.__ARREDORES = {
    {
     "x": 805,
     "y": 85,
+    "raio": 34
+   },
+   {
+    "x": 692,
+    "y": 24,
     "raio": 34
    }
   ],
@@ -37952,8 +38888,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 202,
-    "y": 923,
+    "x": 162,
+    "y": 922,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 162,
+    "y": 922,
     "entrada": "ent_p3"
    }
   ],
@@ -38203,8 +39147,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 202,
-    "y": 923,
+    "x": 162,
+    "y": 922,
+    "raio": 34
+   },
+   {
+    "x": 162,
+    "y": 922,
     "raio": 34
    }
   ],
@@ -38339,8 +39288,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 1269,
-    "y": 1532,
+    "x": 1309,
+    "y": 1558,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1309,
+    "y": 1558,
     "entrada": "ent_p3"
    }
   ],
@@ -38578,8 +39535,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 1269,
-    "y": 1532,
+    "x": 1309,
+    "y": 1558,
+    "raio": 34
+   },
+   {
+    "x": 1309,
+    "y": 1558,
     "raio": 34
    }
   ],
@@ -38716,6 +39678,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 708,
     "y": 573,
+    "entrada": "ent_p2"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 657,
+    "y": 565,
     "entrada": "ent_p2"
    }
   ],
@@ -38888,6 +39858,11 @@ window.__ARREDORES = {
     "x": 708,
     "y": 573,
     "raio": 34
+   },
+   {
+    "x": 657,
+    "y": 565,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -39023,6 +39998,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 1444,
     "y": 2461,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1436,
+    "y": 2534,
     "entrada": "ent_p3"
    }
   ],
@@ -39307,6 +40290,11 @@ window.__ARREDORES = {
     "x": 1444,
     "y": 2461,
     "raio": 34
+   },
+   {
+    "x": 1436,
+    "y": 2534,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -39440,8 +40428,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 1189,
-    "y": 2183,
+    "x": 1193,
+    "y": 2256,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1193,
+    "y": 2256,
     "entrada": "ent_p4"
    }
   ],
@@ -39703,8 +40699,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 1189,
-    "y": 2183,
+    "x": 1193,
+    "y": 2256,
+    "raio": 34
+   },
+   {
+    "x": 1193,
+    "y": 2256,
     "raio": 34
    }
   ],
@@ -39841,7 +40842,15 @@ window.__ARREDORES = {
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
     "x": 1384,
-    "y": 401,
+    "y": 338,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1384,
+    "y": 338,
     "entrada": "ent_p4"
    }
   ],
@@ -40170,7 +41179,12 @@ window.__ARREDORES = {
    },
    {
     "x": 1384,
-    "y": 401,
+    "y": 338,
+    "raio": 34
+   },
+   {
+    "x": 1384,
+    "y": 338,
     "raio": 34
    }
   ],
@@ -40307,6 +41321,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 918,
     "y": 2666,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 887,
+    "y": 2672,
     "entrada": "ent_p3"
    }
   ],
@@ -40467,6 +41489,11 @@ window.__ARREDORES = {
     "x": 918,
     "y": 2666,
     "raio": 34
+   },
+   {
+    "x": 887,
+    "y": 2672,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -40601,7 +41628,15 @@ window.__ARREDORES = {
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
     "x": 2325,
-    "y": 367,
+    "y": 316,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2325,
+    "y": 316,
     "entrada": "ent_p3"
    }
   ],
@@ -40908,7 +41943,12 @@ window.__ARREDORES = {
    },
    {
     "x": 2325,
-    "y": 367,
+    "y": 316,
+    "raio": 34
+   },
+   {
+    "x": 2325,
+    "y": 316,
     "raio": 34
    }
   ],
@@ -41043,8 +42083,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 283,
-    "y": 904,
+    "x": 229,
+    "y": 922,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 229,
+    "y": 922,
     "entrada": "ent_p3"
    }
   ],
@@ -41282,8 +42330,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 283,
-    "y": 904,
+    "x": 229,
+    "y": 922,
+    "raio": 34
+   },
+   {
+    "x": 229,
+    "y": 922,
     "raio": 34
    }
   ],
@@ -41419,6 +42472,14 @@ window.__ARREDORES = {
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
     "x": 165,
+    "y": 2122,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 106,
     "y": 2122,
     "entrada": "ent_p3"
    }
@@ -41672,6 +42733,11 @@ window.__ARREDORES = {
     "x": 165,
     "y": 2122,
     "raio": 34
+   },
+   {
+    "x": 106,
+    "y": 2122,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -41806,8 +42872,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 507,
-    "y": 2298,
+    "x": 454,
+    "y": 2353,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 454,
+    "y": 2353,
     "entrada": "ent_p4"
    }
   ],
@@ -42049,8 +43123,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 507,
-    "y": 2298,
+    "x": 454,
+    "y": 2353,
+    "raio": 34
+   },
+   {
+    "x": 454,
+    "y": 2353,
     "raio": 34
    }
   ],
@@ -42185,8 +43264,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 345,
-    "y": 305,
+    "x": 319,
+    "y": 235,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 319,
+    "y": 235,
     "entrada": "ent_p3"
    }
   ],
@@ -42301,8 +43388,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 345,
-    "y": 305,
+    "x": 319,
+    "y": 235,
+    "raio": 34
+   },
+   {
+    "x": 319,
+    "y": 235,
     "raio": 34
    }
   ],
@@ -42439,6 +43531,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 400,
     "y": 2368,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 434,
+    "y": 2271,
     "entrada": "ent_p4"
    }
   ],
@@ -42805,6 +43905,11 @@ window.__ARREDORES = {
     "x": 400,
     "y": 2368,
     "raio": 34
+   },
+   {
+    "x": 434,
+    "y": 2271,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -42940,6 +44045,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 594,
     "y": 2347,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 642,
+    "y": 2222,
     "entrada": "ent_p4"
    }
   ],
@@ -43240,6 +44353,11 @@ window.__ARREDORES = {
     "x": 594,
     "y": 2347,
     "raio": 34
+   },
+   {
+    "x": 642,
+    "y": 2222,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -43375,6 +44493,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 1577,
     "y": 731,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1508,
+    "y": 698,
     "entrada": "ent_p4"
    }
   ],
@@ -43565,6 +44691,11 @@ window.__ARREDORES = {
     "x": 1577,
     "y": 731,
     "raio": 34
+   },
+   {
+    "x": 1508,
+    "y": 698,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -43701,6 +44832,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2132,
     "y": 1927,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2224,
+    "y": 2007,
     "entrada": "ent_p3"
    }
   ],
@@ -43880,6 +45019,11 @@ window.__ARREDORES = {
     "x": 2132,
     "y": 1927,
     "raio": 34
+   },
+   {
+    "x": 2224,
+    "y": 2007,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -44015,6 +45159,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 1643,
     "y": 2113,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1664,
+    "y": 2168,
     "entrada": "ent_p3"
    }
   ],
@@ -44239,6 +45391,11 @@ window.__ARREDORES = {
     "x": 1643,
     "y": 2113,
     "raio": 34
+   },
+   {
+    "x": 1664,
+    "y": 2168,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -44372,8 +45529,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 534,
-    "y": 1487,
+    "x": 510,
+    "y": 1537,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 510,
+    "y": 1537,
     "entrada": "ent_p3"
    }
   ],
@@ -44506,8 +45671,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 534,
-    "y": 1487,
+    "x": 510,
+    "y": 1537,
+    "raio": 34
+   },
+   {
+    "x": 510,
+    "y": 1537,
     "raio": 34
    }
   ],
@@ -44642,8 +45812,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 1450,
-    "y": 428,
+    "x": 1449,
+    "y": 350,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1449,
+    "y": 350,
     "entrada": "ent_p3"
    }
   ],
@@ -44971,8 +46149,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 1450,
-    "y": 428,
+    "x": 1449,
+    "y": 350,
+    "raio": 34
+   },
+   {
+    "x": 1449,
+    "y": 350,
     "raio": 34
    }
   ],
@@ -45107,8 +46290,16 @@ window.__ARREDORES = {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
     "lado": "visitante",
-    "x": 2356,
-    "y": 1639,
+    "x": 2401,
+    "y": 1667,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2401,
+    "y": 1667,
     "entrada": "ent_p4"
    }
   ],
@@ -45358,8 +46549,13 @@ window.__ARREDORES = {
     "raio": 34
    },
    {
-    "x": 2356,
-    "y": 1639,
+    "x": 2401,
+    "y": 1667,
+    "raio": 34
+   },
+   {
+    "x": 2401,
+    "y": 1667,
     "raio": 34
    }
   ],
@@ -45496,6 +46692,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 282,
     "y": 188,
+    "entrada": "ent_p2"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2189,
+    "y": 388,
     "entrada": "ent_p2"
    }
   ],
@@ -45748,6 +46952,11 @@ window.__ARREDORES = {
     "x": 282,
     "y": 188,
     "raio": 34
+   },
+   {
+    "x": 2189,
+    "y": 388,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -45883,6 +47092,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 2530,
     "y": 704,
+    "entrada": "ent_p2"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 2574,
+    "y": 712,
     "entrada": "ent_p2"
    }
   ],
@@ -46135,6 +47352,11 @@ window.__ARREDORES = {
     "x": 2530,
     "y": 704,
     "raio": 34
+   },
+   {
+    "x": 2574,
+    "y": 712,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -46270,6 +47492,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 500,
     "y": 585,
+    "entrada": "ent_p2"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 438,
+    "y": 542,
     "entrada": "ent_p2"
    }
   ],
@@ -46494,6 +47724,11 @@ window.__ARREDORES = {
     "x": 500,
     "y": 585,
     "raio": 34
+   },
+   {
+    "x": 438,
+    "y": 542,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -46629,6 +47864,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 1643,
     "y": 2113,
+    "entrada": "ent_p3"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1664,
+    "y": 2168,
     "entrada": "ent_p3"
    }
   ],
@@ -46865,6 +48108,11 @@ window.__ARREDORES = {
     "x": 1643,
     "y": 2113,
     "raio": 34
+   },
+   {
+    "x": 1664,
+    "y": 2168,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -47000,6 +48248,14 @@ window.__ARREDORES = {
     "lado": "visitante",
     "x": 500,
     "y": 585,
+    "entrada": "ent_p2"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 438,
+    "y": 542,
     "entrada": "ent_p2"
    }
   ],
@@ -47236,6 +48492,11 @@ window.__ARREDORES = {
     "x": 500,
     "y": 585,
     "raio": 34
+   },
+   {
+    "x": 438,
+    "y": 542,
+    "raio": 34
    }
   ],
   "assentos": {
@@ -47368,6 +48629,14 @@ window.__ARREDORES = {
    {
     "id": "visitante2",
     "rot": "2º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1907,
+    "y": 31,
+    "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
     "lado": "visitante",
     "x": 1907,
     "y": 31,
@@ -47649,6 +48918,11 @@ window.__ARREDORES = {
    {
     "x": 2095,
     "y": 220,
+    "raio": 34
+   },
+   {
+    "x": 1907,
+    "y": 31,
     "raio": 34
    },
    {
@@ -47791,6 +49065,14 @@ window.__ARREDORES = {
     "x": 1907,
     "y": 31,
     "entrada": "ent_p4"
+   },
+   {
+    "id": "visitante3",
+    "rot": "3º ESCALÃO VISITANTE",
+    "lado": "visitante",
+    "x": 1907,
+    "y": 31,
+    "entrada": "ent_p4"
    }
   ],
   "entradas": [
@@ -48068,6 +49350,11 @@ window.__ARREDORES = {
    {
     "x": 2095,
     "y": 220,
+    "raio": 34
+   },
+   {
+    "x": 1907,
+    "y": 31,
     "raio": 34
    },
    {

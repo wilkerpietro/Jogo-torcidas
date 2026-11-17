@@ -127,7 +127,7 @@ export default {
       { n: 3, nome: 'VISITANTE', u: 95.5, v: -101.5, dir: [-0.69, 0.72], larg: 10, cor: '#7a2f2f' }
     ],
     bondes: { mandante1: { de: [0, 290], portao: 1, exato: true }, mandante2: { de: [-150, 250], portao: 2, exato: true }, mandante3: { de: [120, 262], portao: 1, exato: true },
-              visitante1: { de: [262, 30], portao: 3, exato: true }, visitante2: { de: [262, -24], portao: 3, exato: true } },
+              visitante1: { de: [262, 30], portao: 3, exato: true }, visitante2: { de: [262, -24], portao: 3, exato: true }, visitante3: { de: [262, 84], portao: 3, exato: true } },
     grades: [{ de: [100.5, 83.5], ate: [139, 116] }, { de: [16.5, -135.5], ate: [25, -186] }],
     filas: [{ pts: [[-16, 138], [-16, 150]] }, { pts: [[0, 138], [0, 150]] }, { pts: [[90, -106], [84, -114]] }, { pts: [[101, -97], [108, -103]] }],
     pm: [[112, 96], [128, 110], [20, -160], [-8, 160], [60, 150], [-70, 150], [150, -20], [150, 20], [110, -120], [-110, 130]],

@@ -176,9 +176,9 @@ function dentroDoEstadio(osm, pts) { const e = osm.areas.find(a => a.tipo === 'l
 /* ---- OS MARCADORES da cena, no formato da cena de arredores do jogo (dados/cena_arredores.js) ---- */
 export function marcadoresArredores(ficha, prep, paraPx) {
   const ar = prep.ar, px = (u, v) => { const p = paraPx(u, v); return { x: Math.round(p[0]), y: Math.round(p[1]) }; }, par = (u, v) => { const p = paraPx(u, v); return [Math.round(p[0]), Math.round(p[1])]; };
-  const portao = n => (ar.portoes || []).find(g => g.n === n), ROT = { mandante1: '1º ESCALÃO MANDANTE', mandante2: '2º ESCALÃO MANDANTE', mandante3: '3º ESCALÃO MANDANTE', visitante1: '1º ESCALÃO VISITANTE', visitante2: '2º ESCALÃO VISITANTE' };
+  const portao = n => (ar.portoes || []).find(g => g.n === n), ROT = { mandante1: '1º ESCALÃO MANDANTE', mandante2: '2º ESCALÃO MANDANTE', mandante3: '3º ESCALÃO MANDANTE', visitante1: '1º ESCALÃO VISITANTE', visitante2: '2º ESCALÃO VISITANTE', visitante3: '3º ESCALÃO VISITANTE' };
   const entradas = [], spawns = [], idDe = n => 'ent_p' + n;
-  for (const id of ['mandante1', 'mandante2', 'mandante3', 'visitante1', 'visitante2']) { const b = ar.bondes[id]; if (!b) continue; const g = portao(b.portao), lado = id.startsWith('m') ? 'mandante' : 'visitante', q = b.exato && prep.andavel(b.de[0], b.de[1]) ? b.de : prep.naRua(b.de[0], b.de[1]);
+  for (const id of ['mandante1', 'mandante2', 'mandante3', 'visitante1', 'visitante2', 'visitante3']) { const b = ar.bondes[id]; if (!b) continue; const g = portao(b.portao), lado = id.startsWith('m') ? 'mandante' : 'visitante', q = b.exato && prep.andavel(b.de[0], b.de[1]) ? b.de : prep.naRua(b.de[0], b.de[1]);
     if (!entradas.find(e => e.id === idDe(g.n))) { const dl = Math.hypot(g.dir[0], g.dir[1]) || 1;
       entradas.push(Object.assign({ id: idDe(g.n), rot: 'ENTRADA ' + (lado === 'visitante' ? 'VISITANTE' : ROT[id]) + ' · ' + (g.nome || 'PORTÃO ' + g.n), lado, raio: 34, dir: [+(g.dir[0] / dl).toFixed(2), +(-g.dir[1] / dl).toFixed(2)] }, px(g.u, g.v))); }
     spawns.push(Object.assign({ id, rot: ROT[id], lado }, px(q[0], q[1]), id === 'mandante1' ? { jogador: true } : {}, { entrada: idDe(g.n) })); }

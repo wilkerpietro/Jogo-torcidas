@@ -179,7 +179,7 @@ export default {
       { n: 8, nome: 'PORTÃO 8 · VISITANTE', u: 47, v: -70.6, dir: [0, 1], cor: '#7a2f2f' }
     ],
     bondes: { mandante1: { de: [-60, 136], portao: 6 }, mandante2: { de: [20, 136], portao: 3 }, mandante3: { de: [110, 136], portao: 2 },
-              visitante1: { de: [52, -152], portao: 8 }, visitante2: { de: [64, -126], portao: 8 } },
+              visitante1: { de: [52, -152], portao: 8 }, visitante2: { de: [64, -126], portao: 8 }, visitante3: { de: [44, -160], portao: 8 } },
     /* o cordão: na Rua Ismênia Tunes, entre o portão 2 e o 8, e no estacionamento do lado leste */
     grades: [{ de: [12, -68.5], ate: [12, -89.3] }, { de: [76.2, -55], ate: [123, -55] }],
     /* o gradil de fila na frente de cada portão: o corredor de 14 m e a chicana, com 7 m de vão */
