@@ -15248,6 +15248,29 @@ Estimado: as alturas; a fundura do anel (o satélite antigo é um borrão: entre
 
 O Nogueirão entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
 
+## Rio Grande do Norte: Arena das Dunas (dono, 17/11/2026)
+
+O dono, com cinco fotos (três de dentro e duas aéreas, uma delas de 2014, ainda com as arquibancadas provisórias da Copa): "Vamos pro Arena das Dunas. Preste bem atenção nos detalhes que o desenho é complexo". A ficha é `fichas/estadio-arena-das-dunas.mjs`, do América/RN, em Natal. Ela não está entre os 22 diferenciados: entrou nos arredores padrão.
+
+**As medidas** saíram do satélite (Google); o rumo do campo (174,4 graus, quase de norte a sul), do mapa do OpenStreetMap. O satélite inclina o que é alto: as fendas das pétalas do oeste aparecem 18 m deslocadas pro sul e as do leste 11, enquanto as arquibancadas, baixas, ficam no lugar. Pus as pétalas com o meio no meio do campo.
+
+**As arquibancadas**, de cadeiras azuis em mosaico de dois tons: o anel de baixo dá a volta inteira no campo, sem pista; nas duas laterais, por cima dele, a faixa dos camarotes (a laje clara e o vidro escuro) e o anel de cima, que acompanha a curva e acaba antes dos cantos; atrás dos dois gols só existe o anel de baixo, com a esplanada por trás.
+
+**A cobertura** são vinte pétalas: cascas brancas soltas, em forma de duna, que nascem baixas do lado de fora (são a fachada), sobem abauladas por cima das arquibancadas e acabam numa testeira reta sobre o campo, cada uma numa altura, em degraus, com uma fenda translúcida entre elas.
+
+- **oeste:** oito, as mais altas e mais fundas (54 m), com as duas do meio no topo;
+- **leste:** sete, mais baixas e mais rasas (40 m);
+- **norte:** duas pequenas, por trás da esplanada; o fundo fica descoberto;
+- **sul:** três quase rentes ao chão, só na borda; o fundo do sul é aberto, com a tenda branca comprida na esplanada.
+
+**No gerador** (`estadio_lowpoly.mjs`) entrou a opção `petalas` da `coberturasAnel`: cada gomo vira uma casca com perfil de duna (a crista numa fração da beira de dentro, a descida em superelipse até a beira de fora), abaulada de través pelo `bojo`, com a testeira, os lados e a faixa da fenda. As alturas valem pro meio de cada pétala (`alturas(ang)` devolve fora, dentro e crista), e `opacaDe` diz de que fração pra fora a pétala sai inteira na vista de cima do jogo; em cima das cadeiras ela continua transparente, como toda cobertura.
+
+**As torcidas** (escolha minha): a Máfia Vermelha atrás do gol do norte, com apoio no anel de baixo das duas laterais; a visitante atrás do gol do sul. A fração do setor é medida da beira do campo até a beira do pódio; com 0,5 o bonde nascia na esplanada, fora das cadeiras, e passou pra 0,27, no meio do anel de baixo.
+
+Estimado: todas as alturas (41 m na crista do oeste, 35 na do leste); a divisão exata das pétalas; a fundura dos anéis debaixo da cobertura, que o satélite não mostra; o número de fileiras; os telões (pus um em cada canto do norte); a tenda do sul; as escadas de fora (uma em cada divisa de pétala, em dois lances, sem as rampas compridas). As treliças brancas e os refletores debaixo das pétalas não entraram.
+
+Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). O Rio Grande do Norte está completo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

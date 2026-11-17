@@ -652,6 +652,24 @@ ESTÁDIO DEMOLIDO (o Nogueirão): o satélite novo mostra o terreno vazio. O da
 Esri em zoom 18 ou 17 costuma guardar a imagem antiga, e o contorno do
 OpenStreetMap continua lá.
 
+COBERTURA EM PÉTALAS (a Arena das Dunas, 17/11/2026): `petalas` na
+`coberturasAnel` — `{ fenda, passos, fatias, crista, curva, testeira, opacaDe,
+corFenda }`. Cada gomo de `angulos` vira uma casca de duna; `alturas(ang)`
+devolve `[fora, dentro, crista]` e vale pro meio da pétala (elas ficam em
+degraus). Uma `coberturasAnel` pra cada grupo de pétalas de mesma boca e mesma
+beira (oeste, leste, norte, sul). `curva: 2` dá a duna redonda; 2,6 sai
+quadrada. `opacaDe` é a fração a partir da qual a pétala aparece inteira na
+vista de cima (o fundo do anel de cima).
+O SATÉLITE INCLINA O QUE É ALTO: as fendas de uma cobertura de 40 m aparecem
+até 18 m fora do lugar, e mais do lado mais alto. Meça as arquibancadas pelo
+pé, e centre a cobertura nelas.
+A FRAÇÃO DO SETOR (`jogo.fracao`) é medida do primeiro anel (a grama em volta
+do campo) até o último (o pódio de fora). Com esplanada e pódio na ficha, 0,5
+cai fora das cadeiras: calcule a fração do meio do anel onde a torcida fica.
+OS ÂNGULOS DOS TRECHOS de um anel têm de dar 360 sem se sobrepor: um trecho
+errado por cima de outro some sem aviso (o anel de cima das Dunas saiu certo
+por acaso na primeira prova).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

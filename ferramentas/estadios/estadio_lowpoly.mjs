@@ -487,6 +487,32 @@ export function construir(THREE, ficha) {
       : (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return [q[0], q[1], alt(ang, f) + (dh || 0)]; };
     const pt = (ang, f, dh) => { const q = pu(ang, f, dh); return P(q[0], q[1], q[2]); };
     const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = angs[i], a1 = angs[i + 1]; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
+    /* AS PÉTALAS (a Arena das Dunas; dono, 17/11/2026: "Preste bem atenção nos detalhes que o desenho é complexo"): com
+       `petalas: { fenda, passos, fatias, crista, curva, testeira, opacaDe, corFenda }`, cada gomo é uma casca solta, em forma
+       de duna — nasce baixa na beira de fora, sobe abaulada até a crista (na fração `crista` a partir da beira de dentro) e
+       acaba na testeira reta da beira de dentro; de través ela é uma almofada (`bojo` no meio). Entre uma e outra fica a
+       `fenda` (fração do gomo, de cada lado), fechada mais embaixo pela faixa translúcida `corFenda`. `alturas(ang)` devolve
+       `[fora, dentro, crista]` e vale pro MEIO de cada pétala: uma pétala inteira fica numa altura e a vizinha noutra, em
+       degraus. `opacaDe`: a fração a partir da qual a pétala sai inteira na vista de cima (o pedaço de fora das cadeiras). */
+    if (cb.petalas) { const pe = cb.petalas, fen = pe.fenda == null ? 0.05 : pe.fenda, m = pe.passos || 9, kk = pe.fatias || 4, fc = pe.crista == null ? 0.3 : pe.crista, pw = pe.curva || 2.6, bj = cb.bojo || 0;
+      const tst = pe.testeira == null ? 3 : pe.testeira, fo = pe.opacaDe == null ? 2 : pe.opacaDe, cF = pe.corFenda || '#8f979c';
+      const pets = Array.from({ length: n }, (_, i) => { const d = angs[i + 1] - angs[i], am = (angs[i] + angs[i + 1]) / 2, [hF, hD, hC0] = cb.alturas ? cb.alturas(am) : [hf, hd], hC = hC0 == null ? hD + 2 : hC0;
+        const perfil = f => f <= fc ? hD + (hC - hD) * Math.sin(f / fc * Math.PI / 2) : hF + (hC - hF) * Math.pow(Math.max(0, 1 - Math.pow((f - fc) / (1 - fc), pw)), 1 / pw);
+        return { a0: angs[i] + d * fen, a1: angs[i + 1] - d * fen, perfil }; });
+      const xy = (ang, f, h) => { const q = pu(ang, f, 0); return P(q[0], q[1], h); };
+      pets.forEach((pt2, i) => { const c = i % 2 ? (cb.cor2 || cb.cor || '#f4f3ee') : (cb.cor || '#f4f3ee');
+        const pp = (t, f, dh) => xy(pt2.a0 + (pt2.a1 - pt2.a0) * t, f, pt2.perfil(f) + bj * Math.sin(Math.PI * t) * (1 - 0.45 * f * f) + (dh || 0));
+        for (let j = 0; j < m; j++) { const f0 = j / m, f1 = (j + 1) / m, M = (f0 + f1) / 2 >= fo ? Ro : R;
+          for (let q = 0; q < kk; q++) { const t0 = q / kk, t1 = (q + 1) / kk;
+            M.quad(pp(t0, f0), pp(t0, f1), pp(t1, f1), pp(t1, f0), c);
+            if (cb.corBaixo) M.quad(pp(t0, f0, -0.5), pp(t0, f1, -0.5), pp(t1, f1, -0.5), pp(t1, f0, -0.5), cb.corBaixo); } }
+        /* a testeira: a caixa reta da ponta de dentro, e os dois lados da pétala fechados até a metade */
+        for (let q = 0; q < kk; q++) { const t0 = q / kk, t1 = (q + 1) / kk; R.quad(pp(t0, 0), pp(t1, 0), pp(t1, 0, -tst), pp(t0, 0, -tst), pe.corTesteira || c); }
+        for (const t of [0, 1]) for (let j = 0; j < m; j++) { const f0 = j / m, f1 = (j + 1) / m, lado = 1.4; ((f0 + f1) / 2 >= fo ? Ro : R).quad(pp(t, f0), pp(t, f1), pp(t, f1, -lado), pp(t, f0, -lado), pe.corLado || '#dcdcd6'); }
+        /* a faixa translúcida da fenda, até a pétala seguinte */
+        const prox = pets[(i + 1) % n]; if (i < n - 1 || inteiro) for (let j = 0; j < m; j++) { const f0 = j / m, f1 = (j + 1) / m, M = (f0 + f1) / 2 >= fo ? Ro : R, h0 = Math.min(pt2.perfil(f0), prox.perfil(f0)) - 1, h1 = Math.min(pt2.perfil(f1), prox.perfil(f1)) - 1;
+          M.quad(xy(pt2.a1, f0, h0), xy(pt2.a1, f1, h1), xy(prox.a0, f1, h1), xy(prox.a0, f0, h0), cF); } });
+      continue; }
     const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
     /* AS FOLHAS (o Beira-Rio): com `bojo`, cada gomo é uma folha abaulada — a espinha do meio sobe `bojo` metros, e
        a luz pega um lado e o outro de cada folha de jeito diferente; `fenda` deixa um vão escuro entre as folhas */
