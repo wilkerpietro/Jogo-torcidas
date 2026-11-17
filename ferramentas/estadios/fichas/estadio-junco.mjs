@@ -12,7 +12,9 @@
    · EM CIMA, o arco comprido, de cinco trechos (cinza, azul, cinza, azul,
      cinza), com o placar no alto e o letreiro SOBRAL no chão, à frente;
    · À ESQUERDA e À DIREITA, as duas curvas de trás dos gols, mais rasas, cada
-     uma com um trecho azul no meio;
+     uma com um trecho azul no meio. Entre o arco e cada curva fica uma FENDA
+     sem arquibancada, de uns 6 m (o dono cobrou: uma delas tinha saído estreita
+     demais pra se ver);
    · EMBAIXO, solta do oval, a TRIBUNA: reta, mais funda e mais alta, cinza com
      o trecho azul no meio, e no alto dela o prédio branco comprido das cabines,
      de telhado azul; atrás, pra rua, o PÓRTICO da entrada: três arcos brancos
@@ -38,6 +40,8 @@ const TI = { a: 220, b: 57, r: 0.5 }, TF = { a: 220, b: 72, r: 0.5 };
 const DEGRAU = (cor, cor2, mais) => ({ cor, cor2, padrao: 'mosaico', mistura: 0.3, semCadeiras: true, espelhoPintado: true, corEscada: AMARELO, corredor: 0, escadaNaBorda: true, vomitorios: false,
   paredeAtras: true, corFachada: MURO, corLado: MURO, parapeito: 1.4, corMureta: MURO, ...mais });
 const AZ = mais => DEGRAU(AZUL, AZUL2, mais), CZ = mais => DEGRAU(CINZA, CINZA2, mais);
+/* a escada amarela da ponta de cada pedaço (a `escadaNaBorda` só põe a do começo do trecho) */
+const PONTA = DEGRAU(AMARELO, AMARELO, { escadaNaBorda: false, mistura: 0 });
 /* o PÓRTICO: três arcos em degraus de caixa (a meia-lua branca), o anel azul no meio de cada um, os quatro pilares e as grades */
 const PU = 6, PV = -93;
 const PORTICO = [
@@ -68,13 +72,16 @@ export default {
     { dentro: I, fora: F, h: [0.9, 4.6], fileiras: 11, corredorFrente: 1.2, passoFileira: 1.2,
       trechos: [
         /* À DIREITA, a curva de trás do gol: cinza, o azul no meio, cinza */
-        { de: A(72, -44) - 360, ate: 0, ...CZ() }, { de: 0, ate: 17, ...AZ() }, { de: 17, ate: 37.5, ...CZ() },
-        { de: 37.5, ate: 39.6, tipo: 'vazio' },
+        { de: A(72, -44) - 360, ate: 0, ...CZ() }, { de: 0, ate: 17, ...AZ() }, { de: 17, ate: 34.8, ...CZ() }, { de: 34.8, ate: 35.7, ...PONTA },
+        /* A FENDA da direita, de 6,7 m, sem arquibancada (dono, 17/11/2026: "Perceba que o junco tem duas fendas sem arquibancada
+           na parte oval"; na primeira versão ela tinha saído com menos de 3 m) */
+        { de: 35.7, ate: 40.4, tipo: 'vazio' },
         /* EM CIMA, o arco comprido: cinza, azul, cinza, azul, cinza */
-        { de: 39.6, ate: 60.5, ...CZ() }, { de: 60.5, ate: 81, ...AZ() }, { de: 81, ate: 102.3, ...CZ() }, { de: 102.3, ate: 122.9, ...AZ() }, { de: 122.9, ate: 140.4, ...CZ() },
-        { de: 140.4, ate: 144.5, tipo: 'vazio' },
+        { de: 40.4, ate: 60.5, ...CZ() }, { de: 60.5, ate: 81, ...AZ() }, { de: 81, ate: 102.3, ...CZ() }, { de: 102.3, ate: 122.9, ...AZ() }, { de: 122.9, ate: 138.4, ...CZ() }, { de: 138.4, ate: 139.3, ...PONTA },
+        /* A FENDA da esquerda, de 5,6 m */
+        { de: 139.3, ate: 143, tipo: 'vazio' },
         /* À ESQUERDA, a outra curva */
-        { de: 144.5, ate: 173, ...CZ() }, { de: 173, ate: 185.5, ...AZ() }, { de: 185.5, ate: A(-74, -46), ...CZ() },
+        { de: 143, ate: 173, ...CZ() }, { de: 173, ate: 185.5, ...AZ() }, { de: 185.5, ate: A(-74, -46) - 0.9, ...CZ() }, { de: A(-74, -46) - 0.9, ate: A(-74, -46), ...PONTA },
         { de: A(-74, -46), ate: A(-36, -57), tipo: 'vazio' },
         /* EMBAIXO, a TRIBUNA, reta, mais funda e mais alta */
         { de: A(-36, -57), ate: A(-8, -57), dentro: TI, fora: TF, reto: true, h: [1.2, 8.6], passoFileira: 0.95, ...CZ({ corFachada: BRANCO }) },

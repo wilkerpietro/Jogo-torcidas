@@ -42,7 +42,7 @@
    vermelhas. `montarCarro` devolve cada carro na origem (x ao longo dele,
    em unidade de mundo): quem mostra põe os carros no caminho.
    ========================================================= */
-import { Construtor, METRO, lerp, sub, unit } from './construtor3d.js?v=0d41dffa7e';
+import { Construtor, METRO, lerp, sub, unit } from './construtor3d.js?v=2a3a986425';
 
 const M = METRO;
 /* o salão da plataforma, em metros (a conta tem de bater com a de proposta.js) */

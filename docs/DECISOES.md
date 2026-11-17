@@ -15358,6 +15358,10 @@ Estimado: as alturas (o anel a 4,6 m, a tribuna a 8,6); onde começa e acaba cad
 
 O Junco entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). Com ele e o Presidente Vargas, o Ceará fica completo (o Castelão e o Romeirão já existiam).
 
+## Junco: as duas fendas do oval (dono, 17/11/2026)
+
+O dono: "Perceba que o junco tem duas fendas sem arquibancada na parte oval". São os dois vãos entre o arco comprido e cada curva de trás do gol. Na primeira versão a da esquerda tinha 5,7 m e a da direita menos de 3 m, estreita demais pra se ver na cena. Medi as duas de novo no satélite, com a grade de 5 em 5 m: 5,6 m a da esquerda e 6,7 m a da direita. Cada pedaço de arquibancada ganhou também a escada amarela na ponta que dá pra fenda (um trecho estreito pintado de amarelo; a `escadaNaBorda` só põe a do começo do trecho). Briga e chegada da torcida da casa testadas de novo sem erros; os arredores foram regravados com caminho até todos os portões.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

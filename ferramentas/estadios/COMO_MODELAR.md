@@ -731,6 +731,10 @@ cada uma mais estreita; diga ao dono que é uma aproximação.
 FAIXA ESCURA NO PÉ DE UMA FACHADA (o PV): um vão aberto e sombreado, feito como
 faixa escura, é lido como listra pintada. Deixe o muro na cor dele até o chão.
 
+FENDA ENTRE DOIS PEDAÇOS DE ARQUIBANCADA (o Junco): meça a largura no satélite
+com a grade de 5 m (`quadro.sh ... 5`) e confira na vista de cima do jogo se
+ela aparece: com menos de 4 m some. Em graus, 1 grau a 80 m do meio vale 1,4 m.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
