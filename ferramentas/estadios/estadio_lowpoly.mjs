@@ -137,9 +137,15 @@ export function colunasDe(ficha, anel, t) {
     let s0 = 0, s1 = 4; while (fora(s1) < 0 && s1 < 400) s1 *= 2;
     for (let k = 0; k < 40; k++) { const m = (s0 + s1) / 2; if (fora(m) < 0) s0 = m; else s1 = m; }
     q = [a, [a[0] + nx * s1, a[1] + ny * s1]]; if (memo.size < 20000) memo.set(ang, q); return q; };
-  const pos = normal ? (ang, f) => { const [a, b] = peloNormal(ang); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+  const pos0 = normal ? (ang, f) => { const [a, b] = peloNormal(ang); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
             : reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
                    : (ang, f) => { const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); return ponto(ang, r0 + (r1 - r0) * f); };
+  /* `fecha: k` no trecho (a tribuna do Lacerdão; dono, 17/11/2026: a arquibancada coberta é "Triangular"): o lance FECHA PRA
+     TRÁS em volta do MEIO DELE — a fileira da frente tem a largura toda e a do fundo, `k` vezes ela (0,5 = metade), com as
+     paredes dos lados em diagonal. (O trapézio de `fora` com `a` menor fecha em volta do meio do CAMPO; este, do meio do trecho.) */
+  let pos = pos0;
+  if (t.fecha != null && t.fecha < 1) { const m = f => { const a = pos0(t.de, f), b = pos0(t.ate, f); return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }, k = t.fecha;
+    pos = (ang, f) => { const q = pos0(ang, f), c = m(f), s = 1 - f * (1 - k); return [c[0] + (q[0] - c[0]) * s, c[1] + (q[1] - c[1]) * s]; }; }
   const angs = [];
   if (reto || normal) { /* colunas de largura igual, medidas pela beira de dentro */
     const MS = Math.max(180, n * 4), ac = [0]; let ant = pos(t.de, 0);

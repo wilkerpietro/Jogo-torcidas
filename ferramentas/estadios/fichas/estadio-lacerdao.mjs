@@ -17,9 +17,12 @@
      escudos brancos; a caixa branca das cabines no alto, a barra alaranjada na
      frente, e a faixa de areia com os bancos de reserva ao pé dela;
    · EM CIMA, a outra lateral: o lance de baixo, preto, com os escudos brancos,
-     de ponta a ponta; e por cima dele, em 75 m, a TRIBUNA COBERTA, de cadeiras
-     brancas e pretas, com as paredes laterais brancas EM TRIÂNGULO, o telhado
-     escuro e chato nos pilares da frente e a faixa da torcida na mureta;
+     de ponta a ponta, com a escadaria branca no meio; e por cima dele, em 78 m,
+     a TRIBUNA COBERTA, que é TRIANGULAR: a fileira de baixo tem a largura toda
+     e as de cima vão fechando, com as paredes brancas em diagonal dos dois
+     lados; cadeiras em xadrez branco e preto nos lados e pretas no meio; o
+     telhado retangular e chato nos pilares, com o letreiro CENTRAL CAMPEÃO
+     BRASILEIRO SÉRIE B 1986 na testeira, e a faixa da torcida na mureta;
    · À DIREITA, atrás do gol, do lado da avenida, a de degrau preto com as
      faixas brancas inclinadas; por trás, o muro branco com a fila de vãos;
    · À ESQUERDA, atrás do outro gol, a mais rasa, preta, debaixo de um telhado
@@ -46,14 +49,17 @@ const escudo = (x, y, cx, cy, r, L, F) => { const d = Math.hypot((x - cx) * L, (
    baixo pra cima): o triângulo branco de base no alto e ponta embaixo, e três escudos nas partes pretas */
 const GRANDE = (x, y, rnd) => cor((y > 0.03 && x > 0.7 - 0.3 * y && x < 0.7 + 0.1 * y) || [[0.14, 0.5], [0.3, 0.26], [0.9, 0.55]].some(([cx, cy]) => escudo(x, y, cx, cy, 3, 112, 26)), rnd);
 /* o lance de baixo da outra lateral (113 × 6,5 m): preto, com os escudos em fila */
-const BAIXO = (x, y, rnd) => cor([0.08, 0.2, 0.32, 0.44, 0.56, 0.68, 0.8, 0.92].some(cx => escudo(x, y, cx, 0.5, 2.2, 113, 6.5)), rnd);
+/* (e a escadaria branca do meio, que sobe pra tribuna) */
+const BAIXO = (x, y, rnd) => cor(Math.abs(x - 0.655) < 0.07 || [0.07, 0.19, 0.31, 0.43, 0.87, 0.95].some(cx => escudo(x, y, cx, 0.5, 2.2, 113, 6.5)), rnd);
 /* a de trás do gol da avenida (78 × 16,5 m): preta, com seis faixas brancas inclinadas, três pra cada lado */
 const FAIXAS = (x, y, rnd) => cor([0.1, 0.24, 0.38].some(c => Math.abs(x - (c + 0.07 * y)) < 0.022 || Math.abs(x - (1 - c - 0.07 * y)) < 0.022), rnd);
-/* a tribuna coberta: o telhado escuro e chato */
-const TELHADO = { h: 16.4, larg: 11.4, avanco: 0.8, cai: 0.3, cor: '#4a4b4e', cor2: '#424346', listras: true, corFrente: '#2e2f32', altFrente: 1, corBaixo: '#3a3b3e', trelica: false,
-  corPilar: '#d9d9d4', pelaColuna: true };
-const TRIBUNA = (u0, u1, c1, c2) => ({ de: A(u0, 48), ate: A(u1, 48), cor: c1, cor2: c2, padrao: 'mosaico', mistura: 0.3, corredor: 0, escadaNaBorda: true, corEscada: '#c9b98a',
-  vomitorios: false, paredeAtras: true, corFachada: BRANCO, corLado: BRANCO, parapeito: 2, cobertura: TELHADO });
+/* A TRIBUNA COBERTA É TRIANGULAR (dono, 17/11/2026, com a foto de frente: "A arquibancada coberta é [...] Triangular"): a
+   fileira de baixo tem os 78 m e as de cima vão fechando até a metade, com as paredes brancas subindo em diagonal dos dois
+   lados. As cadeiras: xadrez branco e preto nos dois lados, pretas no meio, com as duas escadas claras (`x` de um lado ao
+   outro do trapézio, `y` de baixo pra cima). O telhado, que é retangular, vai nos `blocos`. */
+const TRIB0 = -20, TRIB1 = 58, TRIBM = (TRIB0 + TRIB1) / 2, FECHA = 0.5;
+const CADEIRAS = (x, y, rnd) => { if ([0.36, 0.64].some(c => Math.abs(x - c) < 0.012)) return '#c9b98a';
+  if (x > 0.36 && x < 0.64) return rnd() < 0.12 ? PRETO2 : PRETO; return rnd() < 0.5 ? BRANCO : PRETO; };
 
 export default {
   id: 'estadio-lacerdao', nome: 'Lacerdão', clubes: ['central'], norte: 66.3, vazado: 0.3, folga: 22,
@@ -84,12 +90,13 @@ export default {
           cobertura: { h: 9, larg: 8.6, avanco: 0.6, cai: 0.4, cor: '#3d3e41', cor2: '#343538', listras: true, corFrente: BRANCO, altFrente: 0.9, trelica: false, corPilar: BRANCO, pelaColuna: true } },
         { de: A(-59.5, -38), ate: 360, tipo: 'vazio' }
       ] },
-    /* a TRIBUNA COBERTA, por cima do lance de baixo: três blocos de cadeiras, as paredes laterais brancas em triângulo */
+    /* a TRIBUNA COBERTA, por cima do lance de baixo: triangular (fecha pra trás), de paredes brancas em diagonal */
     { dentro: LAT(48), fora: LAT(58.6), reto: true, h: [6, 11.4], fileiras: 11, corredorFrente: 1.2, corMureta: BRANCO,
       trechos: [
-        { de: 0, ate: A(55, 48), tipo: 'vazio' },
-        TRIBUNA(55, 30, BRANCO, '#8f9093'), TRIBUNA(30, 5, PRETO, PRETO2), TRIBUNA(5, -20, BRANCO, '#8f9093'),
-        { de: A(-20, 48), ate: 360, tipo: 'vazio' }] },
+        { de: 0, ate: A(TRIB1, 48), tipo: 'vazio' },
+        { de: A(TRIB1, 48), ate: A(TRIB0, 48), fecha: FECHA, cor: PRETO, cor2: BRANCO, padrao: 'mosaico', mistura: 0.5, pinta: CADEIRAS, corredor: 0, vomitorios: false,
+          paredeAtras: true, corFachada: BRANCO, corLado: BRANCO, parapeito: 2 },
+        { de: A(TRIB0, 48), ate: 360, tipo: 'vazio' }] },
     /* a LATERAL MAIOR, embaixo: um lance só, descoberto, de 26 m de fundura */
     { dentro: AREIA, fora: LAT(75.6), reto: true, h: [1.8, 14.8], fileiras: 29, corredorFrente: 1.2, corMureta: '#a5673f',
       trechos: [
@@ -105,8 +112,14 @@ export default {
     /* os bancos de reserva, na areia */
     { u: -14, v: -46.6, w: 8, d: 2.2, h: 2.1, cor: '#3a3d42' }, { u: 14, v: -46.6, w: 8, d: 2.2, h: 2.1, cor: '#3a3d42' },
     /* os pilares da frente do telhado da tribuna e a faixa da torcida na mureta dela */
-    ...Array.from({ length: 8 }, (_, i) => ({ u: -19.6 + 74.4 / 7 * i, v: 48.4, w: 0.5, d: 0.5, h: 16, cor: '#d9d9d4' })),
-    { u: 17.5, v: 47.9, w: 0.3, d: 56, h: 1.1, y: 4.8, cor: BRANCO, texto: 'DESDE 2000  ·  COM O CENTRAL ONDE ELE ESTIVER', corTexto: PRETO, textoFace: true, giro: -90, textoLargura: 0.94, textoAltura: 0.55 },
+    ...Array.from({ length: 9 }, (_, i) => ({ u: TRIB0 + 0.4 + (TRIB1 - TRIB0 - 0.8) / 8 * i, v: 48.4, w: 0.5, d: 0.5, h: 16, cor: '#d9d9d4' })),
+    ...Array.from({ length: 9 }, (_, i) => ({ u: TRIB0 + 0.4 + (TRIB1 - TRIB0 - 0.8) / 8 * i, v: 58.4, w: 0.5, d: 0.5, h: 16, cor: '#d9d9d4' })),
+    { u: TRIBM, v: 47.9, w: 0.3, d: 56, h: 1.1, y: 4.8, cor: BRANCO, texto: 'DESDE 2000  ·  COM O CENTRAL ONDE ELE ESTIVER', corTexto: PRETO, textoFace: true, giro: -90, textoLargura: 0.94, textoAltura: 0.55 },
+    /* o telhado da tribuna, retangular e chato, com a testeira do letreiro na frente */
+    { u: TRIBM, v: 53.2, w: TRIB1 - TRIB0 + 1.6, d: 12.4, h: 0.5, y: 16, cor: '#4a4b4e', cobertura: true },
+    { u: TRIBM, v: 46.9, w: 0.3, d: TRIB1 - TRIB0 + 1.6, h: 1.5, y: 15, cor: '#d4d4cf', texto: 'CENTRAL CAMPEÃO BRASILEIRO SÉRIE B 1986', corTexto: PRETO, textoFace: true, giro: -90, textoLargura: 0.9, textoAltura: 0.55, cobertura: true },
+    /* as paredes brancas dos dois lados: os cantos que o triângulo deixa, na altura do pé da tribuna */
+    { u: TRIB0 + 5.2, v: 53.4, w: 10.4, d: 10.2, h: 6, cor: BRANCO }, { u: TRIB1 - 5.2, v: 53.4, w: 10.4, d: 10.2, h: 6, cor: BRANCO },
     /* o fundo da de trás do gol, pra avenida: a fila de vãos escuros no alto e as placas embaixo */
     { u: 76.25, v: 0, w: 0.3, d: 76, h: 1.6, y: 7.4, cor: '#3a3d42' },
     ...Array.from({ length: 16 }, (_, i) => ({ u: 76.3, v: -37.5 + 5 * i, w: 0.5, d: 0.5, h: 11.2, cor: BRANCO })),

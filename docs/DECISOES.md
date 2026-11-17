@@ -15113,6 +15113,14 @@ Como ficou:
 
 A Comando Alvinegro foi pro lance de baixo da tribuna, onde está a torcida na foto do dono (antes estava na "geral" que não existe); a visitante atrás do gol raso. Estimado: as alturas, o desenho exato do triângulo e dos escudos (anéis brancos simplificados), as faixas da de trás do gol, os blocos de cor das cadeiras, a arquibancada rasa e as torres de luz. Briga e chegada testadas de novo, sem erros.
 
+## Lacerdão: a tribuna coberta é triangular (dono, 17/11/2026)
+
+O dono, com uma foto de frente da tribuna: "A arquibancada coberta é retangular, veja essa imagem e corrija." E logo em seguida: "Aliás, Triangular. Errei".
+
+Eu tinha lido "parte superior em formato de triângulo" como as paredes laterais do lance, e a tribuna saiu um retângulo. Na foto de frente, a fileira de baixo ocupa a largura toda e as de cima vão fechando, com as paredes brancas subindo em diagonal dos dois lados: o lance é um trapézio que fecha pra trás. As cadeiras são em xadrez branco e preto nos dois lados e pretas no meio, com duas escadas claras; o telhado é retangular e chato, em cima dos pilares, com o letreiro CENTRAL CAMPEÃO BRASILEIRO SÉRIE B 1986 na testeira; e o lance de baixo tem a escadaria branca no meio.
+
+No gerador, `fecha: k` no trecho: o lance fecha pra trás em volta do meio dele (a fileira do fundo com `k` vezes a largura da da frente). O trapézio que já existia (o `fora` com `a` menor) fecha em volta do meio do campo, e a tribuna não fica no meio. Como a marquise do trecho acompanharia o trapézio, o telhado retangular foi feito com `blocos`. O chão andável continua retangular: os dois cantos que o triângulo deixa são paredes brancas na altura do pé da tribuna.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -574,6 +574,14 @@ Lacerdão, o hotel da avenida atrás da de faixas brancas).
 ESCUDO PINTADO NO DEGRAU, simplificado: o ajudante `escudo(x, y, cx, cy, r, L, F)`
 da ficha dele (um anel com miolo), dentro do `pinta`.
 
+LANCE QUE FECHA PRA TRÁS FORA DO MEIO DO CAMPO (a tribuna triangular do Lacerdão,
+17/11/2026): `fecha: k` no trecho (a fileira do fundo com `k` vezes a largura da
+da frente, em volta do meio do TRECHO). A `cobertura` do trecho fecha junto: se o
+telhado é retangular, faça com `blocos` (`cobertura: true`). O chão andável
+continua retangular; tape os dois cantos com blocos na altura do pé do lance.
+"FORMATO DE TRIÂNGULO" DITO PELO DONO: antes de escolher o que é triangular
+(parede, planta, pintura), procure a foto de FRENTE daquele lance.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
