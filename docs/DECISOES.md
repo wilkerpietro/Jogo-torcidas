@@ -15138,6 +15138,19 @@ Estimado: as alturas, a cor do degrau da de trás do gol, a galeria de tijolo e 
 
 O Cornélio de Barros entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes.
 
+## Cornélio de Barros: as duas arquibancadas grandes mudam de fundura (dono, 17/11/2026)
+
+O dono: "Observe que a arquibancada lateral maior varia de tamanho ao longo do comprimento dela e a arquibancada atrás do gol também. Veja detalhadamente as imagens que mandei pra fazer o mais perfeito possível".
+
+Eu tinha feito as duas como retângulos de fundura constante (20 e 15 m). Ampliando o satélite e a aérea de dia:
+
+- **A lateral** tem um degrau no meio. A metade do lado da praça tem 24 m de fundura e é mais alta, com a caixa branca da boca junto do degrau. A outra metade é mais rasa (19 m) e ainda afunila até a ponta (16 m), porque o fundo acompanha a divisa das casas. As escadas creme ficaram onde o satélite mostra.
+- **A de trás do gol** afunila de 18 m, no canto da lateral, pra 15 m na ponta do lado da torre, com as escadas brancas onde o satélite mostra e a escada larga que separa o lance da ponta (o "lance pequeno do canto" que eu tinha visto na foto do estádio cheio e deixado de fora é esse lance da ponta).
+
+Na ficha, o fundo torto é um contorno por pontos (`forma: 'raios'`) com `normal: true` no trecho (a escada sai perpendicular à beira do campo e vai reta até o fundo) e `inclinacao` no anel (a altura acompanha a fundura: onde é mais funda é mais alta). A galeria de tijolo acompanha o fundo inclinado. A torcida da casa foi pra metade funda da lateral.
+
+Não entrou: a faixa de degraus pintada de amarelo que o lance da ponta tem na foto do estádio cheio (o satélite não mostra). Briga e chegada testadas de novo, sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

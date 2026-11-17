@@ -590,6 +590,15 @@ TRÊS SETORES DA CASA NO MESMO LADO DÃO TRÊS PORTÕES COLADOS e os bondes cruz
 funil do vizinho (dez travessias no teste de chegada): espalhe os setores por
 lados diferentes quando houver arquibancada.
 
+ARQUIBANCADA QUE NÃO É RETÂNGULO (o Cornélio de Barros, 17/11/2026; o dono: "varia
+de tamanho ao longo do comprimento dela"): em estádio encaixado entre casas o
+fundo acompanha a divisa do lote. AMPLIE o satélite três vezes e meça o fundo
+nas DUAS pontas e no meio de cada arquibancada antes de dar um número só;
+procure degrau (duas metades de fundura diferente) e fundo inclinado. Na ficha:
+`fora` por pontos (`POLI`), `normal: true` no trecho e `inclinacao` no anel
+(com `inclinacao: null` nos trechos que não devem segui-la); um trecho por vão
+entre escadas, com as escadas onde o satélite mostra.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
