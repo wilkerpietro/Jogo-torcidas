@@ -33930,7 +33930,7 @@ window.__ARREDORES = {
  "estadio-arena-das-dunas": {
   "nome": "Arena das Dunas",
   "escala": 5.668,
-  "imagem": "img/cenas/arredores_estadio_arena_das_dunas.webp?v=9995e53b",
+  "imagem": "img/cenas/arredores_estadio_arena_das_dunas.webp?v=8af120e4",
   "largura": 2672,
   "altura": 2360,
   "celula": 8,

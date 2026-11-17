@@ -15271,6 +15271,23 @@ Estimado: todas as alturas (41 m na crista do oeste, 35 na do leste); a divisão
 
 Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). O Rio Grande do Norte está completo.
 
+## Arena das Dunas: o anel de cima em blocos e os camarotes só de um lado (dono, 17/11/2026)
+
+O dono, com quatro recortes de perto das fotos: "Perceba que a parte superior é cheia de fendas no meio da arquibancada e entre a superior e inferior tem um lance de camarotes de um lado. A outra lateral tem o padrão da última imagem". Eu tinha feito o anel de cima inteiriço e a mesma faixa de laje e vidro nas duas laterais.
+
+**O anel de cima** virou blocos, um por pétala (cinco no leste, seis no oeste), mais estreitos no fundo (`fecha: 0.84`), com 0,8 grau de vão de cada lado: entre dois blocos fica a fenda em V, com o piso de concreto no fundo. É por ela que desce **o arco** de cada divisa de pétala, a treliça branca de painéis translúcidos que sai da ponta de dentro da cobertura e pisa no corredor da frente dos blocos. A fenda entre as pétalas ficou mais larga (5% do gomo de cada lado) e mais clara.
+
+**Entre os dois anéis:**
+
+- **oeste** (o lado das pétalas grandes): o lance dos camarotes — o vão escuro, a laje branca com duas fileiras de cadeiras, o vidro — e, por cima, a fileira corrida da frente do anel de cima, separada dos blocos pelo corredor;
+- **leste:** a faixa lisa de concreto, com as portas escuras, e os blocos direto por cima.
+
+Qual lado é qual saiu das fotos: o prédio vermelho que aparece por trás da lateral da faixa lisa fica a nordeste do estádio na aérea de fora, do lado oposto às pétalas grandes.
+
+**No gerador**, a opção `petalas` ganhou `arco: { pe, h, passos, borda, cor, cor2, corBorda }`: a faixa em quarto de elipse da ponta de dentro da cobertura até o contorno `pe`, na altura `h` (número ou função do ângulo).
+
+Estimado: a largura das fendas e quanto o bloco estreita; a forma do arco e onde ele pisa; as alturas de cada faixa dos camarotes; quantas portas tem a faixa do leste (sete, só no trecho reto). As cadeiras dos camarotes ficam atrás do parapeito e quase não aparecem de baixo. Briga e chegada testadas de novo sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

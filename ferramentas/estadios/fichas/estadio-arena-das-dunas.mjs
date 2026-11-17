@@ -8,8 +8,15 @@
    ESQUERDA; o sul, o lado aberto, à DIREITA.
    AS ARQUIBANCADAS, de cadeiras azuis em mosaico de dois tons:
    · o anel de BAIXO dá a volta inteira no campo, sem pista, de cantos redondos;
-   · nas DUAS LATERAIS, por cima dele, a faixa escura dos camarotes e o anel de
-     CIMA, que acompanha a curva e acaba antes dos cantos;
+   · nas DUAS LATERAIS, por cima dele, o anel de CIMA, que acompanha a curva e
+     acaba antes dos cantos. Ele é em BLOCOS, um por pétala, mais estreitos no
+     fundo: entre um e outro fica a fenda em V por onde desce o ARCO da
+     cobertura (a treliça branca de painéis translúcidos). No OESTE, entre os
+     dois anéis, fica o lance dos CAMAROTES (o vão escuro, a laje branca com as
+     cadeiras, o vidro) e a fileira corrida da frente do anel de cima; no
+     LESTE, só a faixa lisa de concreto com as portas (o dono corrigiu, com
+     quatro recortes de perto: eu tinha feito o anel de cima inteiriço e a
+     mesma faixa de vidro dos dois lados);
    · atrás dos DOIS GOLS só existe o anel de baixo, com a esplanada por trás.
    A COBERTURA são as PÉTALAS: cascas brancas soltas, em forma de duna, que
    nascem baixas do lado de fora (são a fachada), sobem abauladas por cima das
@@ -41,16 +48,26 @@ const CADEIRA = mais => ({ cor: AZUL, cor2: AZUL2, padrao: 'mosaico', mistura: 0
   vomitorios: { f: 0.5, cada: 2, larg: 4, fundo: 3.4, corParapeito: '#e4e4df' }, paredeAtras: true, corFachada: '#dcdcd6', corLado: '#dcdcd6', parapeito: 1.1, ...mais });
 /* onde o anel de cima começa e acaba em cada lateral */
 const C0 = 40, C1 = 140;
-const VIDRO = '#3c4856';
-/* a laje clara dos camarotes: um degrau só, estreito, que serve de muro branco por baixo do vidro */
-const LAJE = { cor: '#e6e6e1', cor2: '#e6e6e1', padrao: 'mosaico', mistura: 0, semCadeiras: true, espelhoPintado: true, corredor: 0, vomitorios: false, corMureta: '#e6e6e1', paredeAtras: false };
+const VIDRO = '#3c4856', ESCURO = '#2c3138';
+/* os contornos por trás do anel de baixo: `R(d)` fica `d` metros pra fora dele */
+const R = d => ({ a: 91 + d, b: 68.5 + d, r: 39 + d });
+const ESPLANADA = { tipo: 'passagem', cor: CONC, h: [10.3, 10.3] };
+/* um degrau só, estreito, que serve de muro (a faixa escura do vão dos camarotes) */
+const LAJE = { padrao: 'mosaico', mistura: 0, semCadeiras: true, espelhoPintado: true, corredor: 0, vomitorios: false, paredeAtras: false };
+/* os blocos do anel de cima entre as divisas `angs`: a fenda de 0,8 grau de cada lado (menos nas duas pontas) e o fundo mais estreito */
+const BLOCOS = (angs, mais) => angs.slice(0, -1).flatMap((a0, i) => { const a1 = angs[i + 1], g0 = i ? 0.8 : 0, g1 = i < angs.length - 2 ? 0.8 : 0;
+  return [...(g0 ? [{ de: a0, ate: a0 + g0, tipo: 'vazio' }] : []),
+    { de: a0 + g0, ate: a1 - g1, ...CADEIRA({ fecha: 0.84, corredor: 9, vomitorios: { f: 0.1, cada: 2, larg: 3.6, fundo: 3, corParapeito: '#e4e4df' }, ...mais }) },
+    ...(g1 ? [{ de: a1 - g1, ate: a1, tipo: 'vazio' }] : [])]; });
 /* AS PÉTALAS: as divisas, em graus (0 é o meio do fundo do sul, 90 o do leste, 180 o do norte, 270 o do oeste), e as alturas
    de cada uma: [a beira de fora, a testeira de dentro, a crista] */
 const LESTE = [20, 35.8, 54.2, 76.2, 103.8, 125.8, 144.2, 157.8], NORTE = [157.8, 179.4, 196];
 const OESTE = [196, 213.6, 230.3, 247.7, 270, 292.3, 309.7, 326.4, 340], SUL = [-20, -7, 7, 20];
 const ALT_LESTE = ang => { const d = Math.abs(90 - ang); return d < 14 ? [7, 32, 35] : d < 35 ? [7, 31, 34] : d < 52 ? [7, 29.5, 32.2] : [7, 21, 23.5]; };
 const ALT_OESTE = ang => { const d = Math.abs(270 - ang); return d < 25 ? [7, 37, 41] : d < 40 ? [7, 35.5, 39] : d < 55 ? [7, 32, 35.2] : [7, 23, 26]; };
-const PETALA = { cor: BRANCO, cor2: BRANCO2, corBaixo: '#d2d5d4', bojo: 2.2 }, FORMA = { fenda: 0.022, curva: 2.05, corFenda: '#b3b9bc' };
+const PETALA = { cor: BRANCO, cor2: BRANCO2, corBaixo: '#f6f7f6', bojo: 2.2 }, FORMA = { fenda: 0.05, curva: 2.05, corFenda: '#c6cdd1' };
+/* o arco de cada divisa: pisa no corredor da frente dos blocos (nas laterais) ou na esplanada (nos cantos) */
+const ARCO = hLado => ({ pe: R(5.7), h: ang => { const a = ((ang % 360) + 360) % 360, d = Math.min(Math.abs(a - 90), Math.abs(a - 270)); return d < 50 ? hLado : 10.4; }, cor: '#ffffff', cor2: '#eef2f4', corBorda: '#9aa2a8' });
 
 /* AS ESCADAS DE FORA: em cada divisa de pétala, a escada larga que desce do pódio pro chão (dois lances, em degraus de caixa) */
 const raioE = (ang, c) => { const dx = Math.cos(ang * RAD), dy = Math.sin(ang * RAD), k = dx * dx / (c.a * c.a) + dy * dy / (c.b * c.b), b = -2 * dy * c.cv / (c.b * c.b), q = c.cv * c.cv / (c.b * c.b) - 1;
@@ -70,18 +87,30 @@ export default {
     /* O ANEL DE BAIXO: a volta inteira */
     { dentro: L0, fora: L1, h: [1.6, 10.2], fileiras: 26, corredorFrente: 1.6,
       trechos: [{ de: 0, ate: 360, ...CADEIRA() }] },
-    /* por cima dele, nas duas laterais, a faixa escura dos camarotes e O ANEL DE CIMA; atrás dos gols, a esplanada */
-    { dentro: { a: 90.6, b: 68.1, r: 38.6 }, fora: L1, h: [12.4, 12.6], fileiras: 1, corredorFrente: 0,
+    /* POR CIMA DELE, NAS DUAS LATERAIS (dono, 17/11/2026, com quatro recortes de perto: "a parte superior é cheia de fendas no
+       meio da arquibancada e entre a superior e inferior tem um lance de camarotes de um lado. A outra lateral tem o padrão da
+       última imagem"). No OESTE, de baixo pra cima: a faixa escura do vão aberto, a laje branca com as cadeiras dos camarotes,
+       o vidro, a fileira corrida da frente do anel de cima e os blocos. No LESTE, só a faixa lisa de concreto com as portas e
+       os blocos. Atrás dos gols, a esplanada. */
+    { dentro: R(0.15), fora: R(0.3), h: [11.5, 11.6], fileiras: 1, corredorFrente: 0,
+      trechos: [{ de: -C0, ate: 360 - C1, ...ESPLANADA }, { de: 360 - C1, ate: 360 - C0, ...LAJE, cor: ESCURO, cor2: ESCURO, corMureta: ESCURO }] },
+    { dentro: R(0.3), fora: R(2.2), h: [13.2, 13.7], fileiras: 2, corredorFrente: 0,
+      trechos: [{ de: -C0, ate: 360 - C1, ...ESPLANADA }, { de: 360 - C1, ate: 360 - C0, ...CADEIRA({ vomitorios: false, corredor: 0, paredeAtras: false, corMureta: '#e6e6e1' }) }] },
+    { dentro: R(2.2), fora: R(4.6), h: [16.2, 17], fileiras: 3, corredorFrente: 0,
+      trechos: [{ de: -C0, ate: 360 - C1, ...ESPLANADA }, { de: 360 - C1, ate: 360 - C0, ...CADEIRA({ vomitorios: false, corredor: 0, paredeAtras: false, corMureta: VIDRO }) }] },
+    /* o piso de concreto por baixo dos blocos: é ele que aparece nas fendas */
+    { dentro: R(4.6), fora: U1, h: [17.3, 17.3], fileiras: 2, corredorFrente: 0,
       trechos: [
-        { de: -C0, ate: C0, tipo: 'vazio' }, { de: C0, ate: C1, ...LAJE },
-        { de: C1, ate: 360 - C1, tipo: 'vazio' }, { de: 360 - C1, ate: 360 - C0, ...LAJE }
+        { de: -C0, ate: C0, ...ESPLANADA }, { de: C0, ate: C1, tipo: 'passagem', cor: '#e2e2dd', h: [15.5, 15.5], corMureta: '#cfd0cb' },
+        { de: C1, ate: 360 - C1, ...ESPLANADA }, { de: 360 - C1, ate: 360 - C0, tipo: 'passagem', cor: '#e2e2dd', corMureta: '#e6e6e1' }
       ] },
-    { dentro: L1, fora: U1, h: [15.8, 27], fileiras: 21, corredorFrente: 1.4,
+    /* O ANEL DE CIMA, em BLOCOS: um por pétala, mais estreito no fundo, com a fenda em V por onde desce o arco da cobertura */
+    { dentro: R(4.6), fora: U1, h: [17.4, 27.6], fileiras: 15, corredorFrente: 2.2,
       trechos: [
-        { de: -C0, ate: C0, tipo: 'passagem', cor: CONC, h: [10.3, 10.3] },
-        { de: C0, ate: C1, ...CADEIRA({ vomitorios: { f: 0.08, cada: 2, larg: 4, fundo: 3.4, corParapeito: '#e4e4df' }, corMureta: VIDRO }) },
-        { de: C1, ate: 360 - C1, tipo: 'passagem', cor: CONC, h: [10.3, 10.3] },
-        { de: 360 - C1, ate: 360 - C0, ...CADEIRA({ vomitorios: { f: 0.08, cada: 2, larg: 4, fundo: 3.4, corParapeito: '#e4e4df' }, corMureta: VIDRO }) }
+        { de: -C0, ate: C0, tipo: 'vazio' },
+        ...BLOCOS([C0, 54.2, 76.2, 103.8, 125.8, C1], { h: [15.6, 26.2], corMureta: '#cfd0cb' }),
+        { de: C1, ate: 360 - C1, tipo: 'vazio' },
+        ...BLOCOS([360 - C1, 230.3, 247.7, 270, 292.3, 309.7, 360 - C0], { corMureta: '#e6e6e1' })
       ] },
     /* o pódio de fora, de onde nascem as pétalas */
     { dentro: U1, fora: PODIO, h: [6.6, 6.6], fileiras: 2, corredorFrente: 0, corMureta: '#bdbdb7',
@@ -90,8 +119,8 @@ export default {
   fachada: { cor: '#cfcfc9' },
   refletores: [],
   coberturasAnel: [
-    { ...PETALA, dentro: BOCA, fora: FORA, angulos: LESTE, alturas: ALT_LESTE, petalas: { ...FORMA, opacaDe: 0.7, crista: 0.3, testeira: 3.2 } },
-    { ...PETALA, dentro: BOCA, fora: FORA, angulos: OESTE, alturas: ALT_OESTE, petalas: { ...FORMA, opacaDe: 0.55, crista: 0.3, testeira: 3.6 } },
+    { ...PETALA, dentro: BOCA, fora: FORA, angulos: LESTE, alturas: ALT_LESTE, petalas: { ...FORMA, opacaDe: 0.7, crista: 0.3, testeira: 3.2, arco: ARCO(15.7) } },
+    { ...PETALA, dentro: BOCA, fora: FORA, angulos: OESTE, alturas: ALT_OESTE, petalas: { ...FORMA, opacaDe: 0.55, crista: 0.3, testeira: 3.6, arco: ARCO(17.5) } },
     { ...PETALA, bojo: 1.6, dentro: { a: 101, b: 82, forma: 'elipse' }, fora: { a: 124, b: 99, cv: -6, forma: 'elipse' }, angulos: NORTE, alturas: () => [7, 15, 17.4],
       petalas: { ...FORMA, opacaDe: 0.5, crista: 0.35, testeira: 2.4 } },
     { ...PETALA, bojo: 0.9, dentro: { a: 126, b: 100, cv: -6, forma: 'elipse' }, fora: { a: 137.5, b: 110, cv: -6, forma: 'elipse' }, angulos: SUL, alturas: () => [6.9, 9.4, 10.4],
@@ -104,6 +133,8 @@ export default {
     /* os telões, nos dois cantos do norte, no fim do anel de cima */
     { u: -84, v: 52, w: 1.2, d: 13, h: 6.5, y: 15, cor: '#15171b', giro: 33, cobertura: true },
     { u: -84, v: -52, w: 1.2, d: 13, h: 6.5, y: 15, cor: '#15171b', giro: -33, cobertura: true },
+    /* as portas escuras da faixa lisa do leste, por baixo dos blocos */
+    ...[-45, -30, -15, 0, 15, 30, 45].map(u => ({ u, v: 73, w: 2.6, d: 0.3, h: 2.4, y: 10.4, cor: ESCURO })),
     ...ESCADAS,
     /* os bancos de reserva, do lado oeste */
     { u: -14, v: -40.6, w: 12, d: 2.4, h: 2.1, cor: '#e9eaf0' }, { u: 14, v: -40.6, w: 12, d: 2.4, h: 2.1, cor: '#e9eaf0' }

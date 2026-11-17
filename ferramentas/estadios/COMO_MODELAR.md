@@ -670,6 +670,20 @@ OS ÂNGULOS DOS TRECHOS de um anel têm de dar 360 sem se sobrepor: um trecho
 errado por cima de outro some sem aviso (o anel de cima das Dunas saiu certo
 por acaso na primeira prova).
 
+ANEL DE CIMA EM BLOCOS COM FENDAS (a Arena das Dunas, correção do dono): o
+ajudante `BLOCOS(angs, mais)` da ficha dela — um trecho por vão, com `fecha` e
+um `vazio` estreito de cada lado; por baixo, um anel `passagem` do mesmo
+contorno faz o piso que aparece nas fendas. O `arco` das `petalas` desce pela
+fenda até o contorno `pe`.
+FAIXAS ENTRE DOIS ANÉIS (os camarotes das Dunas): o muro da frente de cada anel
+vai do chão até 1,1 m acima do primeiro degrau, e o que fica na frente esconde
+o de trás. Empilhe anéis estreitos, cada um um pouco mais pra fora e mais alto
+que o anterior: cada muro só aparece acima do topo do muro da frente. Um trecho
+`passagem` não tem muro; use um degrau só (`LAJE`).
+AS DUAS LATERAIS PODEM SER DIFERENTES: confira cada uma numa foto antes de
+copiar a de um lado pro outro, e ache qual é qual por um prédio de fora que
+apareça numa foto de dentro e na aérea.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

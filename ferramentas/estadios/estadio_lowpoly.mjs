@@ -488,7 +488,7 @@ export function construir(THREE, ficha) {
     const pt = (ang, f, dh) => { const q = pu(ang, f, dh); return P(q[0], q[1], q[2]); };
     const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = angs[i], a1 = angs[i + 1]; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
     /* AS PÉTALAS (a Arena das Dunas; dono, 17/11/2026: "Preste bem atenção nos detalhes que o desenho é complexo"): com
-       `petalas: { fenda, passos, fatias, crista, curva, testeira, opacaDe, corFenda }`, cada gomo é uma casca solta, em forma
+       `petalas: { fenda, passos, fatias, crista, curva, testeira, opacaDe, corFenda, arco }`, cada gomo é uma casca solta, em forma
        de duna — nasce baixa na beira de fora, sobe abaulada até a crista (na fração `crista` a partir da beira de dentro) e
        acaba na testeira reta da beira de dentro; de través ela é uma almofada (`bojo` no meio). Entre uma e outra fica a
        `fenda` (fração do gomo, de cada lado), fechada mais embaixo pela faixa translúcida `corFenda`. `alturas(ang)` devolve
@@ -511,7 +511,17 @@ export function construir(THREE, ficha) {
         for (const t of [0, 1]) for (let j = 0; j < m; j++) { const f0 = j / m, f1 = (j + 1) / m, lado = 1.4; ((f0 + f1) / 2 >= fo ? Ro : R).quad(pp(t, f0), pp(t, f1), pp(t, f1, -lado), pp(t, f0, -lado), pe.corLado || '#dcdcd6'); }
         /* a faixa translúcida da fenda, até a pétala seguinte */
         const prox = pets[(i + 1) % n]; if (i < n - 1 || inteiro) for (let j = 0; j < m; j++) { const f0 = j / m, f1 = (j + 1) / m, M = (f0 + f1) / 2 >= fo ? Ro : R, h0 = Math.min(pt2.perfil(f0), prox.perfil(f0)) - 1, h1 = Math.min(pt2.perfil(f1), prox.perfil(f1)) - 1;
-          M.quad(xy(pt2.a1, f0, h0), xy(pt2.a1, f1, h1), xy(prox.a0, f1, h1), xy(prox.a0, f0, h0), cF); } });
+          M.quad(xy(pt2.a1, f0, h0), xy(pt2.a1, f1, h1), xy(prox.a0, f1, h1), xy(prox.a0, f0, h0), cF); }
+        /* O ARCO de cada divisa (dono, 17/11/2026, com os recortes de perto: "a parte superior é cheia de fendas no meio da
+           arquibancada"): a treliça branca de painéis translúcidos que sai da ponta de dentro da cobertura e desce em quarto de
+           elipse até o pé, no meio da arquibancada, entre dois blocos de cadeiras. `arco: { pe: contorno onde ela pisa, h:
+           altura do pé (número ou função do ângulo), passos, borda, cor, cor2, corBorda }`. */
+        if (pe.arco && (i < n - 1 || inteiro)) { const ar = pe.arco, na = ar.passos || 8, am2 = (pt2.a1 + prox.a0) / 2, hTip = Math.min(pt2.perfil(0), prox.perfil(0)) - 1, hPe = typeof ar.h === 'function' ? ar.h(am2) : ar.h;
+          const pa = (ang, sq) => { const th = sq * Math.PI / 2, r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, ar.pe), q = ponto(ang, r0 + (r1 - r0) * Math.sin(th)); return P(q[0], q[1], hPe + (hTip - hPe) * Math.cos(th)); };
+          const e0 = pt2.a1, e1 = prox.a0, w = e1 - e0, bd = ar.borda == null ? 0.16 : ar.borda, cB = ar.corBorda || '#7c858b';
+          for (let j = 0; j < na; j++) { const s0 = j / na, s1 = (j + 1) / na;
+            R.quad(pa(e0, s0), pa(e0, s1), pa(e0 + w * bd, s1), pa(e0 + w * bd, s0), cB); R.quad(pa(e1 - w * bd, s0), pa(e1 - w * bd, s1), pa(e1, s1), pa(e1, s0), cB);
+            R.quad(pa(e0 + w * bd, s0), pa(e0 + w * bd, s1), pa(e1 - w * bd, s1), pa(e1 - w * bd, s0), j % 2 ? (ar.cor2 || ar.cor || '#e6ebee') : (ar.cor || '#e6ebee')); } } });
       continue; }
     const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
     /* AS FOLHAS (o Beira-Rio): com `bojo`, cada gomo é uma folha abaulada — a espinha do meio sobe `bojo` metros, e
