@@ -640,6 +640,18 @@ PRÉDIO ATRÁS DA ARQUIBANCADA (os camarotes do Frasqueirão): o satélite mostr
 telhado por cima de tudo e engana na fundura. A foto de frente diz se o degrau
 passa por baixo do prédio (aqui passa, com a mesma fundura de ponta a ponta).
 
+LETREIRO PINTADO NO DEGRAU (o Nogueirão, 17/11/2026): o ajudante `LETREIRO` da
+ficha dele desenha o texto no `pinta`, com letras de 7 linhas, uma casa por
+lugar. O gerador NÃO conta os lugares pelo comprimento em metros do trecho: num
+anel `reto` ele usa o arco e a fundura vistos do meio do campo, então um trecho
+de 46 m longe do meio saiu com 53 lugares e 11 degraus. Meça na prova (um
+`console.error` dentro do `pinta`, que o `assar.js` repassa) e acerte com
+`celula` e `passoFileira` no trecho; com uma coluna a menos o H vira F. Sem
+escada no trecho do letreiro (`corredor: 0`).
+ESTÁDIO DEMOLIDO (o Nogueirão): o satélite novo mostra o terreno vazio. O da
+Esri em zoom 18 ou 17 costuma guardar a imagem antiga, e o contorno do
+OpenStreetMap continua lá.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
