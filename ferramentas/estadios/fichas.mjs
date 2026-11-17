@@ -637,3 +637,4 @@ import marizao from './fichas/estadio-marizao.mjs'; FICHAS[marizao.id] = marizao
 import frasqueirao from './fichas/estadio-frasqueirao.mjs'; FICHAS[frasqueirao.id] = frasqueirao;
 import nogueirao from './fichas/estadio-nogueirao.mjs'; FICHAS[nogueirao.id] = nogueirao;
 import arenaDasDunas from './fichas/estadio-arena-das-dunas.mjs'; FICHAS[arenaDasDunas.id] = arenaDasDunas;
+import presidenteVargas from './fichas/estadio-presidente-vargas.mjs'; FICHAS[presidenteVargas.id] = presidenteVargas;

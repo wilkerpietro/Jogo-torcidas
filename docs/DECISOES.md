@@ -15294,6 +15294,26 @@ O dono, ao ver a prova com os arcos: "Não desce arco nenhum, fica só a fenda m
 
 Saíram os arcos da ficha e a opção `arco` das `petalas` no gerador (a seção anterior a descreve; ela não existe mais). Ficam a fenda em V entre os blocos do anel de cima, com o piso de concreto no fundo, e a faixa clara entre as pétalas, só na cobertura. Briga testada de novo sem erros; o lado de fora não mudou.
 
+## Ceará: Presidente Vargas (dono, 17/11/2026)
+
+O dono: "vamos pro Ceará agora. Falta o Junco e o Presidente Vargas. Vamos iniciar pelo Presidente Vargas." A primeira prova saiu do satélite e de duas fotos do acervo livre da Wikimedia (de 2011, fora do repositório); enquanto ela assava, o dono mandou três fotos: a tribuna vista do gramado, uma aérea do lado oposto e a fachada da entrada, da rua. A ficha é `fichas/estadio-presidente-vargas.mjs`, do Ferroviário e do Floresta, em Fortaleza.
+
+**As medidas** saíram do satélite (Google); o rumo do campo (163,5 graus), do gramado no OpenStreetMap.
+
+**O estádio.** Um anel só, fechado, em retângulo de cantos redondos, colado no gramado (não tem pista), de cadeiras azuis com escadas amarelas: 21,5 m de fundura, cortado ao meio pelo corredor de volta inteira, com as bocas de parede cor de areia no alto da metade de baixo. Por fora, o muro azul com a listra laranja.
+
+- **A tribuna** (no meio da lateral do oeste): o telhado de aço inclinado, com a frente no alto e nela o letreiro "O PV TAMBÉM É SEU. PRESERVE O ESTÁDIO.", o fundo em cima de duas colunas redondas de concreto e o arco branco por cima; debaixo dele, os dois andares de cabines envidraçadas; ao pé, o túnel e os bancos de reserva.
+- **A entrada**, atrás da tribuna, pra rua: a marquise branca com o letreiro ESTÁDIO PRESIDENTE VARGAS, os oito pilares azuis, a faixa amarela, as grades cor de madeira, os muros azuis dos lados e a escadaria vermelha.
+- **O placar** no alto do fundo do sul e quatro torres de luz, duas de cada lado.
+
+O que as fotos do dono mudaram na primeira prova: o telhado era uma laje branca plana, sem colunas nem letreiro; as cabines tinham um andar; as paredes das bocas e do corredor eram brancas; o muro de fora era cinza; a entrada era um prédio liso.
+
+**A listra do muro de fora** são três anéis finos, um na frente do outro e cada um mais baixo. O muro da frente de cada anel sobe 1 m acima dele e encosta no muro de trás do anterior: com outra cor e mais alto, as duas cores brigam na mesma parede e a listra sai falhada. Ele leva a cor do anterior e fica mais baixo.
+
+Estimado: as alturas (o alto da arquibancada a 10,6 m, a frente do telhado a 22); a posição das bocas e das escadas; as medidas da entrada; o desenho das listras. As cadeiras estão desbotadas (azul claro na aérea do dono): ficou um azul médio. As letras da entrada são soltas, brancas, contra o céu; aqui estão numa placa azul. Não entraram o vidro da frente das arquibancadas, as bandeirinhas e a rampa curva da entrada. As torcidas são escolha minha: a da casa atrás do gol do norte, com apoio na lateral do leste; a visitante atrás do gol do sul, o do placar.
+
+O Presidente Vargas entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

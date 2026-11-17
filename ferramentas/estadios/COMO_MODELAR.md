@@ -686,6 +686,19 @@ AS DUAS LATERAIS PODEM SER DIFERENTES: confira cada uma numa foto antes de
 copiar a de um lado pro outro, e ache qual é qual por um prédio de fora que
 apareça numa foto de dentro e na aérea.
 
+MURO DE FORA EM LISTRAS (o Presidente Vargas, 17/11/2026): três anéis finos de
+um degrau, um na frente do outro, cada um mais baixo que o de trás. O muro da
+FRENTE de cada um sobe 1 m acima dele e encosta no muro de trás do anterior:
+dê a ele a cor do anterior (`corMureta`) e deixe-o mais baixo, senão as duas
+cores brigam na mesma parede e a listra sai em pedaços.
+ANEL RETO DE CANTOS REDONDOS, VOLTA INTEIRA: o ajudante `VOLTA(d, reta, mais)`
+da ficha do PV dá as quatro retas e os quatro cantos de um anel `reto` (os
+ângulos mudam de anel pra anel, porque são medidos na beira de dentro).
+LETREIRO NUM BLOCO: a face do `textoFace` olha pra `+u`; `giro: 90` vira pra
+`+v` e `giro: -90` pra `-v`.
+TELHADO SOBRE COLUNAS COM ARCO (a tribuna do PV): `cobertura` no trecho com
+`cai` negativo (a frente no alto) e `arcos` com `pilar` pras duas colunas.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
