@@ -15629,6 +15629,27 @@ Couto Pereira, Arena do Grêmio, Mineirão, Neo Química Arena, Ilha do Retiro, 
   organizadas certas, sem erro de página; e nas onze cenas de fora (base e variantes) todo bonde tem caminho.
 - **Conferido também**: os vinte estádios com caminho de todos os bondes, na assadeira e no jogo.
 
+## Arredores de verdade: o funil, o cordão e a polícia, pelas marcas finais (17/11/2026)
+
+O dono, sobre as grades e a polícia: "desenhe o ideal de acordo com o que eu marquei". O montador (`seguranca`, em
+`arredores_marcas.mjs`) desenha, pra cada cena — a de base e cada variante dos estádios de dois clubes —, a partir dos
+caminhos de verdade de cada bonde até o portão dele:
+
+- **O funil**: dois gradis de fila saindo de cada portão, até 14 m, e nunca por cima do asfalto (o funil não fecha a
+  rua). A largura vem da escala da cena: o gradil ocupa, no jogo, uma faixa de uns 13 px e o boneco uma célula de 8 px;
+  numa cena de 4 px por metro um funil de 7 m não passava ninguém, e agora ele tem uns 12 m (9 m nas cenas de 6 px/m).
+- **O cordão**: um anel de grades de proteção (a que quebra) em volta do portão da visitante, aberto só nos trechos por
+  onde a visitante chega. O raio é o maior, de 70 a 32 m, em que nenhum bonde da casa precisa passar por dentro do anel
+  nem tem portão perto; trecho de anel com mais de 25 m vira várias grades. Na rua, isso dá grades atravessando as ruas
+  (Allianz Parque); na esplanada, um arco (Mineirão, Neo Química Arena).
+- **A polícia**: um posto de cada lado de cada portão e um atrás de cada trecho do cordão, do lado da casa.
+- **A conferência**: as peças entram uma a uma, e cada funil e cada trecho de cordão só fica se, com os que já ficaram,
+  todo bonde ainda chegar no portão dele (com o corpo e a espessura do gradil, na escala da cena).
+- **Onde não há cordão**: no Nilton Santos (não há raio em que a casa não passe perto do portão da visitante) e nos
+  clássicos do Castelão (os portões dos dois clubes são vizinhos). No Barradão e na Vila Belmiro não há funil (os portões
+  dão direto no asfalto). Tudo isso é escolha minha, sem marca do dono.
+- **Conferido**: as 27 cenas (19 estádios e 8 variantes) com caminho de todos os bondes na assadeira e no jogo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

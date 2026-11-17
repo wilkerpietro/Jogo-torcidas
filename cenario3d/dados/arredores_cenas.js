@@ -38027,10 +38027,160 @@ window.__ARREDORES = {
    {
     "x": 1739,
     "y": 1528
+   },
+   {
+    "x": 978,
+    "y": 1116
+   },
+   {
+    "x": 1234,
+    "y": 1547
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1907,
+      1069
+     ],
+     [
+      1955,
+      1064
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1913,
+      1127
+     ],
+     [
+      1962,
+      1121
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1238,
+      783
+     ],
+     [
+      1216,
+      740
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1289,
+      757
+     ],
+     [
+      1267,
+      713
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1055,
+      1396
+     ],
+     [
+      1012,
+      1419
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1027,
+      1345
+     ],
+     [
+      984,
+      1368
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      1769,
+      1475
+     ],
+     [
+      1800,
+      1512
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      1725,
+      1513
+     ],
+     [
+      1756,
+      1550
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1003,
+     "y": 1129
+    },
+    "ate": {
+     "x": 966,
+     "y": 1138
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1206,
+     "y": 1550
+    },
+    "ate": {
+     "x": 1234,
+     "y": 1519
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2422,
@@ -38256,10 +38406,156 @@ window.__ARREDORES = {
    {
     "x": 557,
     "y": 744
+   },
+   {
+    "x": 365,
+    "y": 433
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1541,
+      1314
+     ],
+     [
+      1581,
+      1382
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1490,
+      1344
+     ],
+     [
+      1530,
+      1412
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 870,
+     "y": 524
+    },
+    "ate": {
+     "x": 752,
+     "y": 438
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 762,
+     "y": 443
+    },
+    "ate": {
+     "x": 617,
+     "y": 402
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 628,
+     "y": 403
+    },
+    "ate": {
+     "x": 477,
+     "y": 415
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 488,
+     "y": 412
+    },
+    "ate": {
+     "x": 351,
+     "y": 476
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 360,
+     "y": 469
+    },
+    "ate": {
+     "x": 254,
+     "y": 576
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 260,
+     "y": 567
+    },
+    "ate": {
+     "x": 198,
+     "y": 705
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 201,
+     "y": 694
+    },
+    "ate": {
+     "x": 192,
+     "y": 845
+    },
+    "modulos": 6,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 190,
+     "y": 834
+    },
+    "ate": {
+     "x": 207,
+     "y": 916
+    },
+    "modulos": 3,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2605,
@@ -38465,10 +38761,108 @@ window.__ARREDORES = {
    {
     "x": 1146,
     "y": 922
+   },
+   {
+    "x": 1429,
+    "y": 855
+   },
+   {
+    "x": 1367,
+    "y": 754
+   },
+   {
+    "x": 996,
+    "y": 1236
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1711,
+      1082
+     ],
+     [
+      1767,
+      1067
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1726,
+      1138
+     ],
+     [
+      1782,
+      1123
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1425,
+     "y": 922
+    },
+    "ate": {
+     "x": 1391,
+     "y": 822
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1395,
+     "y": 829
+    },
+    "ate": {
+     "x": 1384,
+     "y": 811
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1370,
+     "y": 791
+    },
+    "ate": {
+     "x": 1332,
+     "y": 748
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 971,
+     "y": 1196
+    },
+    "ate": {
+     "x": 1039,
+     "y": 1233
+    },
+    "modulos": 3,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1948,
@@ -38702,10 +39096,192 @@ window.__ARREDORES = {
    {
     "x": 2041,
     "y": 474
+   },
+   {
+    "x": 2225,
+    "y": 761
+   },
+   {
+    "x": 2433,
+    "y": 1320
+   },
+   {
+    "x": 2511,
+    "y": 948
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1149,
+      726
+     ],
+     [
+      1128,
+      704
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1191,
+      686
+     ],
+     [
+      1170,
+      664
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      2218,
+      1052
+     ],
+     [
+      2252,
+      1049
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      2223,
+      1110
+     ],
+     [
+      2257,
+      1107
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2246,
+     "y": 784
+    },
+    "ate": {
+     "x": 2204,
+     "y": 783
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2406,
+     "y": 1314
+    },
+    "ate": {
+     "x": 2432,
+     "y": 1292
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2474,
+     "y": 1239
+    },
+    "ate": {
+     "x": 2514,
+     "y": 1136
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2512,
+     "y": 1144
+    },
+    "ate": {
+     "x": 2515,
+     "y": 1030
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2516,
+     "y": 1038
+    },
+    "ate": {
+     "x": 2479,
+     "y": 930
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2482,
+     "y": 938
+    },
+    "ate": {
+     "x": 2410,
+     "y": 850
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2416,
+     "y": 855
+    },
+    "ate": {
+     "x": 2317,
+     "y": 798
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2325,
+     "y": 801
+    },
+    "ate": {
+     "x": 2268,
+     "y": 786
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 338,
@@ -38951,10 +39527,160 @@ window.__ARREDORES = {
    {
     "x": 937,
     "y": 1640
+   },
+   {
+    "x": 637,
+    "y": 1540
+   },
+   {
+    "x": 1333,
+    "y": 1660
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1594,
+      853
+     ],
+     [
+      1638,
+      826
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1625,
+      903
+     ],
+     [
+      1669,
+      875
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      924,
+      744
+     ],
+     [
+      901,
+      682
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      978,
+      723
+     ],
+     [
+      954,
+      662
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      524,
+      1213
+     ],
+     [
+      458,
+      1214
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      523,
+      1155
+     ],
+     [
+      457,
+      1156
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      1008,
+      1633
+     ],
+     [
+      989,
+      1696
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      954,
+      1616
+     ],
+     [
+      934,
+      1679
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 670,
+     "y": 1514
+    },
+    "ate": {
+     "x": 654,
+     "y": 1573
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1304,
+     "y": 1695
+    },
+    "ate": {
+     "x": 1312,
+     "y": 1620
+    },
+    "modulos": 3,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2242,
@@ -39201,10 +39927,226 @@ window.__ARREDORES = {
    {
     "x": 1563,
     "y": 1245
+   },
+   {
+    "x": 1824,
+    "y": 1359
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      760,
+      1204
+     ],
+     [
+      701,
+      1189
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      775,
+      1149
+     ],
+     [
+      716,
+      1133
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      922,
+      1799
+     ],
+     [
+      895,
+      1853
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      871,
+      1773
+     ],
+     [
+      843,
+      1827
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1342,
+      1776
+     ],
+     [
+      1361,
+      1834
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1287,
+      1794
+     ],
+     [
+      1306,
+      1852
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      1526,
+      1186
+     ],
+     [
+      1586,
+      1176
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      1536,
+      1244
+     ],
+     [
+      1596,
+      1233
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1509,
+     "y": 1519
+    },
+    "ate": {
+     "x": 1621,
+     "y": 1507
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1613,
+     "y": 1509
+    },
+    "ate": {
+     "x": 1717,
+     "y": 1456
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1710,
+     "y": 1462
+    },
+    "ate": {
+     "x": 1790,
+     "y": 1376
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1785,
+     "y": 1384
+    },
+    "ate": {
+     "x": 1830,
+     "y": 1276
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1828,
+     "y": 1284
+    },
+    "ate": {
+     "x": 1832,
+     "y": 1167
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1833,
+     "y": 1176
+    },
+    "ate": {
+     "x": 1797,
+     "y": 1065
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1800,
+     "y": 1073
+    },
+    "ate": {
+     "x": 1758,
+     "y": 1012
+    },
+    "modulos": 3,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 832,
@@ -39430,10 +40372,76 @@ window.__ARREDORES = {
    {
     "x": 412,
     "y": 1318
+   },
+   {
+    "x": 437,
+    "y": 868
+   },
+   {
+    "x": 333,
+    "y": 885
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1088,
+      565
+     ],
+     [
+      1088,
+      519
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1150,
+      565
+     ],
+     [
+      1150,
+      519
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 478,
+     "y": 900
+    },
+    "ate": {
+     "x": 399,
+     "y": 905
+    },
+    "modulos": 3,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 387,
+     "y": 907
+    },
+    "ate": {
+     "x": 299,
+     "y": 931
+    },
+    "modulos": 4,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1895,
@@ -39659,10 +40667,224 @@ window.__ARREDORES = {
    {
     "x": 1792,
     "y": 858
+   },
+   {
+    "x": 1765,
+    "y": 489
+   },
+   {
+    "x": 1421,
+    "y": 684
+   },
+   {
+    "x": 1998,
+    "y": 1116
+   },
+   {
+    "x": 2106,
+    "y": 812
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      874,
+      928
+     ],
+     [
+      821,
+      885
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      911,
+      883
+     ],
+     [
+      858,
+      840
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      904,
+      1676
+     ],
+     [
+      851,
+      1718
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      868,
+      1631
+     ],
+     [
+      815,
+      1673
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1722,
+      834
+     ],
+     [
+      1768,
+      784
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1765,
+      873
+     ],
+     [
+      1811,
+      823
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1835,
+     "y": 526
+    },
+    "ate": {
+     "x": 1710,
+     "y": 515
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1719,
+     "y": 514
+    },
+    "ate": {
+     "x": 1690,
+     "y": 518
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1536,
+     "y": 584
+    },
+    "ate": {
+     "x": 1452,
+     "y": 678
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1457,
+     "y": 670
+    },
+    "ate": {
+     "x": 1409,
+     "y": 791
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1411,
+     "y": 781
+    },
+    "ate": {
+     "x": 1404,
+     "y": 829
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1898,
+     "y": 1157
+    },
+    "ate": {
+     "x": 1998,
+     "y": 1081
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1991,
+     "y": 1088
+    },
+    "ate": {
+     "x": 2042,
+     "y": 1017
+    },
+    "modulos": 3,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2084,
+     "y": 868
+    },
+    "ate": {
+     "x": 2072,
+     "y": 762
+    },
+    "modulos": 4,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 569,
@@ -39888,10 +41110,156 @@ window.__ARREDORES = {
    {
     "x": 511,
     "y": 1339
+   },
+   {
+    "x": 616,
+    "y": 1731
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1675,
+      974
+     ],
+     [
+      1738,
+      947
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1698,
+      1028
+     ],
+     [
+      1761,
+      1001
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1597,
+      1561
+     ],
+     [
+      1650,
+      1603
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1561,
+      1606
+     ],
+     [
+      1614,
+      1648
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      555,
+      1399
+     ],
+     [
+      488,
+      1414
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      542,
+      1342
+     ],
+     [
+      475,
+      1357
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 420,
+     "y": 1688
+    },
+    "ate": {
+     "x": 543,
+     "y": 1712
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 534,
+     "y": 1712
+    },
+    "ate": {
+     "x": 663,
+     "y": 1692
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 654,
+     "y": 1696
+    },
+    "ate": {
+     "x": 769,
+     "y": 1632
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 761,
+     "y": 1638
+    },
+    "ate": {
+     "x": 779,
+     "y": 1623
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1620,
@@ -40117,10 +41485,168 @@ window.__ARREDORES = {
    {
     "x": 513,
     "y": 1114
+   },
+   {
+    "x": 554,
+    "y": 709
+   },
+   {
+    "x": 120,
+    "y": 1143
+   },
+   {
+    "x": 123,
+    "y": 1199
+   },
+   {
+    "x": 863,
+    "y": 1469
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1799,
+      742
+     ],
+     [
+      1877,
+      717
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1816,
+      798
+     ],
+     [
+      1894,
+      773
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1066,
+      1443
+     ],
+     [
+      1038,
+      1521
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1010,
+      1423
+     ],
+     [
+      982,
+      1500
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      568,
+      1178
+     ],
+     [
+      490,
+      1201
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      552,
+      1120
+     ],
+     [
+      473,
+      1143
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 560,
+     "y": 738
+    },
+    "ate": {
+     "x": 554,
+     "y": 738
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 149,
+     "y": 1137
+    },
+    "ate": {
+     "x": 149,
+     "y": 1143
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 149,
+     "y": 1161
+    },
+    "ate": {
+     "x": 157,
+     "y": 1231
+    },
+    "modulos": 3,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 820,
+     "y": 1467
+    },
+    "ate": {
+     "x": 863,
+     "y": 1427
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2404,
@@ -40367,10 +41893,140 @@ window.__ARREDORES = {
    {
     "x": 973,
     "y": 1497
+   },
+   {
+    "x": 741,
+    "y": 1685
+   },
+   {
+    "x": 1026,
+    "y": 1834
+   },
+   {
+    "x": 1285,
+    "y": 1697
+   },
+   {
+    "x": 1345,
+    "y": 1545
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1724,
+      1483
+     ],
+     [
+      1764,
+      1524
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1682,
+      1523
+     ],
+     [
+      1722,
+      1564
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1289,
+      755
+     ],
+     [
+      1283,
+      699
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1347,
+      749
+     ],
+     [
+      1341,
+      692
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 741,
+     "y": 1643
+    },
+    "ate": {
+     "x": 778,
+     "y": 1698
+    },
+    "modulos": 3,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 999,
+     "y": 1811
+    },
+    "ate": {
+     "x": 1052,
+     "y": 1809
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1245,
+     "y": 1711
+    },
+    "ate": {
+     "x": 1284,
+     "y": 1658
+    },
+    "modulos": 3,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1322,
+     "y": 1555
+    },
+    "ate": {
+     "x": 1325,
+     "y": 1534
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1376,
@@ -40596,10 +42252,33 @@ window.__ARREDORES = {
    {
     "x": 626,
     "y": 1334
+   },
+   {
+    "x": 908,
+    "y": 1126
+   },
+   {
+    "x": 515,
+    "y": 1738
    }
   ],
   "filas": [],
-  "grades": [],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 486,
+     "y": 1699
+    },
+    "ate": {
+     "x": 561,
+     "y": 1725
+    },
+    "modulos": 3,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2663,
@@ -40845,10 +42524,262 @@ window.__ARREDORES = {
    {
     "x": 673,
     "y": 1462
+   },
+   {
+    "x": 426,
+    "y": 1381
+   },
+   {
+    "x": 556,
+    "y": 1731
+   },
+   {
+    "x": 800,
+    "y": 1761
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1540,
+      697
+     ],
+     [
+      1578,
+      656
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1583,
+      736
+     ],
+     [
+      1621,
+      695
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1145,
+      617
+     ],
+     [
+      1145,
+      561
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1203,
+      617
+     ],
+     [
+      1203,
+      561
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1659,
+      1354
+     ],
+     [
+      1709,
+      1380
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1633,
+      1406
+     ],
+     [
+      1683,
+      1431
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      728,
+      1497
+     ],
+     [
+      683,
+      1530
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      694,
+      1450
+     ],
+     [
+      649,
+      1483
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 534,
+     "y": 1257
+    },
+    "ate": {
+     "x": 467,
+     "y": 1336
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 471,
+     "y": 1329
+    },
+    "ate": {
+     "x": 435,
+     "y": 1430
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 436,
+     "y": 1422
+    },
+    "ate": {
+     "x": 437,
+     "y": 1529
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 435,
+     "y": 1521
+    },
+    "ate": {
+     "x": 440,
+     "y": 1545
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 451,
+     "y": 1579
+    },
+    "ate": {
+     "x": 507,
+     "y": 1666
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 502,
+     "y": 1660
+    },
+    "ate": {
+     "x": 587,
+     "y": 1725
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 580,
+     "y": 1721
+    },
+    "ate": {
+     "x": 683,
+     "y": 1753
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 675,
+     "y": 1751
+    },
+    "ate": {
+     "x": 739,
+     "y": 1753
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_9",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 771,
+     "y": 1747
+    },
+    "ate": {
+     "x": 816,
+     "y": 1733
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2030,
@@ -41094,10 +43025,196 @@ window.__ARREDORES = {
    {
     "x": 544,
     "y": 1448
+   },
+   {
+    "x": 417,
+    "y": 1137
+   },
+   {
+    "x": 230,
+    "y": 1504
+   },
+   {
+    "x": 861,
+    "y": 1704
+   },
+   {
+    "x": 947,
+    "y": 1540
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1571,
+      1032
+     ],
+     [
+      1639,
+      1032
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1571,
+      1090
+     ],
+     [
+      1639,
+      1090
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      612,
+      1479
+     ],
+     [
+      562,
+      1525
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      572,
+      1436
+     ],
+     [
+      522,
+      1482
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 454,
+     "y": 1145
+    },
+    "ate": {
+     "x": 408,
+     "y": 1171
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 310,
+     "y": 1265
+    },
+    "ate": {
+     "x": 260,
+     "y": 1380
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 262,
+     "y": 1370
+    },
+    "ate": {
+     "x": 254,
+     "y": 1501
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 253,
+     "y": 1491
+    },
+    "ate": {
+     "x": 290,
+     "y": 1616
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 286,
+     "y": 1607
+    },
+    "ate": {
+     "x": 365,
+     "y": 1711
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 358,
+     "y": 1705
+    },
+    "ate": {
+     "x": 369,
+     "y": 1715
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 807,
+     "y": 1721
+    },
+    "ate": {
+     "x": 873,
+     "y": 1649
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 917,
+     "y": 1558
+    },
+    "ate": {
+     "x": 927,
+     "y": 1515
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2124,
@@ -41343,10 +43460,86 @@ window.__ARREDORES = {
    {
     "x": 1633,
     "y": 1096
+   },
+   {
+    "x": 1784,
+    "y": 1358
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      876,
+      1628
+     ],
+     [
+      819,
+      1648
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      857,
+      1573
+     ],
+     [
+      800,
+      1593
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1566,
+      1081
+     ],
+     [
+      1600,
+      1032
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1613,
+      1114
+     ],
+     [
+      1648,
+      1064
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1754,
+     "y": 1353
+    },
+    "ate": {
+     "x": 1785,
+     "y": 1330
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1801,
@@ -41575,7 +43768,92 @@ window.__ARREDORES = {
     "y": 1302
    }
   ],
-  "filas": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      690,
+      1549
+     ],
+     [
+      634,
+      1557
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      683,
+      1492
+     ],
+     [
+      627,
+      1499
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1268,
+      759
+     ],
+     [
+      1273,
+      702
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1326,
+      764
+     ],
+     [
+      1331,
+      707
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1671,
+      1253
+     ],
+     [
+      1724,
+      1233
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1691,
+      1307
+     ],
+     [
+      1744,
+      1288
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
   "grades": [],
   "fugas": [
    {
@@ -41810,10 +44088,132 @@ window.__ARREDORES = {
    {
     "x": 1643,
     "y": 1497
+   },
+   {
+    "x": 1557,
+    "y": 1663
+   },
+   {
+    "x": 1087,
+    "y": 2026
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      664,
+      1184
+     ],
+     [
+      613,
+      1158
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      690,
+      1133
+     ],
+     [
+      640,
+      1107
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1377,
+      1870
+     ],
+     [
+      1400,
+      1921
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1324,
+      1894
+     ],
+     [
+      1348,
+      1945
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1629,
+      1433
+     ],
+     [
+      1684,
+      1441
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1620,
+      1491
+     ],
+     [
+      1676,
+      1499
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1559,
+     "y": 1695
+    },
+    "ate": {
+     "x": 1528,
+     "y": 1665
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1097,
+     "y": 2002
+    },
+    "ate": {
+     "x": 1112,
+     "y": 2030
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 948,
@@ -42039,10 +44439,51 @@ window.__ARREDORES = {
    {
     "x": 985,
     "y": 830
+   },
+   {
+    "x": 1238,
+    "y": 614
+   },
+   {
+    "x": 768,
+    "y": 604
+   },
+   {
+    "x": 977,
+    "y": 1231
    }
   ],
   "filas": [],
-  "grades": [],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1242,
+     "y": 651
+    },
+    "ate": {
+     "x": 1200,
+     "y": 613
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 955,
+     "y": 1205
+    },
+    "ate": {
+     "x": 1002,
+     "y": 1208
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2017,
@@ -42268,10 +44709,246 @@ window.__ARREDORES = {
    {
     "x": 2115,
     "y": 819
+   },
+   {
+    "x": 2299,
+    "y": 500
+   },
+   {
+    "x": 1725,
+    "y": 647
+   },
+   {
+    "x": 2201,
+    "y": 1151
+   },
+   {
+    "x": 2343,
+    "y": 1057
+   },
+   {
+    "x": 2386,
+    "y": 1001
+   },
+   {
+    "x": 2438,
+    "y": 873
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1012,
+      1387
+     ],
+     [
+      950,
+      1418
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      986,
+      1336
+     ],
+     [
+      924,
+      1367
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1430,
+      1565
+     ],
+     [
+      1414,
+      1634
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1373,
+      1552
+     ],
+     [
+      1358,
+      1621
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2418,
+     "y": 753
+    },
+    "ate": {
+     "x": 2377,
+     "y": 630
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2383,
+     "y": 639
+    },
+    "ate": {
+     "x": 2299,
+     "y": 533
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2307,
+     "y": 539
+    },
+    "ate": {
+     "x": 2192,
+     "y": 469
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2201,
+     "y": 473
+    },
+    "ate": {
+     "x": 2069,
+     "y": 447
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2079,
+     "y": 447
+    },
+    "ate": {
+     "x": 2029,
+     "y": 450
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1759,
+     "y": 634
+    },
+    "ate": {
+     "x": 1740,
+     "y": 675
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2134,
+     "y": 1143
+    },
+    "ate": {
+     "x": 2242,
+     "y": 1104
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2296,
+     "y": 1067
+    },
+    "ate": {
+     "x": 2347,
+     "y": 1012
+    },
+    "modulos": 3,
+    "espessura": 11
+   },
+   {
+    "id": "grade_9",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2353,
+     "y": 1004
+    },
+    "ate": {
+     "x": 2375,
+     "y": 971
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_10",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2385,
+     "y": 953
+    },
+    "ate": {
+     "x": 2419,
+     "y": 828
+    },
+    "modulos": 5,
+    "espessura": 11
+   },
+   {
+    "id": "grade_11",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2418,
+     "y": 838
+    },
+    "ate": {
+     "x": 2420,
+     "y": 783
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 627,
@@ -42505,10 +45182,160 @@ window.__ARREDORES = {
    {
     "x": 1739,
     "y": 1528
+   },
+   {
+    "x": 978,
+    "y": 1116
+   },
+   {
+    "x": 1234,
+    "y": 1547
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1907,
+      1069
+     ],
+     [
+      1955,
+      1064
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1913,
+      1127
+     ],
+     [
+      1962,
+      1121
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1238,
+      783
+     ],
+     [
+      1216,
+      740
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1289,
+      757
+     ],
+     [
+      1267,
+      713
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1055,
+      1396
+     ],
+     [
+      1012,
+      1419
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1027,
+      1345
+     ],
+     [
+      984,
+      1368
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      1769,
+      1475
+     ],
+     [
+      1800,
+      1512
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      1725,
+      1513
+     ],
+     [
+      1756,
+      1550
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1003,
+     "y": 1129
+    },
+    "ate": {
+     "x": 966,
+     "y": 1138
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1206,
+     "y": 1550
+    },
+    "ate": {
+     "x": 1234,
+     "y": 1519
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 100,
@@ -42742,10 +45569,160 @@ window.__ARREDORES = {
    {
     "x": 1739,
     "y": 1528
+   },
+   {
+    "x": 978,
+    "y": 1116
+   },
+   {
+    "x": 1234,
+    "y": 1547
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1907,
+      1069
+     ],
+     [
+      1955,
+      1064
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1913,
+      1127
+     ],
+     [
+      1962,
+      1121
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1238,
+      783
+     ],
+     [
+      1216,
+      740
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1289,
+      757
+     ],
+     [
+      1267,
+      713
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1055,
+      1396
+     ],
+     [
+      1012,
+      1419
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1027,
+      1345
+     ],
+     [
+      984,
+      1368
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      1769,
+      1475
+     ],
+     [
+      1800,
+      1512
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      1725,
+      1513
+     ],
+     [
+      1756,
+      1550
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1003,
+     "y": 1129
+    },
+    "ate": {
+     "x": 966,
+     "y": 1138
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1206,
+     "y": 1550
+    },
+    "ate": {
+     "x": 1234,
+     "y": 1519
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 2422,
@@ -42979,10 +45956,160 @@ window.__ARREDORES = {
    {
     "x": 1739,
     "y": 1528
+   },
+   {
+    "x": 978,
+    "y": 1116
+   },
+   {
+    "x": 1234,
+    "y": 1547
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1907,
+      1069
+     ],
+     [
+      1955,
+      1064
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1913,
+      1127
+     ],
+     [
+      1962,
+      1121
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1238,
+      783
+     ],
+     [
+      1216,
+      740
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1289,
+      757
+     ],
+     [
+      1267,
+      713
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1055,
+      1396
+     ],
+     [
+      1012,
+      1419
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1027,
+      1345
+     ],
+     [
+      984,
+      1368
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_7",
+    "pontos": [
+     [
+      1769,
+      1475
+     ],
+     [
+      1800,
+      1512
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_8",
+    "pontos": [
+     [
+      1725,
+      1513
+     ],
+     [
+      1756,
+      1550
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1003,
+     "y": 1129
+    },
+    "ate": {
+     "x": 966,
+     "y": 1138
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1206,
+     "y": 1550
+    },
+    "ate": {
+     "x": 1234,
+     "y": 1519
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 100,
@@ -43216,10 +46343,132 @@ window.__ARREDORES = {
    {
     "x": 1643,
     "y": 1497
+   },
+   {
+    "x": 1557,
+    "y": 1663
+   },
+   {
+    "x": 1087,
+    "y": 2026
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      664,
+      1184
+     ],
+     [
+      613,
+      1158
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      690,
+      1133
+     ],
+     [
+      640,
+      1107
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1377,
+      1870
+     ],
+     [
+      1400,
+      1921
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1324,
+      1894
+     ],
+     [
+      1348,
+      1945
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1629,
+      1433
+     ],
+     [
+      1684,
+      1441
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1620,
+      1491
+     ],
+     [
+      1676,
+      1499
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1559,
+     "y": 1695
+    },
+    "ate": {
+     "x": 1528,
+     "y": 1665
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1097,
+     "y": 2002
+    },
+    "ate": {
+     "x": 1112,
+     "y": 2030
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1286,
@@ -43465,10 +46714,132 @@ window.__ARREDORES = {
    {
     "x": 1643,
     "y": 1497
+   },
+   {
+    "x": 1557,
+    "y": 1663
+   },
+   {
+    "x": 1087,
+    "y": 2026
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      664,
+      1184
+     ],
+     [
+      613,
+      1158
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      690,
+      1133
+     ],
+     [
+      640,
+      1107
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1377,
+      1870
+     ],
+     [
+      1400,
+      1921
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1324,
+      1894
+     ],
+     [
+      1348,
+      1945
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1629,
+      1433
+     ],
+     [
+      1684,
+      1441
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1620,
+      1491
+     ],
+     [
+      1676,
+      1499
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1559,
+     "y": 1695
+    },
+    "ate": {
+     "x": 1528,
+     "y": 1665
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1097,
+     "y": 2002
+    },
+    "ate": {
+     "x": 1112,
+     "y": 2030
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 948,
@@ -43714,10 +47085,132 @@ window.__ARREDORES = {
    {
     "x": 1643,
     "y": 1497
+   },
+   {
+    "x": 1557,
+    "y": 1663
+   },
+   {
+    "x": 1087,
+    "y": 2026
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      664,
+      1184
+     ],
+     [
+      613,
+      1158
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      690,
+      1133
+     ],
+     [
+      640,
+      1107
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      1377,
+      1870
+     ],
+     [
+      1400,
+      1921
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      1324,
+      1894
+     ],
+     [
+      1348,
+      1945
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_5",
+    "pontos": [
+     [
+      1629,
+      1433
+     ],
+     [
+      1684,
+      1441
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_6",
+    "pontos": [
+     [
+      1620,
+      1491
+     ],
+     [
+      1676,
+      1499
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1559,
+     "y": 1695
+    },
+    "ate": {
+     "x": 1528,
+     "y": 1665
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 1097,
+     "y": 2002
+    },
+    "ate": {
+     "x": 1112,
+     "y": 2030
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 1286,
@@ -43951,10 +47444,192 @@ window.__ARREDORES = {
    {
     "x": 2041,
     "y": 474
+   },
+   {
+    "x": 2225,
+    "y": 761
+   },
+   {
+    "x": 2433,
+    "y": 1320
+   },
+   {
+    "x": 2511,
+    "y": 948
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1149,
+      726
+     ],
+     [
+      1128,
+      704
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1191,
+      686
+     ],
+     [
+      1170,
+      664
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      2218,
+      1052
+     ],
+     [
+      2252,
+      1049
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      2223,
+      1110
+     ],
+     [
+      2257,
+      1107
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2246,
+     "y": 784
+    },
+    "ate": {
+     "x": 2204,
+     "y": 783
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2406,
+     "y": 1314
+    },
+    "ate": {
+     "x": 2432,
+     "y": 1292
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2474,
+     "y": 1239
+    },
+    "ate": {
+     "x": 2514,
+     "y": 1136
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2512,
+     "y": 1144
+    },
+    "ate": {
+     "x": 2515,
+     "y": 1030
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2516,
+     "y": 1038
+    },
+    "ate": {
+     "x": 2479,
+     "y": 930
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2482,
+     "y": 938
+    },
+    "ate": {
+     "x": 2410,
+     "y": 850
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2416,
+     "y": 855
+    },
+    "ate": {
+     "x": 2317,
+     "y": 798
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2325,
+     "y": 801
+    },
+    "ate": {
+     "x": 2268,
+     "y": 786
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 338,
@@ -44188,10 +47863,192 @@ window.__ARREDORES = {
    {
     "x": 2041,
     "y": 474
+   },
+   {
+    "x": 2225,
+    "y": 761
+   },
+   {
+    "x": 2433,
+    "y": 1320
+   },
+   {
+    "x": 2511,
+    "y": 948
    }
   ],
-  "filas": [],
-  "grades": [],
+  "filas": [
+   {
+    "id": "fila_1",
+    "pontos": [
+     [
+      1149,
+      726
+     ],
+     [
+      1128,
+      704
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_2",
+    "pontos": [
+     [
+      1191,
+      686
+     ],
+     [
+      1170,
+      664
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_3",
+    "pontos": [
+     [
+      2218,
+      1052
+     ],
+     [
+      2252,
+      1049
+     ]
+    ],
+    "espessura": 9
+   },
+   {
+    "id": "fila_4",
+    "pontos": [
+     [
+      2223,
+      1110
+     ],
+     [
+      2257,
+      1107
+     ]
+    ],
+    "espessura": 9
+   }
+  ],
+  "grades": [
+   {
+    "id": "grade_1",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2246,
+     "y": 784
+    },
+    "ate": {
+     "x": 2204,
+     "y": 783
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_2",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2406,
+     "y": 1314
+    },
+    "ate": {
+     "x": 2432,
+     "y": 1292
+    },
+    "modulos": 2,
+    "espessura": 11
+   },
+   {
+    "id": "grade_3",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2474,
+     "y": 1239
+    },
+    "ate": {
+     "x": 2514,
+     "y": 1136
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_4",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2512,
+     "y": 1144
+    },
+    "ate": {
+     "x": 2515,
+     "y": 1030
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_5",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2516,
+     "y": 1038
+    },
+    "ate": {
+     "x": 2479,
+     "y": 930
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_6",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2482,
+     "y": 938
+    },
+    "ate": {
+     "x": 2410,
+     "y": 850
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_7",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2416,
+     "y": 855
+    },
+    "ate": {
+     "x": 2317,
+     "y": 798
+    },
+    "modulos": 4,
+    "espessura": 11
+   },
+   {
+    "id": "grade_8",
+    "rot": "GRADE DE PROTEÇÃO",
+    "de": {
+     "x": 2325,
+     "y": 801
+    },
+    "ate": {
+     "x": 2268,
+     "y": 786
+    },
+    "modulos": 2,
+    "espessura": 11
+   }
+  ],
   "fugas": [
    {
     "x": 338,

@@ -800,6 +800,11 @@ malha de 1 m da planta precisa exigir chão também a 1,5 m pros lados, senão u
 arquibancada passa por caminho. E todo trecho de arquibancada entra no sólido pela borda de fora — o trecho que passa pelo
 ângulo zero (de −25 a 25 graus) não dava coluna e ficava fora.
 
+GRADIL SE MEDE EM PIXEL, NÃO EM METRO (o funil dos arredores de verdade, 17/11/2026): no jogo o gradil fecha uns 13 px
+e o boneco precisa de uma célula de 8 px. A cena de arredores tem de 3,5 a 7 px por metro, conforme o tamanho do corte;
+um funil de 7 m, que serve no Independência (7 px/m), fecha a passagem numa cena de 4 px/m. Toda conta de "cabe" tem de
+usar a escala da cena.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

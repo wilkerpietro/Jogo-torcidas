@@ -197,9 +197,87 @@ export function arredoresDasMarcas(ficha, osmLev, M, o = {}) {
   const saidaVariantes = Object.fromEntries(Object.entries(variantes).map(([k, v]) => { const b = bondesDe(v.papeis);
     return [k, { bondes: b, jogo: Object.assign(setoresDe(b), v.torcidas ? { torcidas: v.torcidas } : {}) }]; }));
 
-  /* A POLÍCIA: um posto de cada lado de cada portão, 6 m pra fora */
-  const pm = []; for (const g of portoes) { const tx = -g.dir[1], ty = g.dir[0]; for (const k of [-1, 1]) pm.push([r1(g.u - g.dir[0] * 6 + tx * k * 8), r1(g.v - g.dir[1] * 6 + ty * k * 8)]); }
-
   ar.pisos.push(...acessos);
-  return Object.assign(ar, { portoes, bondes, grades: [], filas: [], pm }, neutro ? { variantes: saidaVariantes } : {});
+  /* A SEGURANÇA (dono, 17/11/2026: "desenhe o ideal de acordo com o que eu marquei"), pra cada cena (a de base e as
+     variantes), sobre a planta já com os acessos: o funil de cada portão, o cordão da visitante e a polícia */
+  const P2 = preparar(Object.assign({}, ficha, { arredores: Object.assign({}, ar, { portoes }) }));
+  /* (a escala da cena, a mesma conta da bancada: a cena tem a área de 3072 × 2048 na proporção do quadro) */
+  const esc = Math.round(Math.sqrt(3072 * 2048 * quadro.u / quadro.v) / 8) * 8 / (2 * quadro.u);
+  const seg = b => seguranca(P2, portoes, b, esc);
+  const s0 = seg(bondes);
+  for (const v of Object.values(saidaVariantes)) Object.assign(v, seg(v.bondes));
+  return Object.assign(ar, { portoes, bondes }, s0, neutro ? { variantes: saidaVariantes } : {});
 }
+
+/* =========================================================
+   A SEGURANÇA DE UMA CENA, pelos caminhos de verdade dos bondes:
+   · O FUNIL: dois gradis de fila saindo de cada portão, 7 m um do outro, até
+     14 m — e nunca por cima do asfalto (o funil não fecha a rua).
+   · O CORDÃO: um anel de grades de proteção em volta do portão da visitante,
+     aberto só por onde a visitante chega. O raio é o maior (de 70 a 30 m)
+     em que nenhum bonde da casa precisa passar por dentro do anel; se nenhum
+     serve, não há cordão. A grade é a que quebra.
+   · A POLÍCIA: um posto de cada lado de cada portão e um atrás de cada
+     pedaço do cordão, do lado da casa.
+   No fim, cada bonde tem de ter caminho com tudo de pé; se não tiver, sai o
+   cordão e, se precisar, o funil.
+   ========================================================= */
+function seguranca(P, portoes, bondes, esc) {
+  /* (tudo na escala da cena: o corpo do boneco ocupa uma célula de 8 px; a grade, a faixa de 5 px pra cada lado mais a célula
+     — a mesma conta da assadeira e do jogo. Numa cena de 4 px por metro, isso é 2 m de corpo e 3 m de grade) */
+  const rc = Math.max(1.5, 8 / esc), rb = 13 / esc, folga = rb + rc + 8 / esc;
+  const corpo = (u, v) => P.andavel(u, v) && P.andavel(u + rc, v) && P.andavel(u - rc, v) && P.andavel(u, v + rc) && P.andavel(u, v - rc);
+  const asfalto = (u, v) => { const q = P.cel(u, v); return q >= 0 && P.via[q] === 1; };
+  const g = n => portoes.find(q => q.n === n);
+  /* o caminho de um bonde (malha de 1 m, com o corpo), evitando as células bloqueadas */
+  const caminho = (de, alvo, bloq) => { const ini = [Math.floor(de[0]), Math.floor(de[1])], fim = [alvo.u, alvo.v], key = (u, v) => u + ',' + v, pai = new Map([[key(...ini), null]]), fila = [ini];
+    for (let k = 0; k < fila.length; k++) { const [u, v] = fila[k]; if (Math.hypot(u + 0.5 - fim[0], v + 0.5 - fim[1]) < 3.5) { const pts = []; let c = key(u, v); while (c) { pts.push(c.split(',').map(Number)); c = pai.get(c); } return pts; }
+      for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = u + du, y = v + dv, c = key(x, y); if (pai.has(c)) continue; const perto = Math.hypot(x + 0.5 - fim[0], y + 0.5 - fim[1]) < 3.5;
+        if ((perto && P.andavel(x + 0.5, y + 0.5)) || (corpo(x + 0.5, y + 0.5) && !(bloq && bloq.has(c)))) { pai.set(c, key(u, v)); fila.push([x, y]); } } }
+    return null; };
+  const saida = b => P.naRua(b.de[0], b.de[1]);
+  const todos = Object.entries(bondes), casa = todos.filter(([k]) => k.startsWith('m')), fora = todos.filter(([k]) => k.startsWith('v'));
+  const rotas = Object.fromEntries(todos.map(([k, b]) => [k, caminho(saida(b), g(b.portao))]));
+  /* o funil de cada portão */
+  const filas = [];
+  for (const q of portoes) { const du = q.dir[0], dv = q.dir[1], tu = -dv, tv = du;
+    let L = 0; while (L < 14 && !asfalto(q.u - du * (L + 1), q.v - dv * (L + 1)) && P.andavel(q.u - du * (L + 1), q.v - dv * (L + 1))) L += 1;
+    if (L < 4) continue;
+    for (const k of [-1, 1]) filas.push({ pts: [[r1(q.u + tu * k * folga), r1(q.v + tv * k * folga)], [r1(q.u + tu * k * folga - du * L), r1(q.v + tv * k * folga - dv * L)]] }); }
+  /* o cordão em volta do portão (ou dos portões) da visitante */
+  const portoesV = [...new Set(fora.map(([, b]) => b.portao))].map(g), portoesM = [...new Set(casa.map(([, b]) => b.portao))].map(g);
+  let grades = [], pmCordao = [];
+  for (const R of [70, 55, 42, 32]) {
+    const dentro = (u, v) => portoesV.some(q => Math.hypot(u - q.u, v - q.v) < R);
+    if (portoesM.some(q => portoesV.some(w => Math.hypot(q.u - w.u, q.v - w.v) < R + 10))) continue;
+    if (casa.some(([k]) => (rotas[k] || []).some(([u, v]) => dentro(u + 0.5, v + 0.5)))) continue;
+    const passaV = (u, v) => fora.some(([k]) => (rotas[k] || []).some(([x, y]) => Math.hypot(x + 0.5 - u, y + 0.5 - v) < 2.5));
+    for (const q of portoesV) { const N = Math.round(2 * Math.PI * R), pts = [];
+      for (let i = 0; i < N; i++) { const a = i / N * 2 * Math.PI, u = q.u + Math.cos(a) * R, v = q.v + Math.sin(a) * R, outro = portoesV.some(w => w !== q && Math.hypot(u - w.u, v - w.v) < R);
+        pts.push({ u, v, a, livre: !outro && P.andavel(u, v) }); }
+      /* os arcos de chão no círculo (começando num ponto sem chão, pra não partir um arco no meio) */
+      const z = pts.findIndex(p => !p.livre); if (z < 0) continue;
+      const ord = [...pts.slice(z), ...pts.slice(0, z)], arcos = []; let cur = null;
+      for (const p of ord) { if (p.livre) { (cur = cur || []).push(p); } else if (cur) { arcos.push(cur); cur = null; } } if (cur) arcos.push(cur);
+      for (const arco of arcos) { if (arco.some(p => passaV(p.u, p.v))) continue;
+        for (let i = 0; i < arco.length - 1; i += 25) { const a = arco[Math.max(0, i - 1)], b = arco[Math.min(arco.length - 1, i + 26)];
+          grades.push({ de: [r1(a.u), r1(a.v)], ate: [r1(b.u), r1(b.v)] }); }
+        const m = arco[Math.floor(arco.length / 2)], ux = (m.u - q.u) / R, vy = (m.v - q.v) / R; pmCordao.push([r1(m.u + ux * 5), r1(m.v + vy * 5)]); } }
+    break; }
+  /* a polícia dos portões */
+  const pm = []; for (const q of portoes) { const tx = -q.dir[1], ty = q.dir[0]; for (const k of [-1, 1]) pm.push([r1(q.u - q.dir[0] * 6 + tx * k * 8), r1(q.v - q.dir[1] * 6 + ty * k * 8)]); }
+  /* cada bonde ainda chega no portão dele com tudo de pé? */
+  const R = Math.ceil(rb), viz = []; for (let du = -R; du <= R; du++) for (let dv = -R; dv <= R; dv++) if (du * du + dv * dv <= rb * rb) viz.push([du, dv]);
+  const bloqueio = (gs, fs) => { const set = new Set(), seg = (a, b) => { const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2); for (let k = 0; k <= n; k++) { const u = a[0] + (b[0] - a[0]) * k / n, v = a[1] + (b[1] - a[1]) * k / n;
+        for (const [du, dv] of viz) set.add(Math.floor(u + du) + ',' + Math.floor(v + dv)); } };
+    for (const x of gs) seg(x.de, x.ate); for (const f of fs) seg(f.pts[0], f.pts[1]); return set; };
+  const chegam = (gs, fs) => { const bl = bloqueio(gs, fs); return todos.every(([, b]) => caminho(saida(b), g(b.portao), bl)); };
+  /* (as peças entram uma a uma: cada funil e cada pedaço de cordão só fica se, junto com os que já ficaram, todo bonde
+     ainda chega no portão dele) */
+  const pares = []; for (let i = 0; i < filas.length; i += 2) pares.push(filas.slice(i, i + 2));
+  let fs = []; for (const par of pares) if (chegam([], [...fs, ...par])) fs.push(...par);
+  const gs = []; for (const x of grades) if (chegam([...gs, x], fs)) gs.push(x);
+  if (!gs.length) pmCordao = [];
+  return { grades: gs, filas: fs, pm: [...pm, ...pmCordao] };
+}
+
