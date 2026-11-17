@@ -160,15 +160,34 @@ window.assarArredores = async function (id) {
 /* O PROTÓTIPO 3D DOS ARREDORES (dono, 17/11/2026: "eu quero fazer um protótipo 3d dos arredores e dos estádios pra ver se
    fica legal"): a mesma cena que a foto de cima fotografa — o estádio, as ruas, as casas, os portões —, exportada em .glb
    pra ser vista girando (ferramentas/estadios/exportar3d.js) */
-window.exportar3d = async function (id) {
+window.exportar3d = async function (id, parte, fatia, fatias) {
   const ficha = FICHAS[id]; if (!ficha || !ficha.arredores) throw new Error('sem arredores: ' + id);
   const ar = ficha.arredores, prep = preparar(ficha), casas = await import('/cenario3d/js/casas3d.js');
   const { scene } = montar(Object.assign({}, ficha, { entorno: ar.entorno || [] }));
   const fora = construirArredores(THREE, ficha, prep, casas); scene.add(fora.grupo);
   /* (só o que tem forma: luzes e câmeras ficam de fora; o visualizador acende as dele) */
-  const raiz = new THREE.Group(); raiz.name = id;
-  scene.traverse(o => { if (o.isMesh && o.visible) { const c = o.clone(); o.updateWorldMatrix(true, false); c.matrix.copy(o.matrixWorld); c.matrix.decompose(c.position, c.quaternion, c.scale); raiz.add(c); } });
+  /* (`parte`: 'estadio' ou 'arredores', pra caber em arquivos menores; sem ela, os dois juntos) */
+  const raiz = new THREE.Group(); raiz.name = id + (parte ? '-' + parte : '');
+  const deFora = new Set(); fora.grupo.traverse(o => deFora.add(o));
+  scene.traverse(o => { if (o.isMesh && o.visible && (!parte || (parte === 'arredores') === deFora.has(o))) { const c = o.clone(); o.updateWorldMatrix(true, false);
+    /* (sem normais e sem coordenada de textura — o visualizador recalcula as normais —, o estádio cabe em menos da metade) */
+    if (!(o.material && o.material.map)) { c.geometry = o.geometry.clone(); c.geometry.deleteAttribute('normal'); c.geometry.deleteAttribute('uv'); } c.matrix.copy(o.matrixWorld); c.matrix.decompose(c.position, c.quaternion, c.scale); raiz.add(c); } });
   const { GLTFExporter } = await import('/cenario3d/js/GLTFExporter.js');
+  /* (em fatias, em .gltf de texto com os dados dentro: é o que a página publicada serve, e cada fatia cabe no limite dela) */
+  if (fatias) {
+    /* (a arquibancada é um objeto só, de meio milhão de vértices: os objetos grandes sem índice viram pedaços de até 120 mil
+       vértices; as cores vão em 1 byte por canal; e os pedaços se repartem pelas fatias pelo tamanho) */
+    const todas = []; for (const c of raiz.children.slice()) { raiz.remove(c); const g = c.geometry, n = g.attributes.position.count;
+      const corB = gg => { const cor = gg.attributes.color; if (cor && !(cor.array instanceof Uint8Array)) { const a8 = new Uint8Array(cor.count * cor.itemSize); for (let i = 0; i < a8.length; i++) a8[i] = Math.round(Math.min(1, Math.max(0, cor.array[i])) * 255); gg.setAttribute('color', new THREE.BufferAttribute(a8, cor.itemSize, true)); } return gg; };
+      if (g.index || n <= 120000) { c.geometry = corB(g.clone()); todas.push(c); continue; }
+      for (let i0 = 0; i0 < n; i0 += 120000) { const i1 = Math.min(n, i0 + 120000), gg = new THREE.BufferGeometry();
+        for (const [k, at] of Object.entries(g.attributes)) gg.setAttribute(k, new THREE.BufferAttribute(at.array.slice(i0 * at.itemSize, i1 * at.itemSize), at.itemSize, at.normalized));
+        const p = c.clone(); p.geometry = corB(gg); todas.push(p); } }
+    const peso = c => c.geometry.attributes.position.count, cestos = Array.from({ length: fatias }, () => ({ n: 0, l: [] }));
+    for (const c of todas.sort((a, b) => peso(b) - peso(a))) { const k = cestos.reduce((m, x, i) => x.n < cestos[m].n ? i : m, 0); cestos[k].l.push(c); cestos[k].n += peso(c); }
+    for (const c of cestos[fatia].l) raiz.add(c);
+    const js = await new Promise((ok, erro) => new GLTFExporter().parse(raiz, ok, erro, { binary: false }));
+    return { gltf: JSON.stringify(js), malhas: raiz.children.length, quadro: ar.quadro, portoes: (ar.portoes || []).map(g => ({ n: g.n, nome: g.nome, u: g.u, v: g.v })) }; }
   const bin = await new Promise((ok, erro) => new GLTFExporter().parse(raiz, ok, erro, { binary: true }));
   let s = ''; const b = new Uint8Array(bin); for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode.apply(null, b.subarray(i, i + 32768));
   return { glb: btoa(s), malhas: raiz.children.length, quadro: ar.quadro, portoes: (ar.portoes || []).map(g => ({ n: g.n, nome: g.nome, u: g.u, v: g.v })) };

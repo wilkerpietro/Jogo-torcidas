@@ -15689,7 +15689,11 @@ recuado parado em bolo no meio da rua).
   ônibus, andares dos prédios). O piloto é o Couto Pereira.
 - **O protótipo 3D** (dono: "eu quero fazer um protótipo 3d dos arredores e dos estádios pra ver se fica legal"): a
   bancada exporta a cena de fora inteira em .glb (`ferramentas/estadios/exportar3d.js <id> <saída.glb>`), pra ser vista
-  girando numa página à parte.
+  girando numa página à parte. Com `estadio` ou `arredores` sai só uma das partes, e com um número de fatias sai em
+  glTF de texto (`<saída>-1.json`, `-2.json`…), com as cores em 8 bits e sem normais nem uv onde não há textura: o .glb
+  inteiro do Couto deu 25 MB e a página publicada não serve .glb, e em fatias ficou em quatro arquivos de 3 a 5 MB
+  (a malha de arquibancada de 516 mil vértices é partida). A página do protótipo tem as vistas de cima, aérea e de
+  rua em cada portão (a câmera vai pro rumo do leque que vai mais longe sem bater em casa).
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
