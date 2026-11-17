@@ -599,6 +599,13 @@ procure degrau (duas metades de fundura diferente) e fundo inclinado. Na ficha:
 (com `inclinacao: null` nos trechos que não devem segui-la); um trecho por vão
 entre escadas, com as escadas onde o satélite mostra.
 
+ESTÁDIO INACABADO (o Amigão, 17/11/2026: os dois fundos são degraus de terra com
+mato): trecho `semCadeiras` de mosaico terra e mato, com `h` mais baixo que o
+das arquibancadas vizinhas, sem escada nem boca, e nenhum setor de `jogo` nele.
+TRAVESSIA ACUSADA PELO CONFERIDOR: olhe o tamanho do passo (`cruza.js` imprime os
+dois pontos). Passo de mais de 100 px entre duas amostras cortando o bico de um
+funil é a corda da amostragem, não travessia; passo curto é de verdade.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

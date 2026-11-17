@@ -15151,6 +15151,22 @@ Na ficha, o fundo torto é um contorno por pontos (`forma: 'raios'`) com `normal
 
 Não entrou: a faixa de degraus pintada de amarelo que o lance da ponta tem na foto do estádio cheio (o satélite não mostra). Briga e chegada testadas de novo, sem erros.
 
+## Paraíba: o Amigão (dono, 17/11/2026)
+
+O dono: "Vamos pra Paraíba agora, estádio amigão", e em seguida, com duas fotos aéreas (uma de dia e uma de noite, cada uma tirada de trás de um gol): "Veja as fotos".
+
+O Ernani Sátyro, em Campina Grande, onde o Treze e o Campinense já mandavam nos dados (`fichas/estadio-amigao.mjs`). Oval em elipse, grande, com o campo no fundo de uma bacia de grama e a pista de terra em volta dele; a elipse das arquibancadas fica 4 m fora do meio do campo.
+
+- **As duas laterais** são arquibancadas grandes em meia-lua, de 37 m de fundura, de degrau de concreto claro, em dois lances separados pela faixa branca do corredor, com as escadas brancas e as caixas das bocas.
+- **Numa delas**, metade fica debaixo da cobertura escura em balanço, com as cadeiras azuis no lance de cima; os quatro bancos de reserva ficam ao pé dela.
+- **Os dois fundos**, atrás dos gols, são inacabados: degraus de terra tomados de mato, mais baixos que as laterais, com a faixa branca do corredor no meio e, num deles, uma casinha. Ficam vazios no jogo.
+
+Qual metade é coberta saiu do cruzamento das duas fotos com o satélite: cada foto foi tirada de um fundo, e a cobertura aparece do mesmo lado nas duas.
+
+Estimado: as alturas (as laterais sobem uns 17 m), a divisa dos dois lances, onde começa e acaba a cobertura e a fundura dela (o satélite a mostra deslocada, com a sombra), a posição das escadas e das bocas e as torres de luz. As torcidas são escolha minha: a da casa no meio da lateral da cobertura, com apoio nela e na ponta da outra lateral; a visitante na outra lateral, do lado oposto.
+
+O Amigão entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes. O conferidor acusa doze travessias de gradil, todas em passos de mais de 100 px entre duas amostras, no bico dos funis inclinados dos portões de canto: é o falso positivo de sempre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
