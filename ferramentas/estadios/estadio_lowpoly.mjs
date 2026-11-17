@@ -385,6 +385,12 @@ export function construir(THREE, ficha) {
         A.quad(Q(i, fg, hg + alt - 0.1), Q(i + 1, fg, hg + alt - 0.1), Q(i + 1, fg, hg + alt), Q(i, fg, hg + alt), cg); q4(i, i + 1, fg, fg + e, hg + alt, cg);
         A.quad(Q(i, fg, hg + alt * 0.5 - 0.05), Q(i + 1, fg, hg + alt * 0.5 - 0.05), Q(i + 1, fg, hg + alt * 0.5 + 0.05), Q(i, fg, hg + alt * 0.5 + 0.05), cg);
         if (i % 3 === 0) A.quad(Q(i, fg, hg), Q(i + 0.14, fg, hg), Q(i + 0.14, fg, hg + alt), Q(i, fg, hg + alt), cg); } }
+    /* A GRADE DO ALTO (o Presidente Vargas; dono, 17/11/2026: "A parte mais alta da arquibancada é de grade, e não azul"):
+       `gradeFundo: { alt, cor }` no trecho — a tela de arame em cima do muro de trás, com um poste a cada 4 lugares e três fios. */
+    if (t.gradeFundo) { const gf = t.gradeFundo, alt = gf.alt || 2.5, cg = gf.cor || '#eef0f0', hb = h1 + (t.parapeito == null ? 1.2 : t.parapeito), e = 0.12 / G.prof;
+      for (let i = 0; i < n; i++) { for (const y of [1, 0.66, 0.33]) A.quad(Q(i, 1, hb + alt * y - 0.07), Q(i + 1, 1, hb + alt * y - 0.07), Q(i + 1, 1, hb + alt * y), Q(i, 1, hb + alt * y), cg);
+        q4(i, i + 1, 1 - e, 1, hb + alt, cg);
+        if (i % 4 === 0) A.quad(Q(i, 1, hb), Q(i + 0.16, 1, hb), Q(i + 0.16, 1, hb + alt), Q(i, 1, hb + alt), cg); } }
   }
   ficha.aneis.forEach((anel, ia) => {
     const rnd = semente(1234 + ia * 77 + (ficha.id || '').length * 13);
@@ -691,7 +697,7 @@ export function construir(THREE, ficha) {
        pontas de cada piso, o fundo e os lados de cada `reta`. O teste é o do jogo (`andavel`): se um metro adiante não se
        anda, tem muro.
      `alambrado: false` e `muro: false` na ficha desligam (as arenas, que não têm nem um nem outro);
-     `alambrado: { h, cor, limiar }` e `muro: { cor }` ajustam. ---- */
+     `alambrado: { h, cor, limiar, corTela, opacidade }` e `muro: { cor }` ajustam. ---- */
   {
     const ALA = ficha.alambrado, MURO = ficha.muro, ult = ficha.aneis.length - 1;
     const corMuro = (MURO && MURO.cor) || ficha.corMuro || (ficha.fachada && ficha.fachada.cor) || '#d9d6cc';
@@ -753,7 +759,8 @@ export function construir(THREE, ficha) {
         const L = lance(anel, t); cerca(L.angs.map(a => L.pos(a, 0)), L.h0 + 1.1, 1.5);
       }
       if (tela.length) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(tela, 3));
-        cena.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: corA, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }))); }
+        /* (`corTela` e `opacidade`: o alambrado de VIDRO do Presidente Vargas, de painel azulado entre montantes brancos) */
+        cena.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: cfg.corTela || corA, transparent: true, opacity: cfg.opacidade || 0.3, side: THREE.DoubleSide, depthWrite: false }))); }
     }
   }
   if (!Ro.vazia) cena.add(Ro.malha());

@@ -24,7 +24,7 @@
    paleta (o mural, a faixa de cerveja) continua com a textura.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ATLAS } from './modelos_atlas.js?v=72ad2dfa4f';
+import { ATLAS } from './modelos_atlas.js?v=99ebf130d5';
 
 export const METRO = 34 / 1.75;
 export const lerp = (a, b, t) => a + (b - a) * t;

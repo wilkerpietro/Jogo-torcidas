@@ -15324,6 +15324,17 @@ O dono, com a foto de perto de uma boca: "A imagem dá impressão de dois andare
 
 Estimado: a altura em que as bocas abrem, a largura da caixa e dos patamares, e a escada reta entre duas bocas (a foto mostra uma boca só). Briga e chegada testadas de novo sem erros.
 
+## Presidente Vargas: o vidro do alambrado, a grade do alto e a fachada de painéis (dono, 17/11/2026)
+
+O dono, com três fotos (uma de perto da arquibancada e duas da rua): "Faça o vidro do alambrado, é característico do estádio. A parte mais alta da arquibancada é de grade, e não azul. O estádio por fora tem essa fachada e as grades o cercam nas demais partes dele."
+
+- **O alambrado de vidro** corre em cima do muro do gramado, na volta inteira: painéis azulados, translúcidos, entre montantes brancos. É o alambrado de sempre do gerador com `corTela` e `opacidade` (novos). Ele nasce na beira do primeiro anel da ficha, então a arquibancada passou a vir antes do anel da grama.
+- **A grade do alto:** saiu a beira azul que eu tinha posto por cima da última fileira; no lugar, a tela de arame com postes brancos (`gradeFundo` no trecho, novo), em cima de um muro baixo.
+- **A fachada de fora:** os painéis cinza, a faixa azul, outra fiada cinza e, embaixo, o vão escuro dos pilares. Saiu o muro azul de listra laranja, que vinha das fotos de 2011 (as duas seções anteriores ainda o descrevem). São quatro muros finos, pelo mesmo arranjo de antes.
+- **As grades em volta:** o quarteirão dos arredores padrão já é cercado pelo gradil; não mudei a cor dele (é a do padrão, igual em todos os estádios), nem pus o piso vermelho de dentro.
+
+Estimado: a altura do vidro (1,5 m em cima de um muro de 2 m) e de cada faixa da fachada; os pilares do vão de baixo não foram desenhados um a um. Briga e chegada testadas de novo sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

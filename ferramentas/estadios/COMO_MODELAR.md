@@ -708,6 +708,16 @@ asa: 3.6, f, larg, fundo, corParapeito }` faz a caixa com um patamar de cada
 lado, a escada do meio só pra baixo e duas subindo das pontas; `grade: { cor }`
 no trecho põe o corrimão na fileira do alto das caixas (ou em `f`).
 
+ALAMBRADO DE VIDRO (o Presidente Vargas): `alambrado: { cor, corTela, opacidade,
+limiar }` na ficha. Ele nasce na beira de dentro do PRIMEIRO anel: se a
+arquibancada é colada no gramado, ponha o anel dela antes do anel da grama, e
+baixe o `limiar` (o padrão, 8 m, pula o trecho perto da linha de fundo).
+GRADE NO ALTO DA ARQUIBANCADA: `gradeFundo: { alt, cor }` no trecho, com
+`parapeito` baixo.
+FACHADA DE HOJE: foto antiga de acervo pode trazer outra pintura por fora (o PV
+de 2011 era azul com listra laranja; hoje é de painéis cinza com faixa azul).
+Sem foto recente da rua, diga ao dono de que ano é a fachada que você fez.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
