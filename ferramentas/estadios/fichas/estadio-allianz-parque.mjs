@@ -44,7 +44,7 @@ const BEIRA = linha([{ a: 95, b: 86.5, r: 42 }, { a: 122, b: 86.5, r: 78 }]);
 const PORTICO = (u, v, giro) => ({ u, v, w: 44, d: 20, h: 9, y: 39.5, cor: '#eceded', giro, cobertura: true });
 
 export default {
-  id: 'estadio-allianz-parque', alambrado: false, muro: false, nome: 'Allianz Parque', clubes: ['palmeiras'], norte: 339, vazado: 0.3, folga: 22,
+  id: 'estadio-allianz-parque', alambrado: false, muro: false, nome: 'Allianz Parque', clubes: ['palmeiras'], norte: 336.6, vazado: 0.3, folga: 22,
   chao: { cor: '#8b8a85' },
   campo: { corMargem: '#3f8f52' },
   corMureta: '#e9ebe8',
@@ -92,7 +92,7 @@ export default {
     { tipo: 'rua', de: [146, 130], ate: [146, -130], larg: 16 }
   ],
   /* a Mancha Verde no meio do Gol Norte e a TUP ao lado dela; a visitante no lance de cima do canto sudeste (mapa do clube) */
-  jogo: { mandante1: [-20, 20], mandante2: [22, 44], mandante3: [-44, -22], visitante: [202, 232], tunelMandante: 0, tunelVisitante: 217, folgaPM: 5,
+  jogo: { mandante1: [270, 302], mandante2: [304, 326], mandante3: [86, 108], visitante: [209, 239], tunelMandante: 0, tunelVisitante: 217, folgaPM: 5,
           fracao: { mandante1: 0.22, mandante2: 0.22, mandante3: 0.22, visitante1: 0.78, visitante2: 0.86, visitante3: 0.7 },
           torcidas: { mancha_verde: 'mandante1', tup: 'mandante2' } }
 };

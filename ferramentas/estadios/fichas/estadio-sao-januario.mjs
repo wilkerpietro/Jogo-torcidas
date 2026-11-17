@@ -39,7 +39,7 @@ const SOCIAL_BAIXO = ['✠', 'G', '✠', 'V', '', 'R', '✠', 'C', '✠'].map((t
 });
 
 export default {
-  id: 'estadio-sao-januario', nome: 'São Januário', clubes: ['vasco'], norte: 167, vazado: 0.3, folga: 20,
+  id: 'estadio-sao-januario', nome: 'São Januário', clubes: ['vasco'], norte: 168.2, vazado: 0.3, folga: 20,
   chao: { cor: '#83807a' },
   campo: { corMargem: '#4f9353' },
   corMureta: BR,
@@ -103,7 +103,7 @@ export default {
     { tipo: 'rua', de: [-170, -92], ate: [190, -92], larg: 12 }, { tipo: 'casas', u: 0, v: -112, nu: 18, nv: 1, passo: 15 },
     { tipo: 'casas', u: -150, v: -40, nu: 2, nv: 4, passo: 15 }
   ],
-  jogo: { mandante1: [80, 110], mandante2: [170, 192], mandante3: [255, 285], visitante: [40, 56], tunelMandante: 95, tunelVisitante: 48, folgaPM: 4,
+  jogo: { mandante1: [255, 285], mandante2: [197, 219], mandante3: [165, 195], visitante: [60, 76], tunelMandante: 95, tunelVisitante: 48, folgaPM: 4,
           fracao: { mandante1: 0.45, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { forca_jovem_vasco: 'mandante1' } }
 };

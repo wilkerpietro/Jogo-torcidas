@@ -23,7 +23,7 @@ export const FICHAS = {
      fica à esquerda da imagem. Anel oval fechado, dois lances, cobertura
      branca em volta toda, fachada escura com os 60 pilares brancos inclinados. */
   'estadio-castelao': {
-    id: 'estadio-castelao', alambrado: false, muro: false, nome: 'Arena Castelão', clubes: ['fortaleza', 'ceara'], norte: 180, vazado: 0.2,
+    id: 'estadio-castelao', alambrado: false, muro: false, nome: 'Arena Castelão', clubes: ['fortaleza', 'ceara'], norte: 185.0, vazado: 0.2,
     chao: { cor: '#8f8d86', esplanada: { a: 182, b: 156, forma: 'elipse' }, corEsplanada: '#d6cfb9' },
     campo: { corMargem: '#4c9656' },
     corMureta: '#e4e2da',
@@ -51,7 +51,7 @@ export const FICHAS = {
       { tipo: 'predio', u: 232, v: 95, w: 44, d: 26, h: 9, cor: '#c9c6bb', cor2: '#aaa79c' }
     ],
     /* a torcida do mandante atrás do gol norte; a visitante atrás do gol sul */
-    jogo: { mandante1: [152, 208], mandante2: [70, 110], mandante3: [250, 290], visitante: [-32, 32], tunelMandante: 180, tunelVisitante: 0 }
+    jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 240], tunelMandante: 180, tunelVisitante: 0 }
   },
 
   /* ILHA DO RETIRO (Sport) — pela planta de setores, pelas fotos e pelas
@@ -70,7 +70,7 @@ export const FICHAS = {
      · na quina SUDOESTE, entre a visitante e a Central, a curva preta com
        SPORT pintado em vermelho. */
   'estadio-ilha-do-retiro': {
-    id: 'estadio-ilha-do-retiro', nome: 'Ilha do Retiro', clubes: ['sport-recife'], norte: 90, vazado: 0.45, corEscada: AMARELO,
+    id: 'estadio-ilha-do-retiro', nome: 'Ilha do Retiro', clubes: ['sport-recife'], norte: 334.9, vazado: 0.45, corEscada: AMARELO,
     chao: { cor: '#8b8a85' },
     campo: { corMargem: '#3f9a50' },
     corMureta: '#2a2a2c',
@@ -135,7 +135,7 @@ export const FICHAS = {
       { tipo: 'arvores', u: 120, v: 40, w: 8, d: 70, n: 6 }
     ],
     /* a Jovem no meio da Sede; a Gang da Ilha na ponta do lado descoberto perto da Sede; as outras, no lado coberto */
-    jogo: { mandante1: [-4, 16], mandante2: [290, 312], mandante3: [70, 110], visitante: [157, 191], tunelMandante: 6, tunelVisitante: 174, folgaPM: 5,
+    jogo: { mandante1: [-16, 4], mandante2: [291, 313], mandante3: [315, 355], visitante: [153, 187], tunelMandante: 6, tunelVisitante: 174, folgaPM: 8,
             torcidas: { jovem_sport: 'mandante1', gang_da_ilha: 'mandante2' } }
   },
 
@@ -144,7 +144,7 @@ export const FICHAS = {
      dando a volta atrás dos dois gols; do lado oeste (embaixo) as sociais
      cobertas, com os refletores no teto e a piscina do clube atrás. */
   'estadio-aflitos': {
-    id: 'estadio-aflitos', nome: 'Aflitos', clubes: ['nautico'], norte: 180,
+    id: 'estadio-aflitos', nome: 'Aflitos', clubes: ['nautico'], norte: 180.3,
     chao: { cor: '#8b8a85' },
     campo: { corMargem: '#4c9656' },
     aneis: [
@@ -171,7 +171,7 @@ export const FICHAS = {
       { tipo: 'rua', de: [-200, -128], ate: [200, -128], larg: 10 }, { tipo: 'rua', de: [-200, 128], ate: [200, 128], larg: 10 },
       { tipo: 'arvores', u: 0, v: -86, w: 150, d: 6, n: 10 }
     ],
-    jogo: { mandante1: [70, 110], mandante2: [160, 200], mandante3: [252, 288], visitante: [-32, 26], tunelMandante: 90, tunelVisitante: 0 }
+    jogo: { mandante1: [-3, 37], mandante2: [39, 79], mandante3: [319, 355], visitante: [109, 167], tunelMandante: 90, tunelVisitante: 0 }
   },
 
   /* MARACANÃ (Flamengo e Fluminense) — pelas fotos do dono (14/11/2026). Anel
@@ -181,7 +181,7 @@ export const FICHAS = {
      telões pendurados atrás dos gols e o Maracanãzinho ao lado. Nota do dono:
      organizada atrás do gol leste (0°), visitante no escanteio sudoeste. */
   'estadio-maracana': {
-    id: 'estadio-maracana', alambrado: false, muro: false, nome: 'Maracanã', clubes: ['flamengo', 'fluminense'], norte: 0, vazado: 0.42, folga: 22,
+    id: 'estadio-maracana', alambrado: false, muro: false, nome: 'Maracanã', clubes: ['flamengo', 'fluminense'], norte: 30.9, vazado: 0.42, folga: 22,
     chao: { cor: '#8c8b86', esplanada: { a: 178, b: 158, forma: 'elipse' }, corEsplanada: '#bdb9ad' },
     campo: { corMargem: '#4c9656' },
     corMureta: '#dcd9cf',
@@ -215,7 +215,7 @@ export const FICHAS = {
       { tipo: 'casas', u: 246, v: -60, nu: 4, nv: 12, passo: 15 }, { tipo: 'casas', u: -250, v: 60, nu: 4, nv: 10, passo: 15 },
       { tipo: 'predio', u: 240, v: 70, w: 22, d: 24, h: 46 }, { tipo: 'predio', u: 262, v: 112, w: 20, d: 22, h: 58 }, { tipo: 'predio', u: -244, v: -40, w: 22, d: 22, h: 40 }
     ],
-    jogo: { mandante1: [-28, 28], mandante2: [70, 110], mandante3: [250, 290], visitante: [206, 240], tunelMandante: 0, tunelVisitante: 223 }
+    jogo: { mandante1: [147, 190], mandante2: [120, 145], mandante3: [80, 118], visitante: [227, 261], tunelMandante: 0, tunelVisitante: 223 }
   },
 
   /* MORUMBI (São Paulo) — pelas fotos do dono (14/11/2026). Oval sem
@@ -226,7 +226,7 @@ export const FICHAS = {
      as piscinas do clube ao lado. Nota do dono: organizada atrás do gol leste,
      visitante no gol oeste. */
   'estadio-morumbi': {
-    id: 'estadio-morumbi', alambrado: false, muro: false, nome: 'Morumbi', clubes: ['sao-paulo'], norte: 180, folga: 14,
+    id: 'estadio-morumbi', alambrado: false, muro: false, nome: 'Morumbi', clubes: ['sao-paulo'], norte: 172.8, folga: 14,
     chao: { cor: '#8a8984' },
     campo: { corMargem: '#4c9656', corFosso: '#aaa69a', pista: { dentro: { a: 80, b: 44, r: 44 }, fora: { a: 88, b: 52, r: 52 }, cor: '#b9584a', raias: 6 },
       ondas: [{ u: 60, amp: 2.6, v: 24, larg: 2.7, cor: '#f1efe8' }, { u: 63.4, amp: 2.6, v: 24, larg: 2.7, cor: '#c8363a' }, { u: 66.8, amp: 2.6, v: 24, larg: 2.7, cor: '#4a4c50' }] },
@@ -257,7 +257,7 @@ export const FICHAS = {
       { tipo: 'casas', u: -100, v: 124, nu: 9, nv: 2, passo: 13 }, { tipo: 'casas', u: 60, v: 124, nu: 12, nv: 2, passo: 13 },
       { tipo: 'casas', u: -40, v: -124, nu: 14, nv: 2, passo: 13 }
     ],
-    jogo: { mandante1: [-28, 28], mandante2: [70, 110], mandante3: [250, 290], visitante: [152, 208], tunelMandante: 0, tunelVisitante: 180 }
+    jogo: { mandante1: [2, 58], mandante2: [94, 134], mandante3: [161, 201], visitante: [221, 277], tunelMandante: 0, tunelVisitante: 180 }
   },
 
   /* NEO QUÍMICA ARENA (Corinthians) — pelas fotos do dono (14/11/2026).
@@ -269,7 +269,7 @@ export const FICHAS = {
      vigas que fecham o retângulo. Nota do dono: organizadas no gol oeste
      (esquerda), visitante na curva nordeste. */
   'estadio-neo-quimica-arena': {
-    id: 'estadio-neo-quimica-arena', alambrado: false, muro: false, nome: 'Neo Química Arena', clubes: ['corinthians'], norte: 180, vazado: 0.46, folga: 58,
+    id: 'estadio-neo-quimica-arena', alambrado: false, muro: false, nome: 'Neo Química Arena', clubes: ['corinthians'], norte: 180.5, vazado: 0.46, folga: 58,
     chao: { cor: '#8e8d88', esplanada: { a: 104, b: 118, r: 2 }, corEsplanada: '#b5b2a8' },
     campo: { corMargem: '#4c9656' },
     corMureta: '#2e3033',
@@ -306,7 +306,7 @@ export const FICHAS = {
       { tipo: 'arvores', u: -150, v: 40, w: 40, d: 120, n: 9 }, { tipo: 'arvores', u: 150, v: -84, w: 44, d: 30, n: 7 },
       { tipo: 'estacionamento', u: -20, v: -160, w: 200, d: 60 }, { tipo: 'estacionamento', u: 10, v: 160, w: 180, d: 60 }
     ],
-    jogo: { mandante1: [152, 208], mandante2: [65, 115], mandante3: [245, 295], visitante: [12, 40], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5 }
+    jogo: { mandante1: [132, 188], mandante2: [211, 261], mandante3: [272, 322], visitante: [-2, 26], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5 }
   },
 
   /* ARRUDA (Santa Cruz) — pela planta e pelas fotos do dono (14/11/2026).
@@ -320,7 +320,7 @@ export const FICHAS = {
      a margem larga de terra clara. Nota do dono: Inferno Coral no leste,
      Raça Coral no norte, visitante no oeste. */
   'estadio-arruda': {
-    id: 'estadio-arruda', nome: 'Arruda', clubes: ['santa-cruz'], norte: 90, vazado: 0.5, folga: 16,
+    id: 'estadio-arruda', nome: 'Arruda', clubes: ['santa-cruz'], norte: 180.0, vazado: 0.5, folga: 16,
     chao: { cor: '#8b8a85' },
     campo: { corMargem: '#cfc8b2' },
     corMureta: '#eeeeea',
@@ -364,7 +364,7 @@ export const FICHAS = {
       { tipo: 'rua', de: [-220, 100], ate: [220, 100], larg: 8 }
     ],
     /* o Inferno Coral atrás do gol do leste; a Raça Coral no norte; a visitante atrás do gol do oeste */
-    jogo: { mandante1: [-18, 18], mandante2: [72, 108], mandante3: [250, 290], visitante: [163, 197], tunelMandante: 0, tunelVisitante: 180,
+    jogo: { mandante1: [-21, 15], mandante2: [72, 108], mandante3: [110, 150], visitante: [180, 214], tunelMandante: 0, tunelVisitante: 180,
             torcidas: { inferno_coral: 'mandante1', raca_coral: 'mandante2' } }
   },
 
@@ -380,7 +380,7 @@ export const FICHAS = {
      dentro. A fachada é o anel de vidro azul-escuro, em cima da esplanada
      redonda. Visitante na quina sudeste (em cima, à direita). */
   'estadio-arena-do-gremio': {
-    id: 'estadio-arena-do-gremio', alambrado: false, muro: false, nome: 'Arena do Grêmio', clubes: ['gremio'], norte: 180, vazado: 0.28, folga: 26,
+    id: 'estadio-arena-do-gremio', alambrado: false, muro: false, nome: 'Arena do Grêmio', clubes: ['gremio'], norte: 195.8, vazado: 0.28, folga: 26,
     chao: { cor: '#8c8b86', esplanada: { a: 150, b: 132, forma: 'elipse' }, corEsplanada: '#b9b5aa' },
     campo: { corMargem: '#3f78c0' },
     corMureta: '#1f2f66',
@@ -420,7 +420,7 @@ export const FICHAS = {
       { tipo: 'rua', de: [-300, -214], ate: [300, -214], larg: 10 }, { tipo: 'rua', de: [-172, -260], ate: [-172, 260], larg: 10 }
     ],
     /* a torcida do Grêmio na Geral (o gol norte); a visitante na quina sudeste */
-    jogo: { mandante1: [160, 200], mandante2: [70, 110], mandante3: [250, 290], visitante: [10, 42], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5, fracao: { mandante1: 0.2 } }
+    jogo: { mandante1: [121, 161], mandante2: [197, 237], mandante3: [239, 279], visitante: [26, 58], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5, fracao: { mandante1: 0.2 } }
   },
 
   /* BEIRA-RIO (Internacional) — pelas plantas de setores e pelas fotos do
@@ -434,7 +434,7 @@ export const FICHAS = {
      do norte, o estacionamento e o ginásio. Torcida adversária no lance de
      cima da quina noroeste (em cima, à direita); a nossa atrás do gol sul. */
   'estadio-beira-rio': {
-    id: 'estadio-beira-rio', alambrado: false, muro: false, nome: 'Beira-Rio', clubes: ['internacional'], norte: 0, vazado: 0.34, folga: 34,
+    id: 'estadio-beira-rio', alambrado: false, muro: false, nome: 'Beira-Rio', clubes: ['internacional'], norte: 37.7, vazado: 0.34, folga: 34,
     chao: { cor: '#8c8b86', esplanada: { a: 170, b: 144, forma: 'elipse' }, corEsplanada: '#a9a59b' },
     campo: { corMargem: '#4a9a56' },
     corMureta: '#e9e6e0',
@@ -467,7 +467,7 @@ export const FICHAS = {
       { tipo: 'arvores', u: -240, v: 40, w: 60, d: 200, n: 26 }, { tipo: 'grama', u: -240, v: 40, w: 70, d: 210, cor: '#6f9a55' },
       { tipo: 'casas', u: -60, v: -214, nu: 16, nv: 3, passo: 14 }, { tipo: 'predio', u: 120, v: -210, w: 22, d: 22, h: 44 }, { tipo: 'predio', u: 156, v: -214, w: 20, d: 22, h: 56 }
     ],
-    jogo: { mandante1: [160, 200], mandante2: [250, 290], mandante3: [70, 110], visitante: [8, 46], tunelMandante: 180, tunelVisitante: 27, folgaPM: 5,
+    jogo: { mandante1: [2, 42], mandante2: [303, 343], mandante3: [261, 301], visitante: [173, 211], tunelMandante: 180, tunelVisitante: 27, folgaPM: 5,
             fracao: { mandante1: 0.2, visitante1: 0.72, visitante2: 0.72, visitante3: 0.72 } }
   },
 

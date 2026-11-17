@@ -16,6 +16,11 @@ import { arredoresPadrao, COM_PADRAO } from './arredores_padrao.mjs';
    (o arquivo exporta a ficha como `default`). É como quem modela um estádio novo testa o dele (assar.js, FICHA=...). */
 { const extra = new URLSearchParams(location.search).get('ficha');
   if (extra) { const m = await import(extra + (extra.includes('?') ? '&' : '?') + 't=' + Date.now()); const f = m.default || m.FICHA; FICHAS[f.id] = f; window.SO_FICHA = f.id; } }
+/* OS ARREDORES DE VERDADE PELAS MARCAS DO DONO (17/11/2026): a ficha diferenciada que não tem `arredores` escrito à mão e
+   tem marcas na prancheta ganha o dela, montado por arredores_marcas.mjs com as ruas do mapa (arredores/<id>.osm.mjs) */
+{ const { MARCAS } = await import('./marcas_do_dono.mjs'), { arredoresDasMarcas, AJUSTES } = await import('./arredores_marcas.mjs');
+  for (const [id, M] of Object.entries(MARCAS)) { const f = FICHAS[id]; if (!f || f.arredores) continue;
+    const osm = (await import('./arredores/' + id + '.osm.mjs')).default; f.arredores = arredoresDasMarcas(f, osm, M, AJUSTES[id] || {}); } }
 /* OS ARREDORES PADRÃO (os 9 quarteirões, as grades e a PM): a ficha que pede `arredoresPadrao` e não tem `arredores` próprio
    ganha o dela, montado por arredores_padrao.mjs */
 for (const f of Object.values(FICHAS)) if ((f.arredoresPadrao || COM_PADRAO.has(f.id)) && !f.arredores) f.arredores = arredoresPadrao(f);

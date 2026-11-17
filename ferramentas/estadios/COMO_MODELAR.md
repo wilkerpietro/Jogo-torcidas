@@ -784,6 +784,17 @@ disco do boneco (5 px de raio) couber nela, ou seja, se a célula e as quatro vi
 bonde ficava parado onde nasceu. Hoje a rua de serviço tem pelo menos 9 m andáveis e o teste da assadeira exige o corpo.
 Mesmo assim, em cena nova, rode a chegada no jogo (p_rota) e olhe se TODOS os bondes entram, não só o do jogador.
 
+O RUMO DA FICHA TEM DE BATER COM O MAPA ANTES DOS ARREDORES (os vinte diferenciados, 17/11/2026): as fichas feitas
+só pelas fotos tinham `norte` redondo (0, 90, 180) e até 90 graus errado. Pra conferir, ponha o estádio modelado (a cena
+de dentro) ao lado do mapa recortado nos mesmos metros, no rumo do mapa e girado 180 graus, e procure o que é torto no
+estádio: o lado coberto contra o telhado (`roof`) do mapa, a rampa contra a estação, o ginásio vizinho. Estádio simétrico
+fica com o rumo do mapa. A Ilha do Retiro estava de cabeça pra baixo.
+
+O PORTÃO NA PAREDE NÃO É O PONTO DO CASCO MAIS PERTO (Vila Belmiro): o casco convexo do que a ficha põe em pé engole as
+ruas que passam entre o estádio e os prédios do clube, e o portão ia parar do outro lado da rua, num canto fechado. O
+certo é sair da marca e andar pelo chão em direção ao meio do campo até o chão acabar. E quando o terreno em volta do
+estádio não é chão no mapa (o clube, um terreno sem nome), o portão para na rua: abra um acesso da rua até a parede.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

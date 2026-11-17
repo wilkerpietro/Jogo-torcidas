@@ -35,7 +35,7 @@ const ABERTURA = { a: 63.5, b: 45, r: 14 }, BEIRA = { a: 118.5, b: 98.5, r: 69.5
 const LISTRAS = { n: 72, cor: '#f2f2ee', cor2: '#8f9297', nervuras: false };
 
 export default {
-  id: 'estadio-arena-mrv', alambrado: false, muro: false, nome: 'Arena MRV', clubes: ['atletico-mineiro'], norte: 33, vazado: 0.22, folga: 26,
+  id: 'estadio-arena-mrv', alambrado: false, muro: false, nome: 'Arena MRV', clubes: ['atletico-mineiro'], norte: 33.2, vazado: 0.22, folga: 26,
   chao: { cor: '#8a867d', esplanada: { a: 150, b: 128, forma: 'elipse' }, corEsplanada: '#c3bdb1' },
   campo: { corMargem: '#4f9353' },
   corMureta: '#d9dad6',
@@ -83,7 +83,7 @@ export default {
     /* à direita (leste): os galpões */
     { tipo: 'predio', u: 175, v: -60, w: 30, d: 60, h: 9, cor: '#8a8d90' }, { tipo: 'predio', u: 120, v: -150, w: 40, d: 30, h: 8, cor: '#6f7478' }
   ],
-  jogo: { mandante1: [168, 192], mandante2: [255, 285], mandante3: [75, 105], visitante: [-20, 20], tunelMandante: 180, tunelVisitante: 0, folgaPM: 5,
+  jogo: { mandante1: [-12, 12], mandante2: [308, 338], mandante3: [264, 294], visitante: [202, 242], tunelMandante: 180, tunelVisitante: 0, folgaPM: 5,
           fracao: { mandante1: 0.4, mandante2: 0.4, mandante3: 0.4, visitante1: 0.78, visitante2: 0.84, visitante3: 0.72 },
           torcidas: { galoucura: 'mandante1', esquadrao_atleticano: 'mandante2' } }
 };

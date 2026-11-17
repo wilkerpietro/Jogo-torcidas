@@ -120,7 +120,7 @@ export default {
     { tipo: 'arvores', u: -124, v: 20, w: 30, d: 150, n: 34 }, { tipo: 'arvores', u: -90, v: 70, w: 40, d: 30, n: 10 },
     { tipo: 'arvores', u: 0, v: -150, w: 240, d: 30, n: 30 }, { tipo: 'arvores', u: 130, v: -60, w: 30, d: 90, n: 18 }
   ],
-  jogo: { mandante1: [-18, 18], mandante2: [296, 316], mandante3: [262, 290], visitante: [164, 196], tunelMandante: 80, tunelVisitante: 100, folgaPM: 3,
+  jogo: { mandante1: [-25, 11], mandante2: [239, 259], mandante3: [261, 289], visitante: [142, 174], tunelMandante: 80, tunelVisitante: 100, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { os_imbativeis: 'mandante1', camisa_12_do_vitoria: 'mandante2' } }
 };

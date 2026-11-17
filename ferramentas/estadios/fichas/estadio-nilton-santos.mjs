@@ -57,7 +57,7 @@ const OESTE_SUP = (() => { const seq = ['', '', '★', '', '', 'T', '', '', '★
 const FRESTA = (de, ate) => ({ de, ate, tipo: 'passagem', cor: '#9a9893' });
 
 export default {
-  id: 'estadio-nilton-santos', nome: 'Nilton Santos', clubes: ['botafogo'], norte: 24, vazado: 0.12, folga: 20,
+  id: 'estadio-nilton-santos', nome: 'Nilton Santos', clubes: ['botafogo'], norte: 25.6, vazado: 0.12, folga: 20,
   chao: { cor: '#8a867e', esplanada: { a: 175, b: 140, forma: 'elipse' }, corEsplanada: '#b9b2a6' },
   campo: { corMargem: '#6aaed6', pista: { dentro: PISTA, fora: W, cor: '#3f86c4', raias: 8 } },
   corMureta: '#d9dad6',
@@ -123,7 +123,7 @@ export default {
     { tipo: 'grama', u: -205, v: -40, w: 70, d: 110, cor: '#3f8a52' }, { tipo: 'predio', u: 30, v: 220, w: 160, d: 30, h: 9, cor: '#a5583f' },
     { tipo: 'rua', de: [230, -250], ate: [230, 250], larg: 24 }, { tipo: 'casas', u: 0, v: -200, nu: 18, nv: 2, passo: 15 }
   ],
-  jogo: { mandante1: [-15, 15], mandante2: [255, 285], mandante3: [75, 105], visitante: [165, 195], tunelMandante: 0, tunelVisitante: 180, folgaPM: 5,
+  jogo: { mandante1: [19, 49], mandante2: [83, 113], mandante3: [121, 151], visitante: [204, 234], tunelMandante: 0, tunelVisitante: 180, folgaPM: 5,
           fracao: { mandante1: 0.35, mandante2: 0.3, mandante3: 0.3, visitante1: 0.4, visitante2: 0.45, visitante3: 0.35 },
           torcidas: { furia_jovem_botafogo: 'mandante1', torcida_jovem_botafogo: 'mandante2' } }
 };

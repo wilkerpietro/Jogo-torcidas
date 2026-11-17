@@ -136,7 +136,7 @@ export default {
   /* a Torcida Jovem e a Sangue Jovem na arquibancada J. de Alencar (a pintura do degrau e as fotos da faixa debaixo da torre do
      placar antigo); os outros bondes da casa na curva da Tiradentes. A VISITANTE na Arquibancada Princesa Isabel, a ponta do
      canto oeste (mapa do clube). */
-  jogo: { mandante1: [170, 190], mandante2: [192, 201], mandante3: [-16, 10], visitante: [137.2, 143.4], tunelMandante: 180, tunelVisitante: 140, folgaPM: 4,
+  jogo: { mandante1: [-13, 7], mandante2: [45, 54], mandante3: [56, 82], visitante: [153, 159], tunelMandante: 180, tunelVisitante: 140, folgaPM: 4,
           fracao: { mandante1: 0.72, mandante2: 0.72, mandante3: 0.5, visitante1: 0.25, visitante2: 0.3, visitante3: 0.2 },
           torcidas: { torcida_jovem: 'mandante1', sangue_jovem: 'mandante2' } }
 };

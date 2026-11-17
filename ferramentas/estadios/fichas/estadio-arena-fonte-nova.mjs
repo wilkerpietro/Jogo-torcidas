@@ -105,7 +105,7 @@ export default {
     { tipo: 'predio', u: -160, v: 60, w: 30, d: 30, h: 36, cor: '#d9d6cb' }, { tipo: 'predio', u: -168, v: 10, w: 26, d: 26, h: 30, cor: '#cfd3d6' },
     { tipo: 'predio', u: -160, v: -50, w: 34, d: 26, h: 24, cor: '#d6d0c2' }, { tipo: 'casas', u: -40, v: 172, nu: 14, nv: 2, passo: 16 }
   ],
-  jogo: { mandante1: [160, 200], mandante2: [206, 232], mandante3: [128, 154], visitante: [28, 52], tunelMandante: 262, tunelVisitante: 278, folgaPM: 3,
+  jogo: { mandante1: [186, 226], mandante2: [241, 267], mandante3: [269, 295], visitante: [17, 41], tunelMandante: 262, tunelVisitante: 278, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { bamor: 'mandante1', terror_tricolor: 'mandante2' } }
 };

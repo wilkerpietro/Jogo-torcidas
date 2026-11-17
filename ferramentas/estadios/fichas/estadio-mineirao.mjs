@@ -89,7 +89,7 @@ const ABERTURA = E(85, 54), DIVISA = E(111, 79), BEIRA = E(141, 109);
 const TENDA = (u, v, giro) => ({ u, v, w: 20, d: 7, h: 4, cor: '#eeeeea', giro });
 
 export default {
-  id: 'estadio-mineirao', alambrado: false, muro: false, nome: 'Mineirão', clubes: ['cruzeiro'], norte: 8, vazado: 0.2, folga: 30,
+  id: 'estadio-mineirao', alambrado: false, muro: false, nome: 'Mineirão', clubes: ['cruzeiro'], norte: 8.6, vazado: 0.2, folga: 30,
   chao: { cor: '#8f8a80', esplanada: E(172, 140), corEsplanada: '#bdb6a6' },
   campo: { corMargem: '#4f9353' },
   corMureta: '#d9d6cc',
@@ -157,7 +157,7 @@ export default {
   ],
   /* a Máfia Azul (e a Galoucura, quando o Atlético manda) no lance de baixo do fundo sul, o Amarelo; a visitante no lance de
      cima da ponta norte da lateral oeste, o Roxo Superior do portão A; os outros bondes da casa no lance de baixo do leste */
-  jogo: { mandante1: [165, 195], mandante2: [255, 285], mandante3: [224, 244], visitante: [44, 64], tunelMandante: 180, tunelVisitante: 54, folgaPM: 5,
+  jogo: { mandante1: [31, 61], mandante2: [76, 106], mandante3: [-15, 5], visitante: [197, 217], tunelMandante: 180, tunelVisitante: 54, folgaPM: 5,
           fracao: { mandante1: 0.28, mandante2: 0.15, mandante3: 0.15, visitante1: 0.66, visitante2: 0.74, visitante3: 0.58 },
           torcidas: { mafia_azul: 'mandante1', galoucura: 'mandante1' } }
 };

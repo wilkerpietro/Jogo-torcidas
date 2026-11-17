@@ -167,7 +167,7 @@ export default {
     { tipo: 'piso', pts: anelPts(186, 180), furo: anelPts(160, 153), cor: '#cdc6b6', cor2: '#c4bdad', padrao: 'liso', y: 0.06 },
     { tipo: 'arvores', u: -170, v: 170, w: 30, d: 16, n: 6 }, { tipo: 'arvores', u: 172, v: -172, w: 26, d: 16, n: 5 }
   ],
-  jogo: { mandante1: [70, 110], mandante2: [250, 290], mandante3: [165, 195], visitante: [300, 335], tunelMandante: 90, tunelVisitante: 318, folgaPM: 3,
+  jogo: { mandante1: [134, 174], mandante2: [81, 121], mandante3: [49, 79], visitante: [274, 309], tunelMandante: 90, tunelVisitante: 318, folgaPM: 3,
           fracao: { mandante1: 0.52, mandante2: 0.52, mandante3: 0.55, visitante1: 0.53, visitante2: 0.53, visitante3: 0.53 },
           torcidas: { remista: 'mandante1', pavilhao_6: 'mandante3', terror_bicolor: 'mandante2', faccao_jovem_paysandu: 'mandante3' } }
 };

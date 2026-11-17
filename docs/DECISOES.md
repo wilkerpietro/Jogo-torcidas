@@ -15555,6 +15555,43 @@ O primeiro dos vinte, por ser de rua de bairro e com o rumo da ficha já certo (
 - **Conferido no jogo**: os cinco bondes com caminho; o 2º e o 3º escalão e os dois bondes visitantes entram e aparecem
   no setor deles; o 1º escalão (o do jogador) entra pela ENTRADA 1; sem erro de página.
 
+## Os vinte diferenciados com arredores de verdade, pelas marcas do dono (17/11/2026)
+
+Com o Couto Pereira como teste, os outros dezenove saíram de uma vez, montados pelas marcas do dono (`arredores_marcas.mjs`,
+lendo `marcas_do_dono.mjs`; a bancada monta o `arredores` de toda ficha diferenciada que tem marcas e não tem arredores
+escritos à mão). Os 22 diferenciados têm agora cena de fora com as ruas de verdade.
+
+- **O que o montador faz com as marcas**: o corte endireitado vira o quadro; as ruas do mapa (as de serviço também); o
+  chão fora das ruas é o terreno do estádio no mapa, o do clube quando o campo está dentro dele (Aflitos, Ilha do Retiro),
+  os estacionamentos e um calçadão de 12 m em volta do estádio; os prédios do mapa e as piscinas não se pisam. O portão
+  sai da entrada marcada e anda pelo chão em direção ao meio do campo até o chão acabar (a parede); se o chão acaba antes
+  (o terreno em volta não está no mapa: Mineirão, Arena MRV), abre-se um acesso de 9 m da rua até a parede, na direção da
+  marca. A 1ª chegada vai pra 1ª entrada, e assim por diante; com menos marcas, os escalões que sobram usam a última. Cada
+  chegada encosta no eixo da rua mais perto. Há um posto de PM de cada lado de cada portão.
+- **O rumo das fichas antigas foi conferido com o mapa**, pondo o estádio modelado ao lado do mapa nas duas orientações:
+  Maracanã 0 → 30,9° (a rampa aponta pra estação), Morumbi 180 → 172,8°, Beira-Rio 0 → 37,7° (o Gigantinho no canto certo),
+  Arena do Grêmio 180 → 195,8°, Arruda 90 → 180° (a social coberta do lado do prédio curvo do mapa), Castelão 180 → 185°,
+  Arena da Baixada 113 → 66,8° (o modelo é simétrico; fiquei com o rumo do mapa) e **a Ilha do Retiro estava invertida**:
+  90 → 334,9°, porque o lado coberto do modelo só bate com o telhado do mapa assim. Os outros mudaram menos de 3°.
+- **Os setores seguem as entradas** (dono): cada escalão foi pro trecho da arquibancada atrás do portão dele; dois escalões
+  no mesmo portão ficam lado a lado. Em seis estádios os setores calculados se sobrepunham e eu ajustei à mão (Allianz,
+  Maracanã, Beira-Rio, Castelão, Mangueirão e São Januário). Na Ilha do Retiro a polícia de dentro passou a ficar 8 graus
+  ao lado do setor da visitante (com 5, dois postos caíam no vão entre as arquibancadas).
+- **Ajustes por estádio**: só se briga do lado de fora na Neo Química Arena, no Allianz Parque e no Nilton Santos (dono). No
+  Castelão a cena é a do Fortaleza em casa (a TUF e a JGT; a visitante dos jogos do Fortaleza); no Mangueirão, a do Remo
+  em casa (nascendo onde nasce a visitante dos jogos do Paysandu, como o dono aceitou). Na Vila Belmiro a avenida tem o
+  canal no meio e o mapa não traz as pontes: as duas perto do estádio entraram à mão.
+- **Conferido**: as 19 cenas assadas com caminho de todos os bondes até o portão (pelo teste que exige o corpo); no jogo, o
+  caminho de cada bonde chega ao ponto em que ele nasce, nos 19, sem erro de página; as cenas de dentro com chão único e
+  nenhum marcador fora. A chegada inteira rodada no jogo em três: no Maracanã e no Mangueirão todos os bondes da IA entram
+  e aparecem no setor (57 s e 31 s); na Vila Belmiro os dois visitantes entram em 40 s e a cena acaba ali (não sobra rival
+  na rua), com os escalões da casa ainda vindo pelas pontes do canal.
+- **O que falta** (fica pra depois da 2ª rodada de marcas): a cena trocar pelo mandante do dia nos estádios de dois clubes
+  (o Ceará no Castelão, com a Aliança entrando com a MOFI; o Paysandu no Mangueirão; o Fla×Flu com chegadas e entradas a
+  mais) — hoje o jogo tem uma cena por estádio; o 3º bonde visitante, só pra quem tem três torcidas; o gradil que conduz,
+  o cordão e a polícia de verdade. **A 2ª rodada**: a prancheta passou a mostrar as cenas desenhadas no lugar dos mapas do
+  levantamento, com as marcas da 1ª rodada já postas; o dono corrige em cima delas e marca "conferi".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

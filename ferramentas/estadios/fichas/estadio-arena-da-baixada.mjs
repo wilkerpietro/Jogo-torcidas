@@ -28,7 +28,7 @@ const NERVURAS = Array.from({ length: 20 }, (_, i) => -93 + i * 9.8).flatMap(u =
   : [{ u, v: 58.6, w: 1, d: 41, h: 0.25, y: 43, cor: NERV, cobertura: true }, { u, v: -57.9, w: 1, d: 40.6, h: 0.25, y: 43, cor: NERV, cobertura: true }]);
 
 export default {
-  id: 'estadio-arena-da-baixada', alambrado: false, muro: false, nome: 'Arena da Baixada', clubes: ['athletico'], norte: 113, vazado: 0.3, folga: 22,
+  id: 'estadio-arena-da-baixada', alambrado: false, muro: false, nome: 'Arena da Baixada', clubes: ['athletico'], norte: 66.8, vazado: 0.3, folga: 22,
   corEscada: '#dfe0df',
   chao: { cor: '#8d8981' },
   campo: { corMargem: '#3f8f4b' },
@@ -86,7 +86,7 @@ export default {
   ],
   /* Os Fanáticos no Buenos Aires inferior (atrás do gol da direita); a visitante nos setores 301 e 302 do anel superior
      (o canto de baixo à esquerda), como no mapa do clube; os outros bondes da casa no anel inferior */
-  jogo: { mandante1: [-13, 13], mandante2: [70, 110], mandante3: [165, 195], visitante: [199, 219], tunelMandante: 0, tunelVisitante: 210, folgaPM: 4,
+  jogo: { mandante1: [10, 36], mandante2: [226, 266], mandante3: [268, 298], visitante: [190, 210], tunelMandante: 0, tunelVisitante: 210, folgaPM: 4,
           fracao: { mandante1: 0.2, mandante2: 0.22, mandante3: 0.22, visitante1: 0.75, visitante2: 0.75, visitante3: 0.75 },
           torcidas: { os_fanaticos: 'mandante1' } }
 };

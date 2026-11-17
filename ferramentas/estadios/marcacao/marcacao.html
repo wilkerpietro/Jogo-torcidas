@@ -184,7 +184,7 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
     <div class="janela" id="janela">
       <div class="palco" id="palco">
         <img id="img" alt="" draggable="false">
-        <svg id="svg" viewBox="0 0 1680 1520" role="img" aria-label="Marcas sobre o mapa"></svg>
+        <svg id="svg" viewBox="0 0 2600 2400" role="img" aria-label="Marcas sobre o mapa"></svg>
       </div>
     </div>
   </section>
@@ -208,7 +208,7 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
   <section class="obs">
     <label class="campo" for="obs">Observações do estádio</label>
     <textarea id="obs" maxlength="2000" placeholder="O que eu preciso saber e não cabe numa marca: rua fechada em dia de jogo, lado de cada torcida, prédio que não pode faltar…"></textarea>
-    <label class="pronto"><input type="checkbox" id="pronto"> Terminei este estádio, pode fazer os arredores</label>
+    <label class="pronto"><input type="checkbox" id="pronto"> Conferi este estádio na cena desenhada (2ª rodada)</label>
   </section>
 
   <section class="geral" aria-label="Todos os estádios">
@@ -223,14 +223,18 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
       <button class="acao" type="button" id="copiar">Copiar todas as marcas</button>
     </div>
     <textarea id="saida" readonly hidden aria-label="Marcas em texto"></textarea>
-    <p class="miudo">Mapas: © colaboradores do OpenStreetMap. Cada quadrado da grade tem 100 m; o anel tracejado fica a 200 m do meio do campo.</p>
+    <p class="miudo">Ruas: © colaboradores do OpenStreetMap. A imagem é a cena inteira: o corte não passa da beira dela.</p>
   </section>
 </div>
 
 <script>
 (function () {
   'use strict';
-  var W = 1680, H = 1520, K = 2; // o mapa: 2 pixels por metro, o meio do campo no meio da imagem
+  /* AS CENAS DESENHADAS (2ª rodada): cada uma no quadro da ficha do estádio — w × h pixels, esc pixels por metro, o meio da
+     imagem em (cu, cv) metros do meio do campo, e o quadro girado `giro` graus em relação ao do levantamento. As marcas
+     continuam guardadas no quadro do levantamento, como na 1ª rodada. */
+  var CENAS = {"estadio-aflitos":{"w":2576,"h":2440,"esc":4.116,"cu":-21.8,"cv":-4.6,"giro":0},"estadio-allianz-parque":{"w":2440,"h":2584,"esc":4.415,"cu":-32,"cv":-33.7,"giro":0},"estadio-arena-da-baixada":{"w":2824,"h":2224,"esc":3.944,"cu":22.3,"cv":-40.9,"giro":0},"estadio-arena-do-gremio":{"w":2600,"h":2416,"esc":4.865,"cu":-11.7,"cv":15.1,"giro":0},"estadio-arena-fonte-nova":{"w":2680,"h":2352,"esc":5.017,"cu":-32,"cv":-13.2,"giro":0},"estadio-arena-mrv":{"w":2392,"h":2632,"esc":4.866,"cu":37.1,"cv":-52.6,"giro":0},"estadio-arruda":{"w":2336,"h":2704,"esc":4.683,"cu":-46.8,"cv":-34.3,"giro":0},"estadio-barradao":{"w":2680,"h":2344,"esc":4.745,"cu":-29.9,"cv":-23,"giro":0},"estadio-beira-rio":{"w":2792,"h":2256,"esc":4.883,"cu":51.8,"cv":22,"giro":0},"estadio-castelao":{"w":2680,"h":2344,"esc":3.49,"cu":-33.1,"cv":-6.4,"giro":0},"estadio-couto-pereira":{"w":2736,"h":2296,"esc":4.598,"cu":29.5,"cv":57,"giro":0},"estadio-ilha-do-retiro":{"w":2960,"h":2128,"esc":5.636,"cu":37.6,"cv":-27.3,"giro":180},"estadio-mangueirao":{"w":2312,"h":2728,"esc":4.007,"cu":8.7,"cv":5.9,"giro":0},"estadio-maracana":{"w":2416,"h":2600,"esc":4.263,"cu":-86.8,"cv":-38.2,"giro":0},"estadio-mineirao":{"w":2520,"h":2496,"esc":4.001,"cu":21.8,"cv":-28.2,"giro":0},"estadio-morumbi":{"w":2424,"h":2600,"esc":4.725,"cu":19.3,"cv":-25.5,"giro":0},"estadio-neo-quimica-arena":{"w":2256,"h":2784,"esc":4.355,"cu":-4.6,"cv":-25.5,"giro":0},"estadio-nilton-santos":{"w":2320,"h":2712,"esc":4.063,"cu":-9.7,"cv":24.6,"giro":0},"estadio-sao-januario":{"w":2528,"h":2488,"esc":4.336,"cu":-21.8,"cv":42.2,"giro":0},"estadio-vila-belmiro":{"w":2872,"h":2192,"esc":4.995,"cu":93.9,"cv":88.9,"giro":0}};
+  var W = 1680, H = 1520, CENA = null;
   var NS = 'http://www.w3.org/2000/svg';
   var E = [
     ['estadio-maracana', 'Maracanã', 'Rio de Janeiro', [['flamengo', 'Flamengo'], ['fluminense', 'Fluminense']], -22.912146, -43.230187, 30.9],
@@ -281,7 +285,8 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
     (Array.isArray(r.corte) ? r.corte : []).slice(0, 60).forEach(function (c) {
       if (!c || typeof c !== 'object') return; var u = num(c.u), v = num(c.v); if (u !== null && v !== null) m.corte.push({ u: u, v: v });
     });
-    m.obs = String(r.obs || '').slice(0, 2000); m.pronto = !!r.pronto;
+    /* (o "terminei" da 1ª rodada, nos mapas do levantamento, não vale pra 2ª: na cena desenhada o dono confere de novo) */
+    m.obs = String(r.obs || '').slice(0, 2000); m.pronto = !!r.pronto && r.rodada === 2;
     m.atualizado = typeof r.atualizado === 'number' && isFinite(r.atualizado) ? r.atualizado : 0;
     return m;
   }
@@ -293,7 +298,7 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
       quadro: 'metros a partir do meio do campo; u ao longo do campo (o rumo), v para cima do mapa',
       pontos: m.pontos.map(function (p) { return { id: p.id, k: p.k, de: p.de, u: p.u, v: p.v, nota: p.nota }; }),
       corte: m.corte.map(function (c) { return { u: c.u, v: c.v }; }),
-      obs: m.obs, pronto: m.pronto, atualizado: m.atualizado
+      obs: m.obs, pronto: m.pronto, atualizado: m.atualizado, rodada: 2
     };
   }
   function guardaNoAparelho(id) { try { localStorage.setItem('marcas:' + id, JSON.stringify(corpo(id))); } catch (e) {} }
@@ -373,10 +378,12 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
   }
 
   /* ---------- contas do mapa ---------- */
-  function px(p) { return [W / 2 + p.u * K, H / 2 - p.v * K]; }
+  function px(p) { var g = CENA.giro * Math.PI / 180, c = Math.cos(g), s = Math.sin(g), u = p.u * c - p.v * s, v = p.u * s + p.v * c;
+    return [W / 2 + (u - CENA.cu) * CENA.esc, H / 2 - (v - CENA.cv) * CENA.esc]; }
   function metros(x, y) {
-    var u = Math.max(-W / 2 / K, Math.min(W / 2 / K, (x - W / 2) / K)), v = Math.max(-H / 2 / K, Math.min(H / 2 / K, (H / 2 - y) / K));
-    return { u: Math.round(u * 10) / 10, v: Math.round(v * 10) / 10 };
+    x = Math.max(0, Math.min(W, x)); y = Math.max(0, Math.min(H, y));
+    var u = (x - W / 2) / CENA.esc + CENA.cu, v = (H / 2 - y) / CENA.esc + CENA.cv, g = -CENA.giro * Math.PI / 180, c = Math.cos(g), s = Math.sin(g);
+    return { u: Math.round((u * c - v * s) * 10) / 10, v: Math.round((u * s + v * c) * 10) / 10 };
   }
   var VENTOS = ['norte', 'nordeste', 'leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste'];
   function onde(p) { // distância e lado, contados do meio do campo
@@ -531,7 +538,7 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
     var casa = atual.torcidas.slice(0, -1).map(function (t) { return t.nome; }).join(' e ');
     var f = $('ficha'); f.textContent = '';
     var b = document.createElement('b'); b.textContent = casa; f.appendChild(document.createTextNode('Casa de ')); f.appendChild(b);
-    f.appendChild(document.createTextNode(' · o campo está deitado no mapa; o norte é a seta vermelha · grade de 100 m · anel tracejado a 200 m do meio do campo'));
+    f.appendChild(document.createTextNode(' · a cena desenhada do jogo, com as suas marcas da 1ª rodada já postas · os pórticos verdes e o vermelho são onde eu pus as entradas, encostadas na parede · corrija o que estiver fora do lugar'));
   }
   function pintaTudo() { pintaFicha(); pintaFerramentas(); pintaMapa(); pintaEscolhida(); pintaLista(); pintaTabela(); $('obs').value = marcas[atual.id].obs; $('pronto').checked = marcas[atual.id].pronto; $('obs').disabled = soOlha; $('pronto').disabled = soOlha; }
 
@@ -544,7 +551,7 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
     zoom = Math.max(mn, Math.min(3, z)); inteiro = zoom <= mn + 0.0005;
     p.style.width = Math.round(W * zoom) + 'px'; p.style.height = Math.round(H * zoom) + 'px';
     j.scrollLeft = fx * W * zoom - j.clientWidth / 2; j.scrollTop = fy * H * zoom - j.clientHeight / 2;
-    $('z-txt').textContent = inteiro ? 'mapa inteiro · 1 cm de tela ≈ ' + Math.round(37.8 / (K * zoom)) + ' m' : Math.round(zoom * 100) + '% · 1 cm de tela ≈ ' + Math.round(37.8 / (K * zoom)) + ' m';
+    $('z-txt').textContent = inteiro ? 'mapa inteiro · 1 cm de tela ≈ ' + Math.round(37.8 / (CENA.esc * zoom)) + ' m' : Math.round(zoom * 100) + '% · 1 cm de tela ≈ ' + Math.round(37.8 / (CENA.esc * zoom)) + ' m';
     $('z-menos').disabled = inteiro; $('z-mais').disabled = zoom >= 3;
     pintaMapa();
   }
@@ -558,7 +565,8 @@ tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
     atual = INDICE[id] || E[0]; escolhida = null; movendo = false;
     try { localStorage.setItem('marcas:atual', atual.id); } catch (e) {}
     $('estadio').value = atual.id;
-    var img = $('img'); img.alt = 'Mapa dos arredores do ' + atual.nome + ', com as ruas e os prédios em volta do estádio'; img.src = 'mapas/' + atual.id + '.jpg';
+    CENA = CENAS[atual.id]; W = CENA.w; H = CENA.h; $('svg').setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var img = $('img'); img.alt = 'A cena de fora do ' + atual.nome + ', desenhada pro jogo: o estádio, as ruas, as casas e os portões'; img.src = 'cenas/' + atual.id + '.webp';
     pintaTudo(); poeZoom(ajuste(), false);
   }
   function poeFerramenta(f) { ferramenta = f; movendo = false; if (f === 'corte' || f === 'nota') { /* a escolha continua valendo */ } pintaFerramentas(); pintaMapa(); pintaEscolhida(); }
