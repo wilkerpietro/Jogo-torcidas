@@ -764,6 +764,11 @@ ANEL EM MEIA-LUA QUE AFINA NAS PONTAS (o anel de cima do Albertão): duas
 elipses que se aproximam nas pontas e `inclinacao` no anel, pra o alto baixar
 junto com a fundura; a marquise usa `alturas(ang)` com a mesma conta (`TOPO`).
 
+SE NENHUMA CENA ASSA (a bancada estoura o tempo, com "404" no console): veja o
+fim do `fichas.mjs`. Um `import` de ficha que não existe derruba a página
+inteira. As fichas antigas ficam DENTRO do `fichas.mjs` e não levam `import`
+(o Romeirão, 17/11/2026).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

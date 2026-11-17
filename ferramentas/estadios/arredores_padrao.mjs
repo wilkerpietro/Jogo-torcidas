@@ -82,7 +82,7 @@ export const COM_PADRAO = new Set([
   /* o Rio Grande do Norte */
   'estadio-frasqueirao', 'estadio-nogueirao', 'estadio-arena-das-dunas',
   /* o Ceará */
-  'estadio-presidente-vargas', 'estadio-junco',
+  'estadio-presidente-vargas', 'estadio-junco', 'estadio-romeirao',
   /* o Maranhão e o Piauí */
   'estadio-castelao-ma', 'estadio-albertao', 'estadio-frei-epifanio'
 ]);

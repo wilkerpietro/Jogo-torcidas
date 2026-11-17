@@ -488,7 +488,7 @@ export const FICHAS = {
        leste.
      Em volta, o estacionamento de um lado e o bairro de casas de telha. */
   'estadio-romeirao': {
-    id: 'estadio-romeirao', nome: 'Arena Romeirão', clubes: ['icasa'], norte: 90, vazado: 0.42, folga: 26, corEscada: '#ecebe6',
+    id: 'estadio-romeirao', nome: 'Arena Romeirão', clubes: ['icasa', 'iguatu'], norte: 90, vazado: 0.42, folga: 26, corEscada: '#ecebe6',
     chao: { cor: '#8b8a85' },
     campo: { corMargem: '#2f6f4a' },
     corMureta: '#f2f2ee', corAlambrado: '#f4f4f0',

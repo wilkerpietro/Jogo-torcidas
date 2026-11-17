@@ -17,7 +17,7 @@
    cartão da partida cai perto da hora da bola e nada do que conta o
    placar passa na frente dele.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=c0a67c1407';
+import { CASCA } from './jogo_casca.js?v=780a4e2744';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -31,18 +31,18 @@ async function montarJogo() {
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos, as fotos das praças e as bandeiras embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=c0a67c1407').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=780a4e2744').catch(() => {});
   /* os estádios low-poly das cenas (ferramentas/estadios/assar.js): antes do jogo, que monta as cenas quando carrega */
-  await carregarScript('dados/estadios_cenas.js?v=c0a67c1407').catch(() => {});
-  await carregarScript('dados/arredores_cenas.js?v=c0a67c1407').catch(() => {});
+  await carregarScript('dados/estadios_cenas.js?v=780a4e2744').catch(() => {});
+  await carregarScript('dados/arredores_cenas.js?v=780a4e2744').catch(() => {});
   /* sem o rolo do feed: a tela entre os jogos é o portal */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=c0a67c1407');
-  await carregarScript('js/portal.js?v=c0a67c1407').catch(err => console.error('o portal não carregou:', err));
+  await carregarScript('js/jogo.js?v=780a4e2744');
+  await carregarScript('js/portal.js?v=780a4e2744').catch(err => console.error('o portal não carregou:', err));
   /* o boneco das cenas de imagem (os dois níveis afinados, em base64) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=c0a67c1407').catch(() => {});
-  await import('./bonecos3_global.js?v=c0a67c1407').catch(err => console.error('o boneco das cenas não carregou:', err));
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=780a4e2744').catch(() => {});
+  await import('./bonecos3_global.js?v=780a4e2744').catch(err => console.error('o boneco das cenas não carregou:', err));
   ligar();
 }
 

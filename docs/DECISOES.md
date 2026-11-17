@@ -15425,6 +15425,14 @@ O dono, com uma aérea tirada de um canto: "Albertão tem dois andares". Eu tinh
 
 Estimado: as alturas (o alto do anel de cima a 26,5 m no meio); a fundura dele; onde acaba o azul. Briga e chegada da torcida da casa testadas de novo sem erros; os arredores foram regravados com caminho até todos os portões.
 
+## Romeirão: o Iguatu entra e os arredores padrão (dono, 17/11/2026)
+
+Levei ao dono que o Iguatu, que nos dados manda no Romeirão, não tinha cena (a ficha só listava o Icasa) e que o Romeirão não estava nos arredores padrão; ele respondeu "Ok". A ficha `estadio-romeirao` (das antigas, dentro do `fichas.mjs`) passou a listar o Icasa e o Iguatu, e o estádio entrou nos arredores padrão. Briga dos dois clubes abrindo em `estadio-romeirao` e chegada das cinco torcidas testadas sem erros.
+
+Um tropeço no caminho: o meu roteiro de fechamento acrescentou ao `fichas.mjs` um `import` de `fichas/estadio-romeirao.mjs`, arquivo que não existe, e com isso nenhuma cena assava (a página não carregava e a bancada esperava até estourar o tempo). A linha saiu antes de qualquer gravação. Ficha antiga, de dentro do `fichas.mjs`, não leva `import`.
+
+Com isto, todo clube dos dados tem estádio com cena, e todo estádio que não é diferenciado está nos arredores padrão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
