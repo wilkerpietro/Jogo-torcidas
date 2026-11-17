@@ -15229,6 +15229,25 @@ Estimado: as alturas; os dois fundos (nenhuma foto mostra um deles de frente; pu
 
 O Frasqueirão entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
 
+## Rio Grande do Norte: Nogueirão (dono, 17/11/2026)
+
+O dono, com três fotos aéreas (duas de drone, recentes, tiradas por cima do prédio da entrada; uma antiga, do lado oposto): "Vamos pro Nogueirão". A ficha é `fichas/estadio-nogueirao.mjs`, do Baraúnas e do Potiguar, em Mossoró.
+
+**As medidas.** O estádio foi demolido: o satélite de hoje (Google) mostra só o terreno com o entulho. As medidas saíram do satélite antigo da Esri, que ali só existe em baixa resolução (1,7 px/m), e do contorno do estádio no OpenStreetMap; o rumo do campo (126,4 graus), do gramado no OpenStreetMap.
+
+**O estádio.** Um anel só, estreito (8,5 m, nove degraus), em retângulo de cantos redondos, levantado do chão em cima de um muro com portas, em volta de um pátio de terra com o gramado no meio:
+
+- **a lateral dos letreiros** (em frente ao prédio), com o degrau pintado: EXTINCHAMAS em vermelho no amarelo, CACIM em branco no verde, EXTINCHAMAS de novo;
+- **a curva de trás de um gol**, com o degrau em blocos alternados, vermelhos e de concreto, em cima do muro branco de barra vermelha;
+- **a outra curva**, de concreto, com um pedaço verde no canto junto do letreiro;
+- **o lado da entrada**, de concreto dos dois lados do prédio de paredes azuis e telhado cinza, com a marquise pra rua.
+
+**As letras** são pintadas pelo `pinta`, numa grade de 7 linhas em que cada casa é um lugar de um degrau (ajudante `LETREIRO` da ficha). Na primeira prova o H saiu como F: o gerador conta os lugares do trecho pelo arco visto do meio do campo, não pelo comprimento em metros, e uma coluna caía. O trecho amarelo levou `celula: 0.64` e `passoFileira: 1.04` pra ter 62 lugares e nove degraus, e o ajudante recebe a contagem medida na prova.
+
+Estimado: as alturas; a fundura do anel (o satélite antigo é um borrão: entre 8 e 10 m); quantos blocos vermelhos tem a curva e onde cai cada um; o tamanho do prédio (37 m por 17); as torres de luz. A foto antiga mostra o degrau todo cinza-azulado e uma tribuna de telhado azul onde hoje é o prédio; valeram as duas recentes. As torcidas são escolha minha: a da casa (Fúria Jovem Baraúnas ou Império Vermelho) no meio da lateral dos letreiros, com apoio na curva dos blocos vermelhos e no concreto ao lado do prédio; a visitante na outra curva.
+
+O Nogueirão entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

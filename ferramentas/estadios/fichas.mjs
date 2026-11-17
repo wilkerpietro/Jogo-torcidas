@@ -635,3 +635,4 @@ import amigao from './fichas/estadio-amigao.mjs'; FICHAS[amigao.id] = amigao;
 import almeidao from './fichas/estadio-almeidao.mjs'; FICHAS[almeidao.id] = almeidao;
 import marizao from './fichas/estadio-marizao.mjs'; FICHAS[marizao.id] = marizao;
 import frasqueirao from './fichas/estadio-frasqueirao.mjs'; FICHAS[frasqueirao.id] = frasqueirao;
+import nogueirao from './fichas/estadio-nogueirao.mjs'; FICHAS[nogueirao.id] = nogueirao;
