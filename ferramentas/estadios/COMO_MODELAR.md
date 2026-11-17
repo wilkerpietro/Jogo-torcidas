@@ -756,6 +756,14 @@ ESTÁDIO NOVO NA LISTA (`dados/estadios.js`): a lista segue o NOME, não o id;
 ponha a linha depois do vizinho de nome (o Frei Epifânio depois do
 Frasqueirão), nos três lugares: `dados/`, `cenario3d/dados/` e o pacote.
 
+DEBAIXO DE UMA MARQUISE LARGA COSTUMA HAVER OUTRO ANDAR (o Albertão, correção
+do dono, 17/11/2026): o satélite só mostra o telhado. Se a marquise tem 40 m e
+a arquibancada visível acaba onde ela começa, procure uma foto de dentro antes
+de fechar com parede; sem foto, diga ao dono que não sabe o que há ali.
+ANEL EM MEIA-LUA QUE AFINA NAS PONTAS (o anel de cima do Albertão): duas
+elipses que se aproximam nas pontas e `inclinacao` no anel, pra o alto baixar
+junto com a fundura; a marquise usa `alturas(ang)` com a mesma conta (`TOPO`).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

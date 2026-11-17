@@ -15415,6 +15415,16 @@ Estimado: as alturas (a lateral descoberta a 7,5 m, o telhado a 13); o tom das c
 
 O Frei Epifânio entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). Conferido nos dados depois disto: todo clube manda num estádio que tem ficha, menos o Iguatu — a ficha do Romeirão existe (é das antigas), mas só lista o Icasa, e ela ainda não está nos arredores padrão.
 
+## Albertão: dois andares na lateral da marquise (dono, 17/11/2026)
+
+O dono, com uma aérea tirada de um canto: "Albertão tem dois andares". Eu tinha feito a bacia num lance só e, debaixo da marquise, uma parede (a seção anterior ainda descreve assim). O satélite não mostra o que fica debaixo da marquise.
+
+- **O anel de cima** entrou na lateral do oeste, por cima do fundo da bacia: uma meia-lua íngreme (0,55 m por metro), de 20 m de fundura no meio, que afina até sumir nas duas curvas, de cadeiras azuis no meio e claras nos lados, atrás da mureta branca do balcão. A fundura saiu da proporção na foto do dono.
+- **A marquise** agora cobre o anel de cima (a ponta 3 m à frente dele, a 30 m no meio) e segue pra fora nas vigas, 25 m além da beira dele. A altura acompanha a do anel de cima em cada ângulo.
+- **As aletas** da fachada: trinta lâminas de concreto debaixo das vigas, da beira do anel de cima até a ponta de fora. Saíram os pedaços de parede curva.
+
+Estimado: as alturas (o alto do anel de cima a 26,5 m no meio); a fundura dele; onde acaba o azul. Briga e chegada da torcida da casa testadas de novo sem erros; os arredores foram regravados com caminho até todos os portões.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
