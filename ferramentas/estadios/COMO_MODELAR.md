@@ -699,6 +699,15 @@ LETREIRO NUM BLOCO: a face do `textoFace` olha pra `+u`; `giro: 90` vira pra
 TELHADO SOBRE COLUNAS COM ARCO (a tribuna do PV): `cobertura` no trecho com
 `cai` negativo (a frente no alto) e `arcos` com `pilar` pras duas colunas.
 
+FAIXA NO MEIO DA ARQUIBANCADA NÃO É SEGUNDO ANDAR (o Amigão, e de novo o
+Presidente Vargas, 17/11/2026): de longe, um corredor, uma fila de bocas ou um
+corrimão corrido parecem a divisa de dois lances. Sem uma foto de perto, faça
+UM lance e diga ao dono que a faixa pode ser outra coisa.
+BOCA EM Y E FERROS DE PROTEÇÃO (o Presidente Vargas): `vomitorios: { emY: true,
+asa: 3.6, f, larg, fundo, corParapeito }` faz a caixa com um patamar de cada
+lado, a escada do meio só pra baixo e duas subindo das pontas; `grade: { cor }`
+no trecho põe o corrimão na fileira do alto das caixas (ou em `f`).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

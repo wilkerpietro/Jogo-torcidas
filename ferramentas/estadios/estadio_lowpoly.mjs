@@ -111,12 +111,21 @@ function medidasDe(ficha, anel, t, arco, prof) {
     else { const d = Math.max(8, Math.round((vs.dist || 30) / larguraCel)); for (let c = d / 2; c < n - margem; c += d) if (c > margem) vomCentros.push(c); }
   }
   const naBoca = i => vomCentros.some(c => Math.abs(i + 0.5 - c) <= vomMeia);
+  /* A BOCA EM Y (o Presidente Vargas; dono, 17/11/2026: "o vomitório tem escadas que acessam a parte de cima e de baixo em Y"):
+     com `vomitorios.emY`, a caixa da boca ganha um PATAMAR de cada lado (`asa` metros, na altura do alto dela); a escada do
+     meio só existe da boca pra BAIXO, e pra CIMA sobem duas, uma na ponta de cada patamar. */
+  const emY = !!(vs && vs.emY), asa = emY ? Math.max(esc + 1, Math.round((vs.asa || 3) / larguraCel)) : 0;
+  const distBoca = i => Math.min(...vomCentros.map(c => Math.abs(i + 0.5 - c)));
+  const naAsa = i => emY && vomCentros.length > 0 && distBoca(i) > vomMeia && distBoca(i) <= vomMeia + asa;
   /* a boca pode abrir no MEIO do lance (`vomitorios.f`, fração da fundura; 0 = na frente, dando no corredor) */
   const vomK0 = Math.round(Math.max(0, Math.min(0.8, (vs && vs.f) || 0)) * N);
   return { n, N, Nold: t.fileiras || anel.fileiras || 14, prof, arco, frente, fc, passo, larguraCel, corr, esc, vomCentros, vomMeia, vomRows,
     /* a cor do fundo da boca e do parapeito em cima dela (`vomitorios.cor`, `vomitorios.corParapeito`: as bocas vermelhas do Mineirão) */
     vomCor: (vs && vs.cor) || '#232427', vomParapeito: (vs && vs.corParapeito) || '#dddbd2',
-    escada: i => (!!t.escadaNaBorda && i < esc) || (!!corr && i > 0 && (i % corr) < esc),
+    escada: (i, k) => { const base = (!!t.escadaNaBorda && i < esc) || (!!corr && i > 0 && (i % corr) < esc);
+      if (!emY || k == null || !vomCentros.length || k < vomK0 + vomRows) return base;
+      const d = distBoca(i); return d <= vomMeia + asa ? d > vomMeia + asa - esc : base; },
+    naPlataforma: (i, k) => naAsa(i) && k >= vomK0 && k < vomK0 + vomRows,
     vomK0, noVomitorio: (i, k) => k >= vomK0 && k < vomK0 + vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomK0 + vomRows && naBoca(i) };
 }
 /* as medidas de um trecho de anel, mais onde cai cada coluna (`pos`, `angs`, `angEm`) */
@@ -329,11 +338,16 @@ export function construir(THREE, ficha) {
     const q4 = (i0, i1, f0, f1, h, c) => A.quad(Q(i0, f0, h), Q(i0, f1, h), Q(i1, f1, h), Q(i1, f0, h), c);
     for (let i = 0; i < n; i++) {
       if (fc > 0) { q4(i, i + 1, 0, fc, h0, i % 2 ? piso : tomL(piso, 0.975)); q4(i, i + 1, 0, fr, h0 + 1.1, ferro); }
-      const escada = G.escada(i);
       for (let k = 0; k < N; k++) {
+        const escada = G.escada(i, k);
         const f0 = fc + (1 - fc) * k / N, f1 = fc + (1 - fc) * (k + 1) / N, df = f1 - f0, sobe = (h1 - h0) / N, hk = h0 + sobe * (k + 0.5), hk1 = hk + sobe;
         let corCad = null;   /* (a cor sorteada da cadeira desta célula: o espelho usa a mesma, sem sortear de novo) */
         if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, G.vomCor); continue; }
+        /* o patamar de cada lado da boca em Y: o piso na altura do alto da caixa, a parede da frente e o degrau de trás */
+        if (G.naPlataforma(i, k)) { const hT = h0 + sobe * (G.vomK0 + G.vomRows - 0.5); q4(i, i + 1, f0, f1, hT, G.vomParapeito);
+          if (k === G.vomK0) A.quad(Q(i, f0, hk - sobe), Q(i, f0, hT + 1), Q(i + 1, f0, hT + 1), Q(i + 1, f0, hk - sobe), tomL(G.vomParapeito, 0.94));
+          if (k === G.vomK0 + G.vomRows - 1 && k < N - 1) A.quad(Q(i, f1, hT), Q(i, f1, hT + sobe), Q(i + 1, f1, hT + sobe), Q(i + 1, f1, hT), CONCRETO_ESC);
+          continue; }
         /* A ESCADA É DE CONCRETO LISO (dono, 14/11/2026: "refaça as escadas entre os blocos de arquibancada pra ficarem
            condizente com a realidade"): a faixa clara entre dois blocos de cadeiras, o degrau só um tom abaixo — antes
            saía tracejada de branco e cinza. Com `corEscada` (a escada pintada), a cor cheia e o degrau um tom abaixo. */
@@ -362,6 +376,15 @@ export function construir(THREE, ficha) {
         if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), espelho);
       }
     }
+    /* OS FERROS DE PROTEÇÃO no meio do lance (o Presidente Vargas; dono, 17/11/2026: "A imagem dá impressão de dois andares mas
+       não é: o estádio tem ferros de proteção no meio da arquibancada"): `grade: { f, cor, alt }` no trecho — o corrimão corrido
+       ao longo de uma fileira (por padrão, a do alto das bocas), aberto nas escadas e nas bocas, com um montante a cada 3 lugares. */
+    if (t.grade) { const gr = t.grade, kg = Math.max(1, Math.min(N - 1, gr.f != null ? Math.round(gr.f * N) : (G.vomCentros.length ? G.vomK0 + G.vomRows : Math.round(N / 2))));
+      const sobe = (h1 - h0) / N, fg = fc + (1 - fc) * kg / N, hg = h0 + sobe * (kg + 0.5), alt = gr.alt || 1, cg = gr.cor || '#f1f1ee', e = 0.14 / G.prof;
+      for (let i = 0; i < n; i++) { if (G.escada(i, kg) || G.noVomitorio(i, kg) || G.noVomitorio(i, kg - 1)) continue;
+        A.quad(Q(i, fg, hg + alt - 0.1), Q(i + 1, fg, hg + alt - 0.1), Q(i + 1, fg, hg + alt), Q(i, fg, hg + alt), cg); q4(i, i + 1, fg, fg + e, hg + alt, cg);
+        A.quad(Q(i, fg, hg + alt * 0.5 - 0.05), Q(i + 1, fg, hg + alt * 0.5 - 0.05), Q(i + 1, fg, hg + alt * 0.5 + 0.05), Q(i, fg, hg + alt * 0.5 + 0.05), cg);
+        if (i % 3 === 0) A.quad(Q(i, fg, hg), Q(i + 0.14, fg, hg), Q(i + 0.14, fg, hg + alt), Q(i, fg, hg + alt), cg); } }
   }
   ficha.aneis.forEach((anel, ia) => {
     const rnd = semente(1234 + ia * 77 + (ficha.id || '').length * 13);

@@ -15314,6 +15314,16 @@ Estimado: as alturas (o alto da arquibancada a 10,6 m, a frente do telhado a 22)
 
 O Presidente Vargas entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
 
+## Presidente Vargas: um lance só, com os ferros no meio e as bocas em Y (dono, 17/11/2026)
+
+O dono, com a foto de perto de uma boca: "A imagem dá impressão de dois andares mas não é: o estádio tem ferros de proteção no meio da arquibancada e o vomitório tem escadas que acessam a parte de cima e de baixo em Y, igual na imagem em anexo". Eu tinha feito duas metades com um corredor de volta inteira no meio (a seção anterior ainda o descreve assim).
+
+**A arquibancada** virou um lance só, do muro do gramado ao alto, com 23 fileiras. A um terço da altura abrem as bocas, cada uma numa caixa cor de areia com um patamar de cada lado; a escada do meio só existe da boca pra baixo, e do alto de cada patamar sobe outra. Entre duas bocas continua uma escada reta, de cima a baixo. Os ferros de proteção, brancos, correm na fileira do alto das caixas, abertos nas escadas.
+
+**No gerador** entraram duas opções: `vomitorios.emY` (com `asa`, a largura do patamar em metros) e `grade: { f, cor, alt }` no trecho, o corrimão corrido ao longo de uma fileira. A escada passou a ser consultada por coluna e por fileira; sem `emY` ela dá o mesmo resultado de antes, e as cenas dos outros estádios não mudam.
+
+Estimado: a altura em que as bocas abrem, a largura da caixa e dos patamares, e a escada reta entre duas bocas (a foto mostra uma boca só). Briga e chegada testadas de novo sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

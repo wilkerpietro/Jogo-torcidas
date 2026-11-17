@@ -29,7 +29,7 @@ import {
 	Vector3,
 	Quaternion,
 } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { decompress } from './TextureUtils.js?v=41486aef11';
+import { decompress } from './TextureUtils.js?v=72ad2dfa4f';
 
 
 /**

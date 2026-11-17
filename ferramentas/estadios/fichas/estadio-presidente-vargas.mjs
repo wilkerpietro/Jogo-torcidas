@@ -8,9 +8,11 @@
    No quadro a tribuna coberta fica EMBAIXO (é o lado oeste).
    Um ANEL SÓ, fechado, em retângulo de cantos redondos, colado no gramado (não
    tem pista), de CADEIRAS AZUIS com as escadas amarelas: 21,5 m de fundura,
-   cortado ao meio pelo corredor de volta inteira, com as bocas de parede cor
-   de areia abrindo no alto da metade de baixo. Por fora, o muro azul com a
-   listra laranja.
+   num LANCE SÓ. De longe parece ter dois andares, e eu fiz dois; o dono
+   corrigiu, com a foto de perto de uma boca: o que corta o lance ao meio são
+   os FERROS DE PROTEÇÃO brancos, e cada boca é uma caixa cor de areia com a
+   escada em Y — uma desce pelo meio, duas sobem pelos lados. Por fora, o muro
+   azul com a listra laranja.
    · EMBAIXO, no meio, a TRIBUNA: o telhado de aço, inclinado, com a frente no
      alto (e nela o letreiro O PV TAMBÉM É SEU. PRESERVE O ESTÁDIO.) e o fundo
      em cima de duas colunas redondas de concreto, com o arco branco por cima;
@@ -37,7 +39,7 @@ const AZUL = '#3470c4', AZUL2 = '#4a86d6', AMARELO = '#dcae2f', BRANCO = '#efefe
 const C = d => ({ a: 60 + d, b: 44 + d, r: 6 + d });
 const CADEIRA = mais => ({ cor: AZUL, cor2: AZUL2, padrao: 'mosaico', mistura: 0.4, corEscada: AMARELO, corredor: 12, vomitorios: false, paredeAtras: false, ...mais });
 /* A VOLTA de um anel de beira `d`: as quatro retas (a de baixo em três pedaços, com a tribuna no meio) e os quatro cantos */
-const VOLTA = (d, reta, mais = {}) => { const a = 60 + d, b = 44 + d, canto = { ...reta, corredor: 0, vomitorios: false };
+const VOLTA = (d, reta, mais = {}) => { const a = 60 + d, b = 44 + d, canto = { ...reta, corredor: 0, vomitorios: false, grade: reta.grade && { ...reta.grade, f: 0.5 } };
   return [
     { de: A(a, -38) - 360, ate: A(a, 38), ...reta }, { de: A(a, 38), ate: A(54, b), ...canto },
     { de: A(54, b), ate: A(-54, b), ...reta }, { de: A(-54, b), ate: A(-a, 38), ...canto },
@@ -55,12 +57,14 @@ export default {
     /* a grama em volta do campo, até o muro baixo */
     { dentro: { a: 55.5, b: 37, r: 0.5 }, fora: C(0), reto: true, h: [0.12, 0.12], fileiras: 2, corredorFrente: 0,
       trechos: [{ de: 0, ate: 360, tipo: 'passagem', cor: '#4f9a55' }] },
-    /* a metade de BAIXO, com as bocas de parede branca no alto dela */
-    { dentro: C(0), fora: C(10), reto: true, h: [1.5, 5.4], fileiras: 11, corredorFrente: 1,
-      trechos: VOLTA(0, CADEIRA({ vomitorios: { f: 0.55, cada: 2, larg: 3.4, fundo: 4.4, corParapeito: AREIA } })) },
-    /* o corredor de volta inteira e a metade de CIMA; no meio da lateral de baixo, o telhado da tribuna */
-    { dentro: C(10), fora: C(21.5), reto: true, h: [5.9, 10.6], fileiras: 10, corredorFrente: 2,
-      trechos: VOLTA(10, CADEIRA({ paredeAtras: true, corFachada: MURO, corLado: AREIA, parapeito: 1.1, corMureta: AREIA }),
+    /* A VOLTA, num LANCE SÓ (dono, 17/11/2026, com a foto de perto de uma boca: "A imagem dá impressão de dois andares mas não
+       é: o estádio tem ferros de proteção no meio da arquibancada e o vomitório tem escadas que acessam a parte de cima e de
+       baixo em Y"). Na primeira versão eu tinha feito duas metades com um corredor no meio. As bocas abrem a um terço da
+       altura, numa caixa cor de areia com um patamar de cada lado: a escada do meio desce, e do alto de cada patamar sobe
+       outra; os ferros brancos correm na fileira do alto das caixas. No meio da lateral de baixo, o telhado da tribuna. */
+    { dentro: C(0), fora: C(21.5), reto: true, h: [1.5, 10.6], fileiras: 23, corredorFrente: 1,
+      trechos: VOLTA(0, CADEIRA({ corredor: 16, vomitorios: { f: 0.34, cada: 2, larg: 2.6, fundo: 3.4, emY: true, asa: 3.6, corParapeito: AREIA }, grade: { cor: '#f1f1ee' },
+          paredeAtras: true, corFachada: MURO, corLado: AREIA, parapeito: 1.1 }),
         { cobertura: { h: 15.5, larg: 21, avanco: 11, cai: -6.5, cor: '#f1f1ed', cor2: '#e6e6e1', listras: true, corBaixo: '#8d9296', trelica: false, pilares: false, pelaColuna: true } }) },
     /* o MURO DE FORA em listras: três muros finos, um na frente do outro e cada um mais baixo — de cima pra baixo, a faixa
        azul, a listra laranja e o azul claro de baixo */
