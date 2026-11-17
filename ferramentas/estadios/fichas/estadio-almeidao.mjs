@@ -1,5 +1,5 @@
-/* ALMEIDÃO (Estádio José Américo de Almeida Filho, Botafogo/PB e Sousa, João
-   Pessoa) — pelas duas fotos aéreas que o dono mandou (17/11/2026: "vamos pro
+/* ALMEIDÃO (Estádio José Américo de Almeida Filho, Botafogo/PB, João Pessoa; o
+   Sousa saiu pro Marizão) — pelas duas fotos aéreas que o dono mandou (17/11/2026: "vamos pro
    Almeidão em João Pessoa que é muito similar [...] Veja as imagens"; uma de
    cima e uma oblíqua) e pelo satélite (o do Google). O rumo do campo, 0,7 grau,
    saiu do contorno do gramado no OpenStreetMap.
@@ -51,7 +51,7 @@ const PILARES = FUNDOS.flatMap(([a0, a1], k) => [[0.14, 6], [0.3, 6], [0.68, 8],
   return out; }));
 
 export default {
-  id: 'estadio-almeidao', nome: 'Almeidão', clubes: ['botafogo-pb', 'sousa'], norte: 0.7, vazado: 0.3, folga: 26,
+  id: 'estadio-almeidao', nome: 'Almeidão', clubes: ['botafogo-pb'], norte: 0.7, vazado: 0.3, folga: 26,
   chao: { cor: '#b3a88c' },
   campo: { corMargem: '#5f9a50' },
   corMureta: BRANCO, alambrado: false, muro: { cor: '#d9d7cf' },
@@ -88,5 +88,5 @@ export default {
   ],
   jogo: { mandante1: [88, 118], mandante2: [34, 62], mandante3: [300, 328], visitante: [212, 248], tunelMandante: 82, tunelVisitante: 98, folgaPM: 3,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
-          torcidas: { jovem_do_botafogo_pb: 'mandante1', furia_do_botafogo_pb: 'mandante2', forca_alviverde: 'mandante1' } }
+          torcidas: { jovem_do_botafogo_pb: 'mandante1', furia_do_botafogo_pb: 'mandante2' } }
 };

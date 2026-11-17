@@ -1,4 +1,4 @@
-/* ESTADIOS — 73 pracas de jogo, com o bairro de cada uma
+/* ESTADIOS — 74 pracas de jogo, com o bairro de cada uma
    GERADO por ferramentas/importar_estadios.py — nao editar a mao.
    Fonte: legado/unity/data.js (prototipo antigo). */
 TO.dados.estadios = [
@@ -6,7 +6,7 @@ TO.dados.estadios = [
   {"id": "alfredo-de-castilho", "nome": "Alfredo de Castilho", "mapa": "interior-de-sp", "bairro": "Bauru", "capacidade": 18866, "mandantes": ["noroeste"]},
   {"id": "alfredo-jaconi", "nome": "Alfredo Jaconi", "mapa": "interior-do-rs", "bairro": "Caxias do Sul I", "capacidade": 19924, "mandantes": ["juventude"]},
   {"id": "allianz-parque", "nome": "Allianz Parque", "mapa": "sao-paulo", "bairro": "Barra Funda", "capacidade": 43713, "mandantes": ["palmeiras"]},
-  {"id": "almeidao", "nome": "Almeidão", "mapa": "paraiba", "bairro": "Mandacaru - JP", "capacidade": 25770, "mandantes": ["botafogo-pb", "sousa"]},
+  {"id": "almeidao", "nome": "Almeidão", "mapa": "paraiba", "bairro": "Mandacaru - JP", "capacidade": 25770, "mandantes": ["botafogo-pb"]},
   {"id": "amigao", "nome": "Amigão", "mapa": "paraiba", "bairro": "Prata - CG", "capacidade": 19000, "mandantes": ["campinense", "treze"]},
   {"id": "antonio-accyoly", "nome": "Antonio Accyoly", "mapa": "goiania", "bairro": "Campinas", "capacidade": 10000, "mandantes": ["atletico-go"]},
   {"id": "arena-castelao", "nome": "Arena Castelão", "mapa": "fortaleza", "bairro": "Maraponga", "capacidade": 63903, "mandantes": ["fortaleza", "ceara"]},
@@ -67,6 +67,7 @@ TO.dados.estadios = [
   {"id": "limeirao", "nome": "Limeirão", "mapa": "interior-de-sp", "bairro": "Limeira", "capacidade": 18000, "mandantes": ["inter-de-limeira"]},
   {"id": "maiao", "nome": "Maião", "mapa": "interior-de-sp", "bairro": "Mirassol I", "capacidade": 15000, "mandantes": ["mirassol"]},
   {"id": "mangueirao", "nome": "Mangueirao", "mapa": "belem", "bairro": "Marambaia", "capacidade": 53000, "mandantes": ["remo", "paysandu"]},
+  {"id": "marizao", "nome": "Marizão", "mapa": "paraiba", "bairro": "Sousa", "capacidade": 10000, "mandantes": ["sousa"]},
   {"id": "maracana", "nome": "Maracanã", "mapa": "rio-de-janeiro", "bairro": "Ipanema", "capacidade": 78838, "mandantes": ["flamengo", "fluminense"]},
   {"id": "mineirao", "nome": "Mineirao", "mapa": "belo-horizonte", "bairro": "Pampulha", "capacidade": 61582, "mandantes": ["cruzeiro"]},
   {"id": "arena-mrv", "nome": "Arena MRV", "mapa": "belo-horizonte", "bairro": "Coração Eucarístico", "capacidade": 46000, "mandantes": ["atletico-mineiro"]},

@@ -15194,6 +15194,23 @@ Estimado: as alturas, a fundura da lateral da cobertura (o telhado a esconde no 
 
 O Almeidão entrou nos arredores padrão. Briga e chegada testadas sem erros, pelos dois clubes. Um reparo de ferramenta: o roteiro de fechamento quebrava com a barra de "Botafogo/PB" no nome da torcida; o teste foi rodado à mão.
 
+## O Sousa sai do Almeidão: Marizão (dono, 17/11/2026)
+
+O dono, com três fotos (uma de dentro, uma de drone da arquibancada principal e uma aérea): "Vamos pro estádio do Sousa, ele vai ter estádio próprio agora."
+
+**Os dados.** O Sousa passa a mandar no Marizão (`marizao`, mapa da Paraíba, bairro Sousa, 10.000 lugares; as fontes vão de 10 a 15 mil) em `dados/times.js`, `dados/torcidas.js` (a Força Alviverde), `dados/estadios.js` (74 praças), `dados/cidades.js`, nas duas fontes de `dados/fonte/` e nas tabelas de `importar_planilha.py` e `importar_estadios.py`; as cópias de `cenario3d/dados/` e o pacote `cenario3d/js/jogo.js` levaram a mesma troca. O Almeidão fica só com o Botafogo/PB, e a cena dele foi regravada sem o Sousa.
+
+**O estádio** (`fichas/estadio-marizao.mjs`), o Antônio Mariz, em Sousa. As medidas saíram do satélite; o campo corre de norte a sul. Três arquibancadas de degrau pintado de verde, com escadas brancas e mureta amarela:
+
+- **a principal** (oeste), de 108 m por 23 de fundura: nas duas pontas um lance só, até o alto; no meio, o lance de baixo e, por cima dele, a tribuna de cadeiras verde-claras debaixo do telhado branco, com o prédio branco das cabines atrás. O degrau é pintado em zigue-zague verde e branco (um `pinta` com onda triangular ao longo do comprimento);
+- **a outra lateral** (leste), comprida e rasa (9 m), de escadas brancas juntas;
+- **atrás do gol do sul**, a de 84 m por 10;
+- **atrás do gol do norte**, só o muro amarelo com as placas.
+
+As três fotos são de épocas diferentes (a de drone é anterior ao telhado; a de dentro mostra o zigue-zague); juntei o telhado da aérea com a pintura da foto de dentro. Estimado: as alturas, o desenho do zigue-zague e se ele vale na principal inteira, a largura da tribuna e do telhado (52 m) e as torres de luz. As escadas cor de vinho que a aérea mostra entre as brancas não entraram. As torcidas são escolha minha: a Força Alviverde no meio da lateral do leste, com apoio nas duas pontas da principal; a visitante atrás do gol.
+
+O Marizão entrou nos arredores padrão. Briga e chegada testadas sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -104,6 +104,8 @@ NOVOS = [
     {'nome': 'Zinho de Oliveira', 'mapa': 'belem', 'bairro': 'Marabá'},
     # 16/11/2026, o dono: o Amazonas e o Manaus saem da Arena da Amazônia e mandam no Carlos Zamith.
     {'nome': 'Carlos Zamith', 'mapa': 'manaus', 'bairro': 'Sâo José Operário'},
+    # 17/11/2026, o dono: "Vamos pro estádio do Sousa, ele vai ter estádio próprio agora" — o Sousa sai do Almeidão e manda no Marizão.
+    {'nome': 'Marizão', 'mapa': 'paraiba', 'bairro': 'Sousa'},
 ]
 
 

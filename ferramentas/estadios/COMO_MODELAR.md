@@ -619,6 +619,15 @@ PEÇAS ESPALHADAS NUMA CURVA (os pilares dos fundos do Amigão): gere os `blocos
 na ficha, com o ponto no ângulo e na fração entre as duas elipses (os ajudantes
 `raio` e `PT` da ficha dele, que valem pra elipse fora do meio).
 
+DEGRAU PINTADO EM ZIGUE-ZAGUE (o Marizão, 17/11/2026): o ajudante `ZIGUE(L, F)` da
+ficha dele, no `pinta` — faixas brancas que sobem e descem com uma onda
+triangular ao longo do comprimento (`L` e `F` em metros, pra onda ter o mesmo
+tamanho em trechos de larguras diferentes).
+FOTOS DE ÉPOCAS DIFERENTES (o Marizão: a de drone sem o telhado, a aérea com ele,
+a de dentro com outra pintura): diga ao dono de qual saiu cada coisa.
+CLUBE QUE GANHA ESTÁDIO: troque os dados ANTES de rodar o teste e REGRAVE a cena
+do estádio de onde ele saiu, senão o jogo ainda abre o antigo pra ele.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

@@ -5956,10 +5956,11 @@
    "temPraia": true,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Almeidão",
-    "Amigão"
+    "Amigão",
+    "Marizão"
    ],
    "rodovias": [
     "Rodovia Nordeste 1",
