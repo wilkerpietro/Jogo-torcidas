@@ -41,7 +41,9 @@ const CADEIRA = mais => ({ cor: AZUL, cor2: AZUL2, padrao: 'mosaico', mistura: 0
   vomitorios: { f: 0.5, cada: 2, larg: 4, fundo: 3.4, corParapeito: '#e4e4df' }, paredeAtras: true, corFachada: '#dcdcd6', corLado: '#dcdcd6', parapeito: 1.1, ...mais });
 /* onde o anel de cima começa e acaba em cada lateral */
 const C0 = 40, C1 = 140;
-const VIDRO = '#33404d';
+const VIDRO = '#3c4856';
+/* a laje clara dos camarotes: um degrau só, estreito, que serve de muro branco por baixo do vidro */
+const LAJE = { cor: '#e6e6e1', cor2: '#e6e6e1', padrao: 'mosaico', mistura: 0, semCadeiras: true, espelhoPintado: true, corredor: 0, vomitorios: false, corMureta: '#e6e6e1', paredeAtras: false };
 /* AS PÉTALAS: as divisas, em graus (0 é o meio do fundo do sul, 90 o do leste, 180 o do norte, 270 o do oeste), e as alturas
    de cada uma: [a beira de fora, a testeira de dentro, a crista] */
 const LESTE = [20, 35.8, 54.2, 76.2, 103.8, 125.8, 144.2, 157.8], NORTE = [157.8, 179.4, 196];
@@ -69,10 +71,10 @@ export default {
     { dentro: L0, fora: L1, h: [1.6, 10.2], fileiras: 26, corredorFrente: 1.6,
       trechos: [{ de: 0, ate: 360, ...CADEIRA() }] },
     /* por cima dele, nas duas laterais, a faixa escura dos camarotes e O ANEL DE CIMA; atrás dos gols, a esplanada */
-    { dentro: { a: 90.6, b: 68.1, r: 38.6 }, fora: L1, h: [12.6, 12.6], fileiras: 2, corredorFrente: 0,
+    { dentro: { a: 90.6, b: 68.1, r: 38.6 }, fora: L1, h: [12.4, 12.6], fileiras: 1, corredorFrente: 0,
       trechos: [
-        { de: -C0, ate: C0, tipo: 'vazio' }, { de: C0, ate: C1, tipo: 'passagem', cor: '#e6e6e1', corMureta: '#e6e6e1' },
-        { de: C1, ate: 360 - C1, tipo: 'vazio' }, { de: 360 - C1, ate: 360 - C0, tipo: 'passagem', cor: '#e6e6e1', corMureta: '#e6e6e1' }
+        { de: -C0, ate: C0, tipo: 'vazio' }, { de: C0, ate: C1, ...LAJE },
+        { de: C1, ate: 360 - C1, tipo: 'vazio' }, { de: 360 - C1, ate: 360 - C0, ...LAJE }
       ] },
     { dentro: L1, fora: U1, h: [15.8, 27], fileiras: 21, corredorFrente: 1.4,
       trechos: [
