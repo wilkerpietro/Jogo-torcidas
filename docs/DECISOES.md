@@ -15413,7 +15413,7 @@ O terceiro dos três estádios que o dono pediu por último ("Castelão, Albert�
 
 Estimado: as alturas (a lateral descoberta a 7,5 m, o telhado a 13); o tom das cadeiras (desbotadas no satélite; ficou o azul da aérea); o tamanho do bloco vermelho e das cabines; os painéis da fachada. As torcidas são escolha minha: a Força Jovem Cavalina no meio da lateral descoberta, a visitante atrás do gol oposto à entrada.
 
-O Frei Epifânio entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). Com ele, todos os estádios dos dados têm ficha, menos o Romeirão, que ainda não foi feito.
+O Frei Epifânio entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). Conferido nos dados depois disto: todo clube manda num estádio que tem ficha, menos o Iguatu — a ficha do Romeirão existe (é das antigas), mas só lista o Icasa, e ela ainda não está nos arredores padrão.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
