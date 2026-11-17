@@ -19,8 +19,8 @@
 
    Tudo em metros; `noMundo` converte. A mesma semente dá o mesmo mato.
    ========================================================= */
-import { METRO, noMundo, sorteio } from './construtor3d.js?v=cc5325ac45';
-import { facesDaArvore, especieLowpolyDe } from './arvores_lowpoly.js?v=cc5325ac45';
+import { METRO, noMundo, sorteio } from './construtor3d.js?v=9014c72d10';
+import { facesDaArvore, especieLowpolyDe } from './arvores_lowpoly.js?v=9014c72d10';
 
 /* a área de chão de cada árvore (m²), por lugar */
 export const DENSIDADE = { mata: 70, cerrado: 200, caatinga: 150, sul: 90, praia: 120, cidade: 250 };

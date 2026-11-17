@@ -564,6 +564,16 @@ MARGEM DE GRAMA OU AREIA MAIOR DE UM LADO (o Lacerdão, 17/11/2026): a beira com
 TRIBUNA COBERTA COM PILAR NA FRENTE: a `cobertura` só põe pilar atrás; os da
 frente são `blocos` finos em fila.
 
+ARQUIBANCADA ESCURA VISTA DE CIMA PARECE TELHADO (o Lacerdão, 17/11/2026, a lateral
+maior lida como cobertura): AMPLIE a aérea antes de decidir — telhado é liso ou
+em gomos; arquibancada tem fileiras finas e pintura (triângulo, escudos). E
+descubra DE ONDE A AÉREA FOI TIRADA: o que está em primeiro plano é o fundo de
+uma arquibancada visto por trás (muro, vãos, placas), não um prédio. Com as
+fotos de dentro, amarre os lados pelo que fica atrás de cada arquibancada (no
+Lacerdão, o hotel da avenida atrás da de faixas brancas).
+ESCUDO PINTADO NO DEGRAU, simplificado: o ajudante `escudo(x, y, cx, cy, r, L, F)`
+da ficha dele (um anel com miolo), dentro do `pinta`.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

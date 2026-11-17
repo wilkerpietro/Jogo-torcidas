@@ -15098,6 +15098,21 @@ Estimado: as alturas; quanto é geral e quanto é tribuna (o telhado esconde a d
 
 O Lacerdão entrou nos arredores padrão. Briga e chegada testadas sem erros.
 
+## Lacerdão refeito: a lateral maior é arquibancada, não telhado (dono, 17/11/2026)
+
+O dono, mandando as quatro fotos de novo: "O Lacerdão tem uma arquibancada lateral maior que os outros lances de arquibancada. A outra arquibancada lateral tem sua parte superior em formato de triângulo. Observe bem os outros detalhes das imagens que mandei pra fazer de forma fiel".
+
+A primeira versão errou dois lados, e o erro vinha de uma leitura só: nas aéreas eu tomei a superfície grande e escura da esquerda por um telhado, e pus debaixo dela a tribuna coberta das fotos de dentro. Ampliando as aéreas, vê-se que ela tem fileiras: é a **arquibancada lateral maior**, descoberta. A tribuna coberta fica do outro lado. E as aéreas foram tiradas de um prédio da avenida, por cima do fundo da arquibancada de trás do gol: o "prédio dos camarotes" que eu modelei era o muro de trás dela, com a fila de vãos.
+
+Como ficou:
+
+- **A lateral maior** (112 × 26 m), descoberta: degrau preto com o triângulo branco no meio (a base no alto, a ponta embaixo) e os escudos brancos, a caixa das cabines no alto, a barra alaranjada na frente e a faixa de areia com os bancos de reserva ao pé.
+- **A outra lateral**: o lance de baixo, preto, com os escudos brancos em fila; por cima dele, em 75 m, a tribuna coberta, de cadeiras brancas e pretas, com as paredes laterais brancas em triângulo, o telhado escuro e chato nos pilares da frente e a faixa da torcida na mureta.
+- **Atrás do gol da avenida**: a de degrau preto com as faixas brancas inclinadas, e o muro branco de vãos por trás.
+- **Atrás do outro gol**: a mais rasa, preta, debaixo de um telhado escuro de beira branca.
+
+A Comando Alvinegro foi pro lance de baixo da tribuna, onde está a torcida na foto do dono (antes estava na "geral" que não existe); a visitante atrás do gol raso. Estimado: as alturas, o desenho exato do triângulo e dos escudos (anéis brancos simplificados), as faixas da de trás do gol, os blocos de cor das cadeiras, a arquibancada rasa e as torres de luz. Briga e chegada testadas de novo, sem erros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
