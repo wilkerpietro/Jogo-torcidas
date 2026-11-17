@@ -638,3 +638,4 @@ import frasqueirao from './fichas/estadio-frasqueirao.mjs'; FICHAS[frasqueirao.i
 import nogueirao from './fichas/estadio-nogueirao.mjs'; FICHAS[nogueirao.id] = nogueirao;
 import arenaDasDunas from './fichas/estadio-arena-das-dunas.mjs'; FICHAS[arenaDasDunas.id] = arenaDasDunas;
 import presidenteVargas from './fichas/estadio-presidente-vargas.mjs'; FICHAS[presidenteVargas.id] = presidenteVargas;
+import junco from './fichas/estadio-junco.mjs'; FICHAS[junco.id] = junco;

@@ -15339,6 +15339,25 @@ Estimado: a altura do vidro (1,5 m em cima de um muro de 2 m) e de cada faixa da
 
 O dono: "Não entendi essa faixa preta na fachada de fora." Era o vão aberto e sombreado dos pilares do térreo, que eu tinha feito como uma faixa escura de 3 m; lida de fora, parecia uma listra pintada. Saiu: o muro de fora fica cinza até o chão, com a faixa azul (três muros finos, não quatro). Briga testada de novo sem erros; os arredores foram regravados com caminho até todos os portões.
 
+## Ceará: Junco (dono, 17/11/2026)
+
+O dono, com cinco fotos (duas das arquibancadas vistas do campo, o pórtico da entrada, a tribuna de perto e uma aérea antiga): "Vamos pro Junco agora. A última foto é antiga mas é boa pra entender o desenho da pintura da arquibancada". A ficha é `fichas/estadio-junco.mjs`, do Guarany de Sobral (o Estádio Municipal Plácido Aderaldo Castelo).
+
+**As medidas** saíram do satélite (Google, nítido); o rumo do campo (161 graus), do gramado no OpenStreetMap.
+
+**O estádio.** Um oval com a pista de terra em volta do gramado e, por fora dela, o muro branco baixo com o alambrado azul. As arquibancadas são de degrau pintado, sem cadeira, em trechos azuis e cinza alternados, com a escada amarela na divisa de cada um e o muro azul no alto:
+
+- **o arco comprido** em frente à tribuna, de cinco trechos (cinza, azul, cinza, azul, cinza), com o placar no alto e o letreiro SOBRAL no chão, à frente;
+- **as duas curvas** de trás dos gols, mais rasas, cada uma com um trecho azul no meio;
+- **a tribuna**, solta do oval: reta, mais funda e mais alta, cinza com o trecho azul no meio, e no alto dela o prédio branco comprido das cabines, de telhado azul;
+- **o pórtico da entrada**, atrás da tribuna, pra rua: três arcos brancos, cada um com o anel azul no meio, entre pilares azuis e brancos, com as grades cor de vinho e o nome do estádio no arco do meio.
+
+**A ordem dos anéis na ficha** importa em dois pontos: o alambrado nasce na beira de dentro do primeiro anel (aqui, o muro branco), e os marcadores do jogo medem a arquibancada do primeiro anel ao último (aqui, as arquibancadas vêm por último, senão a fração do setor sai invertida).
+
+Estimado: as alturas (o anel a 4,6 m, a tribuna a 8,6); onde começa e acaba cada trecho de cor nas duas curvas (medi no satélite, mas ali a tinta está mais apagada); o pórtico, que saiu em degraus de caixa em vez de meia-lua, e as medidas dele; o placar; as torres de luz. O azul é o das fotos de dentro, mais vivo que o do satélite. As torcidas são escolha minha: a Força Jovem Guarany no meio da tribuna, com apoio no arco em frente e numa curva; a visitante na outra curva.
+
+O Junco entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). Com ele e o Presidente Vargas, o Ceará fica completo (o Castelão e o Romeirão já existiam).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

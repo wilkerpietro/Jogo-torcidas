@@ -718,6 +718,19 @@ FACHADA DE HOJE: foto antiga de acervo pode trazer outra pintura por fora (o PV
 de 2011 era azul com listra laranja; hoje é de painéis cinza com faixa azul).
 Sem foto recente da rua, diga ao dono de que ano é a fachada que você fez.
 
+A ORDEM DOS ANÉIS (o Junco, 17/11/2026): o alambrado nasce na beira de dentro
+do PRIMEIRO anel, e os marcadores do jogo medem a arquibancada do primeiro ao
+ÚLTIMO. Num estádio de pista: o muro baixo primeiro (o alambrado fica em cima
+dele), os pisos no meio e as arquibancadas por último. Com um piso por último,
+a fração do setor sai invertida.
+DEGRAU PINTADO EM TRECHOS (o Junco): um trecho por cor, com `corredor: 0` e
+`escadaNaBorda: true` (a escada cai na divisa das cores). Tribuna reta dentro
+de um anel oval: `dentro`, `fora` e `reto: true` no trecho.
+PÓRTICO DE ARCOS: sem curva nos blocos, o arco sai em três caixas empilhadas,
+cada uma mais estreita; diga ao dono que é uma aproximação.
+FAIXA ESCURA NO PÉ DE UMA FACHADA (o PV): um vão aberto e sombreado, feito como
+faixa escura, é lido como listra pintada. Deixe o muro na cor dele até o chão.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
