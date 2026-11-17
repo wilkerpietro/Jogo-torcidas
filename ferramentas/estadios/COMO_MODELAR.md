@@ -735,6 +735,14 @@ FENDA ENTRE DOIS PEDAÇOS DE ARQUIBANCADA (o Junco): meça a largura no satélit
 com a grade de 5 m (`quadro.sh ... 5`) e confira na vista de cima do jogo se
 ela aparece: com menos de 4 m some. Em graus, 1 grau a 80 m do meio vale 1,4 m.
 
+PISTA DE ATLETISMO (o Castelão de São Luís, 17/11/2026): contorno de canto
+redondo com `r` igual a `b` (duas retas e dois semicírculos). Em elipse, o
+canto do campo entra na pista.
+DOIS ESTÁDIOS DE MESMO NOME: a ficha `estadio-castelao` é a de Fortaleza; a de
+São Luís é `estadio-castelao-ma`. O jogo acha a cena pelo clube (`clubes`).
+COBERTURA OU ARQUIBANCADA NO SATÉLITE: uma sombra corrida do lado de dentro de um
+anel escuro diz que a beira de dentro dele é ALTA, ou seja, que é cobertura.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

@@ -15362,6 +15362,25 @@ O Junco entrou nos arredores padrão. Briga e chegada testadas sem erros (as cin
 
 O dono: "Perceba que o junco tem duas fendas sem arquibancada na parte oval". São os dois vãos entre o arco comprido e cada curva de trás do gol. Na primeira versão a da esquerda tinha 5,7 m e a da direita menos de 3 m, estreita demais pra se ver na cena. Medi as duas de novo no satélite, com a grade de 5 em 5 m: 5,6 m a da esquerda e 6,7 m a da direita. Cada pedaço de arquibancada ganhou também a escada amarela na ponta que dá pra fenda (um trecho estreito pintado de amarelo; a `escadaNaBorda` só põe a do começo do trecho). Briga e chegada da torcida da casa testadas de novo sem erros; os arredores foram regravados com caminho até todos os portões.
 
+## Maranhão: Castelão de São Luís (dono, 17/11/2026)
+
+O dono: "vamos pros últimos estádios que faltam, os do Maranhão/Piauí. Castelão, Albertão e Frei Epifânio." Este é o Estádio Governador João Castelo, do Sampaio Corrêa e do Moto Club. A ficha é `fichas/estadio-castelao-ma.mjs` (a `estadio-castelao` é a da Arena Castelão, de Fortaleza). Ele não está entre os 22 diferenciados e entrou nos arredores padrão.
+
+**Sem fotos.** O dono não mandou fotos deste, e a busca de acervo livre não achou nenhuma. Tudo saiu do satélite (Google, nítido, tirado num dia de evento, com um palco montado no gramado); o rumo do campo (170,6 graus), do gramado no OpenStreetMap.
+
+**O estádio.** Uma bacia oval grande, com a pista de atletismo em volta do gramado:
+
+- **o anel de baixo**, descoberto, de volta inteira: cadeiras vermelhas no meio da lateral do oeste, azuladas nas duas curvas de trás dos gols e concreto claro, sem cadeira, na lateral do leste, com duas escadas largas e o túnel no meio;
+- **a marquise** de concreto escuro, em gomos, por fora e por cima dele, de volta inteira: 12 m na lateral do leste, 30 nas curvas e 44 na do oeste (a beira de fora é uma elipse fora do meio);
+- **debaixo da marquise**, o resto da arquibancada, que o satélite não mostra: pus degrau de concreto até a beira de fora;
+- quatro torres de luz, fora do estádio.
+
+A pista é de duas retas e dois semicírculos: em elipse, o canto do campo entrava nela.
+
+Estimado: as alturas (a marquise a 26 m); tudo o que fica debaixo da marquise; se a lateral do leste é mesmo de degrau sem cadeira (no satélite é uma superfície lisa e clara: pode ser outra coisa); os tons das cadeiras. As cabines e a tribuna não foram desenhadas. As torcidas são escolha minha: as da casa na curva do norte, a visitante na do sul.
+
+Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada). O Imperatriz, que nos dados ainda manda no Castelão, passa pro Frei Epifânio quando a ficha dele for feita.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
