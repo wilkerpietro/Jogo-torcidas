@@ -15211,6 +15211,24 @@ As três fotos são de épocas diferentes (a de drone é anterior ao telhado; a 
 
 O Marizão entrou nos arredores padrão. Briga e chegada testadas sem erros.
 
+## Rio Grande do Norte: Frasqueirão (dono, 17/11/2026)
+
+O dono: "Rio Grande do Norte, inicie com o Frasqueirão". Ele não mandou fotos deste; a ficha (`fichas/estadio-frasqueirao.mjs`) saiu do satélite e de quatro fotos do acervo livre da Wikimedia (três de 2019, uma de 2008), que ficaram fora do repositório.
+
+**As medidas.** O rumo do campo (168 graus, quase de norte a sul) saiu do contorno do gramado no OpenStreetMap. Usei duas fontes de satélite: a do Google, mais nova, veio com um defeito em cima do fundo do norte; a da Esri é limpa, mas de antes do quarto módulo.
+
+**O estádio**, o Maria Lamas Farache, do ABC, em Natal. Quatro módulos retos em volta da grama, soltos nos cantos, de degrau pintado de branco com a faixa preta no terço do meio:
+
+- **a lateral do leste**, descoberta, de 114 m por 22: o escudo do ABC pintado no degrau (preto, de contorno e faixa atravessada brancos, com as estrelas amarelas), as duas caixas brancas das bocas na frente e o muro das placas no alto;
+- **atrás dos dois gols**, as de 65 m por 24, iguais (a do sul é o quarto módulo, o mais novo), com o placar no canto;
+- **a principal** (oeste), de cadeiras brancas com as escadas amarelas e um bloco de cadeiras pretas na ponta do norte; atrás e por cima do meio dela, o prédio de três andares de camarotes e cabines, de onde sai o telhado branco em balanço.
+
+Dois erros da primeira prova, corrigidos pelas fotos: eu tinha encurtado a arquibancada debaixo do prédio (ela tem a mesma fundura de ponta a ponta, o prédio fica atrás) e posto as cadeiras pretas na ponta errada (a foto de frente da principal é vista do campo, com a direita e a esquerda trocadas em relação ao quadro). O escudo ficou entre duas escadas, como na foto; na grade do degrau (cada casa tem perto de 1 m) ele só comporta o contorno branco, a faixa e as estrelas, sem o letreiro "ABC F.C.".
+
+Estimado: as alturas; os dois fundos (nenhuma foto mostra um deles de frente; pus os dois como a lateral, pela foto que mostra o do sul de lado); as cores de hoje (as fotos são de 2019, e o satélite novo mostra o fundo do sul mais escuro, talvez já com cadeiras); as torres de luz. As torcidas são escolha minha: a Garra Alvinegra no meio da lateral do escudo, a Ultras do ABC atrás do gol do norte, o terceiro apoio na ponta do norte da principal; a visitante atrás do gol do sul.
+
+O Frasqueirão entrou nos arredores padrão. Briga e chegada testadas sem erros (as cinco torcidas chegam ao portão e aparecem na arquibancada).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

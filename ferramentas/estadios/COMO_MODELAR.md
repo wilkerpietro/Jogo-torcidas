@@ -628,6 +628,18 @@ a de dentro com outra pintura): diga ao dono de qual saiu cada coisa.
 CLUBE QUE GANHA ESTÁDIO: troque os dados ANTES de rodar o teste e REGRAVE a cena
 do estádio de onde ele saiu, senão o jogo ainda abre o antigo pra ele.
 
+DESENHO PINTADO NO DEGRAU (o escudo do Frasqueirão, 17/11/2026): cada casa da
+grade tem perto de 1 m, então um escudo de 13 m só comporta uma camada de
+contorno, a faixa e as estrelas (com contorno preto, branco e miolo, virou um
+borrão). Ponha o desenho ENTRE duas escadas (a escada corta a pintura) e
+confira com uma `vista` de frente, de perto, antes de assar no jogo.
+FOTO DE FRENTE DE UMA ARQUIBANCADA: a direita e a esquerda dela são as de quem
+está no campo. Pra de baixo do quadro, ficam trocadas em relação ao quadro (as
+cadeiras pretas do Frasqueirão foram pra ponta errada na primeira prova).
+PRÉDIO ATRÁS DA ARQUIBANCADA (os camarotes do Frasqueirão): o satélite mostra o
+telhado por cima de tudo e engana na fundura. A foto de frente diz se o degrau
+passa por baixo do prédio (aqui passa, com a mesma fundura de ponta a ponta).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
