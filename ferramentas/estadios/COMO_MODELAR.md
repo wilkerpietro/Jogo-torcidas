@@ -769,6 +769,15 @@ fim do `fichas.mjs`. Um `import` de ficha que não existe derruba a página
 inteira. As fichas antigas ficam DENTRO do `fichas.mjs` e não levam `import`
 (o Romeirão, 17/11/2026).
 
+ARREDORES DE VERDADE, O LEVANTAMENTO (17/11/2026): `osm_arredores.py <id> <lat>
+<lon> <rumo> 420 380` baixa as ruas num quadro largo e `mapa_levantamento.py
+<arquivo.osm.mjs> "<nome>" <saida.svg>` desenha a folha com os nomes das ruas,
+a grade e o norte, pro dono marcar o limite da cena, as ruas de chegada e os
+portões. O RUMO tem de ser o do gramado no mapa, não o da ficha: nove fichas
+antigas têm rumo redondo ou errado (a tabela está nas decisões). Confira se o
+gramado achado é o do estádio e não um de treino ao lado (os Aflitos, a Ilha
+do Retiro): compare com as coordenadas do estádio.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

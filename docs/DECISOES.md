@@ -15433,6 +15433,45 @@ Um tropeço no caminho: o meu roteiro de fechamento acrescentou ao `fichas.mjs` 
 
 Com isto, todo clube dos dados tem estádio com cena, e todo estádio que não é diferenciado está nos arredores padrão.
 
+## Arredores de verdade: o levantamento dos vinte estádios que faltam (dono, 17/11/2026)
+
+O dono, com todos os estádios dos dados já modelados: "inicie a ver o mapa dos estádios que tem arredores personalizados". Dos 22 diferenciados, o Independência e o Serra Dourada já têm os arredores de verdade; faltam vinte.
+
+**O que foi feito.** Pra cada um dos vinte achei o gramado no OpenStreetMap (o meio do campo e o rumo do eixo), baixei as ruas em volta num quadro de 840 por 760 m e desenhei um mapa de levantamento: as ruas com o nome, os prédios, as praças, os trilhos, o campo no meio, a grade de 100 em 100 m, um anel a 200 m do meio do campo e a seta do norte. Os mapas foram ao dono; ficam fora do repositório, como os arquivos de rua deste levantamento (o quadro definitivo de cada estádio sai quando ele entrar na ficha). Entrou no repositório só a ferramenta que desenha o mapa, `ferramentas/estadios/mapa_levantamento.py`.
+
+**O meio do campo e o rumo de cada um:**
+
+| Estádio | Meio do campo (lat, lon) | Rumo na ficha | Rumo no mapa | Observação |
+|---|---|---|---|---|
+| Maracanã | -22.912146, -43.230187 | 0,0 | 30,9 | a ficha está com 0; corrigir |
+| Nilton Santos | -22.893233, -43.292456 | 24,0 | 25,6 |  |
+| São Januário | -22.890874, -43.228264 | 167,0 | 168,2 |  |
+| Mineirão | -19.865932, -43.971131 | 8,0 | 8,6 |  |
+| Arena MRV | -19.930023, -44.013883 | 33,0 | 33,2 |  |
+| Morumbi | -23.600118, -46.720103 | 180,0 | 172,8 | a ficha está com 180; corrigir |
+| Allianz Parque | -23.527502, -46.678525 | 339,0 | 336,6 |  |
+| Neo Química Arena | -23.545319, -46.474226 | 180,0 | 180,5 |  |
+| Vila Belmiro | -23.951131, -46.338916 | 27,8 | 32,3 | 4,5 graus de diferença: conferir no satélite |
+| Arena da Baixada | -25.448178, -49.276944 | 113,0 | 66,8 | a ficha está com 113 e o gramado do mapa corre a 66,8: corrigir |
+| Couto Pereira | -25.421098, -49.259550 | 309,0 | 309,4 |  |
+| Beira-Rio | -30.065500, -51.235921 | 0,0 | 37,7 | a ficha está com 0; corrigir |
+| Arena do Grêmio | -29.973993, -51.194880 | 180,0 | 195,8 | a ficha está com 180; corrigir |
+| Ilha do Retiro | -8.062912, -34.902896 | 90,0 | 154,9 | a ficha está com 90; corrigir (o outro gramado do mapa, 173 m ao sul, é o de treino) |
+| Arruda | -8.026699, -34.891126 | 90,0 | 180,0 | a ficha está com 90; corrigir |
+| Aflitos | -8.040540, -34.896784 | 180,0 | 180,3 | o gramado certo é o de 106 por 71 m (há outro, de treino, 150 m a noroeste) |
+| Barradão | -12.919156, -38.427082 | 158,1 | 158,1 |  |
+| Arena Fonte Nova | -12.978829, -38.504264 | 178,8 | 178,8 |  |
+| Arena Castelão | -3.807257, -38.522458 | 180,0 | 185,0 | a ficha está com 180; corrigir |
+| Mangueirão | -1.381146, -48.443965 | 178,2 | 178,2 |  |
+
+**O que o levantamento mostrou:**
+
+- **Nove fichas estão com o rumo errado pro mapa de verdade.** As antigas, de dentro do `fichas.mjs`, foram feitas com rumo redondo (0, 90 ou 180), e a da Arena da Baixada está 46 graus fora. Dentro do estádio isso não aparece; nos arredores de verdade as ruas sairiam giradas. Cada uma tem de ser corrigida quando o estádio entrar (como foi no Independência), e nas de rumo redondo é preciso conferir no satélite qual ponta do campo é qual.
+- **Estádio sem quarteirão de casa em volta** (o caso do Serra Dourada): Maracanã, Nilton Santos, Mineirão, Neo Química Arena, Arena do Grêmio, Castelão e Mangueirão ficam no meio de esplanada, estacionamento, avenida ou linha de trem. Os outros treze ficam dentro de bairro.
+- **Gramado errado no mapa**: nos Aflitos e na Ilha do Retiro há um campo de treino perto do estádio; peguei primeiro o dos Aflitos errado e corrigi pelas coordenadas do estádio.
+
+**O que cada estádio precisa do dono antes de ser feito** (foi assim no Independência): o limite da cena (ele desenhou o contorno), de que rua chega a torcida da casa e de que rua chega a visitante, e os portões de cada setor quando eu não achar fonte.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
