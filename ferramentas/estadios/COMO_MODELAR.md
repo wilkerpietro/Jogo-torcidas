@@ -773,8 +773,8 @@ ARREDORES DE VERDADE, O LEVANTAMENTO (17/11/2026): `osm_arredores.py <id> <lat>
 <lon> <rumo> 420 380` baixa as ruas num quadro largo e `mapa_levantamento.py
 <arquivo.osm.mjs> "<nome>" <saida.svg>` desenha a folha com os nomes das ruas,
 a grade e o norte, pro dono marcar o limite da cena, as ruas de chegada e os
-portões. O RUMO tem de ser o do gramado no mapa, não o da ficha: nove fichas
-antigas têm rumo redondo ou errado (a tabela está nas decisões). Confira se o
+portões. O RUMO tem de ser o do gramado no mapa, não o da ficha: oito fichas
+têm rumo redondo ou errado (a tabela está nas decisões). Confira se o
 gramado achado é o do estádio e não um de treino ao lado (os Aflitos, a Ilha
 do Retiro): compare com as coordenadas do estádio.
 
