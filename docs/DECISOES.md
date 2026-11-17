@@ -15472,6 +15472,28 @@ O dono, com todos os estádios dos dados já modelados: "inicie a ver o mapa dos
 
 **O que cada estádio precisa do dono antes de ser feito** (foi assim no Independência): o limite da cena (ele desenhou o contorno), de que rua chega a torcida da casa e de que rua chega a visitante, e os portões de cada setor quando eu não achar fonte.
 
+## A prancheta de marcação dos arredores de verdade (17/11/2026)
+
+O dono pediu uma página com os mapas do levantamento de cada estádio diferenciado em que ele mesmo marque
+**onde cada torcida aparece, por onde cada torcida entra e onde o mapa é cortado**. Ficou assim:
+
+- **Onde mora.** É um artefato à parte (“Marcação dos Arredores”), não entra no jogo nem na Bancada da
+  Chegada. A página está guardada em `ferramentas/estadios/marcacao/marcacao.html`; os 20 mapas (1680×1520,
+  2 pixels por metro, o meio do campo no meio da imagem) saem de `ferramentas/estadios/mapa_levantamento.py`
+  e vão publicados ao lado dela em `mapas/<id-da-ficha>.jpg`. Os mapas não ficam no repositório.
+- **O que se marca.** Chegada (bola) e entrada (quadrado) de cada torcida — a cor diz de quem: o mandante,
+  o segundo mandante onde há dois (Maracanã, Castelão, Mangueirão) e a visitante —, os cantos do corte do
+  mapa (o que fica de fora escurece) e recados soltos (losango). Cada marca aceita um recado, muda de lugar
+  e apaga; cada estádio tem observações e o “terminei, pode fazer”.
+- **Como chega a mim.** Cada estádio vira um documento `marcas/<id-da-ficha>` no banco do artefato, com as
+  marcas **em metros no quadro do levantamento** (`u` ao longo do campo, `v` para cima do mapa, a partir do
+  meio do campo) mais o `rumo`, a latitude e a longitude usados. É o mesmo quadro de `osm_arredores.py`,
+  então a marca vira `arredores` da ficha sem conta nenhuma — desde que a ficha use o mesmo `norte`
+  (as oito fichas com o rumo errado são corrigidas antes). Uma cópia fica no aparelho e há o botão de
+  copiar tudo em texto, para o caso de o salvamento não ligar.
+- **A ordem do trabalho.** O dono marca; eu leio as marcas do estádio dado como pronto e faço os arredores
+  dele — um estádio por vez, como sempre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
