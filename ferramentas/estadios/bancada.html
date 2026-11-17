@@ -107,6 +107,12 @@ window.assar = async function (id, opc) {
   const m = marcadores(ficha, paraPx, s);
   return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, soFora: !!ficha.soFora, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
 };
+/* SÓ OS MARCADORES da cena de dentro, sem fotografar (MARCAS=1 no assar.js): a mesma escala e o mesmo quadro de `assar` */
+window.marcasDe = function (id) {
+  const ficha = FICHAS[id]; if (!ficha) throw new Error('sem ficha: ' + id);
+  const s = escalaDe(ficha), paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s];
+  return Object.assign({ nome: ficha.nome }, marcadores(ficha, paraPx, s));
+};
 /* O LUGAR DE CADA ESCALÃO NA ARQUIBANCADA, na cena de arredores (dono, 16/11/2026: "quando a torcida chega no seu ponto de
    entrada no estádio ela spawna automaticamente pro seu local na arquibancada"). É o mesmo ponto em que o bonde nasce na cena
    de dentro (o meio do setor da ficha), passado pro quadro dos arredores: `raio` aponta do fundo pra frente do lance (as

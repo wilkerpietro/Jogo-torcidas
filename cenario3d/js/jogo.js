@@ -46674,6 +46674,116 @@ TO.diaJogo.combate = (function(){
     J.versaoGrades = (J.versaoGrades || 0) + 1;
   }
 
+  /* A LINHA DO ALAMBRADO (dono, 17/11/2026, com prints do Barradão e de
+     um anel curvo: "o alinhamento da posição das torcidas não fica de
+     acordo com a arquibancada nem a faixa fica estendida no
+     alambrado"). A cena do estádio low-poly traz `frente`: a beira da
+     arquibancada de baixo, do lado do campo, em pixels ([x0,y0,x1,y1…],
+     de 2 em 2 graus). Dela saem as coordenadas da arquibancada: `s`
+     corre ao longo do alambrado e `d` é a distância dele pra trás, pro
+     fundo. Uma fileira é uma curva de `d` constante. */
+  let _frente = null;
+  function frenteDaCena(){
+    const F = D.frente;
+    if(!Array.isArray(F) || F.length < 12) return null;
+    if(_frente && _frente.fonte === F) return _frente;
+    const n = F.length / 2, P = [];
+    for(let i = 0; i < n; i++) P.push([F[2*i], F[2*i+1]]);
+    let cx = 0, cy = 0;
+    for(const p of P){ cx += p[0]; cy += p[1]; }
+    cx /= n; cy /= n;
+    const S = [0];
+    for(let i = 0; i < n; i++){ const a = P[i], b = P[(i+1)%n]; S.push(S[i] + Math.hypot(b[0]-a[0], b[1]-a[1])); }
+    const L = S[n] || 1;
+    /* a normal de cada trecho, pra fora (pro fundo da arquibancada), e
+       a dos vértices, média das duas vizinhas: a fileira sai lisa */
+    const NS = [];
+    for(let i = 0; i < n; i++){
+      const a = P[i], b = P[(i+1)%n];
+      let nx = b[1]-a[1], ny = -(b[0]-a[0]); const q = Math.hypot(nx, ny) || 1; nx /= q; ny /= q;
+      if(nx*((a[0]+b[0])/2 - cx) + ny*((a[1]+b[1])/2 - cy) < 0){ nx = -nx; ny = -ny; }
+      NS.push([nx, ny]);
+    }
+    const NV = P.map((_, i) => { const a = NS[(i-1+n)%n], b = NS[i], x = a[0]+b[0], y = a[1]+b[1], q = Math.hypot(x, y) || 1; return [x/q, y/q]; });
+    const trecho = s => {
+      s = ((s % L) + L) % L;
+      let lo = 0, hi = n - 1;
+      while(lo < hi){ const m = (lo + hi + 1) >> 1; if(S[m] <= s) lo = m; else hi = m - 1; }
+      return [lo, (s - S[lo]) / ((S[lo+1] - S[lo]) || 1)];
+    };
+    /* o ponto da fileira `d` na altura `s` do alambrado, e a normal ali */
+    const em = (s, d) => {
+      const [i, t] = trecho(s), a = P[i], b = P[(i+1)%n], na = NV[i], nb = NV[(i+1)%n];
+      let nx = na[0] + (nb[0]-na[0])*t, ny = na[1] + (nb[1]-na[1])*t; const q = Math.hypot(nx, ny) || 1; nx /= q; ny /= q;
+      return {x:a[0] + (b[0]-a[0])*t + nx*(d||0), y:a[1] + (b[1]-a[1])*t + ny*(d||0), nx, ny};
+    };
+    /* onde um ponto cai: `s` no alambrado e `d` pra trás dele */
+    const proj = (x, y) => {
+      let m = null;
+      for(let i = 0; i < n; i++){
+        const a = P[i], b = P[(i+1)%n], dx = b[0]-a[0], dy = b[1]-a[1], l2 = dx*dx + dy*dy || 1;
+        const t = Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy) / l2)), px = a[0] + dx*t, py = a[1] + dy*t, dd = (x-px)**2 + (y-py)**2;
+        if(!m || dd < m.dd) m = {dd, s:S[i] + t*Math.sqrt(l2), d:(x-px)*NS[i][0] + (y-py)*NS[i][1]};
+      }
+      return m;
+    };
+    /* os trechos sem arquibancada (`frenteSem`, os pontos da linha em
+       que a bancada não achou degrau): ali ninguém senta */
+    const sem = new Set(D.frenteSem || []);
+    const temArquibancada = s => { const i = trecho(s)[0]; return !sem.has(i) && !sem.has((i+1)%n); };
+    _frente = {fonte:F, L, em, proj, temArquibancada};
+    return _frente;
+  }
+  /* OS LUGARES DO BONDE NAS FILEIRAS. As fileiras são as curvas
+     paralelas ao alambrado, uma a cada `passo`, e uma delas passa pelo
+     ponto do bonde; na fileira os lugares vão de `passo` em `passo`,
+     medidos na própria curva (no anel curvo, a fileira de trás é mais
+     comprida). Enche do ponto do bonde pra fora, mais ao longo da
+     arquibancada do que pro fundo, só em chão andável, sem cruzar grade
+     e sem lugar já tomado; o passo aperta (18 a 10) até caber, como na
+     enchente de antes. Cena sem `frente` usa a enchente (`lugaresNoSetor`). */
+  function lugaresNaArquibancada(J, s, qtd, ocupados, chave, passos){
+    const Fr = frenteDaCena();
+    if(!Fr) return null;
+    const o = Fr.proj(s.x, s.y);
+    if(!o || o.d <= 0) return null;
+    const grade = (x, y) => A.atravessaGrade && J.grades && J.grades.length && A.atravessaGrade(s.x, s.y, x, y, J.grades);
+    let melhor = null;
+    for(const passo of (passos || [18, 16, 14, 12, 10])){
+      const alcance = Math.max(300, Math.sqrt(qtd) * passo * 2.2);
+      const cands = [];
+      const m0 = Math.ceil((passo*0.6 - o.d) / passo), m1 = Math.floor(alcance / passo);
+      for(let m = m0; m <= m1; m++){
+        const d = o.d + m*passo;
+        /* anda na fileira pros dois lados a partir da altura do bonde,
+           de 2 em 2 px de alambrado, e marca um lugar a cada `passo` */
+        for(const lado of [1, -1]){
+          let ant = Fr.em(o.s, d), acum = 0, alvo = lado > 0 ? 0 : passo;
+          if(lado > 0 && Fr.temArquibancada(o.s)) cands.push({x:ant.x, y:ant.y, u:0, v:m*passo});
+          for(let t = 2; t <= alcance * 1.6 && Math.abs(acum) <= alcance; t += 2){
+            const p = Fr.em(o.s + lado*t, d);
+            acum += Math.hypot(p.x - ant.x, p.y - ant.y); ant = p;
+            if(acum >= alvo + (lado > 0 ? passo : 0)){ alvo += passo;
+              if(Fr.temArquibancada(o.s + lado*t)) cands.push({x:p.x, y:p.y, u:lado*acum, v:m*passo}); }
+          }
+        }
+      }
+      /* mais largo que fundo: o bloco abre ao longo da arquibancada */
+      cands.sort((a, b) => (a.u*a.u + 1.7*a.v*a.v) - (b.u*b.u + 1.7*b.v*b.v));
+      const fora = [];
+      for(const q of cands){
+        if(fora.length >= qtd) break;
+        if(q.x < 4 || q.y < 4 || q.x > A.W-4 || q.y > A.H-4) continue;
+        if(!A.caminhavel(q.x, q.y) || ocupados.has(chave(q)) || grade(q.x, q.y)) continue;
+        fora.push({x:q.x, y:q.y});
+      }
+      if(!melhor || fora.length > melhor.length) melhor = fora;
+      if(fora.length >= qtd) break;
+    }
+    if(!melhor || !melhor.length) return null;
+    for(let i = melhor.length, n = melhor.length; i < qtd; i++) melhor.push(melhor[i % n]);
+    return melhor;
+  }
   /* os lugares do bonde dentro do setor dele: enchente a partir do spawn
      no passo dado, só por chão andável, sem cruzar grade de pé e sem
      cair em lugar já tomado; o passo aperta até caber */
@@ -46798,8 +46908,9 @@ TO.diaJogo.combate = (function(){
        atravessa grade de pé, na ordem da distância (o bloco continua
        junto); se o setor não comporta todo mundo no passo de 18, o passo
        aperta (16, 14, 12, 10) — torcida espremida, mas no lugar dela. */
-    const lugares = (J.grades && J.grades.some(m => m.hp > 0) && A.atravessaGrade)
-      ? lugaresNoSetor(J, s, qtd, ocupados, chave) : null;
+    const lugares = lugaresNaArquibancada(J, s, qtd, ocupados, chave)
+      || ((J.grades && J.grades.some(m => m.hp > 0) && A.atravessaGrade)
+      ? lugaresNoSetor(J, s, qtd, ocupados, chave) : null);
     for(let i=0;i<qtd;i++){
       let p = lugares && lugares[i] ? lugares[i] : A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
                                     y0 + Math.floor(i/cols)*PASSO, 7);
@@ -47798,6 +47909,46 @@ TO.diaJogo.combate = (function(){
       if(c.dx||c.dy){dirX=c.dx;dirY=c.dy;}
     }
     const sl=slots(J.form, Math.max(meus.length,1), dirX, dirY);
+    /* NA ARQUIBANCADA A FORMAÇÃO SEGUE AS FILEIRAS (dono, 17/11/2026: "o
+       alinhamento da posição das torcidas não fica de acordo com a
+       arquibancada"). Com o líder num degrau, a formação é a mesma, mas
+       desenhada nas coordenadas da arquibancada: a frente dela é o campo,
+       o lado corre ao longo do alambrado e cada linha de trás é uma
+       fileira de trás — curva junto no anel curvo. Fora da arquibancada
+       (na grama, no corredor) volta a ser a de sempre, apontada pro
+       caminho do líder. */
+    /* Na arquibancada o seguidor não vai pra uma vaga da formação: ele
+       senta. Os lugares saem das fileiras em volta do líder (a mesma
+       régua do nascimento, a 19 px — o disco tem 18, e a vaga da formação,
+       16,5, fazia um empurrar o outro e o bloco tremer), refeitos quando
+       o líder anda um lugar. */
+    let slArq = null;
+    if(lider && meus.length){
+      const Fr = frenteDaCena();
+      const o = Fr && Fr.proj(lider.x, lider.y);
+      if(o && o.d > 4 && o.d < 420 && Fr.temArquibancada(o.s)){
+        const k = Math.round(o.s/19) + '|' + Math.round(o.d/19) + '|' + meus.length + '|' + J.form;
+        if(!J._sentados || J._sentados.k !== k){
+          const lug = lugaresNaArquibancada(J, {x:lider.x, y:lider.y}, meus.length + 1, new Set(), () => '', [19, 17, 15]);
+          const ls = lug ? lug.filter(q => U.dist2(q.x, q.y, lider.x, lider.y) > 12*12).slice(0, meus.length) : null;
+          /* cada um pega o lugar livre mais perto dele, do mais perto do
+             líder pro mais longe: pela ordem da lista, um atravessava o
+             bloco pra chegar no lugar dele e travava nos já sentados */
+          let porDisco = null;
+          if(ls){
+            porDisco = new Map(); const livre = ls.slice();
+            for(const m of meus.slice().sort((a, b) => U.dist2(a.x, a.y, lider.x, lider.y) - U.dist2(b.x, b.y, lider.x, lider.y))){
+              let bi = -1, bd = Infinity;
+              for(let j = 0; j < livre.length; j++){ const dd = U.dist2(livre[j].x, livre[j].y, m.x, m.y); if(dd < bd){ bd = dd; bi = j; } }
+              if(bi < 0) break;
+              porDisco.set(m, livre.splice(bi, 1)[0]);
+            }
+          }
+          J._sentados = {k, porDisco};
+        }
+        slArq = J._sentados.porDisco;
+      }
+    }
 
     const PF = J._perfil ? (J._tempos = J._tempos || {}) : null;
     let tq = 0;
@@ -47871,6 +48022,7 @@ TO.diaJogo.combate = (function(){
       const recua = d.fugindo || recuando(J, d.lado);
 
       let ax,ay, usarCampo=false, campo=null, ramo=null, escolta=null, cf=null, gp=null;
+      d._sentando = false;
       d._olhaPara=null;
 
       /* de guarda: fica no posto. Sem isto o dono do bar sai andando
@@ -48208,13 +48360,15 @@ TO.diaJogo.combate = (function(){
            tem programação própria, ele tem você */
         else if(d.doJogador && lider){
           const i=meus.indexOf(d), s=sl[i<0?0:i]||{x:0,y:0};
+          const qa = slArq && slArq.get(d);
+          d._sentando = !!qa;
           /* O slot é geometria pura e pode cair em cima de prédio, ou
              fora da cena quando o líder está colado numa borda. Nesse
              caso puxa pro ponto válido mais perto.
              Só nesse caso: pontoLivreMaisProximo devolve CENTRO DE
              CÉLULA, então puxar sempre faria vários seguidores mirarem
              exatamente o mesmo ponto, empilhando e se empurrando. */
-          ax=lider.x+s.x; ay=lider.y+s.y;
+          ax = qa ? qa.x : lider.x+s.x; ay = qa ? qa.y : lider.y+s.y;
           if(!A.livrePara(ax,ay,A.raioMalha(d.r))){
             const q=A.pontoLivreMaisProximo(ax,ay,d.r);
             ax=q.x; ay=q.y;
@@ -48345,8 +48499,10 @@ TO.diaJogo.combate = (function(){
            duas soleiras ele oscila em cima do limite — para com 8, a
            separação empurra pra 10, anda de novo — e é isso que faz o
            bonde inteiro parecer inquieto parado no lugar. */
-        if(d.acomodado && dist>22) d.acomodado=false;
-        if(dist<=9) d.acomodado=true;
+        /* (sentando na fileira, chega no lugar: com 9 de folga a fileira saía torta) */
+        const sentando = d._sentando && !ramo;
+        if(d.acomodado && dist>(sentando ? 12 : 22)) d.acomodado=false;
+        if(dist<=(sentando ? 3 : 9)) d.acomodado=true;
         if(d.acomodado){
           dirx=0; diry=0; d.melhorDist=undefined; d.semGanho=0;
         } else {
@@ -50728,6 +50884,7 @@ TO.diaJogo.combate = (function(){
         if(fx) fora.push(fx);
         if(bd) fora.push(bd);
       }
+      estenderNoAlambrado(fora);
       /* a de quem defende primeiro (a ponte e os testes olham J.faixa) */
       const def = cfg.faixaDefensor === 'eles' ? OUTRO_LADO[meu] : meu;
       fora.sort((x,y)=>(x.lado===def?0:1)-(y.lado===def?0:1) || (x.tipo==='faixa'?0:1)-(y.tipo==='faixa'?0:1));
@@ -50760,6 +50917,62 @@ TO.diaJogo.combate = (function(){
       }
     }
     return fora;
+  }
+  /* AS PEÇAS ESTENDIDAS NO ALAMBRADO (dono, 17/11/2026: "nem a faixa
+     fica estendida no alambrado"). Com a linha do alambrado da cena
+     (`frente`), cada peça segue a curva dele: rumo pela normal do
+     alambrado (antes era o rumo do centro, e a faixa entortava perto do
+     canto), deitada na curva quando o alambrado curva (`arco`, o centro
+     da curva) e lado a lado com as outras do mesmo setor — no setor
+     visitante com três escalões, as três faixas e as bandeiras caíam
+     umas por cima das outras. Quando não cabem no trecho do setor (de
+     `de` a `ate`), todas encolhem na mesma proporção. */
+  function estenderNoAlambrado(pecas){
+    const Fr = frenteDaCena();
+    if(!Fr || !pecas.length) return;
+    const L = Fr.L, mod = v => ((v % L) + L) % L, VAO = 10;
+    const grupos = new Map();
+    for(const F of pecas){
+      const lug = F.spawn && D.faixas && D.faixas[F.spawn];
+      if(!lug || !lug.de || !lug.ate) continue;
+      const o = Fr.proj(lug.x, lug.y), a = Fr.proj(lug.de[0], lug.de[1]).s, b = Fr.proj(lug.ate[0], lug.ate[1]).s;
+      /* o trecho do setor no sentido que contém a âncora */
+      let ini = a, comp = mod(b - a);
+      if(mod(o.s - a) > comp){ ini = b; comp = mod(a - b); }
+      const k = Math.round(ini) + '|' + Math.round(comp);
+      if(!grupos.has(k)) grupos.set(k, {ini, comp, pecas:[]});
+      grupos.get(k).pecas.push({F, u:mod(o.s - ini) + (F.tipo === 'bandeira' ? 0.5 : 0), d:o.d});
+    }
+    for(const g of grupos.values()){
+      const ps = g.pecas.sort((x, y) => x.u - y.u);
+      const total = ps.reduce((t, p) => t + p.F.w, 0) + VAO * (ps.length - 1);
+      const cabe = Math.max(40, g.comp - 16);
+      const k = Math.min(1, cabe / total);
+      if(k < 1) for(const p of ps){ p.F.w = Math.round(p.F.w * k); p.F.h = Math.max(6, Math.round(p.F.h * k)); }
+      const tot = total * k;
+      const faixas = ps.filter(p => p.F.tipo !== 'bandeira'), base = faixas.length ? faixas : ps;
+      const meio = base.reduce((t, p) => t + p.u, 0) / base.length;
+      let u = Math.max(8, Math.min(g.comp - 8 - tot, meio - tot/2));
+      for(const p of ps){
+        const F = p.F, sc = g.ini + u + F.w/2;
+        u += F.w + VAO;
+        const q = Fr.em(sc, p.d);
+        F.x = q.x; F.y = q.y; F.dir = [-q.nx, -q.ny];
+        /* a curva do alambrado ali: o centro do círculo por três pontos
+           dele; reta (raio enorme) fica sem `arco` */
+        const a = Fr.em(sc - 60, 0), b = Fr.em(sc, 0), c = Fr.em(sc + 60, 0);
+        const den = 2 * (a.x*(b.y - c.y) + b.x*(c.y - a.y) + c.x*(a.y - b.y));
+        F.arco = null;
+        if(Math.abs(den) > 1e-6){
+          const a2 = a.x*a.x + a.y*a.y, b2 = b.x*b.x + b.y*b.y, c2 = c.x*c.x + c.y*c.y;
+          const ux = (a2*(b.y - c.y) + b2*(c.y - a.y) + c2*(a.y - b.y)) / den, uy = (a2*(c.x - b.x) + b2*(a.x - c.x) + c2*(b.x - a.x)) / den;
+          const R = Math.hypot(ux - b.x, uy - b.y);
+          /* (o centro tem de ficar do lado do campo) */
+          if(R < 1400 && (ux - b.x)*F.dir[0] + (uy - b.y)*F.dir[1] > 0) F.arco = [ux, uy];
+        }
+        F.base = {x:F.x, y:F.y};
+      }
+    }
   }
   /* monta UMA peça (faixa ou bandeira) de uma torcida num lado/setor;
      null se a torcida não tem a peça */

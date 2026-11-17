@@ -1001,20 +1001,52 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const meio = arco => (arco[0] + arco[1]) / 2;
   const dirPx = (ang, sinal) => { const a = paraPx(0, 0), b = paraPx(Math.cos(ang * RAD), Math.sin(ang * RAD)), q = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
     return [+(sinal * (b[0] - a[0]) / q).toFixed(2), +(sinal * (b[1] - a[1]) / q).toFixed(2)]; };
+  /* A LINHA DO ALAMBRADO (dono, 17/11/2026, com prints do Barradão: "o alinhamento da posição das torcidas não fica de acordo
+     com a arquibancada nem a faixa fica estendida no alambrado"). `frente` é a beira da arquibancada de baixo, do lado do
+     campo, de 2 em 2 graus, em pixels ([x0, y0, x1, y1, …]). O jogo tira dela as fileiras (curvas paralelas a ela, pra trás)
+     e a linha em que as faixas se estendem. O rumo da faixa é a normal dessa linha, apontando pro campo: o rumo do centro
+     (o de antes) entortava a faixa em toda arquibancada reta perto do canto. */
+  /* (a beira é a da ARQUIBANCADA, não a do gramado: o anel de passagem em volta do campo — a grama até o muro vermelho do
+     Barradão — fica de fora; o raio sai da primeira arquibancada andável do raio, e sem nenhuma vale o contorno de dentro) */
+  const naPassagem = (r, ang) => ficha.aneis.some(anel => { const t = trechoEm(anel, ang); if (!t || t.tipo !== 'passagem') return false;
+    return r >= raioDe(ang, t.dentro || anel.dentro) - 0.5 && r <= raioDe(ang, t.fora || anel.fora) + 0.3; });
+  const raioFrente = ang => { const r0 = raioDe(ang, lim.dentro), c = Math.cos(ang * RAD), sn = Math.sin(ang * RAD);
+    const ok = r => andavel(ficha, c * r, sn * r) && !naPassagem(r, ang);
+    /* (de 25 em 25 cm e depois a busca binária até 1 cm: a linha sai lisa, e a curva medida nela não pega serrilhado) */
+    for (let r = r0; r <= r0 + 60; r += 0.25) if (ok(r)) { let a = r - 0.25, b = r; while (b - a > 0.01) { const m = (a + b) / 2; if (ok(m)) b = m; else a = m; } return b; }
+    return null; };
+  const frenteEm = ang => { const q = ponto(ang, raioFrente(ang) ?? raioDe(ang, contornoEm(ang).d)); return paraPx(q[0], q[1]); };
+  /* (`frenteSem`: os pontos da linha em que o raio não acha arquibancada — o lado aberto, o canto vazio entre duas —; ali
+     ninguém senta) */
+  const frenteSem = []; for (let a = 0, k = 0; a < 360; a += 2, k++) if (raioFrente(a) == null) frenteSem.push(k);
+  const frente = []; for (let a = 0; a < 360; a += 2) { const p = frenteEm(a); frente.push(Math.round(p[0]), Math.round(p[1])); }
+  const normalEm = ang => { const a = frenteEm(ang - 1), b = frenteEm(ang + 1), m = frenteEm(ang), c = paraPx(0, 0);
+    let nx = -(b[1] - a[1]), ny = b[0] - a[0]; const q = Math.hypot(nx, ny) || 1; nx /= q; ny /= q;
+    if ((c[0] - m[0]) * nx + (c[1] - m[1]) * ny < 0) { nx = -nx; ny = -ny; }
+    return [+nx.toFixed(3), +ny.toFixed(3)]; };
+  const naFrente = ang => { const p = frenteEm(ang); return [Math.round(p[0]), Math.round(p[1])]; };
   const spawns = [], faixas = {};
-  const bonde = (id, rot, lado, ang, entrada, jogador) => {
+  /* (`setor`: de que ângulo a que ângulo vai o setor do escalão; a faixa dele, a bandeira e as dos outros escalões que
+     dividem o setor se arrumam nesse trecho do alambrado sem uma cobrir a outra) */
+  const bonde = (id, rot, lado, ang, entrada, jogador, setor) => {
     /* (em que altura da arquibancada o bonde fica: no meio, ou onde a ficha disser — `jogo.fracao`, 0 = na frente, 1 = no fundo) */
     spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, (j.fracao && j.fracao[id] != null) ? j.fracao[id] : 0.5), jogador ? { jogador: true } : {}));
-    const q = ponto(ang, raioDe(ang, contornoEm(ang).d) + 0.7), p = paraPx(q[0], q[1]);
-    faixas[id] = { x: Math.round(p[0]), y: Math.round(p[1]), len: 130, dir: dirPx(ang, -1) };
+    /* (a faixa pendura na beira do lance em que o bonde está: no anel de cima, na mureta da varanda, por cima do de baixo —
+       com o bonde lá em cima e a faixa no gramado, uma ficava longe da outra, como no Castelão) */
+    const fr = (j.fracao && j.fracao[id] != null) ? j.fracao[id] : 0.5, cc = contornoEm(ang), rb = raioDe(ang, cc.d) + (raioDe(ang, cc.f) - raioDe(ang, cc.d)) * fr;
+    const c0 = Math.cos(ang * RAD), s0 = Math.sin(ang * RAD), okB = r => andavel(ficha, c0 * r, s0 * r) && !naPassagem(r, ang);
+    let rf = raioFrente(ang) ?? raioDe(ang, cc.d);
+    if (okB(rb)) { let r = rb; while (r - 0.25 > rf && okB(r - 0.25)) r -= 0.25; rf = Math.max(rf, r); }
+    const q = ponto(ang, rf + 0.7), p = paraPx(q[0], q[1]);
+    faixas[id] = { x: Math.round(p[0]), y: Math.round(p[1]), len: 130, dir: normalEm(ang), de: naFrente(setor[0]), ate: naFrente(setor[1]) };
   };
-  bonde('mandante1', 'MANDANTE 1º ESCALÃO', 'mandante', meio(j.mandante1), 'portao_mandante', true);
-  if (j.mandante2) bonde('mandante2', 'MANDANTE 2º ESCALÃO', 'mandante', meio(j.mandante2), 'portao_mandante');
-  if (j.mandante3) bonde('mandante3', 'MANDANTE 3º ESCALÃO', 'mandante', meio(j.mandante3), 'portao_mandante');
-  const [vd, va] = j.visitante;
-  bonde('visitante1', 'VISITANTE 1º ESCALÃO', 'visitante', vd + (va - vd) * 0.5, 'portao_visitante');
-  bonde('visitante2', 'VISITANTE 2º ESCALÃO', 'visitante', vd + (va - vd) * 0.22, 'portao_visitante');
-  bonde('visitante3', 'VISITANTE 3º ESCALÃO', 'visitante', vd + (va - vd) * 0.78, 'portao_visitante');
+  bonde('mandante1', 'MANDANTE 1º ESCALÃO', 'mandante', meio(j.mandante1), 'portao_mandante', true, j.mandante1);
+  if (j.mandante2) bonde('mandante2', 'MANDANTE 2º ESCALÃO', 'mandante', meio(j.mandante2), 'portao_mandante', false, j.mandante2);
+  if (j.mandante3) bonde('mandante3', 'MANDANTE 3º ESCALÃO', 'mandante', meio(j.mandante3), 'portao_mandante', false, j.mandante3);
+  const [vd, va] = j.visitante, sv = [vd + 1, va - 1];
+  bonde('visitante1', 'VISITANTE 1º ESCALÃO', 'visitante', vd + (va - vd) * 0.5, 'portao_visitante', false, sv);
+  bonde('visitante2', 'VISITANTE 2º ESCALÃO', 'visitante', vd + (va - vd) * 0.22, 'portao_visitante', false, sv);
+  bonde('visitante3', 'VISITANTE 3º ESCALÃO', 'visitante', vd + (va - vd) * 0.78, 'portao_visitante', false, sv);
   /* o túnel é o vomitório do lance de baixo mais perto do ângulo pedido (sem vomitório ali, o fundo da arquibancada) */
   const vomitorioEm = ang => {
     const anel = ficha.aneis[0], t = trechoEm(anel, ang); if (!t || t.tipo) return null;
@@ -1063,7 +1095,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const folga = j.folgaPM || 7;
   const pmPostos = [pt(vd - folga, 0.35), pt(vd - folga, 0.7), pt(va + folga, 0.35), pt(va + folga, 0.7)];
   /* a torcida que tem lugar certo no estádio (`jogo.torcidas`: id da torcida → o setor dela) */
-  return Object.assign({ faixas, spawns, entradas, pmPostos, grades }, j.torcidas ? { setorDaTorcida: j.torcidas } : {});
+  return Object.assign({ faixas, frente, frenteSem, spawns, entradas, pmPostos, grades }, j.torcidas ? { setorDaTorcida: j.torcidas } : {});
 }
 
 /* a máscara da cena (192 × 128 células de 8 px), no formato do jogo: por

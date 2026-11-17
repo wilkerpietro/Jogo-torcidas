@@ -15695,6 +15695,36 @@ recuado parado em bolo no meio da rua).
   (a malha de arquibancada de 516 mil vértices é partida). A página do protótipo tem as vistas de cima, aérea e de
   rua em cada portão (a câmera vai pro rumo do leque que vai mais longe sem bater em casa).
 
+## A torcida nas fileiras e a faixa no alambrado, nos estádios low-poly (dono, 17/11/2026)
+
+Dono, com prints do Barradão (Vitória × Fortaleza) e de um anel curvo: "o alinhamento da posição das torcidas não fica de
+acordo com a arquibancada nem a faixa fica estendida no alambrado".
+
+- **O que estava errado.** O bonde nascia numa grade alinhada à tela, em volta do ponto do setor ("o bloco sai redondo"),
+  e a formação do bonde do jogador refazia essa grade virada pro caminho do túnel: nenhuma das duas seguia as fileiras. A
+  faixa era girada pelo rumo do centro do estádio, e não pela linha do alambrado; numa arquibancada reta, perto do canto,
+  ela entortava. As três faixas do setor visitante (e as bandeiras) caíam umas por cima das outras.
+- **A linha do alambrado (`frente`).** A bancada grava em cada cena de estádio a beira da arquibancada, de 2 em 2 graus,
+  em pixels. É a primeira arquibancada andável de cada raio: o anel de passagem em volta do campo (a grama até o muro
+  vermelho do Barradão) fica de fora. Onde o raio não acha degrau (o lado aberto, o canto vazio), o ponto entra em
+  `frenteSem`, e ali ninguém senta. Cada faixa ganha `de` e `ate`, a beira do setor dela.
+- **A torcida nas fileiras.** As fileiras são as curvas paralelas à `frente`, uma a cada passo (18 px, apertando até 10
+  quando não cabe). Na fileira os lugares vão de passo em passo, medidos na própria curva: no anel curvo a fileira de trás
+  é mais comprida. O bonde enche do ponto dele pra fora, mais ao longo da arquibancada do que pro fundo, sem cruzar grade
+  e sem lugar tomado. Cena sem `frente` (a de arredores) segue com a enchente de antes.
+- **O bonde do jogador senta.** Com o líder num degrau, o seguidor não vai pra uma vaga da formação: ele pega um lugar
+  nas fileiras em volta do líder, a 19 px (o disco tem 18). Os lugares são refeitos quando o líder anda um lugar, e cada
+  um pega o lugar livre mais perto dele. Sentando, ele chega no lugar com 3 px de folga, não 9. Fora da arquibancada
+  vale a formação de sempre.
+- **A faixa no alambrado.** O rumo da faixa é a normal da linha do alambrado. Quando a linha curva, ela deita na curva
+  (`arco`). A faixa pendura na beira do lance em que o bonde está: no anel de cima, na mureta da varanda (Castelão,
+  Maracanã, Mangueirão, Couto Pereira, MRV). As peças do mesmo setor ficam lado a lado no trecho dele. Quando não cabem,
+  todas encolhem na mesma proporção.
+- **Sem foto nova.** `MARCAS=1 node ferramentas/estadios/assar.js` refaz só os marcadores das cenas já assadas, sem
+  fotografar de novo.
+- **Conferido** no jogo, na briga do estádio: Barradão, Castelão, Maracanã, Mineirão, Arruda, Ilha do Retiro, Bezerrão e
+  Bruno Daniel. Ninguém nasceu fora do chão e ninguém ficou empilhado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -21,6 +21,8 @@ const SO = process.env.SO ? process.env.SO.split(',') : null, CONF = process.env
 const FICHA = process.env.FICHA ? process.env.FICHA.replace(/^\/+/, '') : null;
 if (FICHA && !CONF) { console.log('com FICHA=... diga também CONF=<pasta das fotos de conferência>'); process.exit(1); }
 const bin = u => Buffer.from(u.split(',')[1], 'base64');
+/* (o JSON da saída com recuo, menos a linha do alambrado — 180 números —, que vai numa linha só) */
+const compacto = d => JSON.stringify(d, null, 1).replace(/"frente(Sem)?": \[[^\]]*\]/g, m => m.replace(/\s+/g, ''));
 (async () => {
   const nav = await chromium.launch({ executablePath: fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const pg = await nav.newPage({ viewport: { width: 1600, height: 1100 } });
@@ -63,6 +65,13 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
   const saida = path.join(RAIZ, 'cenario3d', 'dados', 'estadios_cenas.js');
   let dados = {};
   if (fs.existsSync(saida)) { try { dados = JSON.parse(fs.readFileSync(saida, 'utf8').match(/window\.__ESTADIOS = (\{[\s\S]*\});/)[1]); } catch (e) { dados = {}; } }
+  /* MARCAS=1: refaz só os marcadores (bondes, faixas, alambrado, grades, PM) das cenas já assadas, sem fotografar de novo */
+  if (process.env.MARCAS) {
+    const cab = fs.readFileSync(saida, 'utf8').split('window.__ESTADIOS = ')[0];
+    for (const id of ids.filter(i => dados[i])) dados[id].cena = await pg.evaluate(id => window.marcasDe(id), id);
+    fs.writeFileSync(saida, cab + 'window.__ESTADIOS = ' + compacto(dados) + ';\n');
+    console.log('marcadores refeitos:', ids.filter(i => dados[i]).length); await nav.close(); return;
+  }
   for (const id of ids) {
     const t0 = Date.now();
     const r = await pg.evaluate(id => window.assar(id), id);
@@ -85,6 +94,6 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
       console.log(id, 'chão:', tam.length === 1 ? 'um só' : tam.length + ' ilhas ' + JSON.stringify(tam.sort((a, b) => b - a).slice(0, 6)), '· marcadores fora da ilha maior:', fora.length ? fora.join(', ') : 'nenhum'); }
     console.log(id, 'escala', r.escala, 'px/m ·', Math.round(bin(r.imagem).length / 1024), 'KB ·', Date.now() - t0, 'ms');
   }
-  if (!FICHA) fs.writeFileSync(saida, '/* GERADO por ferramentas/estadios/assar.js — não editar à mão.\n   Os estádios low-poly das cenas: a foto de cima, a máscara de onde se anda\n   e os marcadores de cada um; `clubes` diz quem manda o jogo ali. */\nwindow.__ESTADIOS = ' + JSON.stringify(dados, null, 1) + ';\n');
+  if (!FICHA) fs.writeFileSync(saida, '/* GERADO por ferramentas/estadios/assar.js — não editar à mão.\n   Os estádios low-poly das cenas: a foto de cima, a máscara de onde se anda\n   e os marcadores de cada um; `clubes` diz quem manda o jogo ali. */\nwindow.__ESTADIOS = ' + compacto(dados) + ';\n');
   await nav.close();
 })();
