@@ -15864,6 +15864,19 @@ faturar. A segunda proposta, em 14 páginas, foi aprovada inteira ("Ficou ótimo
   - o botão no menu Jogo;
   - um ano simulado sem erro.
 
+## A briga de bairro sem foto: as imagens que não tinham vindo pro jogo (dono, 18/11/2026)
+
+Relato, com print: "Cena da briga na praça ficou assim". A cena abriu sem a foto, só com a grade do chão andável.
+
+- **A causa.** As fotos das cenas de bairro (`bairro_f2` a `bairro_n3`) e a da subsede só existiam em `img/cenas/`, a
+  pasta do jogo de feed antigo. O jogo abre em `cenario3d/` e procura em `cenario3d/img/cenas/`. Quando o pacote foi
+  remontado, as brigas de bairro estavam desligadas (13/11), e ninguém sentiu falta das fotos. A reunião e o bar
+  voltaram hoje, e a cena abriu sem o fundo.
+- **O conserto.** As dez fotos foram copiadas pra `cenario3d/img/cenas/` (2,5 MB). Conferi todas as imagens de cena que
+  o código do jogo cita: não falta mais nenhuma.
+- **Conferido no celular:** a reunião atacada, "Abrir a cena", e a pracinha com a foto, a nossa reunião e o bonde
+  rival descendo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
