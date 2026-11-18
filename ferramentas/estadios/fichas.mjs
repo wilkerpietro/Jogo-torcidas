@@ -20,10 +20,11 @@ const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 
 /* o Castelão (dono, 18/11/2026): os trechos do lance de baixo entre os quatro vãos dos escanteios (o canto fica a uns 34° do
    eixo), a lateral sul de quatro lances, o camarote e o lance de cima */
-/* (só os dois escanteios que tocam a lateral sul têm o vão — dono, 18/11/2026: "Somente os dois escanteios que tocam a lateral
-   sul que tem esse vão"; os do norte são arquibancada contínua) */
+/* OS VÃOS DOS ESCANTEIOS (dono, 18/11/2026: "Os vãos na parte inferior existem nos 4 escanteios. Na parte superior só nos
+   2"): no lance de baixo, os quatro cantos; no de cima, só os dois que tocam a lateral sul */
+const CAST_VAOS_BAIXO = [[31.5, 36.5], [143.5, 148.5], [211.5, 216.5], [323.5, 328.5]];
 const CAST_VAOS = [[211.5, 216.5], [323.5, 328.5]];
-const CAST_CANTOS = [[-31.5, 211.5], [216.5, 323.5]];
+const CAST_CANTOS = [[-31.5, 31.5], [36.5, 143.5], [148.5, 211.5], [216.5, 323.5]];
 /* (a lateral sul de quatro lances vai de vão a vão, como na foto do canto: os camarotes chegam até o vão do escanteio) */
 const CAST_SUL = [216.5, 323.5];
 /* o vidro VERDE-ESCURO dos camarotes (dono, 18/11/2026: "A fachada da parte do camarote é um vidro de cor verde escuro") */
@@ -49,12 +50,12 @@ export const FICHAS = {
          da parte central: "normalmente as arquibancadas inferiores de estádios de dois andares são acessadas pelo topo do
          setor"). Sem boca nenhuma (dono, 15/11/2026: tirar também as poucas que tinham ficado na frente); do pedido antigo
          dele fica o corredor do alambrado.
-         OS ESCANTEIOS DA LATERAL SUL SEM ARQUIBANCADA (dono, 18/11/2026, com fotos de dentro e a panorâmica; depois: "Somente
-         os dois escanteios que tocam a lateral sul que tem esse vão"): o lance de baixo para nesses dois cantos num vão de uns 6 m — o túnel da rampa que
+         OS QUATRO ESCANTEIOS SEM ARQUIBANCADA EMBAIXO (dono, 18/11/2026, com fotos de dentro e a panorâmica; o lance de cima
+         só tem o vão nos dois cantos da lateral sul): o lance de baixo para em cada canto num vão de uns 6 m — o túnel da rampa que
          desce até o gramado, com a escada de cada lado —, debaixo do anel de circulação, que passa por cima */
       { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 80, b: 62, r: 46 }, h: [1.2, 11], fileiras: 12,
         trechos: CAST_CANTOS.map(([de, ate]) => ({ de, ate, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false, escadaNaBorda: true }))
-          .concat(CAST_VAOS.map(([de, ate]) => ({ de, ate, tipo: 'passagem', cor: '#b9b7ae' }))) },
+          .concat(CAST_VAOS_BAIXO.map(([de, ate]) => ({ de, ate, tipo: 'passagem', cor: '#b9b7ae' }))) },
       /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes: o fundo dele é o VIDRO ESCURO dos camarotes,
          com as luzes (a faixa escura entre os dois lances, na foto de frente e na panorâmica) */
       { dentro: { a: 80, b: 62, r: 46 }, fora: { a: 84, b: 66, r: 50 }, h: [11.1, 11.1], fileiras: 2, corredorFrente: 0,

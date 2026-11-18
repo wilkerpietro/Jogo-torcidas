@@ -15991,10 +15991,10 @@ Também foram rebakeadas as três variantes. Medido: 0 torcedor fora do degrau.
 
 O dono, com uma foto do canto sul de dentro e uma da fachada de perto: "Observe na primeira imagem como os camarotes funcionam e como é esse vão entre a arquibancada lateral sul e as partes atrás do gol. A treliça não faz curva, é apontada pra cima. Observe a fachada do estádio [...]: parece um metal encaixado um no outro entre as treliças. A fachada da parte do camarote é um vidro de cor verde escuro." E depois: "Somente os dois escanteios que tocam a lateral sul que tem esse vão."
 
-**O vão.** Só os escanteios sudoeste e sudeste (211,5°–216,5° e 323,5°–328,5°), e agora ele corta os dois lances: a lateral sul é um bloco e o lance de trás do gol é outro.
-- No lance de baixo, o vão é chão.
-- No de cima, é uma laje na altura da circulação, com o fundo fechado por uma parede escura até perto do telhado (`paredeAte`, opção nova da passagem).
-- Os dois escanteios do norte voltaram a ser arquibancada contínua.
+**Os vãos.** Correção do dono, na mesma noite: "Os vãos na parte inferior existem nos 4 escanteios. Na parte superior só nos 2."
+- No lance de baixo, os quatro escanteios têm o vão de chão.
+- No lance de cima, só os dois que tocam a lateral sul (sudoeste e sudeste, 211,5°–216,5° e 323,5°–328,5°). Ali a lateral sul é um bloco e o lance de trás do gol é outro.
+- O vão de cima é uma laje na altura da circulação, com o fundo fechado por uma parede escura até perto do telhado (`paredeAte`, opção nova da passagem).
 
 **A lateral sul de quatro lances vai de vão a vão.** Antes ia de 236° a 304°; agora vai de 216,5° a 323,5°. Os camarotes chegam até o vão, como na foto.
 
