@@ -24,7 +24,7 @@ O jogo tem três camadas que se alimentam:
 
 Os dois indicadores centrais são **prestígio** (o nome da torcida na rua, que entra no ranking nacional) e **moral**. O jogo não tem condição de vitória: é uma caixa de areia com ranking, retrospectiva de fim de ano e temporadas de futebol que se repetem.
 
-**Há um modo só, o rápido** (desde 13/11/2026; o detalhista deixou de existir e todo save antigo vira rápido): não há reunião mensal da diretoria — as pautas chegam uma por dia como mensagem —, bote e assalto se resolvem na hora e o mapa abre no Brasil. O domínio dos bairros vale, mas **as brigas de bairro saíram** (13/11/2026): o domínio só muda nas brigas do dia de jogo. **Não há ideologia nem tutorial** (ver Parte II, 1.5).
+**Há um modo só, o rápido** (desde 13/11/2026; o detalhista deixou de existir e todo save antigo vira rápido): não há reunião mensal da diretoria — as pautas chegam uma por dia como mensagem —, bote e assalto se resolvem na hora e o mapa abre no Brasil. **O domínio dos bairros está desligado** (18/11/2026, `LIGADO = false` em `TO.dominio`): a barra de 7 não anda, o dia não mexe em moral e prestígio, a receita não leva o corte de bairro, a prévia e o relatório da briga não falam de domínio, o Mapa saiu do menu e a loja, o bar e a subsede não pedem bairro (vão pro bairro de sempre, `bairroDeFora`). A geografia segue (bairros, sedes, onde cada membro mora). **As brigas de bairro voltaram** no mesmo dia, só a reunião e o bar e sem ponto de bairro: por mês, uma chance nossa (a reunião deles na praça ou a turma deles no bar) e um ataque à nossa reunião. **Não há ideologia nem tutorial** (ver Parte II, 1.5).
 
 Existem duas versões jogáveis no mesmo repositório:
 
@@ -281,7 +281,7 @@ Criados depois, pelo uso (agrupados):
 
 ### 1.5 O modo de jogo e as regras fixas que substituíram a ideologia
 
-**Só existe o modo rápido** (13/11/2026). `E.modo` é sempre `'rapido'` e `TO.estado.rapido()` sempre responde verdadeiro; um save antigo com `'detalhista'` é convertido ao carregar. No rápido: sem reunião mensal (as pautas do mês chegam uma por dia, `pautaSoltaDeHoje`), sem a pauta "Onde a gente recruta", bote a bar e resenha rival chegam como sugestão para agora, assalto planejado e executado no mesmo dia, um pedido a aliado por mês, o mapa abre no Brasil. Domínio e brigas de bairro valem; pixação e ação social estão desligadas.
+**Só existe o modo rápido** (13/11/2026). `E.modo` é sempre `'rapido'` e `TO.estado.rapido()` sempre responde verdadeiro; um save antigo com `'detalhista'` é convertido ao carregar. No rápido: sem reunião mensal (as pautas do mês chegam uma por dia, `pautaSoltaDeHoje`), sem a pauta "Onde a gente recruta", bote a bar e resenha rival chegam como sugestão para agora, assalto planejado e executado no mesmo dia, um pedido a aliado por mês, o mapa abre no Brasil. O domínio está desligado (18/11/2026); as brigas de bairro valem só na reunião e no bar; pixação e ação social estão desligadas.
 
 **A ideologia saiu.** As escolhas que ela guardava (`E.politicas`) viraram regras fixas, reescritas a cada carga (`planejamento.js: politicas`):
 
@@ -1096,7 +1096,7 @@ Abordagens: **Furtivo** (entra como cliente; butim menor) e **Rápido** (anuncia
 | Ação social no bairro | **(desligada)**: `dominio.js: social()` devolve `{ok:false}` (a constante `SOCIAL = {custo:1500, gente:5}` ficou sem uso) |
 | Treta marcada / LNT | **(desligadas)**: decisões antigas fecham com "Esse assunto já passou" |
 | Bote a bar rival e a resenha de zona rival | vêm da reunião mensal ou da pauta solta (9.7) e abrem cena de ataque |
-| Briga de bairro | sugerida pelo feed, três por mês (9.8) |
+| Briga de bairro | sugerida pelo feed, duas por mês: uma chance nossa (reunião ou bar) e um ataque à nossa reunião (9.8) |
 | Ataque da subsede de outra cidade | sugerido pelo olheiro da filial (9.9) |
 | Assalto | pauta "Alvos de assalto" (9.7) → planejamento (6.5) |
 | Provocar / aproximar, pedido a aliado, eixos | telas de diplomacia (`relacoes.js`, `eixos.js`, fora do escopo) |

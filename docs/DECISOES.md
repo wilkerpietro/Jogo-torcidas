@@ -15725,6 +15725,51 @@ acordo com a arquibancada nem a faixa fica estendida no alambrado".
 - **Conferido** no jogo, na briga do estádio: Barradão, Castelão, Maracanã, Mineirão, Arruda, Ilha do Retiro, Bezerrão e
   Bruno Daniel. Ninguém nasceu fora do chão e ninguém ficou empilhado.
 
+## A reunião e o bar de volta ao feed; o domínio desligado por enquanto (dono, 18/11/2026)
+
+Pedido: "No jogo, vamos voltar a adicionar no feed o ataque à reunião e o ataque ao bar. Remova também por enquanto os
+trechos que citam domínio, como escolher bairro pra fazer a loja, mapa e etc".
+
+- **O que já estava no feed e continua.** Um ano simulado com a TUF, antes da mudança: 2 ataques ao nosso bar, 3 botes
+  no bar de uma rival, 3 casas de piscina e 1 ataque à nossa casa de piscina. Saíram em 13/11 as brigas de bairro, que
+  eram as mensagens da reunião na praça e da turma no bar: é isso que volta.
+- **A briga de bairro, só a reunião e o bar** (`bairroDeHoje`, feed.js no pacote). Por mês, em dia sem jogo nem
+  caravana:
+  - **uma chance nossa**: a reunião deles na praça ("Chefe, os caras da X tão fazendo uma reunião na pracinha no Y. Dá
+    pra gente chegar e acabar com isso.") ou a turma deles no bar — vendo o jogo do clube, quando ele joga fora hoje, ou
+    de resenha nos outros dias ("Bora dar o bote no bar?"). Ir pra cima, Simular ou Deixar quieto;
+  - **um ataque contra nós**: a nossa reunião na praça ("…uns membros da X desceram pra cima! Bora segurar?"). Abrir a
+    cena, Simular ou Ninguém desce (Moral −3 · Prestígio −3,5 · Relação −6).
+
+  O "de bobeira" não voltou, e os ataques contra nós passaram de dois por mês para um: com dois, o ano teve 21
+  reuniões atacadas.
+  - **Quem é atacado.** Uma torcida da cidade que não é aliada nem irmã, sem trégua e com gente de pé. Vai a pior
+    relação primeiro, com a rival declarada na frente, e o dia escolhe entre as três piores.
+  - **Onde.** Um dos três bairros em que mais mora gente do lado atacado.
+  - **Efetivos e consequências.** Os de antes: quem mora ali defende (até 15) e quem ataca traz até 60% a mais.
+    Vencendo, Prestígio +4 · Relação −2.
+  - **O texto não fala mais em domínio** ("aumenta nossos pontos de domínio", "o bairro escorrega pra eles", "é o
+    bairro da sede deles").
+  - **O ano simulado depois.** Com a TUF, 11 chances nossas e 11 reuniões atacadas, mais os botes de bar e de casa de
+    sempre. Com a Gaviões, 11 e 10.
+- **O domínio desligado** (`LIGADO = false` no começo de `TO.dominio`; o resto lê `TO.dominio.ligado()`):
+  - a barra de 7 não anda (`transferir` e `confronto` não fazem nada, nem depois da briga nem no "ninguém desce");
+  - o dia não mexe em moral e prestígio (`dia`: dona da cidade, sede perdida, o livro da semana);
+  - a receita não leva o corte de bairro de dona de fora (`fator` vale 1, e a nota "bairro da X −15%" some do
+    Patrimônio);
+  - a prévia e o relatório da briga não falam de domínio (`linhaDaPrevia`, `linhaDoResultado`);
+  - nenhum aviso de bairro tomado ou perdido sai em Notícias (`avisar`);
+  - **o Mapa saiu do menu** (`temNoMenu`), e o nome de uma cidade abre o perfil dela, não o mapa;
+  - **a loja, o bar e a subsede não pedem bairro**: o ponto vai pro bairro de sempre (`bairroDeFora`, sorteado fora da
+    zona da sede);
+  - a pauta "Onde a gente recruta" (que só existia na reunião do modo detalhista) não nasce.
+
+  Fica a geografia: os bairros, as sedes, onde cada membro mora, o endereço da loja e da briga. Para religar,
+  `LIGADO = true`.
+- **Conferido.** O jogo abre sem erro e dois anos simulados (TUF e Gaviões) correram sem erro. No celular: o menu sem
+  o Mapa; a reunião atacada no feed; o Simular até o relatório ("Derrota no bairro", sem linha de domínio); a nossa
+  chance no bar; a aba Loja sem escolha de bairro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
