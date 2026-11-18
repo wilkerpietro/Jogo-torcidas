@@ -4635,6 +4635,81 @@ TO.i18n.registrar({
   "Os {n} nossos que estão na reunião contra até {a} deles · segurando, Prestígio +4 · Relação −2": {es:"Los {n} nuestros que están en la reunión contra hasta {a} de ellos · aguantando, Prestigio +4 · Relación −2", en:"The {n} of ours at the meeting against up to {a} of theirs · holding, Prestige +4 · Relationship −2"},
   "Chefe, o caixa tá em {caixa} e o dinheiro tá parado. Dá pra investir: {item} sai por {custo} e ainda sobra {sobra} pro dia a dia.": {es:"Jefe, la caja está en {caixa} y la plata está quieta. Se puede invertir: {item} sale {custo} y todavía quedan {sobra} para el día a día.", en:"Boss, the till is at {caixa} and the money is just sitting there. We can invest: {item} costs {custo} and we'd still have {sobra} for day-to-day."},
   "Ir pra loja": {es:"Ir a la tienda", en:"Go to the shop"},
+  "Fala, presidente! A torcida agora é sua. Quer que a diretoria explique como as coisas funcionam e como fazer a torcida crescer?": {es:"¡Qué tal, presidente! La barra ahora es suya. ¿Quiere que la directiva le explique cómo funcionan las cosas y cómo hacer crecer la barra?", en:"Hey, president! The firm is yours now. Want the board to explain how things work and how to make the firm grow?"},
+  "📖 Quero o tutorial": {es:"📖 Quiero el tutorial", en:"📖 I want the tutorial"},
+  "Já sei jogar": {es:"Ya sé jugar", en:"I already know how to play"},
+  "Fechado, chefe. O tutorial fica no menu Jogo.": {es:"Listo, jefe. El tutorial queda en el menú Juego.", en:"Deal, boss. The tutorial stays in the Game menu."},
+  "Tutorial": {es:"Tutorial", en:"Tutorial"},
+  "como a torcida funciona e cresce": {es:"cómo funciona y crece la barra", en:"how the firm works and grows"},
+  "📖 Abrir o tutorial": {es:"📖 Abrir el tutorial", en:"📖 Open the tutorial"},
+  "← Voltar": {es:"← Volver", en:"← Back"},
+  "Avançar →": {es:"Avanzar →", en:"Next →"},
+  "O objetivo": {es:"El objetivo", en:"The goal"},
+  "Você é o presidente. A meta é ter a torcida mais temida e mais rica do país: mais gente, mais força, mais patrimônio e o topo do ranking. E, de quebra, empurrar o time pra cima.": {es:"Usted es el presidente. La meta es tener la barra más temida y más rica del país: más gente, más fuerza, más patrimonio y la cima del ranking. Y, de paso, empujar al equipo hacia arriba.", en:"You're the president. The goal is to have the most feared and richest firm in the country: more people, more strength, more assets and the top of the ranking. And, on top of that, push the team up."},
+  "Cada tela": {es:"Cada pantalla", en:"Each screen"},
+  "Feed: as mensagens da diretoria. Uma decisão sem resposta para o tempo.": {es:"Feed: los mensajes de la directiva. Una decisión sin respuesta detiene el tiempo.", en:"Feed: the board's messages. An unanswered decision stops the clock."},
+  "Torcida: os membros, com força, defesa, cargo e quem está ferido ou preso.": {es:"Barra: los miembros, con fuerza, defensa, cargo y quién está herido o preso.", en:"Firm: the members, with strength, defence, rank and who's injured or jailed."},
+  "Financeiro: o caixa, a Loja, o Patrimônio e o Elenco (o dinheiro pro time).": {es:"Finanzas: la caja, la Tienda, el Patrimonio y el Plantel (la plata para el equipo).", en:"Finances: the till, the Shop, the Assets and the Squad (money for the team)."},
+  "Calendário: o Expediente da Sede e a agenda do time.": {es:"Calendario: la Jornada de la Sede y la agenda del equipo.", en:"Calendar: the HQ Routine and the team's fixtures."},
+  "Planejamento: toda segunda você decide como a torcida vai pra cada jogo.": {es:"Planificación: cada lunes usted decide cómo va la barra a cada partido.", en:"Planning: every Monday you decide how the firm goes to each game."},
+  "Competições, Ranking, Diplomacia e Notícias: a tabela, o ranking das torcidas, aliados e rivais, e os jornais.": {es:"Competiciones, Ranking, Diplomacia y Noticias: la tabla, el ranking de barras, aliados y rivales, y los diarios.", en:"Competitions, Ranking, Diplomacy and News: the table, the firm ranking, allies and rivals, and the papers."},
+  "O dia corre sozinho: o ≫ pula pro dia seguinte e o 1×/2× muda a velocidade.": {es:"El día corre solo: el ≫ salta al día siguiente y el 1×/2× cambia la velocidad.", en:"The day runs on its own: ≫ jumps to the next day and 1×/2× changes the speed."},
+  "Prestígio — o respeito na rua": {es:"Prestigio — el respeto en la calle", en:"Prestige — respect on the street"},
+  "Sobe: vencer brigas, segurar um ataque contra a gente, tomar a faixa de um rival (+10) ou a bandeira (+5).": {es:"Sube: ganar peleas, aguantar un ataque contra nosotros, quitarle el trapo a un rival (+10) o la bandera (+5).", en:"Goes up: winning fights, holding off an attack on us, taking a rival's banner (+10) or flag (+5)."},
+  "Cai: perder briga, perder a nossa faixa (−20), fugir, ficar 20 dias sem briga, campanha de PIX, deixar quieto um bote que a diretoria sugeriu.": {es:"Baja: perder peleas, perder nuestro trapo (−20), huir, pasar 20 días sin pelea, campaña de PIX, dejar pasar un golpe que propuso la directiva.", en:"Goes down: losing fights, losing our banner (−20), running away, 20 days without a fight, a PIX campaign, passing on a hit the board suggested."},
+  "Faz o bar e a loja renderem mais, atrai doação de simpatizante, conta em dobro no ranking e libera subsede em outra cidade a partir de 60.": {es:"Hace rendir más el bar y la tienda, atrae donaciones de simpatizantes, cuenta doble en el ranking y habilita sede en otra ciudad desde 60.", en:"It makes the bar and shop earn more, draws supporter donations, counts double in the ranking and unlocks a branch in another city from 60."},
+  "Moral — o ânimo da torcida": {es:"Moral — el ánimo de la barra", en:"Morale — the firm's spirit"},
+  "Sobe: o time vencer (+3), título (+12,5), acesso, vencer brigas, segurar ataque, tomar faixa, visitar os feridos.": {es:"Sube: que gane el equipo (+3), título (+12,5), ascenso, ganar peleas, aguantar ataques, quitar trapos, visitar a los heridos.", en:"Goes up: the team winning (+3), a title (+12.5), promotion, winning fights, holding off attacks, taking banners, visiting the injured."},
+  "Cai: o time perder (−3), rebaixamento, caixa no vermelho (−5 por semana), perder a faixa, ninguém descer quando atacam a gente, 20 dias sem briga.": {es:"Baja: que pierda el equipo (−3), descenso, caja en rojo (−5 por semana), perder el trapo, que nadie baje cuando nos atacan, 20 días sin pelea.", en:"Goes down: the team losing (−3), relegation, the till in the red (−5 a week), losing the banner, nobody showing up when we're attacked, 20 days without a fight."},
+  "Com moral alta o comércio rende até 1,3× (com moral baixa, só 0,4×), e mais gente topa viajar na caravana.": {es:"Con moral alta el comercio rinde hasta 1,3× (con moral baja, solo 0,4×), y más gente se anima a viajar en la caravana.", en:"With high morale the businesses earn up to 1.3× (with low morale, only 0.4×), and more people agree to travel with the convoy."},
+  "Mais membros": {es:"Más miembros", en:"More members"},
+  "Deixe \"Recrutar\" num turno do Expediente: cada turno pode trazer 1 ou 2 novatos (R$ 5 cada).": {es:"Deje \"Reclutar\" en un turno de la Jornada: cada turno puede traer 1 o 2 novatos (R$ 5 cada uno).", en:"Put \"Recruit\" in a Routine shift: each shift can bring 1 or 2 rookies (R$ 5 each)."},
+  "A chance cresce com o time ganhando. Título ou acesso abre semanas de recrutamento forte; rebaixamento fecha a porta.": {es:"La chance crece con el equipo ganando. Título o ascenso abren semanas de reclutamiento fuerte; el descenso cierra la puerta.", en:"The chance grows when the team wins. A title or promotion opens weeks of strong recruiting; relegation shuts the door."},
+  "Sem vaga não entra ninguém. A sede manda: o nível 1 comporta 60, o 3 comporta 160 e o 6 comporta 550. Subsede em outra cidade soma vagas.": {es:"Sin lugar no entra nadie. La sede manda: el nivel 1 aloja 60, el 3 aloja 160 y el 6 aloja 550. Una sede en otra ciudad suma lugares.", en:"No room, nobody gets in. The HQ rules: level 1 holds 60, level 3 holds 160 and level 6 holds 550. A branch in another city adds room."},
+  "Torcida mais forte": {es:"Barra más fuerte", en:"A stronger firm"},
+  "O treino é automático, todo dia. A sede maior treina mais gente por dia.": {es:"El entrenamiento es automático, todos los días. Una sede más grande entrena a más gente por día.", en:"Training is automatic, every day. A bigger HQ trains more people a day."},
+  "Promova quem está apto (Torcida): Novato → Componente → Linha de Frente → Diretoria. Cada cargo sobe o limite de força e defesa.": {es:"Ascienda a quien esté apto (Barra): Novato → Integrante → Primera Línea → Directiva. Cada cargo sube el límite de fuerza y defensa.", en:"Promote whoever is ready (Firm): Rookie → Member → Front Line → Board. Each rank raises the strength and defence cap."},
+  "Professor de MMA (Loja → Pessoal) acelera o treino até 2×. O padrinho de treino da Velha Guarda dá +15% no dia.": {es:"El profesor de MMA (Tienda → Personal) acelera el entrenamiento hasta 2×. El padrino de entrenamiento de la Vieja Guardia da +15% en el día.", en:"An MMA coach (Shop → Staff) speeds training up to 2×. An Old Guard training sponsor gives +15% for the day."},
+  "Ferido e preso não treinam nem brigam. Visite os feridos no Expediente e tenha advogado pra quem cair preso.": {es:"Herido y preso no entrenan ni pelean. Visite a los heridos en la Jornada y tenga abogado para quien caiga preso.", en:"Injured and jailed members don't train or fight. Visit the injured in the Routine and keep a lawyer for whoever gets arrested."},
+  "Como faturar": {es:"Cómo facturar", en:"How to make money"},
+  "Mensalidades: todo mês, por cargo. Novato R$ 20, Componente R$ 50, Linha de Frente e Diretoria R$ 100.": {es:"Cuotas: todos los meses, por cargo. Novato R$ 20, Integrante R$ 50, Primera Línea y Directiva R$ 100.", en:"Dues: every month, by rank. Rookie R$ 20, Member R$ 50, Front Line and Board R$ 100."},
+  "Bar, loja e subsede: rendem toda semana, e mais com prestígio, membros e moral altos.": {es:"Bar, tienda y subsede: rinden todas las semanas, y más con prestigio, miembros y moral altos.", en:"Bar, shop and branch: they earn every week, and more with high prestige, members and morale."},
+  "Festa na sede (Expediente): lucra se vier gente, e a diretoria avisa quando der prejuízo.": {es:"Fiesta en la sede (Jornada): deja ganancia si viene gente, y la directiva avisa cuando da pérdida.", en:"HQ party (Routine): profitable if people come, and the board warns you when it loses money."},
+  "Campanha de PIX (Expediente): arrecada, mas custa prestígio.": {es:"Campaña de PIX (Jornada): recauda, pero cuesta prestigio.", en:"PIX campaign (Routine): it raises money, but costs prestige."},
+  "Ingressos: com a relação com o clube boa, ele cede ingressos pra vender nos jogos em casa.": {es:"Entradas: con buena relación con el club, cede entradas para vender en los partidos de local.", en:"Tickets: with a good relationship with the club, it hands over tickets to sell at home games."},
+  "Doação de simpatizante: de vez em quando, maior com prestígio alto.": {es:"Donación de simpatizante: de vez en cuando, mayor con prestigio alto.", en:"Supporter donation: every now and then, bigger with high prestige."},
+  "Bote no bar rival: vencendo, a gente leva parte do caixa deles.": {es:"Golpe en el bar rival: ganando, nos llevamos parte de su caja.", en:"Hit on a rival bar: if we win, we take part of their till."},
+  "Assalto: até 3 por ano, quando a diretoria propõe. Rende muito, mas tem polícia e prisão.": {es:"Asalto: hasta 3 por año, cuando la directiva lo propone. Rinde mucho, pero hay policía y cárcel.", en:"Robbery: up to 3 a year, when the board proposes one. It pays a lot, but there's police and jail."},
+  "Caixa no vermelho derruba a moral toda semana, e 30 dias assim fazem uma loja ser vendida na marra.": {es:"La caja en rojo baja la moral cada semana, y 30 días así obligan a vender una tienda a la fuerza.", en:"A till in the red drops morale every week, and 30 days like that force a shop to be sold."},
+  "A sede vai do nível 0 ao 6, de R$ 30 mil a R$ 1 milhão. Ela libera tudo: membros, diretores, treino e quantos bares e lojas cabem.": {es:"La sede va del nivel 0 al 6, de R$ 30 mil a R$ 1 millón. Habilita todo: miembros, directivos, entrenamiento y cuántos bares y tiendas caben.", en:"The HQ goes from level 0 to 6, from R$ 30k to R$ 1 million. It unlocks everything: members, board, training and how many bars and shops fit."},
+  "Bar e loja se compram e se ampliam até o nível 3. A loja rende mais que o bar.": {es:"Bar y tienda se compran y se amplían hasta el nivel 3. La tienda rinde más que el bar.", en:"Bars and shops are bought and upgraded up to level 3. The shop earns more than the bar."},
+  "Subsede em outra cidade: um núcleo que recruta e briga por lá.": {es:"Sede en otra ciudad: un núcleo que recluta y pelea allá.", en:"Branch in another city: a crew that recruits and fights over there."},
+  "Ônibus baratam a caravana. A enfermaria, o galpão e a área de treino são anexos da sede.": {es:"Los ómnibus abaratan la caravana. La enfermería, el galpón y el área de entrenamiento son anexos de la sede.", en:"Buses make the convoy cheaper. The infirmary, the warehouse and the training area are HQ annexes."},
+  "Quando o caixa encher, a diretoria sugere a compra e o botão leva direto à Loja.": {es:"Cuando la caja se llene, la directiva sugiere la compra y el botón lleva directo a la Tienda.", en:"When the till fills up, the board suggests a purchase and the button takes you straight to the Shop."},
+  "Subir no ranking": {es:"Subir en el ranking", en:"Climbing the ranking"},
+  "A conta: (membros de pé + prestígio × 2) × média de força e defesa × situação financeira.": {es:"La cuenta: (miembros en pie + prestigio × 2) × promedio de fuerza y defensa × situación financiera.", en:"The formula: (members on their feet + prestige × 2) × average strength and defence × financial situation."},
+  "Pra subir: mais gente, prestígio alto, membros treinados e caixa saudável. O caixa vai de \"endividado\" (0,6×) a \"rico\" (1,6×).": {es:"Para subir: más gente, prestigio alto, miembros entrenados y caja sana. La caja va de \"endeudado\" (0,6×) a \"rico\" (1,6×).", en:"To climb: more people, high prestige, trained members and a healthy till. The till goes from \"in debt\" (0.6×) to \"rich\" (1.6×)."},
+  "Ferido e preso saem da conta.": {es:"Herido y preso salen de la cuenta.", en:"Injured and jailed members don't count."},
+  "Ajudar o time a subir": {es:"Ayudar al equipo a subir", en:"Helping the team climb"},
+  "Em Financeiro → Elenco a torcida injeta dinheiro no time: cada ponto de força custa de R$ 20 mil (time fraco) a R$ 320 mil (time no topo).": {es:"En Finanzas → Plantel la barra le inyecta plata al equipo: cada punto de fuerza cuesta de R$ 20 mil (equipo débil) a R$ 320 mil (equipo en la cima).", en:"In Finances → Squad the firm pumps money into the team: each strength point costs from R$ 20k (weak team) to R$ 320k (top team)."},
+  "Time mais forte ganha mais jogos, briga por acesso e título, e isso devolve moral e recrutamento pra torcida.": {es:"Un equipo más fuerte gana más partidos, pelea por ascenso y título, y eso le devuelve moral y reclutamiento a la barra.", en:"A stronger team wins more games, fights for promotion and titles, and that gives the firm morale and recruits back."},
+  "Festa na arquibancada": {es:"Fiesta en la tribuna", en:"Stand displays"},
+  "Na Loja → Festa: papel picado (+4%, R$ 3 mil), trapos (+5%, R$ 6 mil), bandeirão (+8%, R$ 12 mil), mosaico (+10%, R$ 20 mil) e mosaico 3D (+13%, R$ 35 mil).": {es:"En la Tienda → Fiesta: papelitos (+4%, R$ 3 mil), tiras (+5%, R$ 6 mil), bandera gigante (+8%, R$ 12 mil), mosaico (+10%, R$ 20 mil) y mosaico 3D (+13%, R$ 35 mil).", en:"In the Shop → Displays: confetti (+4%, R$ 3k), streamers (+5%, R$ 6k), giant flag (+8%, R$ 12k), mosaic (+10%, R$ 20k) and 3D mosaic (+13%, R$ 35k)."},
+  "Cada festa empurra o time no placar do próximo jogo em que a torcida estiver no estádio. Juntas, somam até +40% de chance.": {es:"Cada fiesta empuja al equipo en el marcador del próximo partido en que la barra esté en el estadio. Juntas, suman hasta +40% de chance.", en:"Each display pushes the team's score in the next game the firm attends. Together they add up to +40% chance."},
+  "O treino de bateria no Expediente dá +20% nos jogos em casa por uma semana.": {es:"El ensayo de la banda en la Jornada da +20% en los partidos de local por una semana.", en:"Drum practice in the Routine gives +20% in home games for a week."},
+  "O jogo gasta uma unidade de cada festa que estiver no estoque.": {es:"El partido gasta una unidad de cada fiesta que haya en stock.", en:"The game uses one of each display in stock."},
+  "Enfraquecer o rival": {es:"Debilitar al rival", en:"Weakening the rival"},
+  "Marque o ataque no Planejamento: contra quem, onde e com quantos. Ou aceite os botes que a diretoria sugere: no bar deles, na reunião deles na praça, na resenha da casa de piscina.": {es:"Marque el ataque en la Planificación: contra quién, dónde y con cuántos. O acepte los golpes que sugiere la directiva: en su bar, en su reunión en la plaza, en la juntada de la casa con pileta.", en:"Set up the attack in Planning: against whom, where and with how many. Or accept the hits the board suggests: at their bar, at their meeting in the square, at the pool-house hangout."},
+  "Cada vitória tira moral e prestígio deles e deixa feridos e presos do lado deles, o que derruba o ranking deles. No bar, a gente leva o caixa e o bar fica rendendo metade por 45 dias. Tomar a faixa deles dói muito lá.": {es:"Cada victoria les quita moral y prestigio y deja heridos y presos de su lado, lo que baja su ranking. En el bar nos llevamos la caja y el bar rinde la mitad por 45 días. Quitarles el trapo les duele mucho.", en:"Every win takes morale and prestige from them and leaves them with injured and jailed members, which drops their ranking. At the bar we take the till and the bar earns half for 45 days. Taking their banner really hurts them."},
+  "Quando atacarem a gente, desça: segurar o ataque rende moral e prestígio.": {es:"Cuando nos ataquen, baje: aguantar el ataque da moral y prestigio.", en:"When they attack us, show up: holding them off earns morale and prestige."},
+  "Quem tenta três vezes e não consegue desiste de vir atrás.": {es:"Quien intenta tres veces y no lo logra deja de venir a buscarnos.", en:"Whoever tries three times and fails stops coming after us."},
+  "Aliados recebem a nossa caravana e ajudam fora de casa. Rivais abaixo de −55 estão em guerra aberta.": {es:"Los aliados reciben nuestra caravana y ayudan de visitante. Los rivales por debajo de −55 están en guerra abierta.", en:"Allies host our convoy and help away from home. Rivals below −55 are at open war."},
+  "Na briga": {es:"En la pelea", en:"In the fight"},
+  "Joystick ou WASD movem o líder e o bonde vai junto. Q bate, F agarra, C chama o bonde, 2 joga pedra, 3 mira a bomba, V muda a postura (massacrar, tomar a faixa, proteger), R recua, X foge.": {es:"El joystick o WASD mueven al líder y la banda lo sigue. Q golpea, F agarra, C llama a la banda, 2 tira piedra, 3 apunta la bomba, V cambia la postura (masacrar, quitar el trapo, proteger), R retrocede, X huye.", en:"The joystick or WASD move the leader and the crew follows. Q hits, F grabs, C calls the crew, 2 throws a stone, 3 aims the bomb, V changes the stance (smash, take the banner, protect), R falls back, X runs."},
+  "A briga acaba no número: o lado que perde gente demais corre. A PM aparta e prende.": {es:"La pelea se define por número: el lado que pierde demasiada gente corre. La policía separa y detiene.", en:"The fight is decided by numbers: the side that loses too many people runs. The police break it up and make arrests."},
+  "Quem não quiser jogar a cena pode tocar em Simular: as consequências são as mesmas.": {es:"Quien no quiera jugar la escena puede tocar Simular: las consecuencias son las mismas.", en:"If you don't want to play the scene, tap Simulate: the consequences are the same."},
+  "Pronto, presidente": {es:"Listo, presidente", en:"All set, president"},
+  "Recrute → treine e promova → fature → compre patrimônio → festa no estádio e dinheiro no time → brigue pra subir o prestígio e enfraquecer os rivais. O tutorial fica no menu Jogo, é só chamar de novo.": {es:"Reclute → entrene y ascienda → facture → compre patrimonio → fiesta en el estadio y plata para el equipo → pelee para subir el prestigio y debilitar a los rivales. El tutorial queda en el menú Juego, solo hay que llamarlo de nuevo.", en:"Recruit → train and promote → make money → buy assets → displays at the stadium and money for the team → fight to raise prestige and weaken rivals. The tutorial stays in the Game menu, just open it again."},
   "Festa": {es:"Fiesta", en:"Party"},
   "Aliados": {es:"Aliados", en:"Allies"},
   "Fechou {mes}: o mês deu {saldo} de lucro.": {es:"Cerró {mes}: el mes dio {saldo} de ganancia.", en:"{mes} is closed: the month made {saldo} in profit."},
@@ -37870,7 +37945,7 @@ TO.feed = (function(){
   /* (a briga de bairro voltou em 18/11/2026: a reunião e o bar, sem domínio) */
   const FORA_DO_FEED = new Set(['veredicto', 'protesto-ct', 'status', 'entrevista', 'convites']);
   /* o que o feed deixa passar antes do primeiro dia de jogo */
-  const ANTES_DA_ESTREIA = new Set(['dica', 'almanaque', 'semana', 'investida-cidade', 'guerra', 'confronto']);
+  const ANTES_DA_ESTREIA = new Set(['tutorial', 'dica', 'almanaque', 'semana', 'investida-cidade', 'guerra', 'confronto']);
   function propor(E, msg){
     caixas(E);
     /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) — menos
@@ -38131,7 +38206,7 @@ TO.feed = (function(){
     return TO.financeiro.diasDeCaravana(E).includes(E.data.dia);
   }
   const calado = E => E.estreou === false && !diaDoNossoJogo(E);
-  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica', 'almanaque',
+  const PASSOS_DA_ESTREIA = new Set(['tutorial', 'diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica', 'almanaque',
                                        /* o planejamento: o cartão de segunda, a pergunta da diretoria e o dia da investida */
                                        'semana', 'investida na cidade', 'dia de jogo']);
 
@@ -38147,6 +38222,7 @@ TO.feed = (function(){
     finally{ if(jogoHoje) E.estreou = true; }
   }
   function eventosDoDiaCru(E, ctx, passo){
+    passo('tutorial',       ()=>conviteDoTutorial(E));
     passo('resultado guardado', ()=>soltarDepoisDoJogo(E));
     passo('posts do dia',   ()=>publicarAgendadas(E));
     passo('tréguas',        ()=>treguasDoDia(E));
@@ -38538,6 +38614,22 @@ TO.feed = (function(){
     _t('Chefe, é bom sempre ficar monitorando quais membros estão aptos pra ser promovidos, assim nossa torcida fica mais forte.'),
     _t('Chefe, nós podemos atacar rivais que estejam na cidade mesmo que eles não estejam em um jogo contra o nosso time. Se eles vierem pra um jogo contra o rival a gente pode emboscar. Vai aparecer a oportunidade em Planejamento.')
   ];
+  /* O CONVITE DO TUTORIAL (dono, 18/11/2026: "Vamos voltar com a
+     mensagem de início do jogo perguntando se quer tutorial"): a primeira
+     mensagem da partida nova, antes do cartão do planejamento (é o
+     primeiro passo do dia). Quem abre o tutorial não recebe as dicas de
+     antes da estreia — o conteúdo é o mesmo. Save antigo (já estreado)
+     não recebe o convite; o tutorial fica no menu Jogo. */
+  function conviteDoTutorial(E){
+    if(E.estreou !== false || E.tutorialConvite) return null;
+    if((E.data.absoluto || 0) < (E.inicioAbs || 0)) return null;   // os dias pulados até o começo
+    const mt = propor(E, {kind:'tutorial', peso:'decisao', voz:'diretor', chave:'tutorial|convite',
+      texto:_t('Fala, presidente! A torcida agora é sua. Quer que a diretoria explique como as coisas funcionam e como fazer a torcida crescer?'),
+      botoes:[{id:'sim', rot:_t('📖 Quero o tutorial'), acao:'tutorial-abrir'},
+              {id:'nao', rot:_t('Já sei jogar'), acao:'tutorial-nao'}]});
+    if(mt) E.tutorialConvite = true;
+    return mt;
+  }
   function dicaDeHoje(E){
     const n0 = E.dicasDoComeco || 0;
     /* O RELÓGIO DAS DICAS É O DA PARTIDA, não o do ano (18/11/2026): a
@@ -38547,6 +38639,9 @@ TO.feed = (function(){
     /* (os dias pulados até o começo da partida não dão dica: elas sairiam
        e seriam apagadas junto com o resto do feed calado) */
     if(desde < 0) return;
+    /* (antes da estreia, dica só pra quem respondeu "Já sei jogar": quem
+       abriu o tutorial já leu tudo, e no dia do convite ainda não há resposta) */
+    if(E.estreou === false && E.tutorialConvite && E.tutorialNovo !== 'nao') return;
     /* MENOS DICAS ATÉ O PRIMEIRO JOGO (dono, 18/11/2026): antes da estreia
        saem só duas, no dia em que a partida abre e três dias depois; as
        outras da lista vêm depois do primeiro jogo, uma a cada três dias.
@@ -42993,6 +43088,15 @@ TO.feed = (function(){
         return {ok:true};
       case 'ciente':
         marcar();
+        return {ok:true};
+      /* o convite do tutorial (18/11/2026; `E.tutorial` é o do tutorial
+         antigo, de save velho — o novo mora em `E.tutorialNovo`) */
+      case 'tutorial-abrir':
+        marcar(); E.tutorialNovo = 'visto';
+        return {ok:true, abrir:{tela:'tutorial'}};
+      case 'tutorial-nao':
+        marcar(); E.tutorialNovo = 'nao';
+        m.consequencia = _t('Fechado, chefe. O tutorial fica no menu Jogo.');
         return {ok:true};
       case 'investida-cidade':
         PL().definirInvestida(E, b.args.chaveJogo, {alvo:b.args.alvo, como:'arredores', olheiro:null});
@@ -66530,6 +66634,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       decisaoAberta = r.abrir.cancelavel
         ? {id, botao: r.abrir.botao || idBotao} : null;
       if(t === 'tela-ataque') abrirAtaque(a.ctx);
+      else if(t === 'tutorial') abrirTutorial();
       else if(t === 'painel-expediente'){ abaCal = 'expediente';
                                           abrirPainel('calendario'); }
       else if(t === 'tela-caravana') abrirCaravana();
@@ -66748,6 +66853,16 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       av.innerHTML = `<b>${_t('O último save não gravou.')}</b>`+
         `<span>${ultimaFalhaSave.motivo}</span>`;
       pg.appendChild(av);
+    }
+
+    /* ---------- o tutorial (18/11/2026) ---------- */
+    {
+      const qt = quadro(_t('Tutorial'), el('span',{class:'conta', texto:_t('como a torcida funciona e cresce')}));
+      const bt = el('button',{class:'bt destaque', texto:_t('📖 Abrir o tutorial')});
+      bt.onclick = ()=>{ if(e) e.tutorialNovo = 'visto'; abrirTutorial(); };
+      const lin = el('div',{class:'tut-abrir'}); lin.appendChild(bt);
+      qt.corpo.appendChild(lin);
+      pg.appendChild(qt);
     }
 
     const duas = el('div',{class:'comp-duas'});
@@ -67430,6 +67545,134 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
   }
 
   /* ---------- relatório do fechamento (GDD §3.2 e §7) ---------- */
+  /* =======================================================
+     O TUTORIAL (dono, 18/11/2026: "Refaça do zero o tutorial só com
+     textos e símbolos falando o que cada coisa faz e como fazer a
+     torcida evoluir"). Uma janela por cima do jogo, uma página por
+     assunto: o símbolo grande, o título e as linhas curtas, cada uma
+     com o seu símbolo (⬆️ sobe, ⬇️ cai, 💡 a dica). Voltar, Avançar e
+     Fechar; o tempo fica parado enquanto ela está aberta (`modal`).
+     O texto foi aprovado pelo dono antes de entrar.
+     ======================================================= */
+  function paginasDoTutorial(){
+    const L = (sb, t) => ({sb, t});
+    return [
+      {ic:'🎯', titulo:_t('O objetivo'), texto:_t('Você é o presidente. A meta é ter a torcida mais temida e mais rica do país: mais gente, mais força, mais patrimônio e o topo do ranking. E, de quebra, empurrar o time pra cima.')},
+      {ic:'🧭', titulo:_t('Cada tela'), linhas:[
+        L('📰', _t('Feed: as mensagens da diretoria. Uma decisão sem resposta para o tempo.')),
+        L('👥', _t('Torcida: os membros, com força, defesa, cargo e quem está ferido ou preso.')),
+        L('💰', _t('Financeiro: o caixa, a Loja, o Patrimônio e o Elenco (o dinheiro pro time).')),
+        L('🗓️', _t('Calendário: o Expediente da Sede e a agenda do time.')),
+        L('📋', _t('Planejamento: toda segunda você decide como a torcida vai pra cada jogo.')),
+        L('🏆', _t('Competições, Ranking, Diplomacia e Notícias: a tabela, o ranking das torcidas, aliados e rivais, e os jornais.')),
+        L('⏩', _t('O dia corre sozinho: o ≫ pula pro dia seguinte e o 1×/2× muda a velocidade.'))]},
+      {ic:'⭐', titulo:_t('Prestígio — o respeito na rua'), linhas:[
+        L('⬆️', _t('Sobe: vencer brigas, segurar um ataque contra a gente, tomar a faixa de um rival (+10) ou a bandeira (+5).')),
+        L('⬇️', _t('Cai: perder briga, perder a nossa faixa (−20), fugir, ficar 20 dias sem briga, campanha de PIX, deixar quieto um bote que a diretoria sugeriu.')),
+        L('💡', _t('Faz o bar e a loja renderem mais, atrai doação de simpatizante, conta em dobro no ranking e libera subsede em outra cidade a partir de 60.'))]},
+      {ic:'⚡', titulo:_t('Moral — o ânimo da torcida'), linhas:[
+        L('⬆️', _t('Sobe: o time vencer (+3), título (+12,5), acesso, vencer brigas, segurar ataque, tomar faixa, visitar os feridos.')),
+        L('⬇️', _t('Cai: o time perder (−3), rebaixamento, caixa no vermelho (−5 por semana), perder a faixa, ninguém descer quando atacam a gente, 20 dias sem briga.')),
+        L('💡', _t('Com moral alta o comércio rende até 1,3× (com moral baixa, só 0,4×), e mais gente topa viajar na caravana.'))]},
+      {ic:'👥', titulo:_t('Mais membros'), linhas:[
+        L('🗓️', _t('Deixe "Recrutar" num turno do Expediente: cada turno pode trazer 1 ou 2 novatos (R$ 5 cada).')),
+        L('⚽', _t('A chance cresce com o time ganhando. Título ou acesso abre semanas de recrutamento forte; rebaixamento fecha a porta.')),
+        L('🏠', _t('Sem vaga não entra ninguém. A sede manda: o nível 1 comporta 60, o 3 comporta 160 e o 6 comporta 550. Subsede em outra cidade soma vagas.'))]},
+      {ic:'💪', titulo:_t('Torcida mais forte'), linhas:[
+        L('🥊', _t('O treino é automático, todo dia. A sede maior treina mais gente por dia.')),
+        L('🎖️', _t('Promova quem está apto (Torcida): Novato → Componente → Linha de Frente → Diretoria. Cada cargo sobe o limite de força e defesa.')),
+        L('🥋', _t('Professor de MMA (Loja → Pessoal) acelera o treino até 2×. O padrinho de treino da Velha Guarda dá +15% no dia.')),
+        L('🩹', _t('Ferido e preso não treinam nem brigam. Visite os feridos no Expediente e tenha advogado pra quem cair preso.'))]},
+      {ic:'💰', titulo:_t('Como faturar'), linhas:[
+        L('💵', _t('Mensalidades: todo mês, por cargo. Novato R$ 20, Componente R$ 50, Linha de Frente e Diretoria R$ 100.')),
+        L('🍺', _t('Bar, loja e subsede: rendem toda semana, e mais com prestígio, membros e moral altos.')),
+        L('🎉', _t('Festa na sede (Expediente): lucra se vier gente, e a diretoria avisa quando der prejuízo.')),
+        L('📲', _t('Campanha de PIX (Expediente): arrecada, mas custa prestígio.')),
+        L('🎟️', _t('Ingressos: com a relação com o clube boa, ele cede ingressos pra vender nos jogos em casa.')),
+        L('🤲', _t('Doação de simpatizante: de vez em quando, maior com prestígio alto.')),
+        L('🏴', _t('Bote no bar rival: vencendo, a gente leva parte do caixa deles.')),
+        L('🕶️', _t('Assalto: até 3 por ano, quando a diretoria propõe. Rende muito, mas tem polícia e prisão.')),
+        L('⚠️', _t('Caixa no vermelho derruba a moral toda semana, e 30 dias assim fazem uma loja ser vendida na marra.'))]},
+      {ic:'🏠', titulo:_t('Patrimônio'), linhas:[
+        L('🏛️', _t('A sede vai do nível 0 ao 6, de R$ 30 mil a R$ 1 milhão. Ela libera tudo: membros, diretores, treino e quantos bares e lojas cabem.')),
+        L('🍺', _t('Bar e loja se compram e se ampliam até o nível 3. A loja rende mais que o bar.')),
+        L('🗺️', _t('Subsede em outra cidade: um núcleo que recruta e briga por lá.')),
+        L('🚌', _t('Ônibus baratam a caravana. A enfermaria, o galpão e a área de treino são anexos da sede.')),
+        L('💡', _t('Quando o caixa encher, a diretoria sugere a compra e o botão leva direto à Loja.'))]},
+      {ic:'🏅', titulo:_t('Subir no ranking'), linhas:[
+        L('🧮', _t('A conta: (membros de pé + prestígio × 2) × média de força e defesa × situação financeira.')),
+        L('⬆️', _t('Pra subir: mais gente, prestígio alto, membros treinados e caixa saudável. O caixa vai de "endividado" (0,6×) a "rico" (1,6×).')),
+        L('🩹', _t('Ferido e preso saem da conta.'))]},
+      {ic:'⚽', titulo:_t('Ajudar o time a subir'), linhas:[
+        L('💸', _t('Em Financeiro → Elenco a torcida injeta dinheiro no time: cada ponto de força custa de R$ 20 mil (time fraco) a R$ 320 mil (time no topo).')),
+        L('📈', _t('Time mais forte ganha mais jogos, briga por acesso e título, e isso devolve moral e recrutamento pra torcida.'))]},
+      {ic:'🥁', titulo:_t('Festa na arquibancada'), linhas:[
+        L('🎊', _t('Na Loja → Festa: papel picado (+4%, R$ 3 mil), trapos (+5%, R$ 6 mil), bandeirão (+8%, R$ 12 mil), mosaico (+10%, R$ 20 mil) e mosaico 3D (+13%, R$ 35 mil).')),
+        L('⚽', _t('Cada festa empurra o time no placar do próximo jogo em que a torcida estiver no estádio. Juntas, somam até +40% de chance.')),
+        L('🥁', _t('O treino de bateria no Expediente dá +20% nos jogos em casa por uma semana.')),
+        L('💡', _t('O jogo gasta uma unidade de cada festa que estiver no estoque.'))]},
+      {ic:'⚔️', titulo:_t('Enfraquecer o rival'), linhas:[
+        L('🗓️', _t('Marque o ataque no Planejamento: contra quem, onde e com quantos. Ou aceite os botes que a diretoria sugere: no bar deles, na reunião deles na praça, na resenha da casa de piscina.')),
+        L('🥊', _t('Cada vitória tira moral e prestígio deles e deixa feridos e presos do lado deles, o que derruba o ranking deles. No bar, a gente leva o caixa e o bar fica rendendo metade por 45 dias. Tomar a faixa deles dói muito lá.')),
+        L('🛡️', _t('Quando atacarem a gente, desça: segurar o ataque rende moral e prestígio.')),
+        L('🔁', _t('Quem tenta três vezes e não consegue desiste de vir atrás.')),
+        L('🤝', _t('Aliados recebem a nossa caravana e ajudam fora de casa. Rivais abaixo de −55 estão em guerra aberta.'))]},
+      {ic:'🥊', titulo:_t('Na briga'), linhas:[
+        L('🕹️', _t('Joystick ou WASD movem o líder e o bonde vai junto. Q bate, F agarra, C chama o bonde, 2 joga pedra, 3 mira a bomba, V muda a postura (massacrar, tomar a faixa, proteger), R recua, X foge.')),
+        L('📉', _t('A briga acaba no número: o lado que perde gente demais corre. A PM aparta e prende.')),
+        L('🎲', _t('Quem não quiser jogar a cena pode tocar em Simular: as consequências são as mesmas.'))]},
+      {ic:'✅', titulo:_t('Pronto, presidente'), texto:_t('Recrute → treine e promova → fature → compre patrimônio → festa no estádio e dinheiro no time → brigue pra subir o prestígio e enfraquecer os rivais. O tutorial fica no menu Jogo, é só chamar de novo.')}
+    ];
+  }
+  function abrirTutorial(){
+    const P = paginasDoTutorial();
+    let i = 0, fechar = null;
+    const corpo = el('div',{class:'tutorial'});
+    const pintar = ()=>{
+      const pg = P[i];
+      corpo.innerHTML = '';
+      corpo.appendChild(el('div',{class:'tut-passo', texto:_t('{n} de {t}', {n:i + 1, t:P.length})}));
+      const cab = el('div',{class:'tut-cab'});
+      cab.appendChild(el('span',{class:'tut-ic', texto:pg.ic}));
+      cab.appendChild(el('h3',{texto:pg.titulo}));
+      corpo.appendChild(cab);
+      if(pg.texto) corpo.appendChild(el('p',{class:'tut-texto', texto:pg.texto}));
+      if(pg.linhas){
+        const ul = el('ul',{class:'tut-linhas'});
+        for(const l of pg.linhas){
+          const li = el('li');
+          li.appendChild(el('span',{class:'tut-sb', texto:l.sb}));
+          li.appendChild(el('span',{class:'tut-t', texto:l.t}));
+          ul.appendChild(li);
+        }
+        corpo.appendChild(ul);
+      }
+      const pontos = el('div',{class:'tut-pontos'});
+      P.forEach((_, k)=>{ const b = el('button',{class:'tut-ponto' + (k === i ? ' on' : ''), title:P[k].titulo});
+        b.setAttribute('aria-label', P[k].titulo); b.onclick = ()=>{ i = k; pintar(); }; pontos.appendChild(b); });
+      corpo.appendChild(pontos);
+      const nav = el('div',{class:'tut-nav'});
+      const voltar = el('button',{class:'bt', texto:_t('← Voltar')});
+      voltar.disabled = i === 0;
+      voltar.onclick = ()=>{ if(i > 0){ i--; pintar(); } };
+      const ultima = i === P.length - 1;
+      const avancar = el('button',{class:'bt destaque', texto: ultima ? _t('Fechar') : _t('Avançar →')});
+      avancar.onclick = ()=>{ if(ultima){ if(fechar) fechar(); } else { i++; pintar(); } };
+      nav.appendChild(voltar); nav.appendChild(avancar);
+      corpo.appendChild(nav);
+      const rolo = corpo.closest('.moldura');
+      if(rolo) rolo.scrollTop = 0;
+    };
+    pintar();
+    fechar = modal(_t('Tutorial'), _t('como a torcida funciona e cresce'), corpo, [], 'estreita');
+    const teclas = ev => {
+      if(!corpo.isConnected){ document.removeEventListener('keydown', teclas); return; }
+      if(ev.key === 'ArrowRight' && i < P.length - 1){ i++; pintar(); }
+      else if(ev.key === 'ArrowLeft' && i > 0){ i--; pintar(); }
+    };
+    document.addEventListener('keydown', teclas);
+  }
+
   function abrirFechamento(rel){
     const corpo = el('div',{class:'fecho'});
 

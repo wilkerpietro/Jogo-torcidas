@@ -1655,9 +1655,16 @@ Resultado: `acoes.fecharBairro` (6.4) e o ponto na barra do bairro (`dominio.con
 
 **Pauta dos jogos** (`pautaDosJogos`, `pautaDaCidade`): monta, para a tela de planejamento da semana, os jogos da nossa cidade (e das cidades de filial), com as torcidas que estarão na rua, a faixa de efetivo de cada uma, quem é hostil, e as aliadas que chegam.
 
-## 10. Tutorial (removido) e os protótipos "Desenvolvimento" e "Influência"
+## 10. Tutorial e os protótipos "Desenvolvimento" e "Influência"
 
-### 10.1 Tutorial (`js/gestao/tutorial.js`, `TO.tutorial`) — removido em 13/11/2026
+### 10.0 O tutorial de texto (18/11/2026)
+
+- **O convite**: a primeira mensagem da partida nova (`conviteDoTutorial`, o primeiro passo do dia, antes do cartão do planejamento; `kind:'tutorial'`, decisão). "📖 Quero o tutorial" (`acao:'tutorial-abrir'`) abre a janela; "Já sei jogar" (`'tutorial-nao'`) fecha com "Fechado, chefe. O tutorial fica no menu Jogo.". A resposta mora em `E.tutorialNovo` (`'visto'` / `'nao'`); `E.tutorial` é o campo do tutorial antigo, de save velho. Save já estreado não recebe o convite.
+- **As dicas**: antes da estreia só saem pra quem respondeu "Já sei jogar"; quem abriu o tutorial não recebe nenhuma até o primeiro jogo.
+- **A janela** (`abrirTutorial`, com `paginasDoTutorial`, no pacote): 14 páginas de texto e símbolos — o objetivo, cada tela, prestígio, moral, mais membros, torcida mais forte, como faturar, patrimônio, ranking, ajudar o time (o Elenco), festa na arquibancada, enfraquecer o rival, na briga e o resumo. Cada página tem o símbolo grande, o título e as linhas com o seu símbolo (⬆️ sobe, ⬇️ cai, 💡 a dica). Voltar, Avançar, os pontos que levam direto a uma página, as setas do teclado e o Fechar; o tempo para enquanto está aberta. Texto aprovado pelo dono; traduzido em espanhol e inglês.
+- **No menu Jogo**: o quadro "Tutorial" com "📖 Abrir o tutorial", a qualquer hora.
+
+### 10.1 Tutorial antigo (`js/gestao/tutorial.js`, `TO.tutorial`) — removido em 13/11/2026
 
 **O tutorial não é mais carregado nem oferecido.** O arquivo continua no repositório; o que segue descreve como ele era.
 

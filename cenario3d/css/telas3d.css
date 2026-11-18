@@ -421,3 +421,24 @@ body.jogo3d #djPalco{margin-inline:auto;border-color:var(--linha);border-radius:
 .fin-mes .negativo{color:var(--rubro-vivo, #e0453d)}
 .msg-bts-link{margin-top:10px}
 @media (max-width: 520px){ .fin-mes .fm-tile b{font-size:14px} }
+
+/* O TUTORIAL (18/11/2026): uma página por assunto, o símbolo grande, o
+   título e as linhas com o símbolo de cada uma; os pontos levam direto a
+   uma página */
+.tutorial{display:flex;flex-direction:column;gap:12px}
+.tutorial .tut-passo{font-family:var(--mono);font-size:12px;color:var(--fraco);letter-spacing:.06em}
+.tutorial .tut-cab{display:flex;align-items:center;gap:12px}
+.tutorial .tut-ic{font-size:40px;line-height:1}
+.tutorial .tut-cab h3{margin:0;font-family:var(--titulo);font-size:24px;letter-spacing:.02em;line-height:1.1}
+.tutorial .tut-texto{margin:0;font-size:16.5px;line-height:1.5;color:var(--texto)}
+.tutorial .tut-linhas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.tutorial .tut-linhas li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;
+  padding:10px 12px;border:1px solid var(--linha);border-radius:8px;background:#1b1b1b}
+.tutorial .tut-sb{font-size:20px;line-height:1.25;text-align:center}
+.tutorial .tut-t{font-size:15.5px;line-height:1.45;color:var(--texto)}
+.tutorial .tut-pontos{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:2px}
+.tutorial .tut-ponto{width:10px;height:10px;padding:0;border-radius:50%;border:1px solid var(--linha);background:#2a2a2a;cursor:pointer}
+.tutorial .tut-ponto.on{background:var(--marca, #f1efe8);border-color:var(--marca, #f1efe8)}
+.tutorial .tut-nav{display:flex;justify-content:space-between;gap:10px}
+.tutorial .tut-nav .bt{min-height:44px;flex:1 1 0}
+.tut-abrir{padding:14px 16px}

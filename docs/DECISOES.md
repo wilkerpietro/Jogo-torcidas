@@ -15821,6 +15821,49 @@ jogo e o primeiro jogo."
 - **Conferido:** dois anos simulados (TUF e Gaviões) sem erro, e no celular o feed com a compra e o mês, o "Ir pra
   loja" abrindo a loja em Pontos e a agenda do time.
 
+## O tutorial volta, só com texto e símbolos (dono, 18/11/2026)
+
+Pedidos: "Vamos voltar com a mensagem de início do jogo perguntando se quer tutorial, e você vai montar o tutorial do zero
+dizendo o que acha de importante. Antes de colocar no jogo você vai me dizer aqui tudo que pretende colocar." Depois da
+primeira proposta (passeio pelas telas com destaque, treino de briga e dicas de primeira vez): "Refaça do zero o
+tutorial só com textos e símbolos falando o que cada coisa faz e como fazer a torcida evoluir", com prestígio, moral,
+força, membros, patrimônio, ranking, dinheiro no time, enfraquecer o rival, festa na arquibancada e as formas de
+faturar. A segunda proposta, em 14 páginas, foi aprovada inteira ("Ficou ótimo. Pode manter tudo.").
+
+- **O convite** é a primeira mensagem da partida nova, antes do cartão do planejamento: "Fala, presidente! A torcida
+  agora é sua. Quer que a diretoria explique como as coisas funcionam e como fazer a torcida crescer?".
+  - **Os botões:** "📖 Quero o tutorial" e "Já sei jogar". O segundo fecha com "Fechado, chefe. O tutorial fica no
+    menu Jogo."
+  - **Segura o tempo** até a resposta.
+  - **Save já estreado** não recebe o convite.
+- **As dicas:** quem abre o tutorial não recebe nenhuma dica antes do primeiro jogo, porque o conteúdo é o mesmo. Quem
+  responde "Já sei jogar" recebe as duas de antes.
+- **A janela** tem uma página por assunto: o símbolo grande, o título e as linhas curtas, cada uma com o seu símbolo
+  (⬆️ sobe, ⬇️ cai, 💡 a dica).
+  - **As 14 páginas:** o objetivo, cada tela, prestígio, moral, mais membros, torcida mais forte, como faturar,
+    patrimônio, subir no ranking, ajudar o time a subir, festa na arquibancada, enfraquecer o rival, na briga e o
+    resumo.
+  - **A navegação:** Voltar e Avançar, os pontos que levam direto a uma página, as setas do teclado e o Fechar. O tempo
+    para enquanto ela está aberta.
+  - **Os idiomas:** o texto vai em espanhol e inglês também.
+- **No menu Jogo**, o quadro "Tutorial" abre a janela a qualquer hora.
+- **Os números das páginas saem das regras de hoje:**
+  - prestígio: faixa +10 e bandeira +5, perder a faixa −20;
+  - moral: vitória ±3, título +12,5, caixa no vermelho −5 por semana, comércio de 0,4× a 1,3×;
+  - mensalidades por cargo;
+  - lotação da sede: 60, 160 e 550;
+  - ponto de força do time: de R$ 20 mil a R$ 320 mil;
+  - as cinco festas, de +4% a +13%, somando +40%, e a bateria +20%;
+  - o ranking: (de pé + prestígio × 2) × força e defesa × situação financeira, de 0,6× a 1,6×.
+- **Dois nomes antigos em choque.** Já havia um tratamento antigo da ação `tutorial`, que só fechava a mensagem de save
+  velho, e o campo `E.tutorial`, do tutorial antigo. O novo usa `tutorial-abrir` e `E.tutorialNovo`.
+- **Conferido no celular:**
+  - o convite é a primeira mensagem;
+  - o botão abre a janela e as 14 páginas vão até o Fechar;
+  - nenhuma dica até a estreia pra quem abriu;
+  - o botão no menu Jogo;
+  - um ano simulado sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
