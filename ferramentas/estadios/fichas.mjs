@@ -21,16 +21,18 @@ const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 /* o Castelão (dono, 18/11/2026): os trechos do lance de baixo entre os quatro vãos dos escanteios (o canto fica a uns 34° do
    eixo), a lateral sul de quatro lances, o camarote e o lance de cima */
 /* OS VÃOS DOS ESCANTEIOS (dono, 18/11/2026: "Os vãos na parte inferior existem nos 4 escanteios. Na parte superior só nos
-   2"; os ângulos saem do mapa de setores que ele mandou, calibrado pelo contorno do lance de baixo — o norte do mapa fica à
-   esquerda da tela, então a lateral Oeste, a Premium dos camarotes, é a de baixo). Do lado da Bossa Nova (em cima na tela) o
-   vão é quase radial e só corta o lance de baixo, em 38° e 143,5°. Do lado dos camarotes ele é uma faixa reta que sai do
-   canto do campo e corta os dois lances, inclinada pra fora: no lance de baixo fica em 224° e 316°, no de cima em 234° e
-   306° — e a lateral de quatro lances vai de um vão de cima ao outro */
-const CAST_VAOS_BAIXO = [[36, 40], [141.5, 145.5], [221.5, 226.5], [313.5, 318.5]];
-const CAST_VAOS = [[231.5, 236.5], [303.5, 308.5]];
-const CAST_CANTOS = [[-41.5, 36], [40, 141.5], [145.5, 221.5], [226.5, 313.5]];
+   2"; os ângulos saem dos mapas de setores que ele mandou — o norte do mapa fica à esquerda da tela, então a lateral Oeste,
+   a Premium dos camarotes, é a de baixo). Do lado da Bossa Nova (em cima na tela) o vão é quase radial e só corta o lance de
+   baixo, em 38° e 143,5°. Do lado dos camarotes o vão é uma faixa RETA, perpendicular à lateral (`corteDe`/`corteAte`, em u),
+   e o de cima NÃO continua o de baixo ("os vãos da superior da lateral sul não estão alinhados com os inferiores"): o de baixo
+   encosta no canto do campo (u de 46,5 a 50 m) e o de cima fica uns 6 m mais pra fora (de 52,5 a 56 m). Os ângulos aqui são
+   só a referência, onde a reta passa no meio da fundura */
+const CAST_VB = [46.5, 50], CAST_VC = [52.5, 56];
+const CAST_CANTOS = [[-43.2, 36, { corteDe: CAST_VB[1] }], [40, 141.5], [145.5, 223.2, { corteAte: -CAST_VB[1] }], [225.3, 314.7, { corteDe: -CAST_VB[0], corteAte: CAST_VB[0] }]];
+const CAST_VAOS_BAIXO = [[36, 40], [141.5, 145.5], [223.2, 225.3, { corteDe: -CAST_VB[1], corteAte: -CAST_VB[0] }], [314.7, 316.8, { corteDe: CAST_VB[0], corteAte: CAST_VB[1] }]];
+const CAST_VAOS = [[236.6, 238.3, { corteDe: -CAST_VC[1], corteAte: -CAST_VC[0] }], [301.7, 303.4, { corteDe: CAST_VC[0], corteAte: CAST_VC[1] }]];
 /* (a lateral sul de quatro lances vai de vão a vão, como na foto do canto: os camarotes chegam até o vão do escanteio) */
-const CAST_SUL = [236.5, 303.5];
+const CAST_SUL = [238.3, 301.7], CAST_SUL_CORTE = { corteDe: -CAST_VC[0], corteAte: CAST_VC[0] };
 /* o vidro VERDE-ESCURO dos camarotes (dono, 18/11/2026: "A fachada da parte do camarote é um vidro de cor verde escuro") */
 const CAST_VIDRO = '#1f3a31';
 /* o camarote: quatro fileiras de cadeira na frente das salas de vidro, separadas pelos montantes claros (a foto do canto sul) */
@@ -58,8 +60,8 @@ export const FICHAS = {
          só tem o vão nos dois cantos da lateral sul): o lance de baixo para em cada canto num vão de uns 6 m — o túnel da rampa que
          desce até o gramado, com a escada de cada lado —, debaixo do anel de circulação, que passa por cima */
       { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 80, b: 62, r: 46 }, h: [1.2, 11], fileiras: 12,
-        trechos: CAST_CANTOS.map(([de, ate]) => ({ de, ate, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false, escadaNaBorda: true }))
-          .concat(CAST_VAOS_BAIXO.map(([de, ate]) => ({ de, ate, tipo: 'passagem', cor: '#b9b7ae' }))) },
+        trechos: CAST_CANTOS.map(([de, ate, c]) => ({ de, ate, ...c, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false, escadaNaBorda: true }))
+          .concat(CAST_VAOS_BAIXO.map(([de, ate, c]) => ({ de, ate, ...c, tipo: 'passagem', cor: '#b9b7ae' }))) },
       /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes: o fundo dele é o VIDRO ESCURO dos camarotes,
          com as luzes (a faixa escura entre os dois lances, na foto de frente e na panorâmica) */
       { dentro: { a: 80, b: 62, r: 46 }, fora: { a: 84, b: 66, r: 50 }, h: [11.1, 11.1], fileiras: 2, corredorFrente: 0,
@@ -71,18 +73,18 @@ export const FICHAS = {
          no mesmo plano do vidro, tapava as salas). Na foto do canto sul (18/11/2026) cada um tem quatro fileiras na frente das salas de
          vidro verde-escuro, uma sala separada da outra por um montante claro */
       { dentro: { a: 84.3, b: 66.3, r: 50.3 }, fora: { a: 89, b: 71, r: 55 }, h: [12.4, 14.6], fileiras: 4, corredorFrente: 1,
-        trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
+        trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_SUL_CORTE, ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
       { dentro: { a: 89.3, b: 71.3, r: 55.3 }, fora: { a: 94, b: 76, r: 60 }, h: [17.8, 20], fileiras: 4, corredorFrente: 1,
-        trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
+        trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_SUL_CORTE, ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
       /* o lance de cima: as bocas abrem logo acima da frente, uma em cada escada, e a escada sobe delas (as caixas com a placa
          verde, nas fotos de 18/11/2026); na lateral sul ele começa atrás dos camarotes, mais alto */
       { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 128, b: 108, r: 90 }, h: [14, 34], fileiras: 18,
         trechos: [
           /* (os escanteios cortam também o lance de cima: a lateral é um bloco e o de trás do gol é outro, com o vão escuro
              entre eles — a foto do canto sul, 18/11/2026; o vão fica na altura do anel de circulação) */
-          { de: -51.5, ate: 231.5, ...CAST_CIMA },
-          { de: CAST_SUL[0], ate: CAST_SUL[1], dentro: { a: 94.3, b: 76.3, r: 60.3 }, h: [22.6, 36], ...CAST_CIMA, corFachada: CAST_VIDRO, paineis: null },
-          ...CAST_VAOS.map(([de, ate]) => ({ de, ate, tipo: 'passagem', alt: 11.1, paredeAte: 36.5, cor: '#5f6262', corFachada: '#5d6265' }))] }
+          { de: -56.6, ate: 236.6, corteDe: CAST_VC[1], corteAte: -CAST_VC[1], ...CAST_CIMA },
+          { de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_SUL_CORTE, dentro: { a: 94.3, b: 76.3, r: 60.3 }, h: [22.6, 36], ...CAST_CIMA, corFachada: CAST_VIDRO, paineis: null },
+          ...CAST_VAOS.map(([de, ate, c]) => ({ de, ate, ...c, tipo: 'passagem', alt: 11.1, paredeAte: 36.5, cor: '#5f6262', corFachada: '#5d6265' }))] }
     ],
     /* A COBERTURA É UMA PEÇA SÓ, INDEPENDENTE DOS LANCES (dono, 18/11/2026, com a foto aérea: "Veja a imagem da cobertura e
        replique fielmente"). Quando a lateral sul ganhou os camarotes, a cobertura ia junto com o lance de cima e a boca do

@@ -128,6 +128,38 @@ function medidasDe(ficha, anel, t, arco, prof) {
     naPlataforma: (i, k) => naAsa(i) && k >= vomK0 && k < vomK0 + vomRows,
     vomK0, noVomitorio: (i, k) => k >= vomK0 && k < vomK0 + vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomK0 + vomRows && naBoca(i) };
 }
+/* O CORTE RETO NA PONTA DO TRECHO (o Castelão; dono, 18/11/2026, com o mapa dos setores: "os vãos da superior da lateral sul
+   não estão alinhados com os inferiores" — o vão é uma faixa reta, perpendicular à lateral, e não segue o raio do centro):
+   `corteDe: u` / `corteAte: u` no trecho — a ponta dele é a reta u = constante (em metros, no quadro do gramado), em todas as
+   fileiras. Cada fileira é reesticada entre o ponto em que ela cruza a reta e a outra ponta; o `de`/`ate` do trecho vira só o
+   ângulo de referência (onde a reta passa, mais ou menos no meio da fundura). */
+const temCorte = t => t.corteDe != null || t.corteAte != null;
+const memoCorte = new Map();
+function raizCorte(pos0, chave, borda, U, f) {
+  const k = chave + '|' + borda + '|' + U + '|' + f.toFixed(4); const m = memoCorte.get(k); if (m != null) return m;
+  let lo = borda - 45, hi = borda + 45; const g = a => pos0(a, f)[0] - U; let glo = g(lo);
+  let r = borda;
+  if (glo * g(hi) <= 0) { for (let i = 0; i < 40; i++) { const md = (lo + hi) / 2, gm = g(md); if ((gm < 0) === (glo < 0)) { lo = md; glo = gm; } else hi = md; } r = (lo + hi) / 2; }
+  if (memoCorte.size > 200000) memoCorte.clear(); memoCorte.set(k, r); return r;
+}
+const radialEntre = (cd, cf) => (a, f) => { const r0 = raioDe(a, cd), r1 = raioDe(a, cf); return ponto(a, r0 + (r1 - r0) * f); };
+function comCortes(t, pos0, chave) {
+  if (!temCorte(t)) return pos0;
+  return (ang, f) => { const A0 = t.corteDe != null ? raizCorte(pos0, chave, t.de, t.corteDe, f) : t.de, A1 = t.corteAte != null ? raizCorte(pos0, chave, t.ate, t.corteAte, f) : t.ate;
+    return pos0(A0 + (ang - t.de) * (A1 - A0) / ((t.ate - t.de) || 1), f); };
+}
+/* o trecho do anel que cobre o PONTO (u, v), contando os cortes retos: o trecho com corte vale entre as duas pontas da fileira
+   em que o ponto está; os outros, pelo ângulo */
+function trechoDoPonto(anel, u, v) {
+  const d = Math.hypot(u, v), ang = Math.atan2(v, u) / RAD;
+  for (const t of anel.trechos) { if (!temCorte(t)) continue;
+    if (!dentroDoArco(ang, t.de - (t.corteDe != null ? 20 : 0), t.ate + (t.corteAte != null ? 20 : 0))) continue;
+    const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, r0 = raioDe(ang, cd), r1 = raioDe(ang, cf);
+    const f = Math.round(Math.max(0, Math.min(1, (d - r0) / ((r1 - r0) || 1))) * 200) / 200, chave = 'p' + anel.trechos.indexOf(t) + '|' + (anel.dentro.a || 0) + '|' + (cd.a || 0);
+    const pos0 = radialEntre(cd, cf), A0 = t.corteDe != null ? raizCorte(pos0, chave, t.de, t.corteDe, f) : t.de, A1 = t.corteAte != null ? raizCorte(pos0, chave, t.ate, t.corteAte, f) : t.ate;
+    if (dentroDoArco(ang, A0, A1)) return t; }
+  return anel.trechos.find(t => !temCorte(t) && dentroDoArco(ang, t.de, t.ate)) || null;
+}
 /* as medidas de um trecho de anel, mais onde cai cada coluna (`pos`, `angs`, `angEm`) */
 export function colunasDe(ficha, anel, t) {
   const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, meio = (t.de + t.ate) / 2;
@@ -152,9 +184,9 @@ export function colunasDe(ficha, anel, t) {
   /* `fecha: k` no trecho (a tribuna do Lacerdão; dono, 17/11/2026: a arquibancada coberta é "Triangular"): o lance FECHA PRA
      TRÁS em volta do MEIO DELE — a fileira da frente tem a largura toda e a do fundo, `k` vezes ela (0,5 = metade), com as
      paredes dos lados em diagonal. (O trapézio de `fora` com `a` menor fecha em volta do meio do CAMPO; este, do meio do trecho.) */
-  let pos = pos0;
+  let pos = comCortes(t, pos0, 'c' + t.de + '|' + t.ate + '|' + (cd.a || 0) + '|' + (cf.a || 0));
   if (t.fecha != null && t.fecha < 1) { const m = f => { const a = pos0(t.de, f), b = pos0(t.ate, f); return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }, k = t.fecha;
-    pos = (ang, f) => { const q = pos0(ang, f), c = m(f), s = 1 - f * (1 - k); return [c[0] + (q[0] - c[0]) * s, c[1] + (q[1] - c[1]) * s]; }; }
+    const pb = pos; pos = (ang, f) => { const q = pb(ang, f), c = m(f), s = 1 - f * (1 - k); return [c[0] + (q[0] - c[0]) * s, c[1] + (q[1] - c[1]) * s]; }; }
   const angs = [];
   if (reto || normal) { /* colunas de largura igual, medidas pela beira de dentro */
     const MS = Math.max(180, n * 4), ac = [0]; let ant = pos(t.de, 0);
@@ -198,7 +230,7 @@ export function andavel(ficha, u, v) {
         if (d <= raioDe(ang, cf) - (ia === ult ? 0.4 : -0.3)) { achou = true; break; } }
       if (achou) return true; continue;
     }
-    const t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue;
+    const t = anel.trechos.some(temCorte) ? trechoDoPonto(anel, u, v) : trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue;
     const r0 = raioDe(ang, t.dentro || anel.dentro), r1 = raioDe(ang, t.fora || anel.fora);
     /* (só a beira de dentro do primeiro anel e a de fora do último encolhem: anéis encostados não deixam fresta) */
     if (d >= r0 + (ia === 0 ? 0.4 : -0.3) && d <= r1 - (ia === ult ? 0.4 : -0.3)) return true;
@@ -406,7 +438,9 @@ export function construir(THREE, ficha) {
           const a0 = t.de + vao * i / n, a1 = t.de + vao * (i + 1) / n;
           /* (no anel reto a passagem segue a mesma régua das vizinhas — pelo lado, não pelo raio — pra emendar nelas sem sobra) */
           const retoP = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
-          const p = (ang, c, h) => { const q = retoP ? pontoPor(paramDe(ang, cd), c) : ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
+          /* (com corte reto, as duas beiras da passagem seguem as retas dos cortes) */
+          const pc = temCorte(t) ? comCortes(t, radialEntre(cd, cf), 'g' + t.de + '|' + t.ate + '|' + (cd.a || 0)) : null;
+          const p = (ang, c, h) => { const q = pc ? pc(ang, c === cd ? 0 : 1) : retoP ? pontoPor(paramDe(ang, cd), c) : ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
           A.quad(p(a0, cd), p(a0, cf), p(a1, cf), p(a1, cd), t.cor || CONCRETO);
           /* (a laje alta — a galeria de cima — ganha a parede de fora) */
           /* (`semParede`: a laje fica solta, sem o paredão embaixo — quem fecha a frente é a fachada de galerias) */
@@ -1174,6 +1208,8 @@ function peDaColuna(cd, cf, u, v) {
 /* o trecho do anel que cobre (u, v), contando a régua do anel reto; null se nenhum */
 function trechoNoPonto(anel, u, v) {
   const d = Math.hypot(u, v), ang = Math.atan2(v, u) / RAD;
+  if (anel.trechos.some(temCorte)) { const t = trechoDoPonto(anel, u, v); if (!t) return null;
+    return d >= raioDe(ang, t.dentro || anel.dentro) - 0.3 && d <= raioDe(ang, t.fora || anel.fora) + 0.3 ? t : null; }
   for (const t of anel.trechos) {
     const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, reto = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
     if (reto) { const p = peDaColuna(cd, cf, u, v); if (p && dentroDoArco(p.ang, t.de, t.ate)) return t; continue; }

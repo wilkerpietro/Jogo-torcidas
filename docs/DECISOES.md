@@ -16000,6 +16000,11 @@ O dono, com uma foto do canto sul de dentro e uma da fachada de perto: "Observe 
   - Do lado dos camarotes, o vão é uma faixa reta que sai do canto do campo e corta os dois lances, inclinada pra fora. No lance de baixo fica em 221,5°–226,5° e 313,5°–318,5°; no de cima, em 231,5°–236,5° e 303,5°–308,5°.
   - A lateral de quatro lances vai de um vão de cima ao outro (236,5°–303,5°).
 - Pelo mapa, a organizada do Ceará fica no Norte (à esquerda), e a do Fortaleza no Sul (à direita). Isso bate com os setores do jogo; os setores não mudaram.
+- **O vão é reto e o de cima não continua o de baixo.** Com o segundo mapa (o de numeração dos setores), o dono disse: "Note que os vãos da superior da lateral sul não estão alinhados com os inferiores". Os vãos eram cunhas pelo raio do centro: a ponta de dentro do vão de cima encostava na de fora do de baixo, e na tela os dois viravam uma faixa diagonal só. Agora o gerador tem o **corte reto** (`corteDe`/`corteAte: u` no trecho): a ponta do trecho é a reta u = constante, perpendicular à lateral, em todas as fileiras. A máscara de andar e a de sentar seguem o corte (`trechoDoPonto`).
+  - No lance de baixo, o vão encosta no canto do campo (|u| de 46,5 a 50 m).
+  - No de cima, o vão fica uns 6 m mais pra fora (|u| de 52,5 a 56 m).
+  - Os camarotes e o lance de cima da lateral são um bloco reto entre os dois vãos de cima, como os setores 401–406 do mapa.
+  - Os dois vãos do lado da Bossa Nova seguem pelo raio, como estão no mapa.
 
 **A lateral sul de quatro lances vai de vão a vão.** Antes ia de 236° a 304°; agora vai de 216,5° a 323,5°. Os camarotes chegam até o vão, como na foto.
 

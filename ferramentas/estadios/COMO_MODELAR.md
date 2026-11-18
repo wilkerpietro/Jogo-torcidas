@@ -844,6 +844,13 @@ de cima uns 30 cm. FACHADA de placas: `fachada.paineis: { alt, larg, cor, cor2,
 junta }`. Vidro com salas: `montantes: { cada, cor }` no trecho com `paredeAtras`.
 Vão com fundo fechado: passagem com `alt` e `paredeAte`.
 
+CORTE RETO NA PONTA (o Castelão, 18/11/2026): a ponta de um trecho de anel é
+radial, pelo raio do centro. Quando o vão ou a ponta da arquibancada é uma reta
+perpendicular à lateral, use `corteDe: u` / `corteAte: u` (em metros, no quadro do
+gramado). Cada fileira é reesticada até cruzar a reta, e o `de`/`ate` vira só a
+referência (onde a reta passa no meio da fundura). Os vizinhos dos dois lados (o
+vão de passagem e o trecho seguinte) levam o mesmo corte, senão sobra cunha.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
