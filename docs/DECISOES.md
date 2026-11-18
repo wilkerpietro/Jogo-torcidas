@@ -15995,6 +15995,11 @@ O dono, com uma foto do canto sul de dentro e uma da fachada de perto: "Observe 
 - No lance de baixo, os quatro escanteios têm o vão de chão.
 - No lance de cima, só os dois que tocam a lateral sul (sudoeste e sudeste, 211,5°–216,5° e 323,5°–328,5°). Ali a lateral sul é um bloco e o lance de trás do gol é outro.
 - O vão de cima é uma laje na altura da circulação, com o fundo fechado por uma parede escura até perto do telhado (`paredeAte`, opção nova da passagem).
+- **Os ângulos saem do mapa de setores** que o dono mandou ("Observe esse mapa do estádio pra acertar o ângulo de cada vão"), calibrado pelo contorno do lance de baixo. O norte do mapa fica à esquerda da tela, então a lateral Oeste (a Premium dos camarotes) é a de baixo:
+  - Do lado da Bossa Nova (em cima na tela), o vão é quase radial e só corta o lance de baixo: 36°–40° e 141,5°–145,5°.
+  - Do lado dos camarotes, o vão é uma faixa reta que sai do canto do campo e corta os dois lances, inclinada pra fora. No lance de baixo fica em 221,5°–226,5° e 313,5°–318,5°; no de cima, em 231,5°–236,5° e 303,5°–308,5°.
+  - A lateral de quatro lances vai de um vão de cima ao outro (236,5°–303,5°).
+- Pelo mapa, a organizada do Ceará fica no Norte (à esquerda), e a do Fortaleza no Sul (à direita). Isso bate com os setores do jogo; os setores não mudaram.
 
 **A lateral sul de quatro lances vai de vão a vão.** Antes ia de 236° a 304°; agora vai de 216,5° a 323,5°. Os camarotes chegam até o vão, como na foto.
 

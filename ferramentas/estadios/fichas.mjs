@@ -21,12 +21,16 @@ const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 /* o Castelão (dono, 18/11/2026): os trechos do lance de baixo entre os quatro vãos dos escanteios (o canto fica a uns 34° do
    eixo), a lateral sul de quatro lances, o camarote e o lance de cima */
 /* OS VÃOS DOS ESCANTEIOS (dono, 18/11/2026: "Os vãos na parte inferior existem nos 4 escanteios. Na parte superior só nos
-   2"): no lance de baixo, os quatro cantos; no de cima, só os dois que tocam a lateral sul */
-const CAST_VAOS_BAIXO = [[31.5, 36.5], [143.5, 148.5], [211.5, 216.5], [323.5, 328.5]];
-const CAST_VAOS = [[211.5, 216.5], [323.5, 328.5]];
-const CAST_CANTOS = [[-31.5, 31.5], [36.5, 143.5], [148.5, 211.5], [216.5, 323.5]];
+   2"; os ângulos saem do mapa de setores que ele mandou, calibrado pelo contorno do lance de baixo — o norte do mapa fica à
+   esquerda da tela, então a lateral Oeste, a Premium dos camarotes, é a de baixo). Do lado da Bossa Nova (em cima na tela) o
+   vão é quase radial e só corta o lance de baixo, em 38° e 143,5°. Do lado dos camarotes ele é uma faixa reta que sai do
+   canto do campo e corta os dois lances, inclinada pra fora: no lance de baixo fica em 224° e 316°, no de cima em 234° e
+   306° — e a lateral de quatro lances vai de um vão de cima ao outro */
+const CAST_VAOS_BAIXO = [[36, 40], [141.5, 145.5], [221.5, 226.5], [313.5, 318.5]];
+const CAST_VAOS = [[231.5, 236.5], [303.5, 308.5]];
+const CAST_CANTOS = [[-41.5, 36], [40, 141.5], [145.5, 221.5], [226.5, 313.5]];
 /* (a lateral sul de quatro lances vai de vão a vão, como na foto do canto: os camarotes chegam até o vão do escanteio) */
-const CAST_SUL = [216.5, 323.5];
+const CAST_SUL = [236.5, 303.5];
 /* o vidro VERDE-ESCURO dos camarotes (dono, 18/11/2026: "A fachada da parte do camarote é um vidro de cor verde escuro") */
 const CAST_VIDRO = '#1f3a31';
 /* o camarote: quatro fileiras de cadeira na frente das salas de vidro, separadas pelos montantes claros (a foto do canto sul) */
@@ -76,7 +80,7 @@ export const FICHAS = {
         trechos: [
           /* (os escanteios cortam também o lance de cima: a lateral é um bloco e o de trás do gol é outro, com o vão escuro
              entre eles — a foto do canto sul, 18/11/2026; o vão fica na altura do anel de circulação) */
-          { de: -31.5, ate: 211.5, ...CAST_CIMA },
+          { de: -51.5, ate: 231.5, ...CAST_CIMA },
           { de: CAST_SUL[0], ate: CAST_SUL[1], dentro: { a: 94.3, b: 76.3, r: 60.3 }, h: [22.6, 36], ...CAST_CIMA, corFachada: CAST_VIDRO, paineis: null },
           ...CAST_VAOS.map(([de, ate]) => ({ de, ate, tipo: 'passagem', alt: 11.1, paredeAte: 36.5, cor: '#5f6262', corFachada: '#5d6265' }))] }
     ],
