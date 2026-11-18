@@ -166,7 +166,7 @@ No dia do jogo do clube, o feed abre **o itinerário**: uma linha do tempo com p
 - O relógio vai de 0 a 90 minutos, a 4 minutos de jogo por segundo real vezes a velocidade da partida. A velocidade padrão é **4×** e o botão alterna 1× → 2× → 4×; há botão de pausa.
 - Os gols aparecem conforme a barra alcança o minuto. No mata-mata empatado, a disputa de pênaltis sai cobrança a cobrança numa grade.
 - **O clima do estádio** tem três degraus (tranquilo, esquentando, tenso). Por minuto de jogo há uma chance de subir um degrau, conforme a pior relação entre as torcidas presentes: maior rival 3,5%, rival quente 3,0%, rival 2,0%, neutro 1,0%. Com aliado nosso no estádio o clima não sobe.
-- **A barra de tensão** (0 a 100) com dois botões: **Amenizar** (−15) e **Provocar** (+15), cada um com recarga de 5 minutos de jogo. Em 100 a arquibancada se pega e abre a cena de briga no setor. Depois de uma briga a PM ocupa o setor e a tensão não estoura de novo.
+- **A barra de tensão** (0 a 100) com dois botões: **Amenizar** (−15) e **Provocar** (+15), cada um com recarga de 5 minutos de jogo. Em 100 a arquibancada se pega e abre a cena de briga no setor. O cartão que pergunta como reagir diz "O clima ficou tenso na arquibancada, vamos ter que reagir." (18/11/2026); o tutorial explica provocar e amenizar. Depois de uma briga a PM ocupa o setor e a tensão não estoura de novo.
 
 ### 3.8 Fim de cena e fim de ano
 
@@ -3327,6 +3327,9 @@ Quem debanda recolhe a faixa antes de correr. Faixa tomada pesa muito em moral e
 
 - **Debandada por baixas**: um lado com 30% de baixas corre (na arquibancada, 50%).
 - **Debandada por minoria**: o rival corre se ficou com 40% ou menos de gente de pé que o outro lado (não vale na arquibancada nem para o jogador).
+- **Ninguém ataca pra correr (18/11/2026)**: quem ataca a gente chega com pelo menos 55% do nosso bonde (`efetivoDoAtaque`, briga de bairro). Sem gente pra isso, o bote pega só a parte nossa que estava ali.
+- **A cena de rua começa andando (18/11/2026)**: 1 s depois de abrir, com o rival a mais de 300 px, o presidente anda sozinho até ele e o bonde vem na formação (`partir`). O direcional devolve o comando. Não vale nos arredores, no estádio, na bancada nem na reunião.
+- **A torcida grande abre espaço (18/11/2026)**: no estádio, `abrirEspacoNaArquibancada` mede cada bonde como um trecho do alambrado. O nosso fica onde está; a divisória da visitante e a grade de escanteio dentro dele andam até a beira, e os vizinhos saem em cascata pro lado (a divisória é barreira). A faixa de quem andou vai junto, e o nosso bonde senta primeiro.
 - **Sem rival de pé**: a cena entra em "comemorando" por 5 s (quem sobrou provoca) e fecha.
 - **Sair/entrar**: levar o líder até a boca encerra.
 - Quem corre vai para a boca de rua mais perto que não passa por dentro do inimigo. Rival que correu sem brigar e é alcançado fica (dois golpes em cima).

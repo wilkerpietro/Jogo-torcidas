@@ -15907,6 +15907,47 @@ O dono mandou o print do Barradão com o bonde visitante passando do alto da arq
 
 **Resultado:** 0 torcedor fora do degrau nos 91 estádios. O teste é `p_vaza.js`, no rascunho.
 
+## A cena de rua já começa andando, a torcida grande abre espaço e ninguém ataca pra correr (dono, 18/11/2026)
+
+**O texto da arquibancada.** O cartão que abre quando a tensão estoura dizia "Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.". Pedido do dono: trocar por **"O clima ficou tenso na arquibancada, vamos ter que reagir."**. Isso vale nos dois cartões da arquibancada: a tensão em 100 e a invasão pelo isolamento. O mesmo cartão das ações (atacar da Diplomacia, ação que abre cena) segue com o texto antigo, porque ali não é arquibancada (`comEscolhaDeBriga(fn, vias, podeFicar, texto)`).
+
+**Provocar e amenizar no tutorial.** Nova página "Provocar ou amenizar", depois de "Festa na arquibancada":
+- a barra de 0 a 100 e o que a faz subir;
+- Provocar +15, Amenizar −15, e 5 minutos de jogo de espera entre um uso e outro;
+- o que acontece em 100;
+- o aliado e a PM;
+- o Provocar da Diplomacia, que é outra coisa.
+
+**A cena de rua já começa andando.** Pelo print, o bonde ficava parado em formação esperando o rival chegar. Primeira proposta: o botão CHAMAR viraria PARTIR quando o rival está longe. O dono recusou: "Não precisa criar o botão partir. O boneco já avança pra cima do rival logo no início da cena."
+- Agora, 1 s depois de abrir a cena, com briga armada e o rival a mais de 300 px, o presidente anda sozinho até o rival mais perto (`partir`/`rumoDaPartida`) e o bonde vem na formação.
+- Ele vai em linha reta quando dá; quando há prédio ou grade no caminho, segue o campo de fluxo.
+- Ele para a 110 px do rival, onde a briga já pegou. Qualquer toque no direcional devolve o comando.
+- Não vale nos arredores, no estádio, na bancada nem na reunião.
+- Medido na briga de bairro: de 570 px até o contato em uns 4 s.
+
+**A torcida grande abre espaço no estádio.** Pedido do dono: "Se a torcida for grande demais pro tamanho destinado a ela, as demais torcidas afastam pro lado e inclusive a grade visitante pode afastar também." Antes de alguém nascer, `abrirEspacoNaArquibancada` faz o seguinte:
+- Mede cada bonde como um trecho do alambrado: o meio é o ponto dele e a largura é a do bloco que ele forma sozinho, sem grade e sem vizinho.
+- O nosso bonde não sai do lugar.
+- A divisória da visitante que cai no nosso trecho anda até a beira dele. A grade de escanteio também, para não espremer o bloco.
+- Os vizinhos saem em cascata, do nosso bloco pros dois lados: cada um começa onde o anterior acaba, mais 40 px de vão. A divisória é barreira: ninguém atravessa pro lado do outro, e quem não cabe antes dela fica espremido ali.
+- Visitante maior que o curral abre as duas divisórias.
+- Ninguém é empurrado pra fora do degrau, e a faixa de quem andou vai junto.
+- No estádio o nosso bonde senta primeiro.
+- A grade de isolamento que já andava (11/10/2026) roda depois, como antes.
+
+Medido:
+- Castelão, nossa visitante de 900: as divisórias abrem 97 e 123 px.
+- Barradão, visitante de 600: abrem 340 px pra cada lado.
+- Castelão, mandante de 1.200 com quatro vizinhos: o vizinho de 480 vai 202 px pro lado, o de 120 vai 219 px e para na divisória, e a grade do escanteio abre.
+
+**Ninguém ataca pra correr na largada.** O rival da IA com 40% ou menos de gente de pé corre (`MINORIA`). Com a MOFI (53) atacando a reunião da TUF (144), a cena abria e já fechava. Agora quem ataca chega com pelo menos 55% do nosso bonde na cena:
+- traz mais gente, se tiver (até 80% da torcida dele);
+- se não tiver, o bote pega só a parte nossa que estava ali.
+
+Isso vale em `efetivoDoAtaque` (bar, reunião, casa, concentração, estrada) e na briga de bairro quando eles atacam.
+
+**Proposta pendente (rival que recua):** o rival que recua fica amontoado no ponto de nascimento. A proposta foi mandada ao dono e espera a resposta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

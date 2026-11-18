@@ -2136,6 +2136,8 @@ TO.i18n.registrar({
   'nos arredores do estádio': {es:'en los alrededores del estadio', en:'around the stadium'},
 
   /* ---------- jogar ou simular ---------- */
+  'O clima ficou tenso na arquibancada, vamos ter que reagir.':
+    {es:'El clima se puso tenso en la tribuna, vamos a tener que reaccionar.', en:'Things got tense in the stands, we have to react.'},
   'Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.':
     {es:'Bajar abre la escena y tú comandas a la banda. Simular resuelve el duelo al instante — las consecuencias son las mismas.',
      en:'Going down opens the scene and you lead the crew. Simulate settles the fight instantly — the consequences are the same.'},
@@ -4698,6 +4700,14 @@ TO.i18n.registrar({
   "Cada festa empurra o time no placar do próximo jogo em que a torcida estiver no estádio. Juntas, somam até +40% de chance.": {es:"Cada fiesta empuja al equipo en el marcador del próximo partido en que la barra esté en el estadio. Juntas, suman hasta +40% de chance.", en:"Each display pushes the team's score in the next game the firm attends. Together they add up to +40% chance."},
   "O treino de bateria no Expediente dá +20% nos jogos em casa por uma semana.": {es:"El ensayo de la banda en la Jornada da +20% en los partidos de local por una semana.", en:"Drum practice in the Routine gives +20% in home games for a week."},
   "O jogo gasta uma unidade de cada festa que estiver no estoque.": {es:"El partido gasta una unidad de cada fiesta que haya en stock.", en:"The game uses one of each display in stock."},
+  "Provocar ou amenizar": {es:"Provocar o calmar", en:"Provoke or calm down"},
+  "No começo da cena o presidente já parte pra cima do rival e o bonde vem junto. Mexer no direcional devolve o comando.": {es:"Al empezar la escena el presidente ya va contra el rival y la banda lo sigue. Mover el direccional devuelve el control.", en:"When the scene starts the president already charges the rival and the crew follows. Touching the stick gives you control back."},
+  "No jogo com rival no estádio, a barra de tensão vai de 0 a 100. Ela sobe sozinha com o tempo, mais rápido com rival de relação ruim, e sobe com gol e com provocação deles.": {es:"En el partido con rival en el estadio, la barra de tensión va de 0 a 100. Sube sola con el tiempo, más rápido con un rival de mala relación, y sube con gol y con provocación de ellos.", en:"In a match with a rival in the stadium, the tension bar goes from 0 to 100. It rises on its own over time, faster with a rival you're on bad terms with, and rises with goals and their taunts."},
+  "Provocar: tensão +15. Empurra a briga pra hora que convier, com o bonde inteiro e descansado.": {es:"Provocar: tensión +15. Empuja la pelea al momento que convenga, con la banda entera y descansada.", en:"Provoke: tension +15. Pushes the fight to the moment that suits you, with the crew whole and rested."},
+  "Amenizar: tensão −15. Segura a briga quando o bonde está fraco, com pouca gente ou muita gente ferida.": {es:"Calmar: tensión −15. Frena la pelea cuando la banda está débil, con poca gente o mucha gente herida.", en:"Calm down: tension −15. Holds the fight back when the crew is weak, short-handed or with many injured."},
+  "Cada botão espera 5 minutos de jogo pra ser usado de novo.": {es:"Cada botón espera 5 minutos de partido para usarse de nuevo.", en:"Each button waits 5 match minutes before it can be used again."},
+  "Em 100 a arquibancada se pega e a gente reage: desce pra briga ou simula. Aliado nosso no estádio segura o clima, e depois de uma briga a PM ocupa o setor.": {es:"En 100 la tribuna se agarra y reaccionamos: bajamos a pelear o simulamos. Un aliado nuestro en el estadio calma el clima, y después de una pelea la policía ocupa el sector.", en:"At 100 the stands kick off and we react: go down to fight or simulate. An ally of ours in the stadium keeps things calm, and after a fight the police take over the section."},
+  "Na Diplomacia, Provocar é outra coisa: piora a relação com uma torcida e pode virar guerra.": {es:"En Diplomacia, Provocar es otra cosa: empeora la relación con una barra y puede volverse guerra.", en:"In Diplomacy, Provoke is something else: it worsens relations with a group and can turn into war."},
   "Enfraquecer o rival": {es:"Debilitar al rival", en:"Weakening the rival"},
   "Marque o ataque no Planejamento: contra quem, onde e com quantos. Ou aceite os botes que a diretoria sugere: no bar deles, na reunião deles na praça, na resenha da casa de piscina.": {es:"Marque el ataque en la Planificación: contra quién, dónde y con cuántos. O acepte los golpes que sugiere la directiva: en su bar, en su reunión en la plaza, en la juntada de la casa con pileta.", en:"Set up the attack in Planning: against whom, where and with how many. Or accept the hits the board suggests: at their bar, at their meeting in the square, at the pool-house hangout."},
   "Cada vitória tira moral e prestígio deles e deixa feridos e presos do lado deles, o que derruba o ranking deles. No bar, a gente leva o caixa e o bar fica rendendo metade por 45 dias. Tomar a faixa deles dói muito lá.": {es:"Cada victoria les quita moral y prestigio y deja heridos y presos de su lado, lo que baja su ranking. En el bar nos llevamos la caja y el bar rinde la mitad por 45 días. Quitarles el trapo les duele mucho.", en:"Every win takes morale and prestige from them and leaves them with injured and jailed members, which drops their ranking. At the bar we take the till and the bar earns half for 45 days. Taking their banner really hurts them."},
@@ -5449,6 +5459,7 @@ TO.i18n.registrar({
   'RECUAR':   {es:'REPLEGAR',  en:'RETREAT'},
   'AGARRAR':  {es:'AGARRAR',   en:'GRAB'},
   'CHAMAR':   {es:'LLAMAR',    en:'RALLY'},
+  'O bonde partiu pra cima.': {es:'La banda fue al frente.', en:'The crew charged.'},
   'FUGIR':    {es:'HUIR',      en:'FLEE'},
   'SAIR':     {es:'SALIR',     en:'EXIT'},
   'PEDRA':    {es:'PIEDRA',    en:'STONE'},
@@ -46298,6 +46309,8 @@ TO.diaJogo.combate = (function(){
 
   function criarEstado(cfg){
     cfg=cfg||{};
+    /* a faixa que andou com o bonde na cena passada volta pro lugar da cena (`abrirEspacoNaArquibancada`) */
+    if(D && D._faixasOrig){ D.faixas = D._faixasOrig; D._faixasOrig = null; }
     /* campo de fluxo é geometria da cena que estava no ar. Trocar de
        cena sem limpar faz o bonde de 'mandante1' andar pro spawn da
        cena anterior, que na nova é dentro de um prédio. */
@@ -46524,8 +46537,10 @@ TO.diaJogo.combate = (function(){
        nosso portão, e a escalação só decide se ele tem NOME e ficha.
        Conferido com escalação vazia: líder existe e anda. */
     /* a grade de isolamento anda conforme o tamanho do visitante */
-    if(D.id && /^estadio-/.test(D.id)) ajustarIsolamento(J, grupos);
-    for(const g of grupos)
+    if(D.id && /^estadio-/.test(D.id)){ abrirEspacoNaArquibancada(J, grupos); ajustarIsolamento(J, grupos); }
+    /* (no estádio o nosso bonde senta primeiro: é o lugar dele que manda) */
+    const ordemNasc = D.id && /^estadio-/.test(D.id) && grupoLider ? [grupoLider, ...grupos.filter(g => g !== grupoLider)] : grupos;
+    for(const g of ordemNasc)
       nascerGrupo(J, g, fichas.get(g) || [], g === grupoLider, nomes);
 
     /* =======================================================
@@ -46809,6 +46824,147 @@ TO.diaJogo.combate = (function(){
     const B = (TO.membros && TO.membros.bancoDe)
       ? TO.membros.bancoDe(TO.estado && TO.estado.E) : N;
     return (B && B.apelidos) || N.apelidos || ['TROVÃO'];
+  }
+
+  /* =======================================================
+     A TORCIDA GRANDE ABRE ESPAÇO (dono, 18/11/2026: "Se a torcida for
+     grande demais pro tamanho destinado a ela, as demais torcidas
+     afastam pro lado e inclusive a grade visitante pode afastar
+     também"). Antes de alguém nascer, cada bonde vira um trecho do
+     alambrado (`s` da `frente`): o meio é o ponto dele e a largura é a
+     do bloco que ele forma sozinho, sem grade e sem vizinho. O NOSSO
+     bonde não sai do lugar. Quem está em cima dele vai pro lado, e o
+     empurrão passa adiante, de vizinho em vizinho. A divisória da
+     visitante que fica dentro do nosso trecho anda até a beira dele, e
+     a visitante recua junto. Visitante maior que o curral abre as duas
+     divisórias. Ninguém é empurrado pra fora do degrau: o ponto novo
+     anda até achar arquibancada. A faixa de quem andou vai junto.
+     ======================================================= */
+  function abrirEspacoNaArquibancada(J, grupos){
+    const Fr = frenteDaCena(), Aq = arquibancadaDaCena();
+    if(!Fr || !Aq || !grupos.length) return;
+    const L = Fr.L, mod = v => ((v % L) + L) % L;
+    const dif = (a, b) => { const x = mod(a - b); return x > L/2 ? x - L : x; };
+    const VAO = 40, PASSO = 18;
+    /* a largura de cada bloco, sozinho */
+    const gradesAntes = J.grades; J.grades = [];
+    const itens = [];
+    try{
+      for(const g of grupos){
+        const o = Fr.proj(g.s.x, g.s.y); if(!o) continue;
+        const lug = lugaresNaArquibancada(J, g.s, Math.max(1, g.qtd || 0), new Set(), () => '', [PASSO]) || [];
+        let w = PASSO/2;
+        for(const p of lug){ const q = Fr.proj(p.x, p.y); if(q) w = Math.max(w, Math.abs(dif(q.s, o.s)) + PASSO/2); }
+        itens.push({g, c:o.s, c0:o.s, d:Math.max(PASSO, o.d), w, nosso:!!(g.bonde && g.bonde.nossa), vis:g.s.lado === 'visitante'});
+      }
+    } finally { J.grades = gradesAntes; }
+    if(!itens.length) return;
+    /* as duas divisórias da visitante, como pontos do alambrado */
+    const divs = [];
+    for(const id of [...new Set((J.grades || []).filter(m => /^div_v/.test(m.grade || '')).map(m => m.grade))]){
+      const ms = J.grades.filter(m => m.grade === id);
+      const cx = ms.reduce((a, m) => a + m.x, 0) / ms.length, cy = ms.reduce((a, m) => a + m.y, 0) / ms.length;
+      const o = Fr.proj(cx, cy); if(o) divs.push({id, c:o.s, c0:o.s, ms});
+    }
+    const visSp = D.spawns.filter(sp => sp.lado === 'visitante').map(sp => Fr.proj(sp.x, sp.y)).filter(Boolean);
+    const lado = dv => { if(!visSp.length) return 1; const m = visSp.reduce((a, o) => a + dif(o.s, dv.c0), 0); return m >= 0 ? 1 : -1; };
+    for(const dv of divs) dv.sv = lado(dv);
+    /* as grades de escanteio: não separam lado nenhum, só seguram a passagem; a que cai no nosso trecho vai pra beira dele */
+    const cantos = [];
+    for(const id of [...new Set((J.grades || []).filter(m => /^canto_/.test(m.grade || '')).map(m => m.grade))]){
+      const ms = J.grades.filter(m => m.grade === id);
+      const cx = ms.reduce((a, m) => a + m.x, 0) / ms.length, cy = ms.reduce((a, m) => a + m.y, 0) / ms.length;
+      const o = Fr.proj(cx, cy); if(o) cantos.push({id, c:o.s, c0:o.s, ms});
+    }
+    const perto = (it, dv) => Math.abs(dif(it.c, dv.c)) < L/4;
+    /* o ponto novo tem de cair em degrau: anda no mesmo sentido até achar */
+    const assentar = (it, sentido) => {
+      for(let k = 0; k < 30; k++){
+        const p = Fr.em(it.c, it.d);
+        if(Fr.temArquibancada(it.c) && (Aq.ok(p.x, p.y) || Aq.perto(p.x, p.y, 40))) return;
+        it.c = mod(it.c + sentido*PASSO);
+      }
+    };
+    const empurrar = (it, alvo, sentido) => { it.c = mod(alvo); it.mexeu = true; assentar(it, sentido); };
+    /* a visitante maior que o curral: as divisórias abrem pros dois lados */
+    if(divs.length === 2){
+      const vis = itens.filter(it => it.vis);
+      const precisa = vis.reduce((a, it) => a + 2*it.w, 0) + VAO*(vis.length + 1);
+      const [a, b] = divs, de = a.sv > 0 ? a : b, ate = de === a ? b : a;
+      const tem = mod(ate.c - de.c);
+      if(vis.length && precisa > tem){ const sobra = (precisa - tem)/2; de.c = mod(de.c - sobra); ate.c = mod(ate.c + sobra); de.mexeu = ate.mexeu = true; }
+    }
+    /* a divisória dentro do NOSSO trecho anda até a beira dele */
+    const nosso = itens.find(it => it.nosso);
+    if(nosso) for(const dv of divs){
+      if(!perto(nosso, dv)) continue;
+      const x = dif(nosso.c, dv.c) * dv.sv;           // >0: o nosso bloco está do lado da visitante
+      const dentro = nosso.vis ? -x + nosso.w + VAO/2 : x + nosso.w + VAO/2;
+      if(dentro > 0.5){ dv.c = mod(dv.c + (nosso.vis ? -dv.sv : dv.sv) * dentro); dv.mexeu = true; }
+    }
+    if(nosso) for(const cg of cantos){
+      const x = dif(cg.c, nosso.c);
+      if(Math.abs(x) < nosso.w + VAO/2){ cg.c = mod(nosso.c + (x >= 0 ? 1 : -1) * (nosso.w + VAO/2)); cg.mexeu = true; }
+    }
+    /* A CASCATA: do nosso bloco pros dois lados, cada vizinho começa onde o anterior acaba (mais o vão); a divisória é
+       barreira — quem vem depois dela começa do outro lado, e quem não cabe antes dela fica espremido ali */
+    if(nosso){
+      for(const sentido of [1, -1]){
+        const rel = x => dif(x, nosso.c) * sentido;
+        const fila = itens.filter(it => it !== nosso && rel(it.c) > 0).map(it => ({it, r:rel(it.c)}))
+          .concat(divs.map(dv => ({dv, r:rel(dv.c)})).filter(e => e.r > 0))
+          .sort((a, b) => a.r - b.r);
+        let livre = nosso.w + VAO;
+        for(let k = 0; k < fila.length; k++){
+          const e = fila[k];
+          if(e.dv){ livre = Math.max(livre, e.r + VAO/2); continue; }
+          const it = e.it;
+          if(e.r - it.w >= livre){ livre = e.r + it.w + VAO; continue; }
+          let r = livre + it.w;
+          /* (a próxima divisória segura: ninguém atravessa pro lado do outro) */
+          const prox = fila.slice(k + 1).find(f => f.dv);
+          if(prox && r + it.w > prox.r - VAO/2) r = Math.max(e.r, prox.r - VAO/2 - it.w);
+          if(r >= L/2 - it.w) r = Math.max(e.r, L/2 - it.w);
+          if(r > e.r + 0.5){ empurrar(it, nosso.c + sentido*r, sentido); e.r = rel(it.c); }
+          livre = e.r + it.w + VAO;
+        }
+      }
+    }
+    /* o bonde que andou nasce no ponto novo, e a faixa dele vai junto */
+    const faixas = D.faixas ? Object.assign({}, D.faixas) : null;
+    let faixaMudou = false;
+    const movida = new Set();
+    for(const it of itens){
+      if(!it.mexeu || Math.abs(dif(it.c, it.c0)) < 4) continue;
+      let p = Fr.em(it.c, it.d);
+      if(!Aq.ok(p.x, p.y)){ const q = Aq.perto(p.x, p.y, 80); if(q) p = {x:q.x, y:q.y, nx:p.nx, ny:p.ny}; }
+      it.g.s = Object.assign({}, it.g.s, {x:Math.round(p.x), y:Math.round(p.y)});
+      const fx = faixas && faixas[it.g.s.id];
+      if(fx && !movida.has(it.g.s.id)){
+        movida.add(it.g.s.id);
+        const ds = dif(it.c, it.c0), em = (x, y) => { const o = Fr.proj(x, y), q = Fr.em(o.s + ds, o.d); return q; };
+        const q = em(fx.x, fx.y), nf = Object.assign({}, fx, {x:Math.round(q.x), y:Math.round(q.y), dir:[+(-q.nx).toFixed(3), +(-q.ny).toFixed(3)]});
+        if(fx.de){ const r = em(fx.de[0], fx.de[1]); nf.de = [Math.round(r.x), Math.round(r.y)]; }
+        if(fx.ate){ const r = em(fx.ate[0], fx.ate[1]); nf.ate = [Math.round(r.x), Math.round(r.y)]; }
+        faixas[it.g.s.id] = nf; faixaMudou = true;
+      }
+    }
+    if(faixaMudou){ D._faixasOrig = D.faixas; D.faixas = faixas; }
+    /* a divisória que andou: os mesmos módulos, na mesma fundura, no ponto novo */
+    let gradeMudou = false;
+    for(const dv of divs.concat(cantos)){
+      const ds = dif(dv.c, dv.c0);
+      if(!dv.mexeu || Math.abs(ds) < 4) continue;
+      const novos = dv.ms.map(m => { const o = Fr.proj(m.x, m.y), q = Fr.em(o.s + ds, o.d), q2 = Fr.em(o.s + ds, o.d + 1);
+        let ux = q2.x - q.x, uy = q2.y - q.y; const n = Math.hypot(ux, uy) || 1; ux /= n; uy /= n;
+        if(ux*m.ux + uy*m.uy < 0){ ux = -ux; uy = -uy; }
+        return Object.assign({}, m, {x:q.x, y:q.y, ux, uy, movida:true}); });
+      J.grades = J.grades.filter(m => m.grade !== dv.id).concat(novos);
+      gradeMudou = true;
+    }
+    if(gradeMudou) J.versaoGrades = (J.versaoGrades || 0) + 1;
+    J.espacoAberto = itens.filter(it => it.mexeu).map(it => ({id:it.g.s.id, ds:Math.round(dif(it.c, it.c0))}))
+      .concat(divs.concat(cantos).filter(dv => dv.mexeu).map(dv => ({id:dv.id, ds:Math.round(dif(dv.c, dv.c0))})));
   }
 
   /* =======================================================
@@ -47398,6 +47554,12 @@ TO.diaJogo.combate = (function(){
     if(J.fase!=='ativo' && J.fase!=='comemorando') return;
     J.t+=dt;
     J._quadro = (J._quadro||0) + 1;
+    /* a cena de rua começa andando: com briga armada e o rival longe, o presidente parte pra cima (1 s depois de abrir,
+       pra dar tempo de ver a cena). Fora: arredores, estádio, bancada e reunião */
+    if(!J._partidaVista && J.t >= 1 && J.fase==='ativo'){
+      J._partidaVista = true;
+      if(!J.paz && !J.reuniao && D.id && D.id !== 'arredores' && !/^estadio/.test(D.id) && !D.assentos && !D.marchaAoInimigo) partir(J);
+    }
     refazerGrade(J);      // uma vez por quadro, antes de qualquer busca
     if(J.fase==='comemorando'){
       moverDiscos(J,dt);
@@ -47918,7 +48080,12 @@ TO.diaJogo.combate = (function(){
       if(teclas['w']||teclas['arrowup'])    dy--;
       if(teclas['s']||teclas['arrowdown'])  dy++;
     }
-    const m=hyp(dx,dy);
+    let m=hyp(dx,dy);
+    /* PARTIR PRA CIMA (dono, 18/11/2026: "minha torcida deve também ter a opção de partir pra cima do rival e não ficar
+       esperando"): sem comando do jogador, o líder anda sozinho até o rival e o bonde vem na formação; qualquer toque no
+       direcional devolve o comando */
+    if(m) J.partindo = null;
+    else if(J.partindo){ const q = rumoDaPartida(J, l); if(q){ dx = q.x; dy = q.y; m = hyp(dx,dy); } }
     if(!m) return;
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma
        regra dos discos, e pelo mesmo motivo (ver `inimigoFugindo`) */
@@ -49660,6 +49827,43 @@ TO.diaJogo.combate = (function(){
     else aviso(J, recuou ? _t('O rival chamou — recua um pouco') : _t('O rival chamou'), '#d9705f');
     logar(J, nosso ? _t('Chamou: {n} de {total} atenderam.', {n:atenderam, total:meus.length-1}) : _t('O rival chamou o bonde dele.'), nosso ? 'r' : 'pm');
     return {atenderam, recuou};
+  }
+  /* PARTIR PRA CIMA NO COMEÇO DA CENA (dono, 18/11/2026: "O boneco já avança pra cima do rival logo no início da cena"):
+     com o rival longe, o líder anda sozinho (`rumoDaPartida`) até encostar ou até o jogador mexer no direcional, e o bonde
+     vem na formação. Nada de botão: a cena já começa andando. */
+  const LONGE_PRA_PARTIR = 300;
+  function inimigoMaisPerto(J, l){
+    let melhor = null, md = Infinity;
+    for(const o of J.discos){ if(!o.vivo || o.fugindo || o.preso || o.entrando || !inimigos(l.lado, o.lado)) continue;
+      const q = U.dist2(l.x, l.y, o.x, o.y); if(q < md){ md = q; melhor = o; } }
+    return melhor ? {o:melhor, d:Math.sqrt(md)} : null;
+  }
+  function podePartir(J){
+    if(!J || J.fase !== 'ativo' || J.reuniao || J.recuando || J.partindo) return false;
+    const l = J.discos.find(d=>d.lider && d.vivo && d.doJogador);
+    if(!l || l.fugindo || l.entrando) return false;
+    const m = inimigoMaisPerto(J, l);
+    return !!m && m.d > LONGE_PRA_PARTIR;
+  }
+  function partir(J){
+    if(!podePartir(J)) return false;
+    J.partindo = {desde:J.t};
+    for(const d of J.discos) if(d.doJogador && d.vivo && !d.lider){ d.linha = d.linha === 'retaguarda' ? d.linha : 'frente'; d.hostil = Math.max(d.hostil||0, 2); }
+    logar(J, _t('O bonde partiu pra cima.'), 'r');
+    return true;
+  }
+  function rumoDaPartida(J, l){
+    const m = inimigoMaisPerto(J, l);
+    if(!m || m.d < 110 || J.recuando || J.fase !== 'ativo'){ J.partindo = null; return null; }
+    const o = m.o;
+    if(!A.atravessaGrade(l.x, l.y, o.x, o.y, J.grades) && visadaLivre(l.x, l.y, o.x, o.y)) return {x:o.x - l.x, y:o.y - l.y};
+    const qx = Math.round(o.x/64)*64, qy = Math.round(o.y/64)*64, c0 = J._campoPartida;
+    let campo = c0 && c0.qx === qx && c0.qy === qy && c0.v === J.versaoGrades ? c0.campo : null;
+    if(!campo){ let px = qx, py = qy; if(!A.caminhavel(px, py)){ const q = A.pontoLivreMaisProximo(o.x, o.y, 7); px = q.x; py = q.y; }
+      campo = A.criarCampo(px, py, A.celulasDeGrades(J.grades)); J._campoPartida = {qx, qy, v:J.versaoGrades, campo}; }
+    const c = campo.passo(l.x, l.y);
+    if(c.semRota || !(c.dx || c.dy)){ J.partindo = null; return null; }
+    return {x:c.dx, y:c.dy};
   }
   function iaChamar(J){
     const ladoIA = OUTRO_LADO[ladoDoJogador(J)];
@@ -51695,7 +51899,7 @@ TO.diaJogo.combate = (function(){
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil, fichasDaZona,
           naFrente, rumoPara, RAIO_BOMBA, podeArremessar, bater, defender, DUR_GOLPE, CAIDO_FICA, CAIDO_SOME,
-          soltarDefesa, agarrar, podeAgarrar, chamar, perfilDe, CD_CHAMAR,
+          soltarDefesa, agarrar, podeAgarrar, chamar, partir, perfilDe, CD_CHAMAR,
           ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
@@ -63594,7 +63798,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       if(sim === null){ d.clima.aberto = false; pontoDeControle(d); d.pausada = false; return; }
       simularProxima = sim;
       abrirBrigaNoEstadio(m, volta, v || via);
-    }, via ? [via] : null);
+    }, via ? [via] : null, false, _t('O clima ficou tenso na arquibancada, vamos ter que reagir.'));
     return true;
   }
   TO.jogoAoVivo = {minuto: minutoExato, invadir: invadirNoEstadio,
@@ -64038,7 +64242,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
               /* a arquibancada volta pro cartão, com a PM no setor */
               if(estadio && cenaEl && cenaEl.isConnected) montarArquibancada(m, cenaEl);
             }, via);
-          }, vias && vias.length ? vias : null, !!(D3 && D3.ativo)), 1100);
+          }, vias && vias.length ? vias : null, !!(D3 && D3.ativo), _t('O clima ficou tenso na arquibancada, vamos ter que reagir.')), 1100);
           return;
         }
       }
@@ -67657,6 +67861,13 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         L('⚽', _t('Cada festa empurra o time no placar do próximo jogo em que a torcida estiver no estádio. Juntas, somam até +40% de chance.')),
         L('🥁', _t('O treino de bateria no Expediente dá +20% nos jogos em casa por uma semana.')),
         L('💡', _t('O jogo gasta uma unidade de cada festa que estiver no estoque.'))]},
+      {ic:'🌡️', titulo:_t('Provocar ou amenizar'), linhas:[
+        L('📊', _t('No jogo com rival no estádio, a barra de tensão vai de 0 a 100. Ela sobe sozinha com o tempo, mais rápido com rival de relação ruim, e sobe com gol e com provocação deles.')),
+        L('📣', _t('Provocar: tensão +15. Empurra a briga pra hora que convier, com o bonde inteiro e descansado.')),
+        L('🕊️', _t('Amenizar: tensão −15. Segura a briga quando o bonde está fraco, com pouca gente ou muita gente ferida.')),
+        L('⏱️', _t('Cada botão espera 5 minutos de jogo pra ser usado de novo.')),
+        L('💥', _t('Em 100 a arquibancada se pega e a gente reage: desce pra briga ou simula. Aliado nosso no estádio segura o clima, e depois de uma briga a PM ocupa o setor.')),
+        L('🤝', _t('Na Diplomacia, Provocar é outra coisa: piora a relação com uma torcida e pode virar guerra.'))]},
       {ic:'⚔️', titulo:_t('Enfraquecer o rival'), linhas:[
         L('🗓️', _t('Marque o ataque no Planejamento: contra quem, onde e com quantos. Ou aceite os botes que a diretoria sugere: no bar deles, na reunião deles na praça, na resenha da casa de piscina.')),
         L('🥊', _t('Cada vitória tira moral e prestígio deles e deixa feridos e presos do lado deles, o que derruba o ranking deles. No bar, a gente leva o caixa e o bar fica rendendo metade por 45 dias. Tomar a faixa deles dói muito lá.')),
@@ -67665,6 +67876,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         L('🤝', _t('Aliados recebem a nossa caravana e ajudam fora de casa. Rivais abaixo de −55 estão em guerra aberta.'))]},
       {ic:'🥊', titulo:_t('Na briga'), linhas:[
         L('🕹️', _t('Joystick ou WASD movem o líder e o bonde vai junto. Q bate, F agarra, C chama o bonde, 2 joga pedra, 3 mira a bomba, V muda a postura (massacrar, tomar a faixa, proteger), R recua, X foge.')),
+        L('🏃', _t('No começo da cena o presidente já parte pra cima do rival e o bonde vem junto. Mexer no direcional devolve o comando.')),
         L('📉', _t('A briga acaba no número: o lado que perde gente demais corre. A PM aparta e prende.')),
         L('🎲', _t('Quem não quiser jogar a cena pode tocar em Simular: as consequências são as mesmas.'))]},
       {ic:'✅', titulo:_t('Pronto, presidente'), texto:_t('Recrute → treine e promova → fature → compre patrimônio → festa no estádio e dinheiro no time → brigue pra subir o prestígio e enfraquecer os rivais. O tutorial fica no menu Jogo, é só chamar de novo.')}
@@ -73147,8 +73359,11 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
                           : EL.noBairro(e, e.torcida.id, cid, d.bairroId, defMax);
     const atkMax = EL.ataqueSorteado(defs.length,
       (TO.mapa.hash(`atk|${e.data.absoluto}|${d.bairroId}|${d.rival}`) % 1000) / 1000);
-    const nossos = atacamos ? EL.maisFortes(e, e.torcida.id, e.torcida.mapa, atkMax) : defs;
+    let nossos = atacamos ? EL.maisFortes(e, e.torcida.id, e.torcida.mapa, atkMax) : defs;
     const deles = atacamos ? defs : EL.maisFortes(e, d.rival, cid, atkMax);
+    /* (quando ELES atacam e não têm gente na cidade pra chegar a 55% dos nossos moradores, o bote pega só os que estavam
+       na rua: sem isso a cena abria com "Eles correram" — dono, 18/11/2026) */
+    if(!atacamos && deles.length < nossos.length * 0.55) nossos = nossos.slice(0, Math.max(2, Math.floor(deles.length / 0.55)));
     const n = Math.max(2, nossos.length), nR = Math.max(2, deles.length);
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);
@@ -73485,12 +73700,13 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
      painel de Ações e da Diplomacia, onde não há mensagem pra pendurar
      botão. Nesses dois a pergunta vira este cartão — e ela é só sobre
      COMO brigar: a ação já foi executada e o custo já saiu. */
-  function comEscolhaDeBriga(fn, vias, podeFicar){
+  /* `texto`: a fala do cartão (a arquibancada passa a dela — dono, 18/11/2026) */
+  function comEscolhaDeBriga(fn, vias, podeFicar, texto){
     /* NO JOGO 3D A PERGUNTA É UM RECADO NA LINHA DO DIA (o dono, 28/09/2026:
        "As mensagens sempre vão ser via balões de alguém falando com o
        jogador"): com a linha do dia andando, o cartão entra nela — e a
        linha está no balão do líder do nosso bonde (recados3d.js) */
-    if(TO.semFeed && ITN && ITN.recados) return escolhaNaLinha(fn, vias, podeFicar);
+    if(TO.semFeed && ITN && ITN.recados) return escolhaNaLinha(fn, vias, podeFicar, texto);
     const corpo = el('div');
     /* A INVASÃO NO ESTÁDIO EM 3D (dia3d.js): os caminhos da nossa torcida
        até o setor rival — cada um abre a briga por ali —, o simular e o
@@ -73515,7 +73731,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       return fechar;
     }
     corpo.appendChild(el('div',{class:'em-construcao', texto:
-      _t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
+      texto || _t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
     const bs = el('div',{class:'msg-bts'});
     let fechar = null;
     const opcao = (rot, classe, simular, dica)=>{
@@ -73535,7 +73751,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
   }
 
 
-  function escolhaNaLinha(fn, vias, podeFicar){
+  function escolhaNaLinha(fn, vias, podeFicar, texto){
     const cx = el('div',{class:'itn-cartao sofrido escolha'});
     const bts = el('div',{class:'bts'});
     const fechar = ()=>cx.remove();
@@ -73554,7 +73770,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       opcao(_t('Ficar no lugar'), '', null, null);
     } else {
       cx.appendChild(el('div',{class:'voz', texto:_t('Como vai ser')}));
-      cx.appendChild(el('p',{texto:_t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
+      cx.appendChild(el('p',{texto:texto || _t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
       opcao(_t('Descer pra briga'), 'acao', false);
       opcao(_t('Simular'), 'simular', true);
       if(podeFicar) opcao(_t('Ficar no lugar'), '', null);
@@ -74101,6 +74317,15 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     if(naCasa) deles = TO.acoes.efetivoDaZona(e, o || {});
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);
+    /* NINGUÉM ATACA PRA CORRER NA LARGADA (dono, 18/11/2026: "Quando uma torcida com menor efetivo quer atacar a maior, já
+       abre a cena com 'Eles Correram'. Não tem sentido existir cena assim"). O lado da IA com 40% ou menos de pé corre
+       (`MINORIA`), então quem ataca chega com pelo menos 55% do nosso bonde na cena: traz mais gente se tiver (até 80% da
+       torcida dele), e se não tiver, o bote pega só a parte nossa que estava ali — o resto do bonde nem chegou a tempo. */
+    const PISO_ATAQUE = 0.55;
+    if(deles < nossos * PISO_ATAQUE){
+      if(!atq.filial && !naCasa) deles = Math.max(deles, Math.min(Math.ceil(nossos * PISO_ATAQUE), Math.round(membrosDeles * 0.8)));
+      if(deles < nossos * PISO_ATAQUE) nossos = Math.max(2, Math.floor(deles / PISO_ATAQUE));
+    }
     /* (o `naSubsede` vai junto: `abrirAtaqueAoBar` lê ele pra faixa da subsede — sem ele a cena do ataque quebrava ao abrir, 13/11/2026) */
     return {o, naEstrada, est, naCasa, naSubsede, bondeZona, fila, nossos, deles};
   }
