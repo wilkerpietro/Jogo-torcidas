@@ -47002,8 +47002,45 @@ TO.diaJogo.combate = (function(){
      arquibancada do que pro fundo, só em chão andável, sem cruzar grade
      e sem lugar já tomado; o passo aperta (18 a 10) até caber, como na
      enchente de antes. Cena sem `frente` usa a enchente (`lugaresNoSetor`). */
-  function lugaresNaArquibancada(J, s, qtd, ocupados, chave, passos){
+  /* ONDE SE SENTA (dono, 18/11/2026: "Ainda existem estádios vazando
+     torcedor pra fora da arquibancada"): a cena do estádio traz a máscara
+     da arquibancada (`arquibancada: {cel, mascara}`, o degrau e os blocos
+     retos, sem a grama em volta do campo nem os corredores). O chão
+     andável deixava o bloco grande escorrer pra grama do campo e pra fora
+     da ponta do lance. */
+  let _arq = null;
+  function arquibancadaDaCena(){
+    const A0 = D.arquibancada;
+    if(!A0 || !A0.mascara) return null;
+    if(_arq && _arq.fonte === A0) return _arq;
+    const cel = A0.cel || 16, linhas = A0.mascara.split(';'), C = Math.ceil(A.W / cel), R = linhas.length;
+    const m = new Uint8Array(C * R);
+    linhas.forEach((l, y) => { let x = 0, v = 0; for(const n of l.split(',').map(Number)){ if(v) m.fill(1, y*C + x, y*C + x + n); x += n; v ^= 1; } });
+    const ok = (x, y) => { const c = Math.floor(x / cel), r = Math.floor(y / cel); return c >= 0 && r >= 0 && c < C && r < R && !!m[r*C + c]; };
+    /* o degrau mais perto de um ponto (o miolo da célula), até `max` px */
+    const perto = (x, y, max) => {
+      const c0 = Math.floor(x / cel), r0 = Math.floor(y / cel), k = Math.ceil(max / cel);
+      let melhor = null, bd = Infinity;
+      for(let r = r0 - k; r <= r0 + k; r++) for(let c = c0 - k; c <= c0 + k; c++){
+        if(c < 0 || r < 0 || c >= C || r >= R || !m[r*C + c]) continue;
+        const px = (c + 0.5) * cel, py = (r + 0.5) * cel, dd = (px - x)**2 + (py - y)**2;
+        if(dd < bd && A.caminhavel(px, py)){ bd = dd; melhor = {x:px, y:py}; }
+      }
+      return melhor && bd <= max*max ? melhor : null;
+    };
+    _arq = {fonte:A0, ok, perto};
+    return _arq;
+  }
+  function lugaresNaArquibancada(J, s, qtd, ocupados, chave, passos, soChao){
     const Fr = frenteDaCena();
+    let Aq = soChao ? null : arquibancadaDaCena();
+    /* o ponto do bonde fora do degrau (no corredor, na grama da frente, na
+       geral): o bloco parte do degrau mais perto, até 150 px; sem degrau
+       por perto, vale o chão andável, como antes */
+    if(Aq && !Aq.ok(s.x, s.y)){
+      const q = Aq.perto(s.x, s.y, 150);
+      if(q) s = Object.assign({}, s, {x:q.x, y:q.y}); else Aq = null;
+    }
     if(!Fr) return null;
     const o = Fr.proj(s.x, s.y);
     if(!o || o.d <= 0) return null;
@@ -47034,7 +47071,7 @@ TO.diaJogo.combate = (function(){
       for(const q of cands){
         if(fora.length >= qtd) break;
         if(q.x < 4 || q.y < 4 || q.x > A.W-4 || q.y > A.H-4) continue;
-        if(!A.caminhavel(q.x, q.y) || ocupados.has(chave(q)) || grade(q.x, q.y)) continue;
+        if(!A.caminhavel(q.x, q.y) || (Aq && !Aq.ok(q.x, q.y)) || ocupados.has(chave(q)) || grade(q.x, q.y)) continue;
         fora.push({x:q.x, y:q.y});
       }
       if(!melhor || fora.length > melhor.length) melhor = fora;
@@ -47047,10 +47084,14 @@ TO.diaJogo.combate = (function(){
   /* os lugares do bonde dentro do setor dele: enchente a partir do spawn
      no passo dado, só por chão andável, sem cruzar grade de pé e sem
      cair em lugar já tomado; o passo aperta até caber */
-  function lugaresNoSetor(J, s, qtd, ocupados, chave){
+  function lugaresNoSetor(J, s, qtd, ocupados, chave, passos){
+    /* (no estádio com a máscara da arquibancada a enchente só anda no
+       degrau, a partir do degrau mais perto do bonde — 18/11/2026) */
+    let Aq = arquibancadaDaCena();
+    if(Aq && !Aq.ok(s.x, s.y)){ const q = Aq.perto(s.x, s.y, 150); if(q) s = Object.assign({}, s, {x:q.x, y:q.y}); else Aq = null; }
     const origem = A.caminhavel(s.x, s.y) ? {x:s.x, y:s.y} : A.pontoLivreMaisProximo(s.x, s.y, 7);
     let melhor = null;
-    for(const passo of [18, 16, 14, 12, 10]){
+    for(const passo of (passos || [18, 16, 14, 12, 10])){
       const vistos = new Set(), fila = [origem], fora = [];
       const k = q => `${Math.round(q.x/passo)}|${Math.round(q.y/passo)}`;
       vistos.add(k(origem));
@@ -47066,7 +47107,7 @@ TO.diaJogo.combate = (function(){
           if(vistos.has(kr)) continue;
           vistos.add(kr);
           if(r.x < 4 || r.y < 4 || r.x > A.W-4 || r.y > A.H-4) continue;
-          if(!A.caminhavel(r.x, r.y)) continue;
+          if(!A.caminhavel(r.x, r.y) || (Aq && !Aq.ok(r.x, r.y))) continue;
           if(A.atravessaGrade(q.x, q.y, r.x, r.y, J.grades)) continue;
           /* a grade nem sempre fecha o setor de ponta a ponta (sobra vão
              no pé da escada, na mureta): sem esta régua a enchente
@@ -48186,10 +48227,15 @@ TO.diaJogo.combate = (function(){
     if(lider && meus.length){
       const Fr = frenteDaCena();
       const o = Fr && Fr.proj(lider.x, lider.y);
-      if(o && o.d > 4 && o.d < 420 && Fr.temArquibancada(o.s)){
-        const k = Math.round(o.s/19) + '|' + Math.round(o.d/19) + '|' + meus.length + '|' + J.form;
+      /* (na arquibancada: pela linha do alambrado, ou — nos estádios de
+         blocos retos, fora dos anéis — pela máscara do degrau) */
+      const Aq = arquibancadaDaCena();
+      const noDegrau = Aq ? Aq.ok(lider.x, lider.y) : false;
+      if((o && o.d > 4 && o.d < 420 && Fr.temArquibancada(o.s)) || noDegrau){
+        const k = Math.round(lider.x/19) + '|' + Math.round(lider.y/19) + '|' + meus.length + '|' + J.form;
         if(!J._sentados || J._sentados.k !== k){
-          const lug = lugaresNaArquibancada(J, {x:lider.x, y:lider.y}, meus.length + 1, new Set(), () => '', [19, 17, 15]);
+          const lug = lugaresNaArquibancada(J, {x:lider.x, y:lider.y}, meus.length + 1, new Set(), () => '', [19, 17, 15])
+            || (arquibancadaDaCena() ? lugaresNoSetor(J, {x:lider.x, y:lider.y}, meus.length + 1, new Set(), () => '', [19, 17, 15]) : null);
           const ls = lug ? lug.filter(q => U.dist2(q.x, q.y, lider.x, lider.y) > 12*12).slice(0, meus.length) : null;
           /* cada um pega o lugar livre mais perto dele, do mais perto do
              líder pro mais longe: pela ordem da lista, um atravessava o
@@ -51644,7 +51690,7 @@ TO.diaJogo.combate = (function(){
     }
   }
 
-  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
+  return {_lugaresNaArquibancada: lugaresNaArquibancada, _lugaresNoSetor: lugaresNoSetor, FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil, fichasDaZona,

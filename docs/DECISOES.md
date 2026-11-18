@@ -15891,6 +15891,22 @@ atacar rivais que estejam na cidade [...]' não dá pra ser lida no tempo atual.
 - **Medido** no relógio de verdade, numa partida nova com "Já sei jogar": a dica do Expediente ficou 11,8 s antes da
   mensagem seguinte e a do financeiro 15,1 s; as outras mensagens, de 1,7 a 4 s, como antes.
 
+## Ninguém senta fora da arquibancada (dono, 18/11/2026)
+
+O dono mandou o print do Barradão com o bonde visitante passando do alto da arquibancada e descendo na grama: "Ainda existem estádios vazando torcedor pra fora da arquibancada. Confira quais estádios estão com isso."
+
+**A medição.** Sentei 250 torcedores em cada setor dos 91 estádios, do jeito do jogo, e contei quantos caíam fora do degrau. **60 estádios vazavam.** O bonde só olhava a máscara de andar, e ela inclui a grama em volta do campo, a pista, as galerias e os corredores. Então quem não cabia no degrau sentava no chão em volta.
+
+**O conserto, em três partes:**
+
+1. **A máscara de onde se senta** (`cena.arquibancada`, células de 16 px, assada junto com os marcadores). Ela vale só onde há degrau: tira o anel de passagem, as passarelas e o lado de fora. O jogo descarta todo lugar fora dela, tanto nas fileiras paralelas ao alambrado quanto no preenchimento por vizinhança. Se o ponto do bonde não cai em degrau, ele escorrega até o degrau mais perto, a até 150 px.
+2. **O anel de cima vale.** Em quatro estádios (Junco, Frei Epifânio, Nogueirão e Rei Pelé) o chão de passagem é desenhado antes e passa por baixo da arquibancada. A primeira versão da máscara via a passagem e apagava os degraus. Agora vale o anel desenhado por último, que é o que aparece.
+3. **A régua do anel reto.** Nas arquibancadas `reto` (o U do Barradão), a imagem corta a ponta da arquibancada pelo lado, mas a máscara cortava pelo raio do centro. Sobrava uma cunha de grama na ponta de cada lateral marcada como degrau, e o bonde subia por ela. A máscara agora acha o pé da coluna na beira de dentro com a mesma régua do desenho (`peDaColuna`).
+
+**O ponto onde o bonde nasce.** 20 pontos caíam no chão: na pista atrás dos gols do Rei Pelé, nas galerias do Nogueirão, da Vila Belmiro, do Bernardo Rubinger e da Joia da Princesa, entre outros. Agora, quando o meio do contorno não cai em degrau, o ponto desliza no mesmo raio até o degrau. Os pontos que já estavam num degrau não mudaram.
+
+**Resultado:** 0 torcedor fora do degrau nos 91 estádios. O teste é `p_vaza.js`, no rascunho.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

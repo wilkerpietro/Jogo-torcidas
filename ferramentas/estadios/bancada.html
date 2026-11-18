@@ -8,7 +8,7 @@
    cena do jogo (1536 × 1024), com as coberturas vazadas por cima, e de dois
    ângulos de conferência (aérea e TV). ferramentas/estadios/assar.js chama. */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { construir, marcadores, mascara, limites, raioDe } from './estadio_lowpoly.mjs';
+import { construir, marcadores, mascara, mascaraDaArquibancada, limites, raioDe } from './estadio_lowpoly.mjs';
 import { FICHAS } from './fichas.mjs';
 import { preparar, construirArredores, marcadoresArredores, mascaraArredores } from './arredores.mjs';
 import { arredoresPadrao, COM_PADRAO } from './arredores_padrao.mjs';
@@ -105,13 +105,13 @@ window.assar = async function (id, opc) {
   const perto = ficha.vista ? olhar(ficha.vista[0], ficha.vista[1], -ficha.vista[2], ficha.vista[3], ficha.vista[4], -ficha.vista[5]) : null;
   /* ---- a máscara e os marcadores ---- */
   const m = marcadores(ficha, paraPx, s);
-  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, soFora: !!ficha.soFora, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
+  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, soFora: !!ficha.soFora, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m, { arquibancada: { cel: 16, mascara: mascaraDaArquibancada(ficha, paraMetros, W, H, 16) } }) };
 };
 /* SÓ OS MARCADORES da cena de dentro, sem fotografar (MARCAS=1 no assar.js): a mesma escala e o mesmo quadro de `assar` */
 window.marcasDe = function (id) {
   const ficha = FICHAS[id]; if (!ficha) throw new Error('sem ficha: ' + id);
-  const s = escalaDe(ficha), paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s];
-  return Object.assign({ nome: ficha.nome }, marcadores(ficha, paraPx, s));
+  const s = escalaDe(ficha), paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s], paraMetros = (x, y) => [(x - W / 2) / s, (H / 2 - y) / s];
+  return Object.assign({ nome: ficha.nome }, marcadores(ficha, paraPx, s), { arquibancada: { cel: 16, mascara: mascaraDaArquibancada(ficha, paraMetros, W, H, 16) } });
 };
 /* O LUGAR DE CADA ESCALÃO NA ARQUIBANCADA, na cena de arredores (dono, 16/11/2026: "quando a torcida chega no seu ponto de
    entrada no estádio ela spawna automaticamente pro seu local na arquibancada"). É o mesmo ponto em que o bonde nasce na cena

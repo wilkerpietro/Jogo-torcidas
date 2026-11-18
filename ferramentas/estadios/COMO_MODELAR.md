@@ -812,6 +812,13 @@ segue o alambrado (a faixa, as fileiras) é a normal dessa linha, nunca o rumo d
 só coincidem no meio dela. E a faixa vai na beira do lance em que o bonde está — com o bonde no anel de cima, na mureta
 da varanda.
 
+ONDE SE SENTA (18/11/2026): o jogo só põe torcedor onde a máscara da
+arquibancada (`naArquibancada`) diz que há degrau. Um anel de passagem pode
+passar por baixo da arquibancada, desde que venha ANTES dela na lista: vale o
+último anel que cobre o ponto. Num anel `reto`, a ponta do trecho é cortada pelo
+lado (a régua do desenho), não pelo raio do centro. Depois de mexer numa ficha,
+`MARCAS=1 node ferramentas/estadios/assar.js` refaz a máscara.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

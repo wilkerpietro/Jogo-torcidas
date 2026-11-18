@@ -997,7 +997,13 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   /* de onde até onde vai a arquibancada NESTE ângulo (cada trecho pode ter a sua fundura, e um anel pode não existir ali) */
   const contornoEm = ang => { let d = null, f = null; for (const anel of ficha.aneis) { const t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue; if (!d) d = t.dentro || anel.dentro; f = t.fora || anel.fora; } return { d: d || lim.dentro, f: f || lim.fora }; };
   const noMeio = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f), q = ponto(ang, r0 + (r1 - r0) * f); return paraPx(q[0], q[1]); };
-  const pt = (ang, f) => { const p = noMeio(ang, f); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
+  /* (se o meio do contorno não cai em degrau — no Rei Pelé, atrás dos gols, o contorno vai do gramado à galeria e o meio caía na
+     pista —, o bonde escorrega no mesmo raio até o degrau mais perto) */
+  const pt = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
+    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), senta = q => naArquibancada(ficha, cs * q, sn * q);
+    if (!senta(r)) for (let k = 0.5; k <= 40; k += 0.5) { if (senta(r + k)) { r += senta(r + k + 1.5) ? k + 1.5 : k; break; } if (senta(r - k)) { r -= senta(r - k - 1.5) ? k + 1.5 : k; break; } }
+    if (!senta(r)) r = r0 + (r1 - r0) * f;
+    const p = paraPx(cs * r, sn * r); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
   const meio = arco => (arco[0] + arco[1]) / 2;
   const dirPx = (ang, sinal) => { const a = paraPx(0, 0), b = paraPx(Math.cos(ang * RAD), Math.sin(ang * RAD)), q = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
     return [+(sinal * (b[0] - a[0]) / q).toFixed(2), +(sinal * (b[1] - a[1]) / q).toFixed(2)]; };
@@ -1100,6 +1106,69 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
 
 /* a máscara da cena (192 × 128 células de 8 px), no formato do jogo: por
    linha, quantas células bloqueadas, quantas livres, quantas bloqueadas… */
+/* ONDE SE SENTA (dono, 18/11/2026: "Ainda existem estádios vazando torcedor pra fora da arquibancada"): o chão andável que é
+   arquibancada — o degrau dos anéis e os blocos retos —, sem o anel de passagem em volta do campo (a grama, a pista, o
+   corredor) nem as passarelas. A máscara de andar continua a de sempre; esta só diz ao jogo onde o bonde pode sentar. */
+/* No anel `reto` o trecho vale pela RÉGUA DO LADO, como no desenho (`paramDe`/`pontoPor`): a coluna sai do ponto da beira
+   de dentro e vai ao ponto de MESMO parâmetro na de fora. Daqui sai, pra um ponto (u, v), o ângulo do pé da coluna na beira
+   de dentro e a fração da fundura (0 na frente, 1 no fundo), ou null se o ponto não cai entre as duas beiras. */
+function peDaColuna(cd, cf, u, v) {
+  const rd = Math.min(cd.r || 0, cd.a, cd.b), rf = Math.min(cf.r || 0, cf.a, cf.b), exd = cd.a - rd, eyd = cd.b - rd, exf = cf.a - rf, eyf = cf.b - rf;
+  const ax = Math.abs(u), ay = Math.abs(v), sx = u < 0 ? -1 : 1, sy = v < 0 ? -1 : 1, ok = f => f >= -1e-6 && f <= 1 + 1e-6;
+  const ang = (x, y) => Math.atan2(y, x) / RAD;
+  /* nas retas de cima/baixo e dos lados */
+  if (cf.b !== cd.b) { const f = (ay - cd.b) / (cf.b - cd.b), m = exd + (exf - exd) * f; if (ok(f) && m > 0 && ax <= m + 1e-6) return { ang: ang(sx * ax / m * exd, sy * cd.b), f }; }
+  if (cf.a !== cd.a) { const f = (ax - cd.a) / (cf.a - cd.a), m = eyd + (eyf - eyd) * f; if (ok(f) && m > 0 && ay <= m + 1e-6) return { ang: ang(sx * cd.a, sy * ay / m * eyd), f }; }
+  if (cd.chanfro || cf.chanfro) return null;
+  /* no canto: |Q − C(f)| = R(f), com o centro C e o raio R andando em linha reta de dentro pra fora */
+  const dx = exf - exd, dy = eyf - eyd, dr = rf - rd, px = ax - exd, py = ay - eyd;
+  const A2 = dx * dx + dy * dy - dr * dr, B2 = -2 * (px * dx + py * dy + rd * dr), C2 = px * px + py * py - rd * rd;
+  const raizes = Math.abs(A2) < 1e-9 ? [-C2 / B2] : (() => { const D = B2 * B2 - 4 * A2 * C2; if (D < 0) return []; const q = Math.sqrt(D); return [(-B2 - q) / (2 * A2), (-B2 + q) / (2 * A2)]; })();
+  for (const f of raizes) { if (!ok(f)) continue; const qx = ax - (exd + dx * f), qy = ay - (eyd + dy * f); if (qx < -1e-6 || qy < -1e-6) continue;
+    const phi = Math.atan2(qy, qx); return { ang: ang(sx * (exd + rd * Math.cos(phi)), sy * (eyd + rd * Math.sin(phi))), f }; }
+  return null;
+}
+/* o trecho do anel que cobre (u, v), contando a régua do anel reto; null se nenhum */
+function trechoNoPonto(anel, u, v) {
+  const d = Math.hypot(u, v), ang = Math.atan2(v, u) / RAD;
+  for (const t of anel.trechos) {
+    const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, reto = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
+    if (reto) { const p = peDaColuna(cd, cf, u, v); if (p && dentroDoArco(p.ang, t.de, t.ate)) return t; continue; }
+    if (dentroDoArco(ang, t.de, t.ate) && d >= raioDe(ang, cd) - 0.3 && d <= raioDe(ang, cf) + 0.3) return t;
+  }
+  return null;
+}
+export function naArquibancada(ficha, u, v) {
+  if (!andavel(ficha, u, v)) return false;
+  for (const p of ficha.passarelas || []) if (Math.abs(u - p.u) <= p.w / 2 && Math.abs(v - p.v) <= p.d / 2) return false;
+  /* vale o anel desenhado por ÚLTIMO que cobre o ponto (é o que fica por cima): no Junco, no Frei Epifânio, no Nogueirão e no
+     Rei Pelé o chão de passagem vem antes e passa POR BAIXO da arquibancada, e olhar qualquer passagem apagava os degraus */
+  /* (e no anel `reto` o trecho é o da régua do lado, a do desenho: pelo ângulo visto do centro, a ponta de cada lateral do
+     Barradão ganhava uma cunha de grama marcada como degrau, e o bonde subia por ela) */
+  for (let i = ficha.aneis.length - 1; i >= 0; i--) { const t = trechoNoPonto(ficha.aneis[i], u, v); if (!t) continue;
+    if (t.tipo === 'vazio') continue;
+    return t.tipo !== 'passagem'; }
+  /* (fora dos anéis, só os blocos retos de arquibancada) */
+  for (const t of ficha.retas || []) {
+    const a = t.ang * RAD, du = u - t.u, dv = v - t.v, x = -du * Math.sin(a) + dv * Math.cos(a), y = du * Math.cos(a) + dv * Math.sin(a);
+    if (Math.abs(x) <= t.comp / 2 && y >= -0.6 && y <= t.prof) return true; }
+  return false;
+}
+/* a máscara de onde se senta, no formato da de andar, em células de `cel` px */
+export function mascaraDaArquibancada(ficha, paraMetros, W, H, cel) {
+  const linhas = [];
+  for (let r = 0; r < H / cel; r++) {
+    const partes = []; let v = 0, n = 0;
+    for (let c = 0; c < W / cel; c++) {
+      let sim = 0;
+      for (const [fx, fy] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75], [0.5, 0.5]]) { const m = paraMetros(c * cel + fx * cel, r * cel + fy * cel); if (naArquibancada(ficha, m[0], m[1])) sim++; }
+      const ok = sim >= 3 ? 1 : 0;
+      if (ok === v) n++; else { partes.push(n); v = ok; n = 1; }
+    }
+    partes.push(n); linhas.push(partes.join(','));
+  }
+  return linhas.join(';');
+}
 export function mascara(ficha, paraMetros, W, H, cel) {
   const linhas = [];
   for (let r = 0; r < H / cel; r++) {
