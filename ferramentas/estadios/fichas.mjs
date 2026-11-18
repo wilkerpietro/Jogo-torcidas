@@ -20,9 +20,17 @@ const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 
 /* o Castelão (dono, 18/11/2026): os trechos do lance de baixo entre os quatro vãos dos escanteios (o canto fica a uns 34° do
    eixo), a lateral sul de quatro lances, o camarote e o lance de cima */
-const CAST_CANTOS = [[-31.5, 31.5], [36.5, 143.5], [148.5, 211.5], [216.5, 323.5]];
-const CAST_SUL = [236, 304];
-const CAST_CAMAROTE = { cor: '#e4e6e0', cor2: '#cfd5d0', padrao: 'mosaico', mistura: 0.2, corredor: 0, vomitorios: false, paredeAtras: true, parapeito: 3.4, corFachada: '#2b343c' };
+/* (só os dois escanteios que tocam a lateral sul têm o vão — dono, 18/11/2026: "Somente os dois escanteios que tocam a lateral
+   sul que tem esse vão"; os do norte são arquibancada contínua) */
+const CAST_VAOS = [[211.5, 216.5], [323.5, 328.5]];
+const CAST_CANTOS = [[-31.5, 211.5], [216.5, 323.5]];
+/* (a lateral sul de quatro lances vai de vão a vão, como na foto do canto: os camarotes chegam até o vão do escanteio) */
+const CAST_SUL = [216.5, 323.5];
+/* o vidro VERDE-ESCURO dos camarotes (dono, 18/11/2026: "A fachada da parte do camarote é um vidro de cor verde escuro") */
+const CAST_VIDRO = '#1f3a31';
+/* o camarote: quatro fileiras de cadeira na frente das salas de vidro, separadas pelos montantes claros (a foto do canto sul) */
+const CAST_CAMAROTE = { cor: '#e4e6e0', cor2: '#cfd5d0', padrao: 'mosaico', mistura: 0.2, corredor: 0, vomitorios: false, paredeAtras: true, parapeito: 3.2,
+  corFachada: CAST_VIDRO, montantes: { cada: 4.5, cor: '#d9dbd6' } };
 /* (as bocas do lance de cima com a escada em Y — dono, 18/11/2026: "Observe que as escadas são em Y": da boca pra baixo
    desce uma escada só, e pra cima sobem duas, uma de cada lado do patamar) */
 const CAST_CIMA = { cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3, vomitorios: { f: 0.12, cada: 1, emY: true, asa: 3 } };
@@ -41,45 +49,53 @@ export const FICHAS = {
          da parte central: "normalmente as arquibancadas inferiores de estádios de dois andares são acessadas pelo topo do
          setor"). Sem boca nenhuma (dono, 15/11/2026: tirar também as poucas que tinham ficado na frente); do pedido antigo
          dele fica o corredor do alambrado.
-         OS QUATRO ESCANTEIOS SEM ARQUIBANCADA (dono, 18/11/2026, com fotos de dentro e a panorâmica: "Nos 4 escanteios tem
-         esses espaços sem arquibancada"): o lance de baixo para em cada canto num vão de uns 6 m — o túnel da rampa que
+         OS ESCANTEIOS DA LATERAL SUL SEM ARQUIBANCADA (dono, 18/11/2026, com fotos de dentro e a panorâmica; depois: "Somente
+         os dois escanteios que tocam a lateral sul que tem esse vão"): o lance de baixo para nesses dois cantos num vão de uns 6 m — o túnel da rampa que
          desce até o gramado, com a escada de cada lado —, debaixo do anel de circulação, que passa por cima */
       { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 80, b: 62, r: 46 }, h: [1.2, 11], fileiras: 12,
-        trechos: CAST_CANTOS.flatMap(([de, ate], k) => [
-          { de, ate, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false, escadaNaBorda: true },
-          { de: ate, ate: CAST_CANTOS[(k + 1) % 4][0] + (k === 3 ? 360 : 0), tipo: 'passagem', cor: '#b9b7ae' }]) },
+        trechos: CAST_CANTOS.map(([de, ate]) => ({ de, ate, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false, escadaNaBorda: true }))
+          .concat(CAST_VAOS.map(([de, ate]) => ({ de, ate, tipo: 'passagem', cor: '#b9b7ae' }))) },
       /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes: o fundo dele é o VIDRO ESCURO dos camarotes,
          com as luzes (a faixa escura entre os dois lances, na foto de frente e na panorâmica) */
       { dentro: { a: 80, b: 62, r: 46 }, fora: { a: 84, b: 66, r: 50 }, h: [11.1, 11.1], fileiras: 2, corredorFrente: 0,
-        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 11.1, cor: '#b3b1a8', corFachada: '#2b343c' }] },
+        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 11.1, cor: '#b3b1a8', corFachada: CAST_VIDRO }] },
       /* A LATERAL SUL TEM QUATRO LANCES (dono, 18/11/2026: "a arquibancada lateral a sul de quem está vendo a tela do jogo.
          Ela tem 4 lances de arquibancada, com as duas do meio sendo camarotes"): no meio da lateral de baixo, entre o lance
          de baixo e o de cima, dois lances rasos de camarote — duas fileiras de cadeira na frente do vidro escuro das salas,
-         um em cima do outro, recuados */
-      { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 89, b: 71, r: 55 }, h: [12.6, 14.2], fileiras: 2, corredorFrente: 1,
+         um em cima do outro, recuados (cada um 30 cm atrás do vidro do de baixo: o muro da frente dele começa no chão e,
+         no mesmo plano do vidro, tapava as salas). Na foto do canto sul (18/11/2026) cada um tem quatro fileiras na frente das salas de
+         vidro verde-escuro, uma sala separada da outra por um montante claro */
+      { dentro: { a: 84.3, b: 66.3, r: 50.3 }, fora: { a: 89, b: 71, r: 55 }, h: [12.4, 14.6], fileiras: 4, corredorFrente: 1,
         trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
-      { dentro: { a: 89, b: 71, r: 55 }, fora: { a: 94, b: 76, r: 60 }, h: [17.6, 19.2], fileiras: 2, corredorFrente: 1,
+      { dentro: { a: 89.3, b: 71.3, r: 55.3 }, fora: { a: 94, b: 76, r: 60 }, h: [17.8, 20], fileiras: 4, corredorFrente: 1,
         trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
       /* o lance de cima: as bocas abrem logo acima da frente, uma em cada escada, e a escada sobe delas (as caixas com a placa
          verde, nas fotos de 18/11/2026); na lateral sul ele começa atrás dos camarotes, mais alto */
       { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 128, b: 108, r: 90 }, h: [14, 34], fileiras: 18,
         trechos: [
-          { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, ...CAST_CIMA },
-          { de: CAST_SUL[0], ate: CAST_SUL[1], dentro: { a: 94, b: 76, r: 60 }, h: [22.6, 36], ...CAST_CIMA }] }
+          /* (os escanteios cortam também o lance de cima: a lateral é um bloco e o de trás do gol é outro, com o vão escuro
+             entre eles — a foto do canto sul, 18/11/2026; o vão fica na altura do anel de circulação) */
+          { de: -31.5, ate: 211.5, ...CAST_CIMA },
+          { de: CAST_SUL[0], ate: CAST_SUL[1], dentro: { a: 94.3, b: 76.3, r: 60.3 }, h: [22.6, 36], ...CAST_CIMA, corFachada: CAST_VIDRO, paineis: null },
+          ...CAST_VAOS.map(([de, ate]) => ({ de, ate, tipo: 'passagem', alt: 11.1, paredeAte: 36.5, cor: '#5f6262', corFachada: '#5d6265' }))] }
     ],
     /* A COBERTURA É UMA PEÇA SÓ, INDEPENDENTE DOS LANCES (dono, 18/11/2026, com a foto aérea: "Veja a imagem da cobertura e
        replique fielmente"). Quando a lateral sul ganhou os camarotes, a cobertura ia junto com o lance de cima e a boca do
        telhado afundou ali; agora ela é o anel da foto: oval, branca e lisa por fora, com a faixa de placas translúcidas
        acinzentadas na beira de dentro (um quarto da largura), a boca oval por cima da frente do lance de cima e a beira de
-       fora por cima da fachada, onde pousam as treliças brancas. Ela SOBE da beira de fora (38,5 m, logo acima do vidro) pra
+       fora rente à fachada, com as treliças brancas logo por fora. Ela SOBE da beira de fora (38,5 m, logo acima do vidro) pra
        de dentro (44 m), como na foto de lado */
-    coberturasAnel: [{ dentro: { a: 82, b: 62, r: 48 }, fora: { a: 137, b: 117, r: 99 }, h: 38.5, cai: -5.5, n: 96,
+    coberturasAnel: [{ dentro: { a: 82, b: 62, r: 48 }, fora: { a: 133, b: 113, r: 95 }, h: 38.5, cai: -5.5, n: 96,
       cor: '#f5f5f1', cor2: '#eef0ee', corNervura: '#e1e4e2', larguraNervura: 0.1, corBaixo: '#d9dcd8',
       bordaDentro: { larg: 13, cor: '#9aa5ad' }, beiral: [1.6, 0.9] }],
-    /* a fachada é o VIDRO espelhado, cinza-azulado, e em volta dele as 60 treliças brancas em arco: nascem no chão a 14 m do
-       vidro, sobem colando nele e passam a beira do telhado, seguindo por cima dele uns 16 m pra dentro (a foto de lado) */
-    fachada: { cor: '#566572', pilares: { n: 60, h: 41, pe: 15, topo: 6, esp: 1.3, fundo: 2.6, cor: '#f6f6f2',
-      trelica: { larg: 3.2, passos: 18, esp: 0.42, caminho: [[14, 0], [13.2, 8], [11.8, 16], [10.4, 24], [9.6, 30], [9.4, 35], [7.5, 38.6], [3, 39.9], [-6, 40.9], [-16, 41.9]] } } },
+    /* A FACHADA (dono, 18/11/2026, com a foto de perto: "parece um metal encaixado um no outro entre as treliças. A fachada
+       da parte do camarote é um vidro de cor verde escuro"): placas de metal cinza em fileiras, uma encaixada na outra; na
+       lateral sul, a dos camarotes, o vidro verde-escuro. AS TRELIÇAS NÃO FAZEM CURVA ("é apontada pra cima"): cada uma sobe
+       reta do chão, por fora da fachada, mais larga embaixo do meio, passa rente à beira do telhado e termina numa ponta uns 14 m
+       acima dele, presa à beira por uma treliçinha deitada */
+    fachada: { cor: '#9ea3a6', paineis: { alt: 3.2, larg: 3.4, cor: '#a7acaf', cor2: '#959a9e', junta: '#6a6f73' },
+      pilares: { n: 60, h: 41, pe: 15, topo: 6, esp: 1.3, fundo: 2.6, cor: '#eef0f0',
+        trelica: { larg: 3.4, passos: 22, esp: 0.4, bojo: 0.4, caminho: [[11, 0], [6.5, 53]], amarras: [[38, 4]] } } },
     entorno: [
       { tipo: 'rua', de: [-260, 150], ate: [260, 150], larg: 14 }, { tipo: 'rua', de: [-260, -150], ate: [260, -150], larg: 14 },
       { tipo: 'rua', de: [-196, -200], ate: [-196, 200], larg: 14 }, { tipo: 'rua', de: [196, -200], ate: [196, 200], larg: 14 },
@@ -87,8 +103,9 @@ export const FICHAS = {
       { tipo: 'casas', u: -232, v: 60, nu: 4, nv: 9, passo: 14 }, { tipo: 'casas', u: 232, v: -50, nu: 4, nv: 9, passo: 14 },
       { tipo: 'predio', u: 232, v: 95, w: 44, d: 26, h: 9, cor: '#c9c6bb', cor2: '#aaa79c' }
     ],
-    /* a conferência da lateral sul (os quatro lances), vista do meio da lateral norte */
-    vista: [0, 24, 40, 0, 16, -80],
+    /* a conferência do canto sudoeste, do alto do campo (como a foto do dono de 18/11/2026: o vão entre a lateral sul e o
+       lance de trás do gol) */
+    vista: [5, 75, 15, -66, 10, -45],
     /* a torcida do mandante atrás do gol norte; a visitante atrás do gol sul */
     jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 240], tunelMandante: 180, tunelVisitante: 0,
             /* (a cena de base é a do Fortaleza em casa; a do Ceará é a variante `@ceara`, arredores_marcas.mjs) */

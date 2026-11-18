@@ -15987,6 +15987,33 @@ O dono, com duas fotos aéreas: "Observe que as escadas são em Y, corrija isso 
 
 Também foram rebakeadas as três variantes. Medido: 0 torcedor fora do degrau.
 
+## O Castelão: os camarotes de vidro verde, o vão só nos cantos da lateral sul, a treliça reta e a fachada de metal (dono, 18/11/2026)
+
+O dono, com uma foto do canto sul de dentro e uma da fachada de perto: "Observe na primeira imagem como os camarotes funcionam e como é esse vão entre a arquibancada lateral sul e as partes atrás do gol. A treliça não faz curva, é apontada pra cima. Observe a fachada do estádio [...]: parece um metal encaixado um no outro entre as treliças. A fachada da parte do camarote é um vidro de cor verde escuro." E depois: "Somente os dois escanteios que tocam a lateral sul que tem esse vão."
+
+**O vão.** Só os escanteios sudoeste e sudeste (211,5°–216,5° e 323,5°–328,5°), e agora ele corta os dois lances: a lateral sul é um bloco e o lance de trás do gol é outro.
+- No lance de baixo, o vão é chão.
+- No de cima, é uma laje na altura da circulação, com o fundo fechado por uma parede escura até perto do telhado (`paredeAte`, opção nova da passagem).
+- Os dois escanteios do norte voltaram a ser arquibancada contínua.
+
+**A lateral sul de quatro lances vai de vão a vão.** Antes ia de 236° a 304°; agora vai de 216,5° a 323,5°. Os camarotes chegam até o vão, como na foto.
+
+**Os camarotes.**
+- Cada um tem quatro fileiras na frente das salas de vidro verde-escuro.
+- As salas são separadas por montantes claros (`montantes`, opção nova do trecho com parede atrás).
+- Cada lance fica 30 cm atrás do vidro do de baixo. O muro da frente de um lance começa no chão e, no mesmo plano do vidro, tapava as salas.
+- O vidro atrás do anel de circulação também é verde-escuro.
+
+**A treliça é reta e aponta pra cima.**
+- Sobe do chão por fora da fachada, mais larga um pouco abaixo do meio (`bojo`).
+- Passa rente à beira do telhado e termina numa ponta uns 14 m acima dele.
+- Fica presa à beira por uma treliçinha deitada em V (`amarras`).
+- A beira de fora do telhado veio pra perto da fachada (4 m pra fora, eram 9).
+
+**A fachada.** Placas de metal cinza em fileiras, uma encaixada na outra: xadrez de dois tons, com a sombra da placa de cima na beira de baixo de cada fileira (`fachada.paineis`, opção nova). Na lateral sul, a dos camarotes, a fachada é o vidro verde-escuro.
+
+Também foram rebakeadas as três variantes. Medido: 0 torcedor fora do degrau.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

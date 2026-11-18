@@ -410,7 +410,8 @@ export function construir(THREE, ficha) {
           A.quad(p(a0, cd), p(a0, cf), p(a1, cf), p(a1, cd), t.cor || CONCRETO);
           /* (a laje alta — a galeria de cima — ganha a parede de fora) */
           /* (`semParede`: a laje fica solta, sem o paredão embaixo — quem fecha a frente é a fachada de galerias) */
-          if (t.alt > 1 && !t.semParede) Pm.quad(p(a0, cf, 0), p(a1, cf, 0), p(a1, cf), p(a0, cf), t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb');
+          /* (`paredeAte`: a parede de fora sobe até essa altura, acima da laje — o fundo escuro do vão de escanteio do Castelão) */
+          if (t.alt > 1 && !t.semParede) Pm.quad(p(a0, cf, 0), p(a1, cf, 0), p(a1, cf, t.paredeAte), p(a0, cf, t.paredeAte), t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb');
         }
         continue;
       }
@@ -430,7 +431,19 @@ export function construir(THREE, ficha) {
         Pm.quad(p(a0, 0, 0), p(a0, 0, h0 + 1.1), p(a1, 0, h0 + 1.1), p(a1, 0, 0), t.corMureta || ficha.corMureta || '#d9d7cf');
         if (ia === ficha.aneis.length - 1 || t.paredeAtras) {
           const par = t.parapeito == null ? 1.2 : t.parapeito, hfa = hEm(a0, h1) + par, hfb = hEm(a1, h1) + par, cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
-          Pm.quad(p(a0, 1, 0), p(a1, 1, 0), p(a1, 1, hfb), p(a0, 1, hfa), cf2);
+          /* OS PAINÉIS DE METAL DA FACHADA (o Castelão; dono, 18/11/2026: "parece um metal encaixado um no outro entre as
+             treliças"): `paineis: { alt, larg, cor, cor2, junta }` no trecho (ou em `fachada.paineis`, pro último anel) — a
+             parede de fora em fileiras de placas de `alt` × `larg` metros, em xadrez de dois tons, com a sombra da placa de
+             cima na beira de baixo de cada fileira (uma encaixada na outra, como escama) */
+          const pn = t.paineis !== undefined ? t.paineis : (ia === ficha.aneis.length - 1 && ficha.fachada ? ficha.fachada.paineis : null);
+          if (pn) { const nf = Math.max(1, Math.round(Math.max(hfa, hfb) / (pn.alt || 3))), cp = Math.max(1, Math.round((pn.larg || 3) / G.larguraCel)), sai = 0.12 / prof;
+            for (let r = 0; r < nf; r++) { const fa0 = hfa * r / nf, fa1 = hfa * (r + 1) / nf, fb0 = hfb * r / nf, fb1 = hfb * (r + 1) / nf, c = (r + Math.floor(i / cp)) % 2 ? pn.cor : (pn.cor2 || pn.cor);
+              Pm.quad(p(a0, 1, fa0), p(a1, 1, fb0), p(a1, 1, fb1), p(a0, 1, fa1), c);
+              Pm.quad(p(a0, 1 + sai, fa0), p(a1, 1 + sai, fb0), p(a1, 1 + sai, fb0 + 0.3), p(a0, 1 + sai, fa0 + 0.3), pn.junta || '#6d7276'); } }
+          else Pm.quad(p(a0, 1, 0), p(a1, 1, 0), p(a1, 1, hfb), p(a0, 1, hfa), cf2);
+          /* os MONTANTES do vidro (`montantes: { cada, cor }`: o camarote do Castelão, as salas separadas umas das outras) */
+          if (t.montantes) { const cm = Math.max(1, Math.round((t.montantes.cada || 4) / G.larguraCel)), e = Math.max(0.12, 0.25 / G.larguraCel);
+            if (i % cm === 0) Pm.quad(p(a0, 1 - 0.05 / prof, h1), p(a0 + (a1 - a0) * e, 1 - 0.05 / prof, h1), p(a0 + (a1 - a0) * e, 1 - 0.05 / prof, hfa), p(a0, 1 - 0.05 / prof, hfa), t.montantes.cor || '#d8dad5'); }
           Pm.quad(p(a0, 1, hfa), p(a1, 1, hfb), p(a1, 1 - 0.8 / prof, hfb), p(a0, 1 - 0.8 / prof, hfa), cf2);
         }
       }
@@ -787,7 +800,9 @@ export function construir(THREE, ficha) {
         const Ltot = acum[acum.length - 1] || 1;
         const em = sv => { const d = sv * Ltot; let q = 1; while (q < cam.length - 1 && acum[q] < d) q++;
           const t = (d - acum[q - 1]) / ((acum[q] - acum[q - 1]) || 1), A = cam[q - 1], B = cam[q]; return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]; };
-        const corda = (sv, lado) => { const [x, y, h] = em(sv), w = hw * Math.pow(Math.sin(Math.PI * sv), 0.7) * lado; return new THREE.Vector3(x + tx * w, h, -(y + ty * w)); };
+        /* (o fuso é mais largo embaixo do meio e afina até a PONTA lá em cima: `bojo`, a fração da altura onde é mais largo) */
+        const bj = tr.bojo == null ? 0.5 : tr.bojo, larg = sv => sv <= bj ? Math.sin(Math.PI / 2 * sv / bj) : Math.cos(Math.PI / 2 * (sv - bj) / (1 - bj));
+        const corda = (sv, lado) => { const [x, y, h] = em(sv), w = hw * Math.pow(Math.max(0, larg(sv)), 0.7) * lado; return new THREE.Vector3(x + tx * w, h, -(y + ty * w)); };
         /* (o pedaço por cima do telhado vai com a cobertura: na vista de cima do jogo ele sai vazado junto com ela, e não tapa
            a arquibancada) */
         const barra = (A, B) => { const d = B.clone().sub(A), L = d.length(); if (L < 0.05) return;
@@ -796,6 +811,11 @@ export function construir(THREE, ficha) {
           (Math.hypot(m.position.x, m.position.z) < rc + 2 ? coberturas : cena).add(sombra(m)); };
         for (let j = 0; j < k; j++) { const s0 = j / k, s1 = (j + 1) / k;
           barra(corda(s0, 1), corda(s1, 1)); barra(corda(s0, -1), corda(s1, -1)); barra(corda(s0, j % 2 ? 1 : -1), corda(s1, j % 2 ? -1 : 1)); }
+        /* as AMARRAS (`amarras: [[altura, até onde], ...]`): a treliçinha deitada que prende o pilar à beira do telhado — duas
+           barras em V, da treliça (na altura dada) até o ponto [pra fora do contorno] na mesma altura */
+        for (const [ha, dra] of tr.amarras || []) { let sv = 0; for (let q = 0; q <= 40; q++) if (em(q / 40)[2] <= ha) sv = q / 40;
+          const [x, y] = em(sv), alvo = ponto(a, rc + dra);
+          for (const lado of [1, -1]) barra(new THREE.Vector3(x + tx * hw * 0.6 * lado, ha, -(y + ty * hw * 0.6 * lado)), new THREE.Vector3(alvo[0], ha, -alvo[1])); }
         continue; }
       const comp = Math.hypot(w1[0] - w0[0], w1[1] - w0[1], alt);
       const m = sombra(new THREE.Mesh(new THREE.BoxGeometry(fc.pilares.esp || 1.1, comp, fc.pilares.fundo || 2.2), mat(fc.pilares.cor || '#f4f4ef')));

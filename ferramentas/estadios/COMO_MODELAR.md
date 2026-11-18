@@ -837,6 +837,13 @@ A TRELIÇA EM ARCO da fachada é `fachada.pilares.trelica.caminho`: pontos
 [pra fora do contorno, altura], e negativo é por cima do telhado. O pedaço por cima
 do telhado sai vazado na vista de cima, junto com a cobertura.
 
+LANCES EMPILHADOS (o Castelão, 18/11/2026): o lance que começa onde o de baixo
+acaba tem o muro da frente subindo DO CHÃO. Se ele cai no mesmo plano da parede
+de trás do de baixo, os dois brigam e o muro tapa o vidro. Recue o `dentro` do
+de cima uns 30 cm. FACHADA de placas: `fachada.paineis: { alt, larg, cor, cor2,
+junta }`. Vidro com salas: `montantes: { cada, cor }` no trecho com `paredeAtras`.
+Vão com fundo fechado: passagem com `alt` e `paredeAte`.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
