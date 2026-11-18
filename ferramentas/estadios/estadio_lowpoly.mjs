@@ -774,6 +774,29 @@ export function construir(THREE, ficha) {
     const n = fc.pilares.n, alt = fc.pilares.h, c = fc.pilares.contorno || lim.fora;
     for (let i = 0; i < n; i++) {
       const a = 360 * i / n, w0 = ponto(a, raioDe(a, c) + (fc.pilares.pe || 9)), w1 = ponto(a, raioDe(a, c) + (fc.pilares.topo || 1));
+      /* A TRELIÇA EM ARCO (o Castelão; dono, 18/11/2026, com duas fotos aéreas: "Veja nesse ângulo pra aprimorar a
+         cobertura. É parte importante do estádio"): com `trelica: { caminho, larg, passos, esp }` o pilar é uma treliça branca
+         que nasce no chão fora da fachada, sobe colada no vidro em curva, passa a beira do telhado e segue POR CIMA dele até
+         perto do meio. `caminho` são os pontos [quanto fica pra fora do contorno, altura] em metros (negativo: por cima do
+         telhado, pra dentro); o fuso tem duas cordas lado a lado que se abrem até `larg` e se juntam nas pontas, com o
+         zigue-zague entre elas. */
+      if (fc.pilares.trelica) { const tr = fc.pilares.trelica, k = tr.passos || 16, hw = (tr.larg || 2.6) / 2, e = tr.esp || 0.35, cor = fc.pilares.cor || '#f4f4ef';
+        const tx = -Math.sin(a * RAD), ty = Math.cos(a * RAD), rc = raioDe(a, c);
+        const cam = (tr.caminho || [[fc.pilares.pe || 9, 0], [fc.pilares.topo || 1, alt]]).map(([dr, h]) => { const q = ponto(a, rc + dr); return [q[0], q[1], h]; });
+        const acum = [0]; for (let q = 1; q < cam.length; q++) acum.push(acum[q - 1] + Math.hypot(cam[q][0] - cam[q - 1][0], cam[q][1] - cam[q - 1][1], cam[q][2] - cam[q - 1][2]));
+        const Ltot = acum[acum.length - 1] || 1;
+        const em = sv => { const d = sv * Ltot; let q = 1; while (q < cam.length - 1 && acum[q] < d) q++;
+          const t = (d - acum[q - 1]) / ((acum[q] - acum[q - 1]) || 1), A = cam[q - 1], B = cam[q]; return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]; };
+        const corda = (sv, lado) => { const [x, y, h] = em(sv), w = hw * Math.pow(Math.sin(Math.PI * sv), 0.7) * lado; return new THREE.Vector3(x + tx * w, h, -(y + ty * w)); };
+        /* (o pedaço por cima do telhado vai com a cobertura: na vista de cima do jogo ele sai vazado junto com ela, e não tapa
+           a arquibancada) */
+        const barra = (A, B) => { const d = B.clone().sub(A), L = d.length(); if (L < 0.05) return;
+          const m = new THREE.Mesh(new THREE.BoxGeometry(e, L, e), mat(cor)); m.position.copy(A).add(B).multiplyScalar(0.5);
+          m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+          (Math.hypot(m.position.x, m.position.z) < rc + 2 ? coberturas : cena).add(sombra(m)); };
+        for (let j = 0; j < k; j++) { const s0 = j / k, s1 = (j + 1) / k;
+          barra(corda(s0, 1), corda(s1, 1)); barra(corda(s0, -1), corda(s1, -1)); barra(corda(s0, j % 2 ? 1 : -1), corda(s1, j % 2 ? -1 : 1)); }
+        continue; }
       const comp = Math.hypot(w1[0] - w0[0], w1[1] - w0[1], alt);
       const m = sombra(new THREE.Mesh(new THREE.BoxGeometry(fc.pilares.esp || 1.1, comp, fc.pilares.fundo || 2.2), mat(fc.pilares.cor || '#f4f4ef')));
       m.position.set((w0[0] + w1[0]) / 2, alt / 2, -(w0[1] + w1[1]) / 2);

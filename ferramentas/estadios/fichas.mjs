@@ -23,8 +23,9 @@ const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 const CAST_CANTOS = [[-31.5, 31.5], [36.5, 143.5], [148.5, 211.5], [216.5, 323.5]];
 const CAST_SUL = [236, 304];
 const CAST_CAMAROTE = { cor: '#e4e6e0', cor2: '#cfd5d0', padrao: 'mosaico', mistura: 0.2, corredor: 0, vomitorios: false, paredeAtras: true, parapeito: 3.4, corFachada: '#2b343c' };
-const CAST_CIMA = { cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3, vomitorios: { f: 0.12, cada: 1 },
-  cobertura: { h: 43, larg: 47, avanco: 9, cai: 3, cor: '#f5f5f1', cor2: '#e6e8e6', listras: true, corTrelica: '#b9bdc0', pilares: false } };
+/* (as bocas do lance de cima com a escada em Y — dono, 18/11/2026: "Observe que as escadas são em Y": da boca pra baixo
+   desce uma escada só, e pra cima sobem duas, uma de cada lado do patamar) */
+const CAST_CIMA = { cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3, vomitorios: { f: 0.12, cada: 1, emY: true, asa: 3 } };
 
 export const FICHAS = {
   /* ARENA CASTELÃO (Fortaleza e Ceará) — o eixo do campo é norte-sul; o norte
@@ -66,7 +67,19 @@ export const FICHAS = {
           { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, ...CAST_CIMA },
           { de: CAST_SUL[0], ate: CAST_SUL[1], dentro: { a: 94, b: 76, r: 60 }, h: [22.6, 36], ...CAST_CIMA }] }
     ],
-    fachada: { cor: '#3a4046', pilares: { n: 60, h: 41, pe: 15, topo: 6, esp: 1.3, fundo: 2.6, cor: '#f6f6f2' } },
+    /* A COBERTURA É UMA PEÇA SÓ, INDEPENDENTE DOS LANCES (dono, 18/11/2026, com a foto aérea: "Veja a imagem da cobertura e
+       replique fielmente"). Quando a lateral sul ganhou os camarotes, a cobertura ia junto com o lance de cima e a boca do
+       telhado afundou ali; agora ela é o anel da foto: oval, branca e lisa por fora, com a faixa de placas translúcidas
+       acinzentadas na beira de dentro (um quarto da largura), a boca oval por cima da frente do lance de cima e a beira de
+       fora por cima da fachada, onde pousam as treliças brancas. Ela SOBE da beira de fora (38,5 m, logo acima do vidro) pra
+       de dentro (44 m), como na foto de lado */
+    coberturasAnel: [{ dentro: { a: 82, b: 62, r: 48 }, fora: { a: 137, b: 117, r: 99 }, h: 38.5, cai: -5.5, n: 96,
+      cor: '#f5f5f1', cor2: '#eef0ee', corNervura: '#e1e4e2', larguraNervura: 0.1, corBaixo: '#d9dcd8',
+      bordaDentro: { larg: 13, cor: '#9aa5ad' }, beiral: [1.6, 0.9] }],
+    /* a fachada é o VIDRO espelhado, cinza-azulado, e em volta dele as 60 treliças brancas em arco: nascem no chão a 14 m do
+       vidro, sobem colando nele e passam a beira do telhado, seguindo por cima dele uns 16 m pra dentro (a foto de lado) */
+    fachada: { cor: '#566572', pilares: { n: 60, h: 41, pe: 15, topo: 6, esp: 1.3, fundo: 2.6, cor: '#f6f6f2',
+      trelica: { larg: 3.2, passos: 18, esp: 0.42, caminho: [[14, 0], [13.2, 8], [11.8, 16], [10.4, 24], [9.6, 30], [9.4, 35], [7.5, 38.6], [3, 39.9], [-6, 40.9], [-16, 41.9]] } } },
     entorno: [
       { tipo: 'rua', de: [-260, 150], ate: [260, 150], larg: 14 }, { tipo: 'rua', de: [-260, -150], ate: [260, -150], larg: 14 },
       { tipo: 'rua', de: [-196, -200], ate: [-196, 200], larg: 14 }, { tipo: 'rua', de: [196, -200], ate: [196, 200], larg: 14 },

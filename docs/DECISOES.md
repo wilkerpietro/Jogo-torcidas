@@ -15964,6 +15964,29 @@ O dono mandou três fotos de dentro e uma panorâmica: "Veja como funciona o pad
 
 **Os setores não mudaram.** O vão do escanteio sudoeste cai dentro do setor visitante ([176°, 240°]) e o do nordeste fica na ponta do mandante1. A torcida senta dos dois lados do vão. Também foram rebakeadas as três variantes (`@ceara`, `@fortaleza@ceara`, `@ceara@fortaleza`). Medido: 0 torcedor fora do degrau.
 
+## O Castelão: a cobertura pela foto aérea, as treliças em arco e as escadas em Y (dono, 18/11/2026)
+
+O dono, com duas fotos aéreas: "Observe que as escadas são em Y, corrija isso e torne fiel à realidade. Não sei porque mexeu na cobertura, não precisava. Veja a imagem da cobertura e replique fielmente." E depois: "Veja nesse ângulo pra aprimorar a cobertura. É parte importante do estádio."
+
+**Por que a cobertura tinha mudado.** Ela vinha presa ao lance de cima, trecho a trecho. Quando a lateral sul ganhou os camarotes, o lance de cima dali passou a começar mais atrás, e a boca do telhado afundou naquele lado. **Agora a cobertura é uma peça só, independente dos lances** (`coberturasAnel`):
+- é oval, branca e lisa por fora;
+- tem a faixa de placas translúcidas cinza-azuladas na beira de dentro (13 m, uns 23% da largura);
+- a boca oval fica por cima da frente do lance de cima;
+- a beira de fora fica por cima da fachada;
+- ela sobe da beira de fora (38,5 m, logo acima do vidro) até a de dentro (44 m), como na foto de lado.
+
+**As treliças em arco.** Os 60 pilares brancos eram barras retas. Agora cada um é uma treliça em fuso (`fachada.pilares.trelica`):
+- duas cordas que se abrem no meio, com o zigue-zague entre elas;
+- nasce no chão a 14 m do vidro, sobe colada nele em curva e passa a beira do telhado;
+- segue **por cima** do telhado uns 16 m pra dentro;
+- o pedaço por cima do telhado vai no grupo da cobertura, então na vista de cima do jogo sai vazado junto com ela e não tapa a arquibancada.
+
+**A fachada é de vidro.** Cinza-azulado, no lugar do cinza-escuro.
+
+**As escadas em Y.** As bocas do lance de cima (uma em cada escada, logo acima da frente) ganharam um patamar de cada lado. Da boca pra baixo desce uma escada só; pra cima sobem duas, uma de cada ponta do patamar (`vomitorios.emY`, a mesma régua do Presidente Vargas).
+
+Também foram rebakeadas as três variantes. Medido: 0 torcedor fora do degrau.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

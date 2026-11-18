@@ -828,6 +828,15 @@ com `paredeAtras`, `parapeito` alto e `corFachada` escura, que fazem o vidro das
 salas. O VÃO DE ESCANTEIO é um trecho `passagem` estreito no lance, entre dois
 trechos de degrau com `escadaNaBorda`.
 
+COBERTURA SOLTA DOS LANCES (o Castelão, 18/11/2026): `cobertura` dentro de um
+trecho acompanha a geometria DAQUELE trecho. Se um lado do lance muda (começa mais
+atrás, por exemplo), o telhado muda junto e a boca entorta. Quando o telhado é uma
+peça inteira de desenho próprio, use `coberturasAnel`, com `dentro`/`fora` só dele,
+`bordaDentro` (a faixa translúcida) e `cai` negativo (a beira de dentro mais alta).
+A TRELIÇA EM ARCO da fachada é `fachada.pilares.trelica.caminho`: pontos
+[pra fora do contorno, altura], e negativo é por cima do telhado. O pedaço por cima
+do telhado sai vazado na vista de cima, junto com a cobertura.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,
