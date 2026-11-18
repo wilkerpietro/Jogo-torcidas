@@ -15770,6 +15770,57 @@ trechos que citam domínio, como escolher bairro pra fazer a loja, mapa e etc".
   o Mapa; a reunião atacada no feed; o Simular até o relatório ("Derrota no bairro", sem linha de domínio); a nossa
   chance no bar; a aba Loja sem escolha de bairro.
 
+## O caixa que sobra, o mês no feed, a loja por natureza, a agenda no celular e a partida perto da estreia (dono, 18/11/2026)
+
+Pedidos: "Quando a torcida acumular dinheiro deve aparecer uma mensagem sugerindo comprar alguma coisa e na mensagem o
+botão de ir pra loja"; "Cada natureza de despesa na loja deve ter um botão removível pra navegação da tela [...] ter
+menos scroll"; "Faça uma mensagem breve do resumo financeiro do último mês com um design condizente com o visual atual
+do jogo"; "O calendário > agenda do time ainda tem scrollbar horizontal"; "A data de início do jogo deve ter menos
+mensagens e deve iniciar mais próximo do primeiro jogo do time da temporada"; "Coloque menos dicas entre o início do
+jogo e o primeiro jogo."
+
+- **A sugestão de compra** (`sugestaoDeCompraHoje`). Sai depois do primeiro jogo, em dia comum, no máximo uma a cada
+  30 dias, com o caixa de R$ 15 mil pra cima.
+  - **O que o diretor sugere:** a compra de estrutura que cabe no caixa sem mexer na reserva (quatro semanas de
+    despesa, no mínimo R$ 5 mil). A ordem é a sede, depois bar e loja, a frota, a subsede e o pessoal; dentro da mesma
+    natureza, a mais cara que cabe. Exemplo: "Chefe, o caixa tá em R$ 82.416 e o dinheiro tá parado. Dá pra investir:
+    ampliar bar para nível 2 sai por R$ 60.000 e ainda sobra R$ 22.416 pro dia a dia."
+  - **O botão "Ir pra loja"** tem o desenho dos botões de decisão (é um link de mensagem com `botao: true`). Ele abre
+    o Financeiro na Loja, já filtrada na natureza da compra.
+  - **Num ano simulado** da TUF saíram 12.
+- **O fechamento do mês no feed** (`fechamentoDoMesHoje`). Quando o mês fecha, sai "Fechou março: o mês deu R$ X de
+  lucro." (ou de prejuízo) com o cartão do mês (`cartaoDoMes`, classes `fin-mes`).
+  - **O cartão:** três quadros (receitas em verde, despesas em vermelho, saldo), a maior entrada, a maior saída e o
+    caixa de antes → de agora, no desenho dos cartões do Financeiro.
+  - **O link** "Ver o financeiro".
+  - **Save antigo** não recebe o mês que já tinha fechado.
+- **A loja por natureza.** No topo da Loja, um botão por seção: Material, Festa, Sede, Pontos, Subsedes, Aliados,
+  Pessoal, Frota e Outros (só as que têm o que comprar). Tocar mostra só aquela seção; o botão escolhido ganha um ×,
+  que volta a mostrar tudo. O desenho é o da fileira de filtros (`filtros-linha`).
+- **A agenda do time no celular** (até 720 px):
+  - **A tabela** de seis colunas, que rolava pro lado, vira um cartão por jogo, em duas linhas. À esquerda ficam a
+    data e a hora; em cima, o adversário e o placar; embaixo, a competição e o casa/fora.
+  - **A escolha do time** (o escudo e o nome ao lado do seletor) desce pra baixo dele.
+  - **As páginas de até três abas** (o Calendário) dividem a largura em vez de rolar.
+  - **Medido** em 390 e 360 px: nada passa da largura.
+- **A partida abre perto da estreia** (`adiantarAteOPrimeiroJogo`, no fim de `TO.estado.novo`).
+  - **Quando abre:** na segunda-feira da semana do primeiro compromisso do clube (o jogo, ou a saída da caravana se é
+    fora), ou na semana anterior se ele cair antes da quinta, pra sobrar tempo de planejar. Assim o cartão da semana
+    sai no dia em que a partida abre.
+  - **As semanas puladas correm de verdade e caladas** (os jogos dos outros, as tabelas, o mundo), com o expediente
+    parado. Depois voltam ao começo o caixa, o extrato, os fechamentos, a moral, o prestígio e o expediente, e do feed
+    só fica o que nasceu no dia em que a partida abre.
+  - **O custo:** criar a partida leva cerca de 1 s a mais.
+  - **A TUF** abria em 05/01 e estreava em 15/02 (o dia 41); agora abre em 09/02.
+- **Menos dicas até o primeiro jogo.** Antes da estreia saem duas: no dia em que a partida abre e três dias depois. As
+  outras duas dicas de começo vêm depois da estreia, uma a cada três dias. As dicas das semanas 1 e 3 só saem depois
+  da estreia. O relógio das dicas conta do começo da partida (`E.inicioAbs`), não do ano, e os dias pulados não dão
+  dica.
+  - **Medido** com a TUF: entre o começo e a estreia (seis dias) saem cinco mensagens: duas dicas, o planejamento da
+    semana, a partida e a rodada.
+- **Conferido:** dois anos simulados (TUF e Gaviões) sem erro, e no celular o feed com a compra e o mês, o "Ir pra
+  loja" abrindo a loja em Pontos e a agenda do time.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

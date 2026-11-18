@@ -4633,6 +4633,19 @@ TO.i18n.registrar({
   "Chefe, a gente tava fazendo uma reunião {lugar} {noBairro} e uns membros da {nome} desceram pra cima! Bora segurar?": {es:"¡Jefe, estábamos haciendo una reunión {lugar} {noBairro} y unos miembros de {nome} vinieron encima! ¿Aguantamos?", en:"Boss, we were holding a meeting {lugar} {noBairro} and some {nome} members came at us! Do we hold them off?"},
   "Até {a} nossos contra os {n} que estão ali · vencendo, Prestígio +4 · Relação −2": {es:"Hasta {a} de los nuestros contra los {n} que están ahí · ganando, Prestigio +4 · Relación −2", en:"Up to {a} of ours against the {n} who are there · winning, Prestige +4 · Relationship −2"},
   "Os {n} nossos que estão na reunião contra até {a} deles · segurando, Prestígio +4 · Relação −2": {es:"Los {n} nuestros que están en la reunión contra hasta {a} de ellos · aguantando, Prestigio +4 · Relación −2", en:"The {n} of ours at the meeting against up to {a} of theirs · holding, Prestige +4 · Relationship −2"},
+  "Chefe, o caixa tá em {caixa} e o dinheiro tá parado. Dá pra investir: {item} sai por {custo} e ainda sobra {sobra} pro dia a dia.": {es:"Jefe, la caja está en {caixa} y la plata está quieta. Se puede invertir: {item} sale {custo} y todavía quedan {sobra} para el día a día.", en:"Boss, the till is at {caixa} and the money is just sitting there. We can invest: {item} costs {custo} and we'd still have {sobra} for day-to-day."},
+  "Ir pra loja": {es:"Ir a la tienda", en:"Go to the shop"},
+  "Festa": {es:"Fiesta", en:"Party"},
+  "Aliados": {es:"Aliados", en:"Allies"},
+  "Fechou {mes}: o mês deu {saldo} de lucro.": {es:"Cerró {mes}: el mes dio {saldo} de ganancia.", en:"{mes} is closed: the month made {saldo} in profit."},
+  "Fechou {mes}: o mês deu {saldo} de prejuízo.": {es:"Cerró {mes}: el mes dio {saldo} de pérdida.", en:"{mes} is closed: the month lost {saldo}."},
+  "Ver o financeiro": {es:"Ver las finanzas", en:"See the finances"},
+  "Maior entrada · {rot}": {es:"Mayor ingreso · {rot}", en:"Biggest income · {rot}"},
+  "Maior saída · {rot}": {es:"Mayor gasto · {rot}", en:"Biggest expense · {rot}"},
+  "Material": {es:"Material", en:"Gear"},
+  "Pontos": {es:"Locales", en:"Venues"},
+  "Mostrar tudo": {es:"Mostrar todo", en:"Show all"},
+  "Mostrar só {secao}": {es:"Mostrar solo {secao}", en:"Show only {secao}"},
   "O jogo é na nossa praça: a caravana sai da nossa sede, ninguém precisa receber a gente.": {es:"El partido es en nuestra plaza: la caravana sale de nuestra sede, nadie necesita recibirnos.", en:"The game is in our home city: the convoy leaves from our HQ, nobody needs to host us."},
   "Temos subsede em {cidade}: a caravana fica nela.": {es:"Tenemos subsede en {cidade}: la caravana se queda en ella.", en:"We have a branch in {cidade}: the convoy stays there."},
   "<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>V</kbd> postura · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena": {es:"<kbd>WASD</kbd> líder · <kbd>Q</kbd> golpear · <kbd>F</kbd> agarrar · <kbd>C</kbd> llamar · <kbd>2</kbd> piedra · <kbd>3</kbd> mira de la bomba (clic tira) · <kbd>V</kbd> postura · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · ruedita = zoom · <kbd>F2</kbd> editor de escena", en:"<kbd>WASD</kbd> leader · <kbd>Q</kbd> hit · <kbd>F</kbd> grab · <kbd>C</kbd> rally · <kbd>2</kbd> stone · <kbd>3</kbd> bomb aim (click throws) · <kbd>V</kbd> stance · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · wheel = zoom · <kbd>F2</kbd> scene editor"},
@@ -32611,8 +32624,53 @@ TO.estado = (function(){
     if(TO.almanaque) TO.almanaque.tirarFoto(E);
     sortearProximoJogo(E);
     lancar(E, _t('Caixa inicial'), 0);
+    adiantarAteOPrimeiroJogo();
     mudou();
     return E;
+  }
+
+  /* O JOGO COMEÇA PERTO DO PRIMEIRO JOGO (dono, 18/11/2026: "A data de
+     início do jogo deve ter menos mensagens e deve iniciar mais próximo
+     do primeiro jogo do time da temporada"). A partida abria em 05/01, e
+     o primeiro jogo do clube costuma cair em fevereiro: eram semanas de
+     espera com dicas e avisos. Agora ela abre na segunda-feira da semana
+     do primeiro compromisso (o jogo, ou a saída da caravana quando é
+     fora) — na semana anterior se ele cair antes da quinta, pra sobrar
+     tempo de planejar. As semanas puladas correm de verdade, caladas
+     (o feed ainda não estreou): os jogos dos outros, as tabelas, o mundo.
+     O que é da torcida volta ao que era no começo — o caixa, o extrato,
+     os fechamentos, a moral e o prestígio, o expediente (que fica parado
+     durante o pulo) — e do feed só fica o que nasceu no dia em que a
+     partida abre. */
+  function adiantarAteOPrimeiroJogo(){
+    const meu = E.torcida && E.torcida.clubeId && TO.mundo.time(E.torcida.clubeId);
+    if(!meu || !E.temporada || !TO.competicoes.agendaDoClube) return;
+    const emDias = j => (j.semana-1)*7 + (j.dia-1);
+    const ag = TO.competicoes.agendaDoClube(E, meu.id).filter(j => j.semana && j.dia).sort((a, b) => emDias(a) - emDias(b));
+    if(!ag.length) return;
+    const j = ag[0];
+    const viagem = TO.financeiro.diasDaViagem ? TO.financeiro.diasDaViagem(E, j) : [];
+    const ev = Math.min(emDias(j), ...viagem);
+    let alvo = ev - (ev % 7);
+    if(ev - alvo < 3) alvo -= 7;
+    if(alvo <= 0) return;
+    const guarda = {dinheiro:E.dinheiro, indicadores:Object.assign({}, E.indicadores), expediente:E.expediente,
+                    membros:E.membros.length};
+    E.expediente = {};
+    E.inicioAbs = alvo;
+    let voltas = 0;
+    while((E.data.absoluto || 0) < alvo && voltas++ < 400) avancarDia();
+    E.expediente = guarda.expediente;
+    E.dinheiro = guarda.dinheiro;
+    E.indicadores = guarda.indicadores;
+    E.historicoIndicadores = [];
+    E.transacoes = [];
+    E.resumoMes = {}; E.mesCorrente = null; E.ultimoFechamento = null; E.ultimaSemana = null;
+    E.historicoSemanas = []; E.caixaAberturaSemana = E.dinheiro; E.semanasNoVermelho = 0;
+    if(E.acoes) E.acoes.feitas = [];
+    E.feed = (E.feed || []).filter(m => m.quando && m.quando.abs === alvo);
+    E.feedFila = (E.feedFila || []).filter(m => m.quando && m.quando.abs === alvo);
+    lancar(E, _t('Caixa inicial'), 0);
   }
 
   /* -------------------------------------------------------
@@ -38114,6 +38172,8 @@ TO.feed = (function(){
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
     passo('festa no prejuízo', ()=>festaNoPrejuizoHoje(E));
+    passo('fechamento do mês', ()=>fechamentoDoMesHoje(E));
+    passo('sugestão de compra', ()=>sugestaoDeCompraHoje(E));
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
        28/08/2026) */
     passo('recepções',      ()=>{ if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E); });
@@ -38480,15 +38540,28 @@ TO.feed = (function(){
   ];
   function dicaDeHoje(E){
     const n0 = E.dicasDoComeco || 0;
-    /* (só nas seis primeiras semanas da partida: quem já joga há tempo não
-       recebe dica de começo quando a lista ganha uma nova) */
-    if(n0 < DICAS_DO_COMECO.length && TO.relacoes.semanaAbs(E) <= 6){
+    /* O RELÓGIO DAS DICAS É O DA PARTIDA, não o do ano (18/11/2026): a
+       partida agora abre perto do primeiro jogo do clube (`inicioAbs`),
+       que pode ser a semana 6 do ano */
+    const desde = (E.data.absoluto || 0) - (E.inicioAbs || 0);
+    /* (os dias pulados até o começo da partida não dão dica: elas sairiam
+       e seriam apagadas junto com o resto do feed calado) */
+    if(desde < 0) return;
+    /* MENOS DICAS ATÉ O PRIMEIRO JOGO (dono, 18/11/2026): antes da estreia
+       saem só duas, no dia em que a partida abre e três dias depois; as
+       outras da lista vêm depois do primeiro jogo, uma a cada três dias.
+       (Só nas seis primeiras semanas: quem já joga há tempo não recebe
+       dica de começo quando a lista ganha uma nova.) */
+    if(n0 < DICAS_DO_COMECO.length && desde <= 42){
+      const antes = E.estreou === false;
+      if(antes ? (n0 >= 2 || desde % 3 !== 0) : (desde - (E.dicaUltimaAbs != null ? E.dicaUltimaAbs - (E.inicioAbs || 0) : -99)) < 3) return;
       const m0 = propor(E, {kind:'dica', peso:'info', voz:'diretor',
         chave:`dica-comeco|${n0}`, texto: DICAS_DO_COMECO[n0]});
-      if(m0) E.dicasDoComeco = n0 + 1;
+      if(m0){ E.dicasDoComeco = n0 + 1; E.dicaUltimaAbs = E.data.absoluto || 0; }
       return;
     }
-    const sa = TO.relacoes.semanaAbs(E);
+    if(E.estreou === false) return;
+    const sa = Math.floor(desde / 7) + 1;
     /* SÓ NO PRIMEIRO MÊS (pedido do dono, 08/09/2026): a dica a cada
        duas semanas virava ruído depois que o jogador já sabe jogar.
        Saem as das semanas 1 e 3 e mais nenhuma; o "Como funciona" do
@@ -41694,6 +41767,76 @@ TO.feed = (function(){
      precisam ir pra festa se pagar — e oferece trocar o turno. Avisa de
      novo só depois de 21 dias, e só se o prejuízo continua.
      ------------------------------------------------------- */
+  /* O CAIXA CHEIO VIRA SUGESTÃO DE COMPRA (dono, 18/11/2026: "Quando a
+     torcida acumular dinheiro deve aparecer uma mensagem sugerindo
+     comprar alguma coisa e na mensagem o botão de ir pra loja"). Depois
+     do primeiro jogo, em dia comum, no máximo uma a cada 30 dias: com o
+     caixa de R$ 15 mil pra cima, o diretor aponta a compra de estrutura
+     que cabe no caixa sem mexer na reserva (quatro semanas de despesa,
+     no mínimo R$ 5 mil) — a sede primeiro, depois bar e loja, a frota,
+     a subsede e o pessoal; dentro da mesma natureza, a mais cara que
+     cabe. O botão leva pra loja, já na seção da compra. */
+  const NAT_DA_SUGESTAO = ['sede', 'pontos', 'frota', 'filiais', 'pessoal'];
+  function sugestaoDeCompraHoje(E){
+    if(E.estreou === false || !TO.patrimonio || !TO.patrimonio.opcoes) return null;
+    if(!diaComumFeed(E, E.data.dia)) return null;
+    const hoje = E.data.absoluto || 0;
+    if(hoje - (E.avisoCompra != null ? E.avisoCompra : -999) < 30) return null;
+    const caixa = E.dinheiro || 0;
+    if(caixa < 15000) return null;
+    const semana = (E.ultimaSemana && E.ultimaSemana.despesa) || 0;
+    const reserva = Math.max(5000, Math.round(semana * 4));
+    let ops = [];
+    try{ ops = TO.patrimonio.opcoes(E) || []; }catch(_){ return null; }
+    const cabe = ops.filter(o => NAT_DA_SUGESTAO.includes(o.natureza) && !o.trava && o.custo > 0 && o.custo <= caixa - reserva);
+    if(!cabe.length) return null;
+    cabe.sort((a, b) => NAT_DA_SUGESTAO.indexOf(a.natureza) - NAT_DA_SUGESTAO.indexOf(b.natureza) || b.custo - a.custo);
+    const o = cabe[0];
+    E.avisoCompra = hoje;
+    const item = String(o.rot || '');
+    return propor(E, {
+      kind:'compra', peso:'info', voz:'diretor', tipo:'bom',
+      chave:`compra|${hoje}`,
+      texto:_t('Chefe, o caixa tá em {caixa} e o dinheiro tá parado. Dá pra investir: {item} sai por {custo} e ainda sobra {sobra} pro dia a dia.',
+               {caixa:U.dinheiro(caixa), item: item.charAt(0).toLowerCase() + item.slice(1), custo:U.dinheiro(o.custo), sobra:U.dinheiro(caixa - o.custo)}),
+      dados:{item:o.id, custo:o.custo, natureza:o.natureza},
+      links:[{rot:_t('Ir pra loja'), botao:true, nota:o.nota ? String(o.nota).split(' · ')[0] : undefined,
+              acao:'painel', args:{pagina:'financeiro', sub:'loja', secao:o.natureza}}]
+    });
+  }
+
+  /* O FECHAMENTO DO MÊS NO FEED (dono, 18/11/2026: "Faça uma mensagem
+     breve do resumo financeiro do último mês com um design condizente
+     com o visual atual do jogo"). Quando o mês fecha (`fecharMes`, no
+     fim da última semana dele), sai uma mensagem curta do tesoureiro
+     com o cartão do mês: receitas, despesas e o saldo, a maior entrada
+     e a maior saída, e o caixa de antes e de agora. O botão abre o
+     Financeiro. Só o fechamento novo: um save antigo não recebe o mês
+     que já passou. */
+  function fechamentoDoMesHoje(E){
+    const r = E.ultimoFechamento;
+    if(!r || !r.mensal) return null;
+    const chave = `mes-fin|${r.ano}|${r.semanaAte}`;
+    if(E.fechamentoAvisado === chave) return null;
+    E.fechamentoAvisado = chave;
+    const semAbs = (E.data.ano - r.ano) * 52 + E.data.semana - r.semanaAte;
+    if(semAbs > 1) return null;
+    const mes = MESES[TO.estado.dataDaSemana(r.ano, r.semanaAte, 4).getMonth()];
+    const rec = (r.receitas || [])[0], des = (r.despesas || [])[0];
+    return propor(E, {
+      kind:'mes-financeiro', peso:'info', voz:'diretor', tipo: r.saldo >= 0 ? 'bom' : 'ruim',
+      chave,
+      texto: r.saldo >= 0
+        ? _t('Fechou {mes}: o mês deu {saldo} de lucro.', {mes, saldo:U.dinheiro(r.saldo)})
+        : _t('Fechou {mes}: o mês deu {saldo} de prejuízo.', {mes, saldo:U.dinheiro(-r.saldo)}),
+      dados:{mes, receita:r.receita, despesa:r.despesa, saldo:r.saldo,
+             caixaAntes:r.caixaAntes, caixaDepois:r.caixaDepois,
+             maiorReceita: rec ? {rot:rec.rot, v:rec.v} : null,
+             maiorDespesa: des ? {rot:des.rot, v:des.v} : null},
+      links:[{rot:_t('Ver o financeiro'), acao:'painel', args:{pagina:'financeiro', sub:'resumo'}}]
+    });
+  }
+
   function festaNoPrejuizoHoje(E){
     const exp = E.expediente || {};
     const turnos = ['manha', 'tarde', 'noite'].filter(t => exp[t] === 'festa').length;
@@ -65830,6 +65973,8 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       }
     }
 
+    if(m.kind === 'mes-financeiro' && m.dados) art.appendChild(cartaoDoMes(m.dados));
+
     /* O RELATÓRIO DO OLHEIRO É TABELA (decisão do dono, 17/08/2026):
        coluna 1 a competição, o dia e o jogo com a cor de cada clube;
        coluna 2 as torcidas do jogo, cada uma com sua cor e estimativa. */
@@ -66077,11 +66222,16 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
 
     /* links informativos não consomem nada — "Ver Competições" */
     for(const l of (m.links || [])){
-      const la = el('div',{class:'msg-abaixo'});
-      const a = el('button',{class:'msg-link', texto:l.rot});
+      /* (o link que é botão — "Ir pra loja", 18/11/2026 — tem o desenho
+         dos botões de decisão, com a nota embaixo) */
+      const la = el('div',{class: l.botao ? 'msg-bts msg-bts-link' : 'msg-abaixo'});
+      const a = el('button',{class: l.botao ? 'bt' : 'msg-link'});
+      if(l.botao){ a.appendChild(el('b',{texto:l.rot})); if(l.nota) a.appendChild(el('small',{texto:l.nota})); }
+      else a.textContent = l.rot;
       a.onclick = ()=>{
         const args = l.args || {};
         if(args.pagina === 'noticias' && args.aba) subNoticias = args.aba;
+        if(args.pagina === 'financeiro' && args.sub){ subFin = args.sub; if(args.sub === 'loja') filtroLoja = args.secao || null; }
         /* O LINK DA MENSAGEM POSICIONA A TELA (23/08/2026): com
            Competições em três níveis, "ver a chave" tem de dizer qual
            nível, qual país e qual competição — senão cai na Série A. */
@@ -69582,7 +69732,11 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     const sec0 = el('div',{class:'loja-secao'});
     sec0.appendChild(el('h3',{html:_t('Compra rápida <small>material de cena — o que se repõe toda semana</small>')}));
     sec0.appendChild(rap);
-    pg.appendChild(sec0);
+    /* AS SEÇÕES VÃO PRA UMA LISTA (dono, 18/11/2026: "Cada natureza de
+       despesa na loja deve ter um botão removível pra navegação da tela
+       ter menos scroll"): no topo, um botão por natureza; tocar mostra
+       só aquela, e o × do botão escolhido volta a mostrar tudo */
+    const secoes = [{id:'rapida', rot:_t('Material'), node:sec0}];
 
     /* ---- FESTA NA ARQUIBANCADA (dono, 11/10/2026) ----
        uma compra = uma festa; o estoque sobe no próximo jogo do clube
@@ -69613,20 +69767,20 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       secF.appendChild(el('div',{class:'recado', html: total
         ? _t('No próximo jogo a festa empurra o time em <b>+{pct}%</b> (a bateria ensaiada soma mais 20% em casa).', {pct:Math.round(total*100)})
         : _t('Depósito vazio: o próximo jogo vai sem festa.')}));
-      pg.appendChild(secF);
+      secoes.push({id:'festa', rot:_t('Festa'), node:secF});
     }
 
     /* ---- o resto, por natureza ---- */
     const SECOES = [
-      ['sede',    _t('Sede e anexos'),        _t('o que a sede comporta, e o que ela ganha')],
-      ['pontos',  _t('Pontos comerciais'),    _t('bar, loja e subsede: rendem todo mês')],
-      ['filiais', _t('Subsedes em outras cidades'), _t('núcleo local que recruta, defende e ataca lá')],
-      ['aliados', _t('Presente pra aliado'),   _t('a gente paga, o patrimônio é dele — e a relação sobe')],
-      ['pessoal', _t('Pessoal'),              _t('professor de MMA e advogado: mensalidade no fechamento')],
-      ['frota',   _t('Frota'),                _t('ônibus: a caravana de estrada sai mais barata')],
-      ['outros',  _t('Outros'),               ''],
+      ['sede',    _t('Sede e anexos'),        _t('o que a sede comporta, e o que ela ganha'), _t('Sede')],
+      ['pontos',  _t('Pontos comerciais'),    _t('bar, loja e subsede: rendem todo mês'), _t('Pontos')],
+      ['filiais', _t('Subsedes em outras cidades'), _t('núcleo local que recruta, defende e ataca lá'), _t('Subsedes')],
+      ['aliados', _t('Presente pra aliado'),   _t('a gente paga, o patrimônio é dele — e a relação sobe'), _t('Aliados')],
+      ['pessoal', _t('Pessoal'),              _t('professor de MMA e advogado: mensalidade no fechamento'), _t('Pessoal')],
+      ['frota',   _t('Frota'),                _t('ônibus: a caravana de estrada sai mais barata'), _t('Frota')],
+      ['outros',  _t('Outros'),               '', _t('Outros')],
     ];
-    for(const [nat, rot, sub] of SECOES){
+    for(const [nat, rot, sub, curto] of SECOES){
       const itens = de(nat);
       if(!itens.length) continue;
       const sec = el('div',{class:'loja-secao'});
@@ -69683,8 +69837,38 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         gr.appendChild(it);
       }
       sec.appendChild(gr);
-      pg.appendChild(sec);
+      secoes.push({id:nat, rot:curto, node:sec});
     }
+    if(filtroLoja && !secoes.some(x => x.id === filtroLoja)) filtroLoja = null;
+    const nav = el('div',{class:'filtros-linha loja-nav'});
+    for(const x of secoes){
+      const on = filtroLoja === x.id;
+      const b = el('button',{class: on ? 'on' : '', texto:x.rot});
+      if(on) b.appendChild(el('span',{class:'tira', texto:'×'}));
+      b.title = on ? _t('Mostrar tudo') : _t('Mostrar só {secao}', {secao:x.rot});
+      b.onclick = ()=>{ filtroLoja = on ? null : x.id; redesenhar(); };
+      nav.appendChild(b);
+    }
+    pg.appendChild(nav);
+    for(const x of secoes) if(!filtroLoja || filtroLoja === x.id) pg.appendChild(x.node);
+  }
+  let filtroLoja = null;
+
+  /* o cartão do fechamento do mês, no feed (18/11/2026) */
+  function cartaoDoMes(d){
+    const c = el('div',{class:'fin-mes'});
+    const tiles = el('div',{class:'fm-tiles'});
+    const tile = (rot, v, cls) => { const t = el('div',{class:'fm-tile'}); t.appendChild(el('span',{texto:rot})); t.appendChild(el('b',{class:cls, texto:U.dinheiro(v)})); return t; };
+    tiles.appendChild(tile(_t('Receitas'), d.receita || 0, 'positivo'));
+    tiles.appendChild(tile(_t('Despesas'), -(d.despesa || 0), 'negativo'));
+    tiles.appendChild(tile(_t('Saldo'), d.saldo || 0, (d.saldo || 0) >= 0 ? 'positivo' : 'negativo'));
+    c.appendChild(tiles);
+    const linha = (rot, valor, cls) => { const l = el('div',{class:'fm-linha'}); l.appendChild(el('span',{texto:rot})); l.appendChild(el('b',{class:cls || '', texto:valor})); c.appendChild(l); };
+    if(d.maiorReceita) linha(_t('Maior entrada · {rot}', {rot:d.maiorReceita.rot}), U.dinheiro(d.maiorReceita.v), 'positivo');
+    if(d.maiorDespesa) linha(_t('Maior saída · {rot}', {rot:d.maiorDespesa.rot}), U.dinheiro(-d.maiorDespesa.v), 'negativo');
+    if(d.caixaAntes != null && d.caixaDepois != null)
+      linha(_t('Caixa'), `${U.dinheiro(d.caixaAntes)} → ${U.dinheiro(d.caixaDepois)}`, d.caixaDepois < 0 ? 'negativo' : '');
+    return c;
   }
 
   /* =======================================================

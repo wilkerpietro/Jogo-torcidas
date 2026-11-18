@@ -358,3 +358,66 @@ body.jogo3d .semc .sem-abrir{margin-top:2px;width:100%}
    o palco tem a largura do canvas (fit-content) dentro de uma grade de
    bloco: sem a margem ele encostava na esquerda, com uma faixa vazia do lado */
 body.jogo3d #djPalco{margin-inline:auto;border-color:var(--linha);border-radius:var(--raio);overflow:hidden}
+
+/* A LOJA POR NATUREZA (dono, 18/11/2026): um botão por seção no topo; o
+   escolhido mostra só ela e ganha o × que volta a mostrar tudo */
+.loja-nav{margin:4px 0 14px}
+.loja-nav button{font-size:13px;padding:8px 13px;min-height:36px}
+.loja-nav button .tira{font-size:16px;line-height:1;margin-left:2px;opacity:.85}
+
+/* A AGENDA DO TIME CABE NO CELULAR (dono, 18/11/2026: "o calendário >
+   agenda do time ainda tem scrollbar horizontal"): as seis colunas viram
+   um cartão por jogo, em duas linhas — a data e a hora à esquerda, o
+   adversário e o placar em cima, a competição e o casa/fora embaixo */
+@media (max-width: 720px){
+  table.agenda thead{display:none}
+  table.agenda, table.agenda tbody{display:block;width:100%}
+  table.agenda tr{display:grid;grid-template-columns:58px minmax(0,1fr) auto;
+    grid-template-areas:"data adv placar" "hora comp local";gap:4px 12px;
+    padding:12px 14px;border-bottom:1px solid var(--linha, #1e1e1e);align-items:center}
+  table.agenda td{display:block;padding:0;border:0;min-width:0;background:transparent}
+  table.agenda tr:hover td, table.agenda tr.meu td{background:transparent}
+  table.agenda tr.meu{background:#2b1414}
+  table.agenda td.data{grid-area:data}
+  table.agenda td.hora{grid-area:hora;font-size:11px;color:var(--fraco)}
+  table.agenda td:nth-child(5){grid-area:adv}
+  table.agenda td.placar{grid-area:placar;text-align:right}
+  table.agenda td.comp{grid-area:comp}
+  table.agenda td.comp b{display:inline;font-weight:600}
+  table.agenda td.comp small{display:inline;margin-left:6px}
+  table.agenda td:nth-child(4){grid-area:local;text-align:right}
+  table.agenda .adv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rolo:has(> table.agenda){overflow-x:hidden}
+}
+
+/* (as páginas de até três abas — o Calendário — dividem a largura no
+   celular, com o rótulo em duas linhas: a terceira aba não fica cortada
+   atrás de um rolo de lado) */
+@media (max-width: 720px){
+  .pagina.painel .abas-grandes:not(:has(> button:nth-child(4))){overflow-x:visible}
+  .pagina.painel .abas-grandes:not(:has(> button:nth-child(4))) > button{
+    flex:1 1 0;min-width:0;white-space:normal;text-align:center;padding-left:6px;padding-right:6px;line-height:1.15}
+}
+/* (a escolha do time da agenda: no celular o escudo e o nome do clube
+   descem pra baixo do seletor, em vez de vazar pela direita) */
+@media (max-width: 720px){
+  .escolha-time{grid-template-columns:minmax(0,1fr)}
+  .escolha-time .quem{min-width:0}
+  .escolha-time .quem > div{min-width:0}
+  .escolha-time .quem small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+
+/* O FECHAMENTO DO MÊS NO FEED (18/11/2026): três números grandes e as
+   linhas do mês, no desenho dos cartões do Financeiro */
+.fin-mes{margin-top:10px;border:1px solid var(--linha);border-radius:8px;background:#151515;padding:12px 14px}
+.fin-mes .fm-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.fin-mes .fm-tile{border:1px solid var(--linha);border-radius:7px;padding:8px 10px;background:#1b1b1b;min-width:0}
+.fin-mes .fm-tile span{display:block;font-family:var(--titulo);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco)}
+.fin-mes .fm-tile b{display:block;font-family:var(--mono);font-size:16px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-mes .fm-linha{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--linha);font-size:14px}
+.fin-mes .fm-linha span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--texto)}
+.fin-mes .fm-linha b{font-family:var(--mono);white-space:nowrap}
+.fin-mes .positivo{color:var(--verde-vivo, #4fbf6a)}
+.fin-mes .negativo{color:var(--rubro-vivo, #e0453d)}
+.msg-bts-link{margin-top:10px}
+@media (max-width: 520px){ .fin-mes .fm-tile b{font-size:14px} }
