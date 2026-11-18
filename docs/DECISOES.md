@@ -15948,6 +15948,22 @@ Isso vale em `efetivoDoAtaque` (bar, reunião, casa, concentração, estrada) e 
 
 **Proposta pendente (rival que recua):** o rival que recua fica amontoado no ponto de nascimento. A proposta foi mandada ao dono e espera a resposta.
 
+## O Castelão pelas fotos de dentro: os escanteios, os camarotes da lateral sul e as bocas do lance de cima (dono, 18/11/2026)
+
+O dono mandou três fotos de dentro e uma panorâmica: "Veja como funciona o padrão de arquibancadas, corredores e vomitórios do Castelão na segunda imagem. A primeira imagem é a arquibancada lateral a sul de quem está vendo a tela do jogo. Ela tem 4 lances de arquibancada, com as duas do meio sendo camarotes. Nos 4 escanteios tem esses espaços sem arquibancada."
+
+**Os escanteios.** O lance de baixo para em cada canto num vão de uns 6 m (5°, em 34°, 146°, 214° e 326°). É o túnel da rampa que desce até o gramado, com uma escada de cada lado (`escadaNaBorda`). O anel de circulação passa por cima. O vão é chão (passagem): anda-se por ele, mas ninguém senta.
+
+**A lateral sul (a de baixo da tela) tem quatro lances.** Entre 236° e 304°, ficam entre o lance de baixo e o de cima:
+- dois lances rasos de camarote, cada um com duas fileiras de cadeira na frente do vidro escuro das salas, um em cima do outro, recuados (alturas 12,6 m e 17,6 m);
+- o lance de cima, que ali começa atrás deles, mais alto (22,6 m).
+
+**O vidro dos camarotes em volta toda.** A parede de trás do anel de circulação é o vidro escuro com as luzes: a faixa escura entre os dois lances, nas fotos de frente e na panorâmica.
+
+**As bocas do lance de cima.** As caixas com a placa verde ficam logo acima da frente do lance, uma em cada escada, e a escada sobe delas (`vomitorios: { f: 0.12, cada: 1 }`; antes eram a um quarto da altura, em escadas alternadas). O lance de baixo segue sem boca, como o dono pediu em 15/11.
+
+**Os setores não mudaram.** O vão do escanteio sudoeste cai dentro do setor visitante ([176°, 240°]) e o do nordeste fica na ponta do mandante1. A torcida senta dos dois lados do vão. Também foram rebakeadas as três variantes (`@ceara`, `@fortaleza@ceara`, `@ceara@fortaleza`). Medido: 0 torcedor fora do degrau.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -819,6 +819,15 @@ passar por baixo da arquibancada, desde que venha ANTES dela na lista: vale o
 lado (a régua do desenho), não pelo raio do centro. Depois de mexer numa ficha,
 `MARCAS=1 node ferramentas/estadios/assar.js` refaz a máscara.
 
+LANCES SÓ NUM TRECHO (o Castelão, 18/11/2026): quando um lado tem mais lances
+que os outros (a lateral sul com dois camarotes entre o lance de baixo e o de cima),
+cada lance a mais é um ANEL próprio, com o trecho dele e `tipo: 'vazio'` no resto
+da volta. No anel de cima, o trecho daquele lado ganha `dentro` e `h` próprios:
+começa atrás dos camarotes, mais alto. Camarote é um lance raso (duas fileiras)
+com `paredeAtras`, `parapeito` alto e `corFachada` escura, que fazem o vidro das
+salas. O VÃO DE ESCANTEIO é um trecho `passagem` estreito no lance, entre dois
+trechos de degrau com `escadaNaBorda`.
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

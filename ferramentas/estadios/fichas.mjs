@@ -18,6 +18,14 @@ const ARR_BANDAS = [['#c3202d', 30], ['#efeee9', 13], ['#1d1d1f', 30], ['#efeee9
 const ILHA_TETO = { h: 26, larg: 11, avanco: 2.5, cai: 1.2, cor: '#8f8e89', cor2: '#7d7c78', listras: true, corTrelica: '#5f5e5b', corPilar: '#8a8985' };
 const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 
+/* o Castelão (dono, 18/11/2026): os trechos do lance de baixo entre os quatro vãos dos escanteios (o canto fica a uns 34° do
+   eixo), a lateral sul de quatro lances, o camarote e o lance de cima */
+const CAST_CANTOS = [[-31.5, 31.5], [36.5, 143.5], [148.5, 211.5], [216.5, 323.5]];
+const CAST_SUL = [236, 304];
+const CAST_CAMAROTE = { cor: '#e4e6e0', cor2: '#cfd5d0', padrao: 'mosaico', mistura: 0.2, corredor: 0, vomitorios: false, paredeAtras: true, parapeito: 3.4, corFachada: '#2b343c' };
+const CAST_CIMA = { cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3, vomitorios: { f: 0.12, cada: 1 },
+  cobertura: { h: 43, larg: 47, avanco: 9, cai: 3, cor: '#f5f5f1', cor2: '#e6e8e6', listras: true, corTrelica: '#b9bdc0', pilares: false } };
+
 export const FICHAS = {
   /* ARENA CASTELÃO (Fortaleza e Ceará) — o eixo do campo é norte-sul; o norte
      fica à esquerda da imagem. Anel oval fechado, dois lances, cobertura
@@ -31,16 +39,32 @@ export const FICHAS = {
       /* o lance de baixo: entra-se por CIMA, pelo anel de circulação atrás da última fileira (dono, 15/11/2026, com o corte
          da parte central: "normalmente as arquibancadas inferiores de estádios de dois andares são acessadas pelo topo do
          setor"). Sem boca nenhuma (dono, 15/11/2026: tirar também as poucas que tinham ficado na frente); do pedido antigo
-         dele fica o corredor do alambrado */
+         dele fica o corredor do alambrado.
+         OS QUATRO ESCANTEIOS SEM ARQUIBANCADA (dono, 18/11/2026, com fotos de dentro e a panorâmica: "Nos 4 escanteios tem
+         esses espaços sem arquibancada"): o lance de baixo para em cada canto num vão de uns 6 m — o túnel da rampa que
+         desce até o gramado, com a escada de cada lado —, debaixo do anel de circulação, que passa por cima */
       { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 80, b: 62, r: 46 }, h: [1.2, 11], fileiras: 12,
-        trechos: [{ de: 0, ate: 360, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false }] },
-      /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes */
+        trechos: CAST_CANTOS.flatMap(([de, ate], k) => [
+          { de, ate, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18, vomitorios: false, escadaNaBorda: true },
+          { de: ate, ate: CAST_CANTOS[(k + 1) % 4][0] + (k === 3 ? 360 : 0), tipo: 'passagem', cor: '#b9b7ae' }]) },
+      /* o anel de circulação atrás do lance de baixo, debaixo dos camarotes: o fundo dele é o VIDRO ESCURO dos camarotes,
+         com as luzes (a faixa escura entre os dois lances, na foto de frente e na panorâmica) */
       { dentro: { a: 80, b: 62, r: 46 }, fora: { a: 84, b: 66, r: 50 }, h: [11.1, 11.1], fileiras: 2, corredorFrente: 0,
-        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 11.1, cor: '#b3b1a8' }] },
-      /* o lance de cima: as bocas abrem no lance, a um quarto da altura */
+        trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 11.1, cor: '#b3b1a8', corFachada: '#2b343c' }] },
+      /* A LATERAL SUL TEM QUATRO LANCES (dono, 18/11/2026: "a arquibancada lateral a sul de quem está vendo a tela do jogo.
+         Ela tem 4 lances de arquibancada, com as duas do meio sendo camarotes"): no meio da lateral de baixo, entre o lance
+         de baixo e o de cima, dois lances rasos de camarote — duas fileiras de cadeira na frente do vidro escuro das salas,
+         um em cima do outro, recuados */
+      { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 89, b: 71, r: 55 }, h: [12.6, 14.2], fileiras: 2, corredorFrente: 1,
+        trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
+      { dentro: { a: 89, b: 71, r: 55 }, fora: { a: 94, b: 76, r: 60 }, h: [17.6, 19.2], fileiras: 2, corredorFrente: 1,
+        trechos: [{ de: CAST_SUL[0], ate: CAST_SUL[1], ...CAST_CAMAROTE }, { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, tipo: 'vazio' }] },
+      /* o lance de cima: as bocas abrem logo acima da frente, uma em cada escada, e a escada sobe delas (as caixas com a placa
+         verde, nas fotos de 18/11/2026); na lateral sul ele começa atrás dos camarotes, mais alto */
       { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 128, b: 108, r: 90 }, h: [14, 34], fileiras: 18,
-        trechos: [{ de: 0, ate: 360, cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3, vomitorios: { f: 0.25, cada: 2 },
-                    cobertura: { h: 43, larg: 47, avanco: 9, cai: 3, cor: '#f5f5f1', cor2: '#e6e8e6', listras: true, corTrelica: '#b9bdc0', pilares: false } }] }
+        trechos: [
+          { de: CAST_SUL[1], ate: CAST_SUL[0] + 360, ...CAST_CIMA },
+          { de: CAST_SUL[0], ate: CAST_SUL[1], dentro: { a: 94, b: 76, r: 60 }, h: [22.6, 36], ...CAST_CIMA }] }
     ],
     fachada: { cor: '#3a4046', pilares: { n: 60, h: 41, pe: 15, topo: 6, esp: 1.3, fundo: 2.6, cor: '#f6f6f2' } },
     entorno: [
@@ -50,6 +74,8 @@ export const FICHAS = {
       { tipo: 'casas', u: -232, v: 60, nu: 4, nv: 9, passo: 14 }, { tipo: 'casas', u: 232, v: -50, nu: 4, nv: 9, passo: 14 },
       { tipo: 'predio', u: 232, v: 95, w: 44, d: 26, h: 9, cor: '#c9c6bb', cor2: '#aaa79c' }
     ],
+    /* a conferência da lateral sul (os quatro lances), vista do meio da lateral norte */
+    vista: [0, 24, 40, 0, 16, -80],
     /* a torcida do mandante atrás do gol norte; a visitante atrás do gol sul */
     jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 240], tunelMandante: 180, tunelVisitante: 0,
             /* (a cena de base é a do Fortaleza em casa; a do Ceará é a variante `@ceara`, arredores_marcas.mjs) */
