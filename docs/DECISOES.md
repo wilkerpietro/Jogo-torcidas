@@ -15877,6 +15877,20 @@ Relato, com print: "Cena da briga na praça ficou assim". A cena abriu sem a fot
 - **Conferido no celular:** a reunião atacada, "Abrir a cena", e a pracinha com a foto, a nossa reunião e o bonde
   rival descendo.
 
+## A dica fica o tempo de ser lida (dono, 18/11/2026)
+
+Pedido: "As mensagens de dica devem durar mais tempo antes de aparecer outra no feed. A mensagem 'Chefe, nós podemos
+atacar rivais que estejam na cidade [...]' não dá pra ser lida no tempo atual."
+
+- **Antes.** O compasso do feed olhava só a PRÓXIMA mensagem da fila: o recado comum esperava 2,2 s, o jornal 3,5 s e a
+  decisão 1,5 s. Sem fila, o dia passava em 120 ms. Uma dica caía e, uns 2 s depois, outra mensagem ou o dia seguinte já
+  empurravam ela pra baixo.
+- **Agora** (`leituraDe`, no relógio do pacote). A dica que acabou de cair segura a próxima mensagem e o dia pelo tempo
+  de leitura dela: 2,5 s mais 0,3 s por palavra, no mínimo 6 s. A dica dos rivais na cidade, com 40 palavras, fica uns
+  14 s. A leitura não encurta no 2×, porque quem lê é gente. As outras mensagens seguem no compasso de antes.
+- **Medido** no relógio de verdade, numa partida nova com "Já sei jogar": a dica do Expediente ficou 11,8 s antes da
+  mensagem seguinte e a do financeiro 15,1 s; as outras mensagens, de 1,7 a 4 s, como antes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

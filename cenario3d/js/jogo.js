@@ -72834,6 +72834,17 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
      calado leva até a noite; o compasso de sempre é o mínimo. Sem jogo 3D,
      nada muda. */
   const ritmo3d = () => TO.jogo3d && TO.jogo3d.ritmo;
+  /* A DICA FICA NA TELA O TEMPO DE SER LIDA (dono, 18/11/2026: "As
+     mensagens de dica devem durar mais tempo antes de aparecer outra no
+     feed"): a dica que acabou de cair segura a próxima mensagem — e o dia
+     — pelo tempo de leitura dela, 2,5 s mais 0,3 s por palavra, no mínimo
+     6 s (a dica do ataque aos rivais da cidade, com 40 palavras, fica uns
+     14 s). A leitura não encurta no 2×: quem lê é gente. */
+  const leituraDe = m => {
+    if(!m || m.kind !== 'dica') return 0;
+    const palavras = String(m.texto || '').trim().split(/\s+/).filter(Boolean).length;
+    return Math.max(6000, 2500 + palavras * 300);
+  };
   const compassoDaFila = e => {
     const r = ritmo3d(), base = compassoDaFila0(e);
     return r ? Math.max(base, r.antesDaProxima(e) || 0) : base;
@@ -72886,7 +72897,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         if(caiu && ritmo3d() && ritmo3d().caiu) ritmo3d().caiu(e, caiu);
         pintarTopo(); atualizarFeed();
         if(TO.feed.travado(e)) return;         // decisão dropada: espera
-        relogioTempo = setTimeout(tique, compassoDaFila(e)/vel);
+        relogioTempo = setTimeout(tique, Math.max(compassoDaFila(e)/vel, leituraDe(caiu)));
         return;
       }
       passarUmDia(e);
