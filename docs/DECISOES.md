@@ -15830,8 +15830,8 @@ tutorial só com textos e símbolos falando o que cada coisa faz e como fazer a 
 força, membros, patrimônio, ranking, dinheiro no time, enfraquecer o rival, festa na arquibancada e as formas de
 faturar. A segunda proposta, em 14 páginas, foi aprovada inteira ("Ficou ótimo. Pode manter tudo.").
 
-- **O convite** é a primeira mensagem da partida nova, antes do cartão do planejamento: "Fala, presidente! A torcida
-  agora é sua. Quer que a diretoria explique como as coisas funcionam e como fazer a torcida crescer?".
+- **O convite** é a primeira mensagem da partida nova, antes do cartão do planejamento: "Bem-vindo ao Torcida
+  Organizada, presidente. Quer ver o tutorial de como o jogo funciona?" (texto do dono, 18/11/2026).
   - **Os botões:** "📖 Quero o tutorial" e "Já sei jogar". O segundo fecha com "Fechado, chefe. O tutorial fica no
     menu Jogo."
   - **Segura o tempo** até a resposta.

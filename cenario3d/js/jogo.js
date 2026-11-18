@@ -4635,7 +4635,7 @@ TO.i18n.registrar({
   "Os {n} nossos que estão na reunião contra até {a} deles · segurando, Prestígio +4 · Relação −2": {es:"Los {n} nuestros que están en la reunión contra hasta {a} de ellos · aguantando, Prestigio +4 · Relación −2", en:"The {n} of ours at the meeting against up to {a} of theirs · holding, Prestige +4 · Relationship −2"},
   "Chefe, o caixa tá em {caixa} e o dinheiro tá parado. Dá pra investir: {item} sai por {custo} e ainda sobra {sobra} pro dia a dia.": {es:"Jefe, la caja está en {caixa} y la plata está quieta. Se puede invertir: {item} sale {custo} y todavía quedan {sobra} para el día a día.", en:"Boss, the till is at {caixa} and the money is just sitting there. We can invest: {item} costs {custo} and we'd still have {sobra} for day-to-day."},
   "Ir pra loja": {es:"Ir a la tienda", en:"Go to the shop"},
-  "Fala, presidente! A torcida agora é sua. Quer que a diretoria explique como as coisas funcionam e como fazer a torcida crescer?": {es:"¡Qué tal, presidente! La barra ahora es suya. ¿Quiere que la directiva le explique cómo funcionan las cosas y cómo hacer crecer la barra?", en:"Hey, president! The firm is yours now. Want the board to explain how things work and how to make the firm grow?"},
+  "Bem-vindo ao Torcida Organizada, presidente. Quer ver o tutorial de como o jogo funciona?": {es:"Bienvenido a Torcida Organizada, presidente. ¿Quiere ver el tutorial de cómo funciona el juego?", en:"Welcome to Torcida Organizada, president. Want to see the tutorial on how the game works?"},
   "📖 Quero o tutorial": {es:"📖 Quiero el tutorial", en:"📖 I want the tutorial"},
   "Já sei jogar": {es:"Ya sé jugar", en:"I already know how to play"},
   "Fechado, chefe. O tutorial fica no menu Jogo.": {es:"Listo, jefe. El tutorial queda en el menú Juego.", en:"Deal, boss. The tutorial stays in the Game menu."},
@@ -38624,7 +38624,7 @@ TO.feed = (function(){
     if(E.estreou !== false || E.tutorialConvite) return null;
     if((E.data.absoluto || 0) < (E.inicioAbs || 0)) return null;   // os dias pulados até o começo
     const mt = propor(E, {kind:'tutorial', peso:'decisao', voz:'diretor', chave:'tutorial|convite',
-      texto:_t('Fala, presidente! A torcida agora é sua. Quer que a diretoria explique como as coisas funcionam e como fazer a torcida crescer?'),
+      texto:_t('Bem-vindo ao Torcida Organizada, presidente. Quer ver o tutorial de como o jogo funciona?'),
       botoes:[{id:'sim', rot:_t('📖 Quero o tutorial'), acao:'tutorial-abrir'},
               {id:'nao', rot:_t('Já sei jogar'), acao:'tutorial-nao'}]});
     if(mt) E.tutorialConvite = true;
