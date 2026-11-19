@@ -851,6 +851,12 @@ gramado). Cada fileira é reesticada até cruzar a reta, e o `de`/`ate` vira só
 referência (onde a reta passa no meio da fundura). Os vizinhos dos dois lados (o
 vão de passagem e o trecho seguinte) levam o mesmo corte, senão sobra cunha.
 
+NÍVEIS SEPARADOS NA MÁSCARA (19/11/2026): o assado põe uma barreira em toda
+divisa de anel com degrau de mais de 1,5 m, aberta só nos acessos do anel mais
+alto: as bocas; sem boca, as escadas; sem escada, as pontas. Se um anel alto
+ficar sem saída (o assado acusa ilha de chão), dê a ele boca (`vomitorios`) ou
+escada (`corredor`).
+
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra
 "fundo, torre, lateral", o canto é o nordeste ou o sudoeste; "lateral,

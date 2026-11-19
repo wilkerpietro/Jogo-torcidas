@@ -1077,7 +1077,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   /* (se o meio do contorno não cai em degrau — no Rei Pelé, atrás dos gols, o contorno vai do gramado à galeria e o meio caía na
      pista —, o bonde escorrega no mesmo raio até o degrau mais perto) */
   const pt = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
-    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), senta = q => naArquibancada(ficha, cs * q, sn * q);
+    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), senta = q => naArquibancada(ficha, cs * q, sn * q) && !barreira(ficha, cs * q, sn * q);
     if (!senta(r)) for (let k = 0.5; k <= 40; k += 0.5) { if (senta(r + k)) { r += senta(r + k + 1.5) ? k + 1.5 : k; break; } if (senta(r - k)) { r -= senta(r - k - 1.5) ? k + 1.5 : k; break; } }
     if (!senta(r)) r = r0 + (r1 - r0) * f;
     const p = paraPx(cs * r, sn * r); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
@@ -1248,13 +1248,88 @@ export function mascaraDaArquibancada(ficha, paraMetros, W, H, cel) {
   }
   return linhas.join(';');
 }
+/* =========================================================
+   NINGUÉM SOBE DE UM NÍVEL PRO OUTRO PELA PAREDE (dono, 19/11/2026: "Faça o boneco parar de atravessar de um nível pro
+   outro de arquibancadas"). A máscara de andar é plana: o anel de circulação, o camarote e o lance de cima se encostavam, e
+   o boneco passava de um pro outro por cima do muro da frente. Agora, na divisa entre dois anéis com degrau de mais de
+   1,5 m (a beira de trás do de baixo contra a frente do de cima), fica uma BARREIRA fina na máscara, aberta só nos acessos
+   do de cima: as bocas (vomitórios); sem boca, as escadas; sem escada, as duas pontas do trecho. Na lateral entre dois
+   trechos vizinhos de alturas diferentes (a ponta de um lance contra o vão de passagem, o camarote contra o lance de cima)
+   também. A divisa com o chão (a pista, o gramado, a passagem rente ao chão) segue aberta: é por ali que se chega na frente
+   da arquibancada (na lateral não: a ponta do lance é parede, e só na frente dele o degrau é pequeno).
+   ========================================================= */
+const DEGRAU_BARRA = 1.5, MEIA_BARRA = 0.75;
+const hFrente = (anel, t) => t.tipo === 'passagem' ? (t.alt || 0.12) : (t.h || anel.h)[0];
+const hFundo = (anel, t) => t.tipo === 'passagem' ? (t.alt || 0.12) : (t.h || anel.h)[1];
+/* a altura do lance na fração `f` da fundura: plano no corredor da frente (`fc`), e subindo dali até o fundo */
+const memoFc = new WeakMap();
+const hEmF = (ficha, anel, t, f) => { if (t.tipo === 'passagem') return t.alt || 0.12;
+  let fc = memoFc.get(t); if (fc == null) { fc = colunasDe(ficha, anel, t).fc || 0; memoFc.set(t, fc); }
+  const [h0, h1] = t.h || anel.h; return f <= fc ? h0 : h0 + (h1 - h0) * (f - fc) / ((1 - fc) || 1); };
+const memoAcessos = new WeakMap();
+/* os acessos de um trecho, em graus: [ângulo, meia largura] */
+function acessosDe(ficha, anel, t) {
+  let a = memoAcessos.get(t); if (a) return a; a = [];
+  if (t.tipo !== 'passagem') {
+    const G = colunasDe(ficha, anel, t), rm = (raioDe((t.de + t.ate) / 2, t.dentro || anel.dentro)) || 1, grau = m => m / (rm * RAD);
+    if (G.vomCentros.length) for (const c of G.vomCentros) a.push([G.angEm(c), grau(G.vomMeia * G.larguraCel + 0.6)]);
+    else if (G.corr) for (let i = G.corr; i < G.n; i += G.corr) a.push([G.angEm(i + G.esc / 2), grau(1.2)]);
+    if (!a.length) { a.push([t.de, grau(1.6)], [t.ate, grau(1.6)]); }
+  }
+  memoAcessos.set(t, a); return a;
+}
+const trechoDe = (anel, u, v, ang) => anel.trechos.some(temCorte) ? trechoDoPonto(anel, u, v) : trechoEm(anel, ang);
+export function barreira(ficha, u, v) {
+  const d = Math.hypot(u, v); if (d < 1e-6) return false;
+  const ang = Math.atan2(v, u) / RAD, aneis = ficha.aneis;
+  for (let ia = 1; ia < aneis.length; ia++) {
+    const anel = aneis[ia];
+    /* (o trecho de cima é o que está do lado de fora da divisa: um passo pra fora dela) */
+    const t = trechoDe(anel, u * (d + MEIA_BARRA + 0.1) / d, v * (d + MEIA_BARRA + 0.1) / d, ang);
+    if (!t || t.tipo === 'vazio') continue;
+    const rb = raioDe(ang, t.dentro || anel.dentro); if (Math.abs(d - rb) > MEIA_BARRA) continue;
+    /* o anel de baixo: o de dentro cuja beira de fora encosta aqui */
+    const pu = u * (rb - MEIA_BARRA - 0.1) / d, pv = v * (rb - MEIA_BARRA - 0.1) / d;
+    let tb = null, ab = null;
+    for (let ib = ia - 1; ib >= 0 && !tb; ib--) { const x = trechoDe(aneis[ib], pu, pv, ang); if (x && x.tipo !== 'vazio' && Math.abs(raioDe(ang, x.fora || aneis[ib].fora) - rb) < 1.2) { tb = x; ab = aneis[ib]; } }
+    if (!tb) continue;
+    const hA = hFrente(anel, t), hB = hFundo(ab, tb);
+    if (Math.min(hA, hB) < 0.6 || Math.abs(hA - hB) < DEGRAU_BARRA) continue;
+    /* aberto nos acessos do mais alto */
+    const [alto, anelAlto] = hA > hB ? [t, anel] : [tb, ab];
+    if (acessosDe(ficha, anelAlto, alto).some(([a, m]) => Math.abs(((ang - a + 540) % 360) - 180) <= m)) continue;
+    return true;
+  }
+  /* a lateral entre dois trechos vizinhos do mesmo anel */
+  for (const anel of aneis) {
+    const t = trechoDe(anel, u, v, ang); if (!t || t.tipo === 'vazio') continue;
+    const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, r0 = raioDe(ang, cd), r1 = raioDe(ang, cf);
+    if (d < r0 - 0.3 || d > r1 + 0.3) continue;
+    const f = Math.max(0, Math.min(1, (d - r0) / ((r1 - r0) || 1)));
+    for (const [borda, U, lado] of [[t.de, t.corteDe, -1], [t.ate, t.corteAte, 1]]) {
+      const perto = U != null ? Math.abs(u - U) <= MEIA_BARRA : Math.abs(((ang - borda + 540) % 360) - 180) * RAD * d <= MEIA_BARRA;
+      if (!perto) continue;
+      /* o vizinho: um passo pro outro lado da ponta (na ponta reta, pro lado oposto ao meio do trecho) */
+      let x;
+      if (U != null) { const am = (t.de + t.ate) / 2, um = Math.cos(am * RAD) * raioDe(am, cd), uN = U - Math.sign(um - U) * (MEIA_BARRA + 0.4);
+        x = trechoDe(anel, uN, v, Math.atan2(v, uN) / RAD); }
+      else { const aV = borda + lado * (MEIA_BARRA + 0.4) / d / RAD; x = trechoDe(anel, Math.cos(aV * RAD) * d, Math.sin(aV * RAD) * d, aV); }
+      if (!x || x === t || x.tipo === 'vazio') continue;
+      /* (aqui o chão não abre: a ponta do lance é parede, e só na frente dele a diferença é pequena) */
+      const h1 = hEmF(ficha, anel, t, f), h2 = hEmF(ficha, anel, x, f);
+      if (Math.abs(h1 - h2) < DEGRAU_BARRA) continue;
+      return true;
+    }
+  }
+  return false;
+}
 export function mascara(ficha, paraMetros, W, H, cel) {
   const linhas = [];
   for (let r = 0; r < H / cel; r++) {
     const partes = []; let v = 0, n = 0;
     for (let c = 0; c < W / cel; c++) {
       let livres = 0;
-      for (const [dx, dy] of [[2, 2], [6, 2], [2, 6], [6, 6], [4, 4]]) { const m = paraMetros(c * cel + dx, r * cel + dy); if (andavel(ficha, m[0], m[1])) livres++; }
+      for (const [dx, dy] of [[2, 2], [6, 2], [2, 6], [6, 6], [4, 4]]) { const m = paraMetros(c * cel + dx, r * cel + dy); if (andavel(ficha, m[0], m[1]) && !barreira(ficha, m[0], m[1])) livres++; }
       const livre = livres >= 4 ? 1 : 0;
       if (livre === v) n++; else { partes.push(n); v = livre; n = 1; }
     }

@@ -16024,6 +16024,25 @@ O dono, com uma foto do canto sul de dentro e uma da fachada de perto: "Observe 
 
 Também foram rebakeadas as três variantes. Medido: 0 torcedor fora do degrau.
 
+## Ninguém passa de um nível da arquibancada pro outro pela parede (dono, 19/11/2026)
+
+Pedido do dono: "Faça o boneco parar de atravessar de um nível pro outro de arquibancadas". A máscara de andar da cena é plana. O lance de baixo, o anel de circulação, o camarote e o lance de cima se encostavam, e o boneco subia de um pro outro por cima do muro da frente.
+
+**A barreira.** No assado da máscara (`barreira`, em `estadio_lowpoly.mjs`), entra uma barreira fina (1,5 m) em dois lugares:
+- **Na divisa entre dois anéis com degrau de mais de 1,5 m** (a beira de trás do de baixo contra a frente do de cima). Ela fica aberta só nos acessos do mais alto: as bocas (vomitórios); sem boca, as escadas; sem escada, as duas pontas do trecho.
+- **Na lateral entre dois trechos vizinhos do mesmo anel com alturas diferentes:** a ponta de um lance contra o vão de passagem, ou o camarote contra o lance de cima. O corredor da frente do lance, plano e baixo, segue aberto pro chão.
+
+A divisa radial com o chão (a pista, o gramado, a passagem rente ao chão) segue aberta: é por ali que se chega na frente da arquibancada.
+
+**No Castelão:**
+- do anel de circulação pro lance de cima, só pelas bocas;
+- dos camarotes, só pelas pontas;
+- os vãos dos escanteios só abrem pro corredor da frente.
+
+O ponto onde o bonde nasce escorrega pra fora da barreira, como já escorregava pra fora do chão sem degrau.
+
+**Conferido:** no assado, o chão de cada estádio continua uma ilha só, com todos os marcadores (bondes, túneis e PM) nela. A Ilha do Retiro tinha ficado com a passagem entre a visitante e o lado coberto fechada; isso foi resolvido abrindo o corredor da frente.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
