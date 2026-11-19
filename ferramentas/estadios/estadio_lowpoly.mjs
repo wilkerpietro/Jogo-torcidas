@@ -1077,7 +1077,9 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   /* (se o meio do contorno não cai em degrau — no Rei Pelé, atrás dos gols, o contorno vai do gramado à galeria e o meio caía na
      pista —, o bonde escorrega no mesmo raio até o degrau mais perto) */
   const pt = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
-    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), senta = q => naArquibancada(ficha, cs * q, sn * q) && !barreira(ficha, cs * q, sn * q);
+    /* (e longe da barreira entre níveis: com o ponto rente a ela, a célula da máscara sai fechada) */
+    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), livreB = q => [-1.6, 0, 1.6].every(e => !barreira(ficha, cs * (q + e), sn * (q + e)));
+    const senta = q => naArquibancada(ficha, cs * q, sn * q) && livreB(q);
     if (!senta(r)) for (let k = 0.5; k <= 40; k += 0.5) { if (senta(r + k)) { r += senta(r + k + 1.5) ? k + 1.5 : k; break; } if (senta(r - k)) { r -= senta(r - k - 1.5) ? k + 1.5 : k; break; } }
     if (!senta(r)) r = r0 + (r1 - r0) * f;
     const p = paraPx(cs * r, sn * r); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
@@ -1256,7 +1258,7 @@ export function mascaraDaArquibancada(ficha, paraMetros, W, H, cel) {
    do de cima: as bocas (vomitórios); sem boca, as escadas; sem escada, as duas pontas do trecho. Na lateral entre dois
    trechos vizinhos de alturas diferentes (a ponta de um lance contra o vão de passagem, o camarote contra o lance de cima)
    também. A divisa com o chão (a pista, o gramado, a passagem rente ao chão) segue aberta: é por ali que se chega na frente
-   da arquibancada (na lateral não: a ponta do lance é parede, e só na frente dele o degrau é pequeno).
+   da arquibancada; e o vão de chão ao lado de um lance também (é por ele que se passa de uma arquibancada solta pra outra).
    ========================================================= */
 const DEGRAU_BARRA = 1.5, MEIA_BARRA = 0.75;
 const hFrente = (anel, t) => t.tipo === 'passagem' ? (t.alt || 0.12) : (t.h || anel.h)[0];
@@ -1315,8 +1317,10 @@ export function barreira(ficha, u, v) {
         x = trechoDe(anel, uN, v, Math.atan2(v, uN) / RAD); }
       else { const aV = borda + lado * (MEIA_BARRA + 0.4) / d / RAD; x = trechoDe(anel, Math.cos(aV * RAD) * d, Math.sin(aV * RAD) * d, aV); }
       if (!x || x === t || x.tipo === 'vazio') continue;
-      /* (aqui o chão não abre: a ponta do lance é parede, e só na frente dele a diferença é pequena) */
+      /* (só entre dois níveis de cima do chão: o vão de chão ao lado de um lance segue aberto — na Arena Conda as quatro
+         arquibancadas só se ligam pelos vãos entre elas, e fechando-os cada uma virava uma ilha) */
       const h1 = hEmF(ficha, anel, t, f), h2 = hEmF(ficha, anel, x, f);
+      if ((t.tipo === 'passagem' && hEmF(ficha, anel, t, 0) < 0.6) || (x.tipo === 'passagem' && hEmF(ficha, anel, x, 0) < 0.6)) continue;
       if (Math.abs(h1 - h2) < DEGRAU_BARRA) continue;
       return true;
     }
