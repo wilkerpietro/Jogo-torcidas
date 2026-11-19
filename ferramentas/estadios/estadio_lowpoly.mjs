@@ -1071,6 +1071,8 @@ export function construir(THREE, ficha) {
    ========================================================= */
 export function marcadores(ficha, paraPx, pxPorMetro) {
   const lim = limites(ficha), j = ficha.jogo;
+  /* (o caminho de volta, do pixel pro metro: o quadro da cena é alinhado aos eixos) */
+  const o0 = paraPx(0, 0), e1 = paraPx(1, 0), e2 = paraPx(0, 1), paraMetros0 = (x, y) => [(x - o0[0]) / ((e1[0] - o0[0]) || 1), (y - o0[1]) / ((e2[1] - o0[1]) || 1)];
   /* de onde até onde vai a arquibancada NESTE ângulo (cada trecho pode ter a sua fundura, e um anel pode não existir ali) */
   const contornoEm = ang => { let d = null, f = null; for (const anel of ficha.aneis) { const t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue; if (!d) d = t.dentro || anel.dentro; f = t.fora || anel.fora; } return { d: d || lim.dentro, f: f || lim.fora }; };
   const noMeio = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f), q = ponto(ang, r0 + (r1 - r0) * f); return paraPx(q[0], q[1]); };
@@ -1078,10 +1080,13 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
      pista —, o bonde escorrega no mesmo raio até o degrau mais perto) */
   const pt = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
     /* (e longe da barreira entre níveis: com o ponto rente a ela, a célula da máscara sai fechada) */
-    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), livreB = q => [-1.6, 0, 1.6].every(e => !barreira(ficha, cs * (q + e), sn * (q + e)));
+    const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), livreB = q => [[0, 0], [1.6, 0], [-1.6, 0], [0, 1.6], [0, -1.6]].every(([er, et]) => !barreira(ficha, cs * (q + er) - sn * et, sn * (q + er) + cs * et));
     const senta = q => naArquibancada(ficha, cs * q, sn * q) && livreB(q);
     if (!senta(r)) for (let k = 0.5; k <= 40; k += 0.5) { if (senta(r + k)) { r += senta(r + k + 1.5) ? k + 1.5 : k; break; } if (senta(r - k)) { r -= senta(r - k - 1.5) ? k + 1.5 : k; break; } }
     if (!senta(r)) r = r0 + (r1 - r0) * f;
+    /* (o ponto que não é de sentar — o posto da PM no corredor, o túnel no fundo — também sai de cima da barreira entre níveis) */
+    const anda = q => [-1.2, 0, 1.2].every(e => andavel(ficha, cs * (q + e), sn * (q + e))) && livreB(q);
+    if (!anda(r)) for (let k = 0.5; k <= 8; k += 0.5) { if (anda(r + k)) { r += k; break; } if (anda(r - k)) { r -= k; break; } }
     const p = paraPx(cs * r, sn * r); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
   const meio = arco => (arco[0] + arco[1]) / 2;
   const dirPx = (ang, sinal) => { const a = paraPx(0, 0), b = paraPx(Math.cos(ang * RAD), Math.sin(ang * RAD)), q = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -1144,7 +1149,9 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
      frente, senão cai fora do chão: a arquibancadinha de 4 m do Ulrico Mursa) */
   const fundoEm = ang => { const c = contornoEm(ang); return raioDe(ang, c.f) - raioDe(ang, c.d) < 12 ? 0.7 : 0.9; };
   const tunel = (id, rot, lado, ang) => { const v = vomitorioEm(ang);
-    return v ? { id, rot, lado, raio: 40, dir: dirPx(v.ang, 1), x: v.x, y: v.y } : Object.assign({ id, rot, lado, raio: 40, dir: dirPx(ang, 1) }, pt(ang, fundoEm(ang))); };
+    /* (o túnel na boca que caiu em cima da barreira entre níveis vai pro fundo do lance, como quando não há boca) */
+    const naBarra = v && (() => { const q = paraMetros0(v.x, v.y); return [-1.2, 0, 1.2].some(e => barreira(ficha, q[0] + e, q[1]) || barreira(ficha, q[0], q[1] + e)); })();
+    return v && !naBarra ? { id, rot, lado, raio: 40, dir: dirPx(v.ang, 1), x: v.x, y: v.y } : Object.assign({ id, rot, lado, raio: 40, dir: dirPx(ang, 1) }, pt(ang, fundoEm(ang))); };
   const entradas = [tunel('portao_mandante', 'TÚNEL MANDANTE', 'mandante', j.tunelMandante == null ? meio(j.mandante1) : j.tunelMandante),
                     tunel('portao_visitante', 'TÚNEL VISITANTE', 'visitante', j.tunelVisitante == null ? meio(j.visitante) : j.tunelVisitante)];
   const grades = [vd, va].map((ang, i) => { const a = pt(ang, 0.04), b = pt(ang, 0.96);
@@ -1277,6 +1284,9 @@ function acessosDe(ficha, anel, t) {
     if (G.vomCentros.length) for (const c of G.vomCentros) a.push([G.angEm(c), grau(G.vomMeia * G.larguraCel + 0.6)]);
     else if (G.corr) for (let i = G.corr; i < G.n; i += G.corr) a.push([G.angEm(i + G.esc / 2), grau(1.2)]);
     if (!a.length) { a.push([t.de, grau(1.6)], [t.ate, grau(1.6)]); }
+  } else {
+    /* (a passagem elevada — a passarela em cima dos camarotes do Germano Krüger — abre nas pontas) */
+    const rm = (raioDe((t.de + t.ate) / 2, t.dentro || anel.dentro)) || 1; a.push([t.de, 1.6 / (rm * RAD)], [t.ate, 1.6 / (rm * RAD)]);
   }
   memoAcessos.set(t, a); return a;
 }
