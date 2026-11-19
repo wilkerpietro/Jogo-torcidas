@@ -16030,7 +16030,7 @@ Pedido do dono: "Faça o boneco parar de atravessar de um nível pro outro de ar
 
 **A barreira.** No assado da máscara (`barreira`, em `estadio_lowpoly.mjs`), entra uma barreira fina (1,5 m) em dois lugares:
 - **Na divisa entre dois anéis com degrau de mais de 1,5 m** (a beira de trás do de baixo contra a frente do de cima). Ela fica aberta só nos acessos do mais alto: as bocas (vomitórios); sem boca, as escadas; sem escada, as duas pontas do trecho.
-- **Na lateral entre dois trechos vizinhos do mesmo anel com alturas diferentes:** a ponta de um lance contra o vão de passagem, ou o camarote contra o lance de cima. O corredor da frente do lance, plano e baixo, segue aberto pro chão.
+- **Na lateral entre dois trechos vizinhos do mesmo anel, quando os dois ficam acima do chão e as alturas diferem:** o camarote contra o lance de cima, ou a ponta de um lance contra uma laje alta. O vão de chão ao lado de um lance segue aberto: na Arena Conda as quatro arquibancadas soltas só se ligam por esses vãos, e fechando-os cada uma tinha virado uma ilha.
 
 A divisa radial com o chão (a pista, o gramado, a passagem rente ao chão) segue aberta: é por ali que se chega na frente da arquibancada.
 
@@ -16041,7 +16041,14 @@ A divisa radial com o chão (a pista, o gramado, a passagem rente ao chão) segu
 
 O ponto onde o bonde nasce escorrega pra fora da barreira, como já escorregava pra fora do chão sem degrau.
 
-**Conferido:** no assado, o chão de cada estádio continua uma ilha só, com todos os marcadores (bondes, túneis e PM) nela. A Ilha do Retiro tinha ficado com a passagem entre a visitante e o lado coberto fechada; isso foi resolvido abrindo o corredor da frente.
+**A passagem elevada também tem acesso.** A passarela em cima dos camarotes do Germano Krüger abre nas pontas.
+
+**Os marcadores saem de cima da barreira.** O ponto do bonde, o túnel e o posto da PM escorregam até um chão andável longe dela (1,6 m pros lados e pro fundo). O túnel que cairia numa boca rente à barreira vai pro fundo do lance.
+
+**Conferido:**
+- Um verificador sem foto (máscara, marcadores e ilhas) passou nos 90 estádios. O rebake geral dos 99 deixou o chão de cada um numa ilha só, com bondes, túneis e PM nela. Ficaram só duas ilhas de uma célula na Arena das Dunas e um posto da PM numa variante do Mangueirão, que o jogo já reposiciona sozinho.
+- No jogo, no Castelão, o presidente empurrado do anel de circulação contra o lance de cima para na parede entre as bocas. Perto de uma boca, escorrega até ela e sobe por ali.
+- Ninguém senta fora do degrau.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
