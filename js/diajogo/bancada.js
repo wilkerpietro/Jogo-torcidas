@@ -1,0 +1,191 @@
+
+/* =========================================================
+   BANCADA DE CENAS — a página solta de arredores.html
+   ---------------------------------------------------------
+   Uma aba por cenário: arredores, praça, rua, bar da rival,
+   alvo comercial e CT. Trocar de aba remonta a noite naquele
+   cenário, com o efetivo que aquele tipo de briga costuma ter.
+
+   É a mesma ponte que o jogo usa. O que rodar aqui roda lá —
+   por isso a bancada serve pra calibrar sem abrir o save.
+   ========================================================= */
+window.TO = window.TO || {};
+TO.diaJogo = TO.diaJogo || {};
+
+TO.diaJogo.bancada = (function(){
+  const CENAS = [
+    {id:'arredores', rot:'Arredores', titulo:'Arredores do estádio',
+     cfg:{intencao:'atacar', bombas:2, efetivoRival:30}},
+    /* a mesma cena em noite tranquila, que é o outro comportamento
+       inteiro dos arredores: ninguém marcha pro portão, o pessoal fica
+       de conversa e entra escalão por escalão perto da hora. Sem uma
+       aba própria não havia como ver — a de cima força briga. */
+    {id:'arredores', rot:'Arredores · em paz', titulo:'Arredores, noite tranquila',
+     cfg:{paz:true, bombas:2, efetivoRival:30}},
+    {id:'praca', rot:'Praça', titulo:'Praça do bairro',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:22}},
+    {id:'rua', rot:'Rua · periferia', titulo:'Rua de bairro de periferia',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-media', rot:'Rua · classe média', titulo:'Rua de classe média',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-nobre', rot:'Rua · classe alta', titulo:'Rua de bairro nobre',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'bar', rot:'Bar da rival', titulo:'Bar da torcida rival',
+     cfg:{intencao:'atacar', bombas:2, efetivoRival:14}},
+    {id:'comercio', rot:'Comércio', titulo:'Alvo comercial',
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:6}},
+    {id:'ct', rot:'CT do clube', titulo:'CT do clube',
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:10}},
+
+    /* O LOTE DE 19/08 (fotos do dono) entra na bancada pelo mesmo
+       motivo das outras: é aqui que a máscara se acerta no F2. As
+       tretas abrem sem arma, como no jogo; os estádios abrem com os
+       setores ligados, senão o bonde do jogador tomaria o spawn do
+       1º escalão e a planta não seria a que se vai editar. */
+    /* as três cenas viraram briga de bairro (15/10/2026): pedra e bomba */
+    {id:'treta-beco', rot:'Bairro · beco', titulo:'Briga de bairro no beco (de bobeira, 7×7)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:7}},
+    {id:'treta-galpao', rot:'Bairro · galpão', titulo:'Briga de bairro no galpão (assistindo o jogo)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'treta-campo', rot:'Bairro · campo', titulo:'Briga de bairro no campo (reunião na praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    /* as brigas de bairro por classe (fotos do dono, 15/10/2026) */
+    {id:'bairro-f4', rot:'Popular · pracinha', titulo:'Briga de bairro na pracinha (popular, praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-f2', rot:'Popular · lagoa', titulo:'Briga de bairro no bar da lagoa (popular, jogo)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-f3', rot:'Popular · becos', titulo:'Briga de bairro nos becos (popular, bobeira)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:7}},
+    {id:'bairro-m1', rot:'Média · quadra', titulo:'Briga de bairro na quadra do parque (média, praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-m2', rot:'Média · lago', titulo:'Briga de bairro na praça do lago (média, praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-m3', rot:'Média · quiosque', titulo:'Briga de bairro no quiosque com TV (média, jogo)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-m1-rua', rot:'Média · rua do parque', titulo:'Briga de bairro na rua do parque (média, bobeira)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:7}},
+    {id:'bairro-n1', rot:'Nobre · praça', titulo:'Briga de bairro na praça nobre (nobre, praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-n3', rot:'Nobre · society', titulo:'Briga de bairro no campo society (nobre, praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-n3-bar', rot:'Nobre · barzinho', titulo:'Briga de bairro no barzinho do society (nobre, jogo)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'bairro-n2', rot:'Nobre · corredor', titulo:'Briga de bairro no corredor comercial (nobre, bobeira)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:7}},
+    {id:'emb-posto', rot:'Emboscada · posto', titulo:'Emboscada no pátio do posto',
+     cfg:{intencao:'atacar', bombas:2, efetivoRival:24}},
+    {id:'emb-onibus', rot:'Emboscada · estrada', titulo:'Emboscada na pista, ônibus parado',
+     cfg:{intencao:'atacar', bombas:2, efetivoRival:24}},
+    {id:'estadio-10', rot:'Estádio · 10 mil', titulo:'Arquibancada do estádio de 10 mil',
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:60,
+          /* 500 no 1º escalão visitante: o teste do setor cheio (dono, 11/10/2026) */
+          efetivoPorSpawn:{visitante1:500}}},
+    {id:'estadio-20', rot:'Estádio · 20 mil', titulo:'Arquibancada do estádio de 20 mil',
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:80,
+          efetivoPorSpawn:{visitante1:500}}},
+    {id:'estadio-40', rot:'Estádio · 40 mil', titulo:'Arquibancada do estádio de 40 mil',
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:90,
+          efetivoPorSpawn:{visitante1:500}}},
+    /* A CASA DE PISCINA (dono, 21/09/2026): a zona deles de resenha,
+       20 contra 20, faixa no muro do deck — entra aqui antes de tudo,
+       pra máscara ser acertada no F2 e a cena ser vista antes de
+       valer no jogo. `faixaDefensor:'eles'` estende a peça deles. */
+    {id:'casa-piscina', rot:'Casa de piscina', titulo:'Resenha na casa de piscina',
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:20, faixaDefensor:'eles'}},
+    /* a subsede (foto do dono, 11/10/2026) */
+    {id:'subsede', rot:'Subsede', titulo:'Ataque à subsede',
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:14, faixaDefensor:'eles'}},
+    /* A REUNIÃO DA DIRETORIA NO PÁTIO DA SEDE (dono, 22/09/2026): uma
+       aba por nível de sede, com a diretoria sentada em C no pátio e o
+       presidente em pé à direita — sem briga. A escalação de mentira é
+       só pra cada cadeira ter um nome. É aqui que a máscara de cada
+       sede se acerta no F2. */
+    ...[1,2,3,4,5].map(n => ({id:'sede-'+n, rot:'Sede '+n,
+      titulo:`Reunião da diretoria — sede nível ${n}${n===5?' (e 6)':''}`,
+      cfg:{paz:true, reuniao:true, bombas:0, efetivoRival:0,
+           escalacao: (()=>{
+             const N = (TO.dados && TO.dados.nomes) || {};
+             const ap = N.apelidos || ['Zé','Tião','Bento','Dudu','Caju','Neco','Buda','Tico'];
+             const fora = [];
+             for(let i=0;i<13;i++) fora.push({id:i+1, apelido:String(ap[(i*7+n) % ap.length]),
+               forca:12+(i%6), defesa:12+((i*3)%6), xp:300+i*10, moral:12, cargo:'diretoria'});
+             return fora;
+           })()}})),
+    /* AS LOJAS DO ASSALTO (10/10/2026): a foto e a máscara de cada
+       nível, pra acertar no F2. A cena aqui é a da briga, em paz — o
+       assalto de verdade abre pela tela do plano (assalto2d.js) */
+    ...['roupas','mercadinho','posto','supermercado','joalheria','banco'].map((t, i) => ({
+      id:'assalto-'+t, rot:'Assalto '+(i+1), titulo:`Assalto nível ${i+1} — ${t}`,
+      cfg:{paz:true, bombas:0, efetivoRival:0}}))
+  ];
+
+  /* A BANCADA DE PERTO (briga3d.html) usa a mesma bancada com outra
+     lista: as três ruas na versão vista de trás do líder. É a mesma
+     ponte e o mesmo combate — o que muda é o canvas, que ali é WebGL e
+     tem a camada de nomes por cima. */
+  const CENAS_3D = [
+    {id:'rua-3d', rot:'Rua · periferia', titulo:'Rua de periferia, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-media-3d', rot:'Rua · classe média', titulo:'Rua de classe média, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-nobre-3d', rot:'Rua · classe alta', titulo:'Rua de bairro nobre, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}}
+  ];
+
+  const botoes = {};
+  let atual = null, lista = CENAS, extra = {};
+
+  function abrir(c){
+    atual = c;
+    /* A BANCADA ESTÁ SEMPRE EM CENA. O pad de toque só aparece com
+       `em-cena` no body (cenas.css) — no jogo é quem entra na cena que
+       marca; aqui a cena é a página inteira, e sem isto no celular não
+       havia botão nenhum. */
+    document.body.classList.add('em-cena');
+    /* a chave é o rótulo e não o id: as duas abas de arredores são a
+       mesma cena em situação diferente, e por id uma apagava a outra */
+    for(const k of Object.keys(botoes)) botoes[k].classList.toggle('on', k === c.rot);
+    /* no celular as abas rolam de lado: a aba aberta tem de estar à vista */
+    const bt = botoes[c.rot], abas = bt && bt.parentElement;
+    if(abas && abas.scrollWidth > abas.clientWidth + 2)
+      bt.scrollIntoView({inline:'center', block:'nearest'});
+    const t = document.getElementById('cenaTitulo');
+    if(t) t.textContent = c.titulo;
+    document.title = c.titulo + ' — Torcida Organizada';
+    TO.diaJogo.ponte.montar(Object.assign({config: Object.assign({local:c.id}, c.cfg)}, extra));
+  }
+
+  function montar(cenas, opc){
+    lista = cenas || CENAS; extra = opc || {};
+    const abas = document.getElementById('cenaAbas');
+    if(!abas) return;
+    abas.innerHTML = '';
+    for(const c of lista){
+      const b = document.createElement('button');
+      b.textContent = c.rot;
+      b.onclick = ()=>abrir(c);
+      botoes[c.rot] = b;
+      abas.appendChild(b);
+    }
+    /* na bancada de cima, o botão que troca boneco por disco e volta:
+       é a comparação que decide se o boneco fica */
+    if(extra.sobreGL){
+      const bt = document.createElement('button');
+      const rot = ()=>{ bt.textContent = extra.bonecos ? 'Bonecos ✓' : 'Discos ✓';
+                        bt.classList.toggle('on', !!extra.bonecos); };
+      bt.onclick = ()=>{ extra.bonecos = !extra.bonecos; rot(); if(atual) abrir(atual); };
+      bt.style.marginLeft = 'auto';
+      rot();
+      abas.appendChild(bt);
+    }
+    const dica = document.createElement('small');
+    dica.textContent = 'trocar de aba recomeça a noite · F2 abre o editor';
+    abas.appendChild(dica);
+    /* #praca, #estadio-20…: abre direto na aba pedida, pra link e pra teste */
+    const pedida = (location.hash||'').slice(1);
+    abrir(lista.find(c=>c.id===pedida) || lista[0]);
+  }
+
+  return {CENAS, CENAS_3D, montar, abrir, get atual(){return atual;}};
+})();
+

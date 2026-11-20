@@ -1,0 +1,138 @@
+<title>Bancada da Chegada</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/jogo.css">
+<link rel="stylesheet" href="css/jogo3d.css">
+<link rel="stylesheet" href="css/portal.css">
+<link rel="stylesheet" href="css/telas3d.css">
+<style>
+/* o painel fica por cima do jogo, no mesmo escuro dele: uma placa de concreto com a tinta verde da casa e a vermelha de quem vem de fora */
+:root {
+  color-scheme: dark;
+  --chg-chao: #0c0e11; --chg-placa: #15181d; --chg-placa2: #1c2027; --chg-linha: #2b3039;
+  --chg-texto: #ecebe4; --chg-mudo: #969ca7; --chg-casa: #58b97c; --chg-fora: #e0635a; --chg-ouro: #d9a441;
+  --chg-titulo: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --chg-corpo: "Barlow", "Segoe UI", Arial, sans-serif;
+  --chg-dado: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--chg-chao); color: var(--chg-texto); }
+#chgPainel { position: fixed; inset: 0; z-index: 9000; overflow: auto; background: rgba(8, 9, 11, 0.86);
+  padding-block: calc(20px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  font-family: var(--chg-corpo); font-size: 15px; line-height: 1.45; }
+.chg-cartao { max-width: 760px; margin: 0 auto; background: var(--chg-placa); border: 1px solid var(--chg-linha); border-radius: 6px; display: flex; flex-direction: column; gap: 18px; padding: 22px; }
+.chg-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chg-cartao h1 { font-family: var(--chg-titulo); font-weight: 700; font-size: 28px; letter-spacing: 0.04em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+.chg-cartao p { margin: 0; color: var(--chg-mudo); max-width: 62ch; }
+.chg-cartao h2 { font-family: var(--chg-titulo); font-weight: 600; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--chg-mudo); margin: 0 0 8px; }
+.chg-campo { display: flex; flex-direction: column; min-width: 0; }
+.chg-lados { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.chg-lado { min-width: 0; border-top: 3px solid var(--chg-casa); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.chg-lado.fora { border-top-color: var(--chg-fora); }
+.chg-lado h2 { color: var(--chg-casa); margin: 0; } .chg-lado.fora h2 { color: var(--chg-fora); }
+.chg-linha { display: grid; grid-template-columns: 78px minmax(0, 1fr) 62px; gap: 8px; align-items: center; }
+.chg-linha label { font-family: var(--chg-dado); font-size: 12px; color: var(--chg-mudo); }
+#chgPainel select, #chgPainel input[type="number"] { width: 100%; min-width: 0; box-sizing: border-box; background: var(--chg-placa2); color: var(--chg-texto); border: 1px solid var(--chg-linha); border-radius: 4px; padding: 8px; font: inherit; }
+#chgPainel input[type="number"] { font-family: var(--chg-dado); font-variant-numeric: tabular-nums; text-align: right; }
+#chgPainel select:focus-visible, #chgPainel input:focus-visible, #chgPainel button:focus-visible, #chgBarra button:focus-visible { outline: 2px solid var(--chg-ouro); outline-offset: 2px; }
+.chg-opcoes { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.chg-opcoes label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.chg-opcoes input { accent-color: var(--chg-casa); width: 17px; height: 17px; margin: 0; }
+.chg-nota { font-size: 13px; }
+#chgAviso { color: var(--chg-fora); font-weight: 600; }
+#chgSoFora { color: var(--chg-ouro); }
+.chg-pe { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+#chgComecar { font-family: var(--chg-titulo); font-weight: 700; font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; background: var(--chg-casa); color: #08130c; border: 0; border-radius: 4px; padding: 12px 26px; cursor: pointer; }
+#chgComecar:hover { filter: brightness(1.08); }
+#chgFechar, #chgBarra button { font-family: var(--chg-titulo); font-weight: 600; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; background: var(--chg-placa2); color: var(--chg-texto); border: 1px solid var(--chg-linha); border-radius: 4px; padding: 7px 10px; cursor: pointer; }
+.chg-teclas { font-family: var(--chg-dado); font-size: 12px; color: var(--chg-mudo); }
+#chgCarregando { font-family: var(--chg-dado); color: var(--chg-mudo); }
+/* durante a cena: uma barra pequena no canto, com o placar de cada bonde */
+#chgBarra { position: fixed; z-index: 8990; right: max(10px, env(safe-area-inset-right, 0px)); top: calc(84px + env(safe-area-inset-top, 0px)); width: min(350px, calc(100vw - 20px)); background: rgba(16, 18, 22, 0.9); border: 1px solid var(--chg-linha); border-radius: 6px; padding: 8px; font-family: var(--chg-corpo); font-size: 13px; color: var(--chg-texto); display: flex; flex-direction: column; gap: 8px; }
+.chg-botoes { display: flex; flex-wrap: wrap; gap: 6px; }
+#chgNovo { background: var(--chg-casa); color: #08130c; border-color: transparent; }
+#chgPlacar { width: 100%; table-layout: fixed; border-collapse: collapse; font-family: var(--chg-dado); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+#chgPlacar th, #chgPlacar td { padding: 3px 4px; text-align: right; border-top: 1px solid var(--chg-linha); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#chgPlacar col.c1 { width: 118px; } #chgPlacar col.c3, #chgPlacar col.c4 { width: 44px; } #chgPlacar col.c5 { width: 34px; }
+#chgPlacar thead th { color: var(--chg-mudo); font-weight: 500; border-top: 0; }
+#chgPlacar th:first-child, #chgPlacar td.nome { text-align: left; }
+#chgPlacar td.nome { font-family: var(--chg-corpo); }
+#chgPlacar tr.mandante th { color: var(--chg-casa); } #chgPlacar tr.visitante th { color: var(--chg-fora); }
+#chgPlacar tr.meu td.nome { font-weight: 600; }
+#chgPlacar td.fora { color: var(--chg-ouro); }
+#chgFase { color: var(--chg-ouro); font-size: 12px; min-height: 1em; }
+#chgBarra.recolhida #chgPlacar, #chgBarra.recolhida #chgFase { display: none; }
+/* no celular a barra fica no alto, embaixo do placar do jogo, e o placar dos bondes abre pelo botão */
+@media (max-width: 560px) { .chg-cartao { padding: 16px; } .chg-cartao h1 { font-size: 23px; }
+  #chgBarra { top: calc(52px + env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; padding: 6px; }
+  #chgBarra button { padding: 6px 8px; font-size: 12px; } }
+</style>
+
+<div id="chgPainel">
+  <div class="chg-cartao">
+    <div class="chg-topo">
+      <div>
+        <h1>Bancada da chegada</h1>
+        <p>O jogo de verdade, aberto direto na cena de arredores do estádio que você escolher. Cada bonde nasce na ponta de uma rua, segue o gradil até o portão dele, entra e aparece no lugar dele na arquibancada.</p>
+      </div>
+      <button id="chgFechar" type="button" title="Voltar pra cena aberta" hidden>Fechar</button>
+    </div>
+    <div id="chgCarregando">Carregando o jogo… (uns 20 MB na primeira vez)</div>
+    <div id="chgForm" hidden>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="chg-campo">
+          <h2><label for="chgEstadio">Estádio</label></h2>
+          <select id="chgEstadio"></select>
+          <p id="chgSoFora" class="chg-nota" hidden>Neste estádio os setores não se ligam por dentro: no jogo, a briga dele só acontece aqui fora.</p>
+        </div>
+        <div class="chg-lados">
+          <div class="chg-lado"><h2>Mandante · torcida e quantos vão</h2><div id="chgMandante" style="display:flex;flex-direction:column;gap:8px"></div></div>
+          <div class="chg-lado fora"><h2>Visitante · torcida e quantos vão</h2><div id="chgVisitante" style="display:flex;flex-direction:column;gap:8px"></div></div>
+        </div>
+        <div>
+          <h2>Você controla o 1º escalão de qual lado</h2>
+          <div class="chg-opcoes">
+            <label><input type="radio" name="chgLado" id="chgLadoM" value="mandante" checked> Mandante</label>
+            <label><input type="radio" name="chgLado" id="chgLadoV" value="visitante"> Visitante</label>
+          </div>
+        </div>
+        <div>
+          <h2>Clima</h2>
+          <div class="chg-opcoes">
+            <label><input type="radio" name="chgClima" id="chgClimaP" value="paz" checked> Em paz: só a chegada</label>
+            <label><input type="radio" name="chgClima" id="chgClimaB" value="briga"> Vieram pra brigar</label>
+            <label><input type="checkbox" id="chgLogo" checked> Os outros bondes entram logo, sem esperar a hora do jogo</label>
+          </div>
+        </div>
+        <p id="chgAviso" hidden></p>
+        <div class="chg-pe">
+          <span class="chg-teclas">WASD ou setas andam · ENTER manda a sua torcida pro portão · no celular, o direcional da tela</span>
+          <button id="chgComecar" type="button">Começar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="chgBarra" hidden>
+  <div class="chg-botoes">
+    <button id="chgNovo" type="button">Novo teste</button>
+    <button id="chgMapa" type="button">Ver o mapa inteiro</button>
+    <button id="chgVel" type="button">Relógio 1×</button>
+    <button id="chgMenos" type="button" title="Mostrar ou esconder o placar">Placar</button>
+  </div>
+  <table id="chgPlacar">
+    <colgroup><col class="c1"><col><col class="c3"><col class="c4"><col class="c5"></colgroup>
+    <thead><tr><th>Bonde</th><th></th><th title="Na rua, a caminho">Rua</th><th title="Já no lugar deles na arquibancada">Arq.</th><th title="Caídos ou presos">Fora</th></tr></thead>
+    <tbody id="chgPlacarCorpo"></tbody>
+  </table>
+  <div id="chgFase"></div>
+</div>
+
+<script>document.body.classList.add('jogo3d');</script>
+<script type="module" src="js/jogo2d.js"></script>
+<script>
+/*CHEGADA*/
+</script>
