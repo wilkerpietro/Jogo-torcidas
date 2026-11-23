@@ -50521,9 +50521,16 @@ TO.diaJogo.combate = (function(){
         if(U.dist(d.x, d.y, gp.x, gp.y) < 150){ ax = gp.x + d._vad.dx; ay = gp.y + d._vad.dy; }
         else { campo = gp.campo; usarCampo = true; }
       } else if(recua){
-        // recuo mandado pelo jogador: volta pro próprio spawn e espera
+        /* O RECUO EM CONJUNTO (dono, 23/11/2026: "o rival deve recuar em
+           conjunto para um ponto só, mas sem estar tão agrupado, fica
+           visualmente feio"): o bonde volta junto pro ponto dele (o
+           spawn), e cada um para no seu lugar de uma roda larga atrás do
+           ponto (`lugarNoRecuo`), em vez de todo mundo empilhado nele.
+           Longe, vai pelo campo; perto e com a vista livre, direto pro lugar */
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
-        campo = campoDoSpawn(s); usarCampo=true;
+        const lg=lugarNoRecuo(J, d, s);
+        if(U.dist(d.x,d.y,lg.x,lg.y) < 170 && A.livre(d.x,d.y,lg.x,lg.y)){ ax=lg.x; ay=lg.y; ramo='recuo'; }
+        else { campo = campoDoSpawn(s); usarCampo=true; }
       } else if(d.cacaFaixa && J.postura==='faixa' && (cf = alvoDaFaixa(J, d))){
         /* TOMAR A FAIXA (16/10/2026): passa pela briga do meio sem parar
            e vai em quem segura a peça; de perto, direto nele, de longe
@@ -50959,6 +50966,29 @@ TO.diaJogo.combate = (function(){
   }
 
   const camposSpawn={};
+  /* O LUGAR DE CADA UM NO RECUO: uma roda em volta do ponto, empurrada pra
+     trás dele (o lado longe do inimigo), com o raio crescendo com o bonde
+     (de 60 a 220 px); os lugares saem em espiral (ângulo de ouro), um por
+     disco, e caem no chão livre mais perto. Refeita a cada recuo novo
+     (20 s), que o inimigo muda de lado */
+  function lugarNoRecuo(J, d, s){
+    const L = d._recuoLugar;
+    if(L && L.sid === s.id && J.t - L.t < 20) return L;
+    const meus = J.discos.filter(x=>x.vivo && x.spawn === d.spawn && !x.sumiu);
+    const n = Math.max(1, meus.length), k = Math.max(0, meus.indexOf(d));
+    const R = U.limitar(20*Math.sqrt(n), 60, 220);
+    /* o lado de trás: do meio do inimigo pro ponto */
+    let ix = 0, iy = 0, ni = 0;
+    for(const x of J.discos) if(x.vivo && inimigos(x.lado, d.lado)){ ix += x.x; iy += x.y; ni++; }
+    let ux = 0, uy = 0;
+    if(ni){ ux = s.x - ix/ni; uy = s.y - iy/ni; const q = hyp(ux, uy) || 1; ux /= q; uy /= q; }
+    const ang = k*2.39996, r = R*Math.sqrt((k + 0.5)/n);
+    let x = s.x + ux*R*0.45 + Math.cos(ang)*r, y = s.y + uy*R*0.45 + Math.sin(ang)*r;
+    const raio = d.r || 7;
+    if(!A.cabe(x, y, raio)){ const q = A.pontoLivreMaisProximo(x, y, raio); if(q){ x = q.x; y = q.y; } else { x = s.x; y = s.y; } }
+    d._recuoLugar = {sid:s.id, t:J.t, x, y};
+    return d._recuoLugar;
+  }
   function campoDoSpawn(s){
     if(!camposSpawn[s.id]) camposSpawn[s.id]=A.criarCampo(s.x,s.y);
     return camposSpawn[s.id];

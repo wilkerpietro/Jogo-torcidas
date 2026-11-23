@@ -3443,7 +3443,7 @@ A PM sobe um degrau por vez e desce com folga:
 - **PM acuada**: com 5 brigões para cada PM (e 10 ou mais) a até 170 px, ela fecha em bloco e pede reforço.
 - **Grade rompida**: todos em carga; em cena com tropa de choque, 8 PMs (vida 380) entram em 7 s pelo buraco ou por `tropaEm`, e a carga dura 18 s. Depois "a tropa recompõe a linha".
 - **Viatura**: chamada no primeiro caído (ou no degrau 1). Chega em 26 a 36 s, com sirene 10 s antes. Descem 3 PMs em carga de ronda por 16 s. Entra pela boca marcada, por um posto da PM ou pela boca de rua mais longe da confusão. Dentro do setor do estádio não entra carro: é reforço a pé.
-- **Recuo do rival**: com alerta acima de 78 e mais de 22% do bonde deles sob ameaça da PM, o visitante recua 9 s (não na arquibancada).
+- **Recuo do rival**: com alerta acima de 78 e mais de 22% do bonde deles sob ameaça da PM, o visitante recua 9 s (não na arquibancada). Quem recua volta junto pro ponto de nascimento, cada um no seu lugar de uma roda atrás dele (raio `20 × √n`, de 60 a 220 px; `lugarNoRecuo`), e não empilhado no ponto. No estádio, vadia em volta dele.
 - A PM não manda no bonde do jogador: só avisa a pressão.
 
 ## 4. O assalto

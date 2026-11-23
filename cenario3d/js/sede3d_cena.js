@@ -18,9 +18,9 @@
    salas ficam acesas, poucas: quem entra no escuro enxerga pouco.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { montarSede } from './sede3d.js?v=45f73e8c6a';
-import { ATLAS } from './modelos_atlas.js?v=45f73e8c6a';
-import * as K from './detalhe3d.js?v=45f73e8c6a';
+import { montarSede } from './sede3d.js?v=3c3ae96409';
+import { ATLAS } from './modelos_atlas.js?v=3c3ae96409';
+import * as K from './detalhe3d.js?v=3c3ae96409';
 
 const MUNDO = 34 / 1.75;          // unidade do mundo por metro (o cenário 3D)
 const PX = 24;                    // px do tabuleiro por metro (o boneco)

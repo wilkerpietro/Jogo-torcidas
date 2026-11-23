@@ -16359,6 +16359,23 @@ Sempre rival de verdade (relação < 20, não irmã) e com sede (nível ≥ 1).
   - A peça vem com 85% se não viram, 35% se viram.
   - O cofre vem com 60% de chance quando a peça veio.
 
+## O recuo em conjunto, espalhado (dono, 23/11/2026)
+
+**O pedido.** O dono, respondendo a proposta do recuo do rival: "o rival deve recuar em conjunto para um ponto só, mas sem estar tão agrupado, fica visualmente feio".
+
+**Como era.** Fora do estádio (rua, praça, bairro, sede), o bonde que recuava voltava pelo campo até o ponto de nascimento e parava a 40 px dele. Todo mundo se empilhava ali. No teste com 30 rivais na rua, o raio do bonde ficava em 24 px, com 11 px entre vizinhos.
+
+**Como ficou** (`lugarNoRecuo`). O bonde ainda volta junto pro mesmo ponto, o dele, mas cada um tem o seu lugar numa roda em volta do ponto:
+- **O tamanho**: o raio cresce com o bonde, `20 × √n`, de 60 a 220 px.
+- **O lado**: a roda é empurrada pra trás do ponto, pro lado longe do inimigo (45% do raio).
+- **Os lugares**: saem em espiral, pelo ângulo de ouro, e caem no chão livre mais perto.
+- **O caminho**: longe, vai pelo campo; a menos de 170 px e com a vista livre, direto pro seu lugar.
+- **A roda nova**: é refeita a cada recuo novo (20 s), porque o inimigo muda de lado.
+
+No mesmo teste, o raio foi pra 70 px, com 24 px entre vizinhos.
+
+**O que não muda.** No estádio, o recuo continua vadiando em volta do estádio (a regra de 17/11). O recuo do nosso bonde, mandado pela tecla R, usa a mesma roda.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
