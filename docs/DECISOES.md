@@ -16425,6 +16425,37 @@ O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. 
   - O Arruda ganhou uma ilhota de 3 células, e a Arena das Dunas manteve as duas de 1 célula.
   - O bonde da Vila Belmiro (visitante 2) e o do Marizão (mandante 1) nascem fora do degrau, como antes da mudança. Eles sentam certo.
 
+## A arquibancada viva volta; a investida contra qualquer rival hostil; o vomitório pela caixa desenhada (dono, 23/11/2026)
+
+**A arquibancada viva.** O dono: "veja como era a animação dos bonecos no estádio 3d com bandeira, bateria, etc, pra trazer pro nosso jogo também".
+
+É a do dia de jogo do jogo 3D (`arquibancada.js`, 28/09/2026, que saiu com a cidade 3D). Agora ela está na cena do estádio: `vidaDaArquibancada` no combate e `adereco` no bonecos3. Em cada setor, a torcida que está nele ganha os papéis:
+- **O puxador**: o da frente, perto do meio, de costas pro jogo e de frente pra torcida, regendo o canto (`reger`).
+- **A bateria**: pelo nível da sede (2, 3, 4, 6, 8, 10, 12), no máximo um quarto da torcida. São os do meio, uma fileira atrás.
+  - Surdo nos 30% do meio, repique nos 20% das pontas, caixa no resto.
+  - O instrumento fica na cintura, com o casco na cor da torcida (a secundária quando a primária é clara) e a pele por cima, deitado pra quem toca.
+- **Os bandeirões de bambu**: um a cada dez (de 1 a 4), no fundo do setor, espalhados.
+  - O bambu tem 6 m e vai nas duas mãos, no balanço do oito (`mastro`).
+  - O pano de 4 × 4 m é de verdade: 9 × 9 partículas presas no bambu, com gravidade, vento e as ligações.
+  - O desenho do pano é o de antes: cores da torcida, um de quatro padrões e a sigla.
+- **O resto canta junto** (`jeito: 'arquibancada'`): palma, braço, pulo, no tempo da torcida, o mesmo `gestoParam` da bateria.
+
+Todos olham pro campo, menos o puxador. Na briga, na correria e no chão, o gesto para e o instrumento e o bandeirão somem. O líder fica sem papel.
+
+Não voltou a faixa estendida por dois na chegada: na cena do estádio a torcida já nasce no lugar, com a faixa na mureta.
+
+**A investida contra qualquer rival hostil.** O dono, com o print do Ceará × Sport no planejamento: "deve dar a opção de atacar a jovem sport e a gang da ilha".
+- Nos outros jogos da nossa praça, a lista "Contra quem" mostra toda torcida hostil na rua. Antes era só quem estava de −55 pra baixo (13/11/2026).
+- A pergunta da diretoria na véspera continua só pras de −55.
+
+**A torcida da cidade não "vem pra cá".** A mensagem "a Falange Coral vem pra cá no domingo pro Ceará × Ferroviário" não tinha sentido: o Ferroviário é da cidade. Quando a torcida é da nossa praça, a diretoria diz que ela "vai estar na rua" no jogo.
+
+**O vomitório pela caixa desenhada.** O dono: "os bonecos ainda ficam em cima do vomitório, veja como era organizado isso na época do jogo 3d pra replicar igual".
+- **No jogo 3D**: o vomitório era um poço no meio do lance, com a mureta em volta. As fileiras pulavam o poço, e ninguém sentava nem andava ali.
+- **O erro**: a primeira versão do `naBoca` achava a coluna da boca pelo ângulo visto do centro. No trecho de ponta reta (o lance de cima do Castelão, com `corteDe`/`corteAte`), a coluna não segue esse ângulo, e a caixa não era reconhecida.
+- **Agora**: a pegada é o polígono da própria caixa, tirado de `G.pos` (as colunas c ± vomMeia, das fileiras `vomK0` a `vomK0 + vomRows`). Ninguém senta nem anda nela, em qualquer trecho.
+- **A reassadura**: todos os estádios foram reassados de novo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

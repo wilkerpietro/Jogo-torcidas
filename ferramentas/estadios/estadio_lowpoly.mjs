@@ -1260,20 +1260,35 @@ export function naBoca(ficha, u, v) {
   for (let i = ficha.aneis.length - 1; i >= 0; i--) {
     const anel = ficha.aneis[i], t = trechoNoPonto(anel, u, v); if (!t) continue;
     if (t.tipo === 'vazio' || t.tipo === 'passagem') return false;
-    const G = colunasDe(ficha, anel, t); if (!G.vomCentros.length) return false;
-    const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora;
-    const reto = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
-    let ang, f;
-    if (reto) { const p = peDaColuna(cd, cf, u, v); if (!p) return false; ang = p.ang; f = p.f; }
-    else { ang = Math.atan2(v, u) / RAD; const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); f = (d - r0) / ((r1 - r0) || 1); }
-    /* a coluna: onde o ângulo cai entre as divisas das colunas do trecho */
-    const a = t.de + mod360(ang - t.de), A = G.angs;
-    let j = 0; while (j < A.length - 2 && A[j + 1] <= a) j++;
-    const ci = j + Math.max(0, Math.min(1, (a - A[j]) / ((A[j + 1] - A[j]) || 1)));
-    /* a fileira: da frente (depois do corredor) pro fundo */
-    const k = (f - G.fc) / ((1 - G.fc) || 1) * G.N;
-    if (k < G.vomK0 - 0.15 || k > G.vomK0 + G.vomRows + 0.15) return false;
-    return G.vomCentros.some(c => Math.abs(ci - c) <= G.vomMeia + 0.1);
+    return dentroDeUmaBoca(ficha, anel, t, u, v);
+  }
+  return false;
+}
+/* (a pegada é o polígono da caixa desenhada — as colunas c ± vomMeia, das fileiras vomK0 a vomK0 + vomRows —, tirado de
+   `G.pos`: assim vale também no trecho de ponta reta, em que a coluna não segue o ângulo visto do centro) */
+const memoBocas = new WeakMap();
+function bocasDoTrecho(ficha, anel, t) {
+  let L = memoBocas.get(t); if (L) return L; L = [];
+  const G = colunasDe(ficha, anel, t);
+  const fK = k => G.fc + (1 - G.fc) * k / G.N, f0 = fK(G.vomK0 - 0.1), f1 = fK(G.vomK0 + G.vomRows + 0.1);
+  for (const c of G.vomCentros) {
+    const cs = [c - G.vomMeia - 0.1, c, c + G.vomMeia + 0.1].map(x => G.angEm(Math.max(0, Math.min(G.n, x))));
+    const pol = [...cs.map(a => G.pos(a, f0)), ...cs.slice().reverse().map(a => G.pos(a, f1))];
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const [x, y] of pol) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    L.push({ pol, x0, x1, y0, y1 });
+  }
+  memoBocas.set(t, L); return L;
+}
+function dentroDeUmaBoca(ficha, anel, t, u, v) {
+  for (const b of bocasDoTrecho(ficha, anel, t)) {
+    if (u < b.x0 || u > b.x1 || v < b.y0 || v > b.y1) continue;
+    let dentro = false;
+    for (let a = 0, z = b.pol.length - 1; a < b.pol.length; z = a++) {
+      const [xa, ya] = b.pol[a], [xz, yz] = b.pol[z];
+      if ((ya > v) !== (yz > v) && u < (xz - xa) * (v - ya) / ((yz - ya) || 1e-9) + xa) dentro = !dentro;
+    }
+    if (dentro) return true;
   }
   return false;
 }

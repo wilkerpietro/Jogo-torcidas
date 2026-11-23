@@ -4768,6 +4768,7 @@ TO.i18n.registrar({
   "{nome} · escolha a torcida": {es:"{nome} · elegí la barra", en:"{nome} · pick the firm"},
   "{nome} · quem é o presidente": {es:"{nome} · quién es el presidente", en:"{nome} · who is the president"},
   "Chefe, define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.": {es:"Jefe, definí la Jornada de la Sede: tres turnos por día — mañana, tarde y noche —, cada uno con una acción que los muchachos llevan solos. Los días de partido y de ruta quedan afuera.", en:"Boss, set the HQ Daily Routine: three shifts a day — morning, afternoon and evening — each with an action the lads run on their own. Match days and travel days are left out."},
+  "Chefe, a {nome} vai estar na rua {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?": {es:"Jefe, {nome} va a estar en la calle {dia} por el {casa} × {vis}{comp}. Estamos en guerra con ellos (relación {rel}). ¿Vamos al frente?", en:"Boss, {nome} will be out on the street {dia} for {casa} \u00d7 {vis}{comp}. We're at war with them (relation {rel}). Shall we go at them?"},
   "Chefe, a {nome} vem pra cá {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?": {es:"Jefe, {nome} viene para acá {dia} por el {casa} × {vis}{comp}. Estamos en guerra con ellos (relación {rel}). ¿Vamos por ellos?", en:"Boss, {nome} are coming here {dia} for {casa} × {vis}{comp}. We're at war with them (relation {rel}). Can we go after them?"},
   "Pode atacar": {es:"Pueden atacar", en:"Go ahead"},
   "Deixa passar": {es:"Dejalo pasar", en:"Let it go"},
@@ -43538,12 +43539,16 @@ TO.feed = (function(){
         .sort((a, b) => TO.relacoes.nivel(E, a.id) - TO.relacoes.nivel(E, b.id));
       if(!alvos.length) continue;
       const alvo = alvos[0], rel = Math.round(TO.relacoes.nivel(E, alvo.id));
+      /* (a torcida que é da nossa cidade não "vem pra cá": ela já está aqui — o dono, 23/11/2026, com a Falange Coral no
+         Ceará × Ferroviário) */
+      const daqui = ((M().torcida(alvo.id) || alvo.torcida || {}).mapa) === E.torcida.mapa;
+      const P0 = {nome:alvo.torcida.nome, dia:NO_DIA[dia] || NO_DIA[6], casa:og.casa.nome, vis:og.vis.nome, comp:pelaComp(og.comp), rel};
       propor(E, {
         kind:'investida-cidade', peso:'decisao', voz:'diretor', tipo:'ruim',
         chave:`investida-cidade|${E.data.ano}|${E.data.semana}|${og.chave}`,
-        texto:_t('Chefe, a {nome} vem pra cá {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?',
-                 {nome:alvo.torcida.nome, dia:NO_DIA[dia] || NO_DIA[6], casa:og.casa.nome, vis:og.vis.nome,
-                  comp:pelaComp(og.comp), rel}),
+        texto: daqui
+          ? _t('Chefe, a {nome} vai estar na rua {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?', P0)
+          : _t('Chefe, a {nome} vem pra cá {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?', P0),
         dados:{chaveJogo:og.chave, alvo:alvo.id, dia},
         botoes:[{id:'atacar', rot:_t('Pode atacar'), acao:'investida-cidade',
                  args:{chaveJogo:og.chave, alvo:alvo.id},
@@ -48325,6 +48330,9 @@ TO.diaJogo.combate = (function(){
     /* `J.faixa` continua apontando pra faixa de quem defende (a
        primeira): é o nome que a ponte e os testes conhecem */
     J.faixa = J.faixas[0] || null;
+    /* A ARQUIBANCADA VIVA (`vidaDaArquibancada`): no estádio, cada torcida
+       ganha o puxador, a bateria, os bandeirões e o canto */
+    if(/^estadio/.test(D.id || '') && !cfg.arredores) vidaDaArquibancada(J);
     /* A FURTIVA: quem está na sede dorme sentado (o vigia perto do portão,
        os outros lá dentro); dos nossos, um tira a peça do armário e, com
        três, outro abre o cofre (`cofreiro`); com dois, o cofre é do líder */
@@ -49866,6 +49874,92 @@ TO.diaJogo.combate = (function(){
      invasão pelos fundos pegaria todo mundo de costas pra
      sempre. Os dois juntos cobrem os dois casos.
      ======================================================= */
+  /* =======================================================
+     A ARQUIBANCADA VIVA (dono, 23/11/2026: "veja como era a animação dos
+     bonecos no estádio 3d com bandeira, bateria, etc, pra trazer pro nosso
+     jogo também"). É a do dia de jogo do jogo 3D (o `arquibancada.js` que
+     saiu com a cidade 3D, 28/09/2026), agora na cena do estádio. Em cada
+     setor, a torcida que está nele ganha os papéis:
+     - o PUXADOR: o da frente, no meio, de COSTAS pro jogo e de frente pra
+       ela, regendo o canto (`reger`);
+     - a BATERIA: `BATERIA_POR_NIVEL` pelo nível da sede (de 2 no ponto de
+       encontro a 12 no complexo), no máximo um quarto da torcida, os do
+       meio dela: surdo nos três de dez do meio, repique nos dois das
+       pontas, caixa no resto, com o instrumento no corpo (bonecos3);
+     - os BANDEIRÕES DE BAMBU: pano de 4 × 4 m num bambu de 6 m, um a cada
+       dez (de 1 a 4), espalhados no fundo do setor, no balanço do oito
+       (`mastro`, o pano de verdade em bonecos3);
+     - o resto CANTA JUNTO (`jeito: 'arquibancada'`): palma, braço, pulo,
+       no tempo da bateria da torcida (`gestoParam`).
+     Todo mundo olha pro campo, menos o puxador. Na briga e na correria o
+     boneco larga o gesto e o instrumento some (bonecos3 cuida disso). */
+  const BATERIA_POR_NIVEL = [2, 3, 4, 6, 8, 10, 12];
+  function nivelDaSedeDe(id){
+    const E = TO.estado && TO.estado.E;
+    if(E && E.torcida && id === E.torcida.id) return E.torcida.sedeNivel || 0;
+    const t = E && TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E)[id] : null;
+    const o = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(id) : null;
+    return Math.round(t && t.sede != null ? t.sede : (o && o.sedeNivel) || 1);
+  }
+  function vidaDaArquibancada(J){
+    const meioX = (A.W || 1536) / 2, meioY = (A.H || 1024) / 2;
+    const porSpawn = new Map();
+    for(const d of J.discos){ if(!d.vivo || d.lider) continue; if(!porSpawn.has(d.spawn)) porSpawn.set(d.spawn, []); porSpawn.get(d.spawn).push(d); }
+    for(const [sid, gente] of porSpawn){
+      const b = J.setores && J.setores[sid];
+      if(!b || gente.length < 3) continue;
+      const s = D.spawns.find(x=>x.id === sid) || gente[0];
+      /* a frente do setor e o rumo do campo: a faixa da cena (a normal dela aponta pro campo); sem faixa, o meio da cena */
+      const fx = D.faixas && D.faixas[sid];
+      let nx, ny, ox, oy;
+      if(fx && fx.dir){ nx = fx.dir[0]; ny = fx.dir[1]; ox = fx.x; oy = fx.y; }
+      else { nx = meioX - s.x; ny = meioY - s.y; const q = hyp(nx, ny) || 1; nx /= q; ny /= q; ox = s.x + nx*80; oy = s.y + ny*80; }
+      const px = -ny, py = nx;
+      const fundo = d => (ox - d.x)*nx + (oy - d.y)*ny;          // quanto atrás da frente
+      const lado = d => (d.x - ox)*px + (d.y - oy)*py;            // pro lado, ao longo da frente
+      const cx = gente.reduce((a, d)=>a + lado(d), 0) / gente.length;
+      const campo = Math.atan2(nx, ny), costas = Math.atan2(-nx, -ny);
+      /* o canto da torcida: o mesmo ritmo e a mesma fase pra todo mundo dela */
+      const h = [...String(b.id || sid)].reduce((a, c)=>Math.imul(a ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+      const canto = {ritmo: 4.9 + (h % 100) / 100 * 1.3, fase: (h % 628) / 100};
+      const livre = new Set(gente);
+      /* o puxador: o mais da frente, perto do meio */
+      const pux = gente.slice().sort((a, c)=>(fundo(a) + 0.35*Math.abs(lado(a) - cx)) - (fundo(c) + 0.35*Math.abs(lado(c) - cx)))[0];
+      if(pux){ pux.papel = 'puxador'; pux.jeito = 'puxador'; pux.gestoParam = canto; pux.rumoPapel = costas; livre.delete(pux); }
+      /* a bateria: os do meio, uma fileira atrás do puxador */
+      const nB = Math.min(BATERIA_POR_NIVEL[U.limitar(nivelDaSedeDe(b.id), 0, 6)], Math.floor(gente.length / 4));
+      if(nB > 0){
+        const prof = gente.map(fundo).sort((a, c)=>a - c), f0 = prof[Math.floor(prof.length * 0.25)];
+        const bat = [...livre].sort((a, c)=>(Math.abs(lado(a) - cx) + Math.abs(fundo(a) - f0)) - (Math.abs(lado(c) - cx) + Math.abs(fundo(c) - f0))).slice(0, nB);
+        bat.sort((a, c)=>Math.abs(lado(a) - cx) - Math.abs(lado(c) - cx));
+        const corCasco = luzDeCor(b.cor) > 175 ? (b.cor2 || '#1a1a1a') : (b.cor || '#1a1a1a');
+        bat.forEach((d, i)=>{
+          const fr = i / Math.max(1, bat.length);
+          const tipo = fr < 0.3 ? 'surdo' : fr >= 0.8 ? 'repique' : 'caixa';
+          d.papel = 'bateria'; d.instrumento = {tipo, cor:corCasco}; d.gestoForcado = tipo; d.jeito = 'arquibancada'; d.gestoParam = canto; d.rumoPapel = campo;
+          livre.delete(d);
+        });
+      }
+      /* os bandeirões: no fundo, espalhados ao longo do setor */
+      const nBd = gente.length >= 8 ? U.limitar(Math.round(gente.length / 10), 1, 4) : 0;
+      if(nBd){
+        const prof = gente.map(fundo).sort((a, c)=>a - c), fMeio = prof[Math.floor(prof.length * 0.5)];
+        const atras = [...livre].filter(d=>fundo(d) >= fMeio).sort((a, c)=>lado(a) - lado(c));
+        for(let k = 0; k < nBd && atras.length; k++){
+          const d = atras[Math.min(atras.length - 1, Math.floor((k + 0.5) * atras.length / nBd))];
+          if(!livre.has(d)) continue;
+          d.papel = 'bandeirao'; d.jeito = 'arquibancada'; d.gestoForcado = 'mastro';
+          d.gestoParam = {ritmo:canto.ritmo, fase:canto.fase, a:0};
+          d.bandeirao = {cor:b.cor || '#c0392b', cor2:b.cor2 || '#f2f2f2', cor3:b.cor3 || null, sigla:b.sigla || '', id:b.id || sid, j:k,
+                         periodo: 2.6 + (h % 7) / 10 + k * 0.17, amp: 0.75 + ((h >> 3) % 20) / 100, fase:(k * 1.9 + canto.fase) % 6.28};
+          d.rumoPapel = campo; livre.delete(d);
+        }
+      }
+      /* o resto canta junto, olhando pro campo */
+      for(const d of livre){ d.papel = 'canta'; d.jeito = 'arquibancada'; d.gestoParam = canto; d.rumoPapel = campo; }
+    }
+  }
+  const luzDeCor = hex => { const v = parseInt(String(hex || '#888888').replace('#', '').slice(0, 6), 16) || 0; return ((v >> 16) & 255)*0.299 + ((v >> 8) & 255)*0.587 + (v & 255)*0.114; };
   /* O BARULHO (a furtiva, 23/11/2026): a casa dorme até o barulho passar
      de 100. Soma: porta apanhando (5/s por quem bate), pedra (30), bomba (150), e
      andar colado em quem dorme (70/s a menos de 34 px; 25/s a menos de
@@ -68072,11 +68166,13 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       d.appendChild(s0);
       if(r.passou || !vigente || !r.grupo || !r.grupo.chaveJogo){ d.appendChild(el('p',{class:'plj-vazio', texto: r.passou ? _t('Esse jogo já passou.') : _t('Nada a decidir.')})); return d; }
       const inv = (p.investidas||{})[r.grupo.chaveJogo];
-      /* NA CIDADE, SÓ COM A RELAÇÃO LÁ EMBAIXO (dono, 13/11/2026): nos
-         outros jogos da nossa praça a investida só existe contra quem
-         está de −55 pra baixo com a gente; a diretoria pergunta antes */
-      const hostis = r.torcidas.filter(t=>t.hostil &&
-        (!emCasa || TO.relacoes.nivel(e, t.id) <= P.RELACAO_QUENTE));
+      /* NA CIDADE, CONTRA QUALQUER RIVAL HOSTIL (dono, 23/11/2026, com o
+         print do Ceará × Sport: "deve dar a opção de atacar a jovem sport e
+         a gang da ilha"). Era só contra quem estava de −55 pra baixo
+         (13/11/2026); a pergunta da diretoria na véspera continua só pra
+         esses, mas na mão o jogador pode investir contra qualquer hostil */
+      const hostis = r.torcidas.filter(t=>t.hostil);
+      void emCasa;
       const ondes = emCasa ? P.ONDE_ATAQUE : P.ONDE_ATAQUE.filter(o=>o.id!=='arredores');
       const base = emCasa ? {como:'arredores', olheiro:null} : {como:'ida', olheiro:'avenida', filial:cidade};
       const s = secao(1, _t('A nossa investida'), _t('só aparece na cidade e só para o tempo se for marcada'));

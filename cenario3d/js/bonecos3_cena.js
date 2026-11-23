@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=15e2ed423a';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=5ea19d3e50';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2663,7 +2663,8 @@ let escalaDoTabuleiro = () => 1;
       const vel = medirVelocidade(f, q0.x, q0.z, dt);
       const corre = !!(d.fugindo || d._cacando || d.fugaBomba);
       const emBriga = d.golpe > 0 || d.apanhou > 0 || d.hostil > 0;
-      const rumo = rumoDe(d);
+      /* (o papel na arquibancada viva: o puxador de costas pro jogo, o resto de frente pro campo — parado e fora da briga) */
+      const rumo = (d.rumoPapel != null && !emBriga && !corre && vel < 4) ? d.rumoPapel : rumoDe(d);
       if(typeof rumo === 'number') f.yaw = girar(f.yaw, rumo, Math.min(1, dt*14));
       else if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
       if(d.arremesso && d.arremesso.t > 0.4){
@@ -2740,6 +2741,7 @@ let escalaDoTabuleiro = () => 1;
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
     panoNaMao(c, d);
+    adereco(c, d, f, dt);
     if(c.anel){
       const cor = anelDe(J, d);
       const hex = cor === 'lado' ? corLado(d.lado, false) : cor;
@@ -3119,6 +3121,7 @@ let escalaDoTabuleiro = () => 1;
     const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); scene.add(sol);
     const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); scene.add(contra);
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
+    limparBandeiroes();
     /* o cenário em 3D da cena (a casa de festas) volta pra cena nova */
     if(cenarioExtra){ scene.add(cenarioExtra); luzDoCenario(); }
     ativo = true;
@@ -3129,6 +3132,161 @@ let escalaDoTabuleiro = () => 1;
   /* A PEÇA NA MÃO (a invasão de sede, 23/11/2026): quem carrega a faixa
      ou a bandeira (`d.comFaixa`) leva o pano dobrado nos braços, na cor
      da dona — na sede o chão é 3D e a faixa do 2D fica por baixo dele */
+  /* =======================================================
+     A ARQUIBANCADA VIVA NO CORPO (dono, 23/11/2026: a animação do estádio
+     do jogo 3D — a bateria e os bandeirões — trazida pro nosso jogo; o
+     combate dá o papel, `vidaDaArquibancada`): o INSTRUMENTO na cintura
+     (surdo, caixa, repique: o casco na cor da torcida, a pele por cima,
+     deitado pra quem toca) e o BANDEIRÃO DE BAMBU (o bambu de 6 m nas
+     duas mãos, no balanço do oito, e o pano de 4 × 4 m DE VERDADE —
+     partículas presas no bambu, com gravidade, vento e as ligações —,
+     o mesmo do `arquibancada.js` de 28/09/2026). Na briga, na correria e
+     no chão, o instrumento e o bandeirão somem.
+     ======================================================= */
+  const METRO_FIG = 34 / 1.75;      // unidades do boneco por metro (o boneco de 34 tem 1,75 m)
+  const MED_INST = { surdo:{r:0.25, h:0.46, y:0.92, frente:0.36, lado:0, deita:0.45},
+                     caixa:{r:0.17, h:0.15, y:1.0, frente:0.3, lado:0, deita:0.55},
+                     repique:{r:0.14, h:0.32, y:1.02, frente:0.2, lado:-0.2, deita:1.0} };
+  const quietoNaArq = d => d.vivo && !d.noChao && !(d.derrubado > 0) && !(d.golpe > 0 || d.apanhou > 0 || d.hostil > 0)
+                         && !(d.fugindo || d._cacando || d.fugaBomba) && !d.preso;
+  const _bT = new THREE.Vector3(), _bB = new THREE.Vector3(), _bL = new THREE.Vector3(), _bO = new THREE.Vector3();
+  const bandeiroesTodos = new Set();
+  const telasBandeirao = new Map();
+  function adereco(c, d, f, dt){
+    const ok = quietoNaArq(d);
+    /* o instrumento */
+    const ins = d.instrumento;
+    if(c.inst && (!ins || c.inst.userData.tipo !== ins.tipo)){ c.raiz.remove(c.inst); c.inst = null; }
+    if(ins && !c.inst){
+      const md = MED_INST[ins.tipo] || MED_INST.caixa, m = METRO_FIG;
+      const g = new THREE.Group();
+      const mc = new THREE.MeshLambertMaterial({color: ins.cor || '#c0392b'}); mc._propria = true;
+      const mp = new THREE.MeshLambertMaterial({color:'#f1ede2'}); mp._propria = true;
+      const casco = new THREE.Mesh(new THREE.CylinderGeometry(md.r*m, md.r*m, md.h*m, 14), mc);
+      const pele = new THREE.Mesh(new THREE.CylinderGeometry(md.r*m*1.03, md.r*m*1.03, md.h*m*0.12, 14), mp);
+      pele.position.y = md.h*m*0.5;
+      g.add(casco, pele);
+      g.position.set(md.lado*m, md.y*m, md.frente*m);
+      g.rotation.x = -md.deita;
+      g.userData.tipo = ins.tipo;
+      c.raiz.add(g); c.inst = g;
+    }
+    if(c.inst) c.inst.visible = ok;
+    /* o bandeirão */
+    const bd = d.bandeirao;
+    if(!bd){ if(c.haste) c.haste.visible = false; return; }
+    if(!c.haste){
+      const m = METRO_FIG, mt = new THREE.MeshLambertMaterial({color:'#c9b27a'}); mt._propria = true;
+      const haste = new THREE.Group();
+      const cano = new THREE.Mesh(new THREE.CylinderGeometry(0.03*m, 0.038*m, 5.8*m, 6), mt);
+      cano.position.y = 2.1*m;                 // de 0,8 m abaixo das mãos a 5 m acima
+      haste.add(cano);
+      haste.position.set(0, 1.4*m, 0.15*m);
+      c.raiz.add(haste); c.haste = haste;
+    }
+    if(!c.band || !bandeiroesTodos.has(c.band)) c.band = criarBandeirao(bd);
+    const tt = tAnim, w = 2*Math.PI / bd.periodo;
+    const th = bd.amp*Math.sin(tt*w + bd.fase), be = 0.3*Math.sin(2*tt*w + bd.fase*1.3);
+    if(d.gestoParam) d.gestoParam.a = th;
+    c.haste.rotation.set(be, 0, -th);
+    c.haste.visible = ok;
+    c.band.malha.visible = ok;
+    if(!ok){ c.band.ult = null; return; }
+    /* o topo e o eixo do bambu no mundo; o lado (pra onde o pano cai) */
+    c.raiz.updateMatrixWorld(true);
+    const m = METRO_FIG;
+    const topo = c.haste.localToWorld(_bT.set(0, 5.0*m, 0)).clone();
+    const base = c.haste.localToWorld(_bB.set(0, 1.0*m, 0));
+    const eixo = topo.clone().sub(base).normalize();
+    const lx = c.haste.localToWorld(_bL.set(1, 0, 0)).sub(c.haste.localToWorld(_bO.set(0, 0, 0))).normalize();
+    const metroW = m * c.raiz.scale.x;
+    simularBandeirao(c.band, [topo.x, topo.y, topo.z], [eixo.x, eixo.y, eixo.z], [-lx.x, -lx.z], tt, Math.min(1/30, Math.max(0, dt)), metroW);
+  }
+  function telaDoBandeirao(bd){
+    const k = [bd.cor, bd.cor2, bd.cor3, bd.sigla, bd.j % 4].join('|');
+    if(telasBandeirao.has(k)) return telasBandeirao.get(k);
+    const Wd = 256, cv = document.createElement('canvas'); cv.width = cv.height = Wd;
+    const x = cv.getContext('2d'), c1 = bd.cor, c2 = bd.cor2, c3b = bd.cor3 || c2;
+    const desenho = (bd.j + ([...String(bd.id)].reduce((h, ch)=>h*31 + ch.charCodeAt(0) | 0, 7) >>> 0)) % 4;
+    x.fillStyle = c1; x.fillRect(0, 0, Wd, Wd);
+    x.fillStyle = c2;
+    if(desenho === 0){ x.beginPath(); x.moveTo(0, 0); x.lineTo(Wd, 0); x.lineTo(0, Wd); x.closePath(); x.fill(); }
+    else if(desenho === 1){ for(let i = 0; i < 5; i++) if(i % 2) x.fillRect(0, i*Wd/5, Wd, Wd/5); }
+    else if(desenho === 2){ x.fillRect(0, 0, Wd/2, Wd/2); x.fillRect(Wd/2, Wd/2, Wd/2, Wd/2); }
+    else { x.fillRect(0, Wd*0.36, Wd, Wd*0.28); x.fillStyle = c3b; x.fillRect(0, Wd*0.44, Wd, Wd*0.12); }
+    const luzC = h => { const v = parseInt(String(h || '#888').replace('#', '').slice(0, 6), 16) || 0; return ((v>>16)&255)*0.299 + ((v>>8)&255)*0.587 + (v&255)*0.114; };
+    x.font = '700 76px "Barlow Condensed", "Arial Narrow", system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    const sig = String(bd.sigla || '').slice(0, 5);
+    x.lineWidth = 8; x.strokeStyle = c1; x.strokeText(sig, Wd/2, Wd/2 + 4);
+    x.fillStyle = c2 === c1 ? '#fff' : (desenho === 0 ? (luzC(c1) > 128 ? '#141414' : '#f4f4f4') : c2); x.fillText(sig, Wd/2, Wd/2 + 4);
+    const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4;
+    telasBandeirao.set(k, tx);
+    return tx;
+  }
+  /* o pano: 9 × 9 partículas, a coluna 0 presa nos 4 m de cima do bambu */
+  function criarBandeirao(bd){
+    const nx = 9, ny = 9, N = nx*ny, liga = [];
+    for(let r = 0; r < ny; r++) for(let cc = 0; cc < nx; cc++){
+      const i = r*nx + cc;
+      if(cc < nx - 1) liga.push(i, i + 1, 0);
+      if(r < ny - 1) liga.push(i, i + nx, 1);
+      if(cc < nx - 1 && r < ny - 1) liga.push(i, i + nx + 1, 2, i + 1, i + nx, 2);
+      if(cc < nx - 2) liga.push(i, i + 2, 3);
+    }
+    const geo = new THREE.BufferGeometry(), pos = new Float32Array(N*3), uv = new Float32Array(N*2), idx = [];
+    for(let r = 0; r < ny; r++) for(let cc = 0; cc < nx; cc++){ const i = r*nx + cc; uv[2*i] = cc/(nx - 1); uv[2*i + 1] = 1 - r/(ny - 1); }
+    for(let r = 0; r < ny - 1; r++) for(let cc = 0; cc < nx - 1; cc++){ const i = r*nx + cc; idx.push(i, i + nx, i + 1, i + 1, i + nx, i + nx + 1); }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(idx);
+    const mt = new THREE.MeshLambertMaterial({map:telaDoBandeirao(bd), side:THREE.DoubleSide}); mt._propria = true;
+    const malha = new THREE.Mesh(geo, mt); malha.frustumCulled = false; malha.visible = false;
+    if(scene) scene.add(malha);
+    const B = {bd, nx, ny, N, X:new Float32Array(N*3), Y:new Float32Array(N*3), liga:Int32Array.from(liga), malha, pronto:false, ult:null};
+    bandeiroesTodos.add(B);
+    return B;
+  }
+  function simularBandeirao(B, topo, eixo, lado, tr, dt, metroW){
+    const {nx, ny, N, X, Y} = B, rx = 4*metroW/(nx - 1), ry = 4*metroW/(ny - 1), rd = Math.hypot(rx, ry);
+    const rest = [rx, ry, rd, 2*rx];
+    const presa = r => [topo[0] - eixo[0]*r*ry, topo[1] - eixo[1]*r*ry, topo[2] - eixo[2]*r*ry];
+    if(!B.pronto || !B.ult || Math.hypot(topo[0] - B.ult[0], topo[2] - B.ult[2]) > 2.5*metroW){
+      for(let r = 0; r < ny; r++) for(let cc = 0; cc < nx; cc++){ const q = presa(r), i = (r*nx + cc)*3; X[i] = q[0] + lado[0]*cc*rx; X[i + 1] = q[1] - cc*rx*0.3; X[i + 2] = q[2] + lado[1]*cc*rx; }
+      Y.set(X); B.pronto = true;
+    }
+    B.ult = topo;
+    if(dt > 0){
+      const sub = 2, h = dt/sub, g = -9.8*metroW, vento = 1.6*metroW*(1 + 0.6*Math.sin(tr*0.7 + B.bd.fase)), wx = 0.6*vento, wz = 0.8*vento;
+      for(let s0 = 0; s0 < sub; s0++){
+        for(let i = 0; i < N; i++){
+          if(i % nx === 0) continue;
+          const k = i*3;
+          const vx = (X[k] - Y[k])*0.985, vy = (X[k + 1] - Y[k + 1])*0.985, vz = (X[k + 2] - Y[k + 2])*0.985;
+          const tur = Math.sin(tr*3.1 + i*0.7)*1.2*metroW;
+          Y[k] = X[k]; Y[k + 1] = X[k + 1]; Y[k + 2] = X[k + 2];
+          X[k] += vx + (wx + tur*0.5)*h*h; X[k + 1] += vy + (g + tur*0.3)*h*h; X[k + 2] += vz + (wz - tur*0.5)*h*h;
+        }
+        for(let r = 0; r < ny; r++){ const q = presa(r), k = r*nx*3; X[k] = q[0]; X[k + 1] = q[1]; X[k + 2] = q[2]; }
+        const L = B.liga;
+        for(let it = 0; it < 4; it++) for(let j = 0; j < L.length; j += 3){
+          const ia = L[j], ib = L[j + 1], a = ia*3, b = ib*3, rr = rest[L[j + 2]];
+          const pa = (ia % nx) === 0, pb = (ib % nx) === 0;
+          if(pa && pb) continue;
+          const dx = X[b] - X[a], dy = X[b + 1] - X[a + 1], dz = X[b + 2] - X[a + 2], l = Math.hypot(dx, dy, dz) || 1e-6;
+          const fq = (l - rr)/l, ka = pa ? 0 : pb ? 1 : 0.5, kb = pb ? 0 : pa ? 1 : 0.5;
+          X[a] += dx*fq*ka; X[a + 1] += dy*fq*ka; X[a + 2] += dz*fq*ka;
+          X[b] -= dx*fq*kb; X[b + 1] -= dy*fq*kb; X[b + 2] -= dz*fq*kb;
+        }
+      }
+    }
+    const pos = B.malha.geometry.attributes.position;
+    pos.array.set(X); pos.needsUpdate = true;
+    B.malha.geometry.computeVertexNormals();
+  }
+  /* (na cena nova, os panos velhos saem) */
+  function limparBandeiroes(){
+    for(const B of bandeiroesTodos){ if(B.malha.parent) B.malha.parent.remove(B.malha); B.malha.geometry.dispose(); B.malha.material.dispose(); }
+    bandeiroesTodos.clear();
+  }
+
   function panoNaMao(c, d){
     const F = d.comFaixa;
     if(!F){ if(c.pano) c.pano.visible = false; return; }
@@ -3679,6 +3837,8 @@ void main() {`)
   }
   function atualizarCena(J, dt){
     quadroN++; tAnim += dt;
+    /* (o pano de bandeirão de quem não for desenhado neste quadro fica escondido) */
+    for(const B of bandeiroesTodos) B.malha.visible = false;
     /* o cenário que tem peça viva (as portas da sede) acompanha a briga */
     if(cenarioExtra && cenarioExtra.userData.aCadaQuadro) cenarioExtra.userData.aCadaQuadro(J, dt);
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
@@ -4518,6 +4678,7 @@ void main() {`)
     if(modeloGLB) modeloGLB.traverse(o => { if(o.isMesh) remendar(o.material); });
     if(modeloLonge) modeloLonge.traverse(o => { if(o.isMesh) remendar(o.material); });
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
+    limparBandeiroes();
     ativo = true;
     carregarGLB();
     /* o nível de cada boneco sai da câmera de quem é dono dela: `opc.camera`
