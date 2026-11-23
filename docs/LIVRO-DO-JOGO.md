@@ -3386,7 +3386,7 @@ Quem debanda recolhe a faixa antes de correr. Faixa tomada pesa muito em moral e
 - **A torcida grande abre espaço (18/11/2026)**: no estádio, `abrirEspacoNaArquibancada` mede cada bonde como um trecho do alambrado. O nosso fica onde está; a divisória da visitante e a grade de escanteio dentro dele andam até a beira, e os vizinhos saem em cascata pro lado (a divisória é barreira). A faixa de quem andou vai junto, e o nosso bonde senta primeiro.
 - **Sem rival de pé**: a cena entra em "comemorando" por 5 s (quem sobrou provoca) e fecha.
 - **Sair/entrar**: levar o líder até a boca encerra.
-- Quem corre vai para a boca de rua mais perto que não passa por dentro do inimigo. Rival que correu sem brigar e é alcançado fica (dois golpes em cima).
+- Quem corre vai para a boca de rua mais perto que não passa por dentro do inimigo, e lá some do mapa (23/11/2026; antes seguia correndo e parava espalhado). Rival que correu sem brigar e é alcançado fica (dois golpes em cima).
 - Mínimo para debandada valer: 6 de cada lado.
 
 ### 2.11 O resultado da cena

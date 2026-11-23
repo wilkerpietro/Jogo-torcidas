@@ -51440,53 +51440,20 @@ TO.diaJogo.combate = (function(){
     return v;
   }
 
-  /* QUEM CORRE NÃO SOME (o dono, 07/10/2026: "Quando uma torcida corre
-     agora, em todas as cenas de fuga não existirá mais o boneco sumir da
-     tela, ele continua correndo até certo ponto enquanto o atacante
-     provoca de longe"). Quem chega na boca de fuga sai da briga do mesmo
-     jeito — `sumiu`, a conta dos `sumiram`, o fim —, mas o boneco segue
-     correndo no rumo que vinha (`d.longe`), uns 290 a 500 px (8 a 14 m na
-     rua do jogo 3D), e para lá, olhando pra trás; o desenho segue
-     mostrando ele (bonecos3.js). Na cena de cima do jogo de feed isso é
-     fora da tela, como antes */
+  /* QUEM CORRE SOME DE NOVO (dono, 23/11/2026: "os bonecos quando correm
+     devem voltar a sumir do mapa, essa ideia de se espalhar não ficou
+     legal"). De 07/10 até aqui, quem chegava na boca de fuga seguia
+     correndo uns 290 a 500 px pra fora da briga (`d.longe`) e parava lá,
+     virado pra ela — e o bonde que correu ficava espalhado pelo mapa.
+     Agora, chegou na boca, sai da cena: `sumiu`, a conta dos `sumiram` e o
+     fim, como antes de 07/10. (`correrLonge` fica pra quem ainda tiver
+     `d.longe`; ninguém novo ganha um.) */
   const LONGE = {de:290, ate:500, vel:90};
   function sumir(J,d){
     if(d.sumiu) return;
     d.sumiu=true;
     J.sumiram[d.lado]=(J.sumiram[d.lado]||0)+1;
-    let vx=d.vx||0, vy=d.vy||0, v=hyp(vx,vy);
-    if(v < 20){
-      const ini = centroDoInimigo(J, d.lado);
-      if(ini){ vx=d.x-ini.x; vy=d.y-ini.y; v=hyp(vx,vy); }
-    }
-    if(v < 1e-3){ d.vx=d.vy=0; return; }
-    vx/=v; vy/=v;
-    const resta = LONGE.de + Math.random()*(LONGE.ate-LONGE.de);
-    /* QUEM CORRE, CORRE POR ONDE DÁ PRA ANDAR (16/11/2026, o dono na bancada
-       da chegada: "quando o rival corre agora, na animação 'Eles correram',
-       ele acaba atravessando a física das paredes do estádio"). A corrida
-       era uma reta cega no rumo em que o disco vinha — na cena de uma tela
-       só ela saía pela borda e ninguém via; nos arredores com o estádio no
-       mapa, quem debanda perto do ponto em que chegou "some" ali mesmo e
-       saía correndo por cima de casa, de gradil e de arquibancada. Agora o
-       rumo é escolhido: dos dezesseis em volta, o que deixa correr mais
-       longe sem bater em nada, entre os que não vão pra cima de quem ficou
-       (até uns 100° do rumo de fuga); e o passo passa pela física da cena. */
-    {
-      let melhor=null, mq=-1;
-      for(let i=0;i<16;i++){
-        const a=i*Math.PI/8, ux=Math.cos(a), uy=Math.sin(a), co=ux*vx+uy*vy;
-        if(co < -0.17) continue;
-        let livre=0;
-        for(let s=14; s<=resta; s+=14){ if(!A.caminhavel(d.x+ux*s, d.y+uy*s)) break; livre=s; }
-        if(livre > 28 && A.atravessaGrade(d.x, d.y, d.x+ux*livre, d.y+uy*livre, J.grades)) livre=Math.min(livre, 28);
-        const q=livre*(0.75+0.25*co);
-        if(q>mq){ mq=q; melhor={ux, uy, livre}; }
-      }
-      if(melhor){ vx=melhor.ux; vy=melhor.uy; }
-    }
-    d.longe = {vx:vx*LONGE.vel, vy:vy*LONGE.vel, resta, parado:false, preso:0};
-    d.vx=d.longe.vx; d.vy=d.longe.vy;
+    d.vx=d.vy=0;
   }
   /* quem saiu correndo da briga segue até o ponto dele e para lá, virado pra ela */
   function correrLonge(J,dt){

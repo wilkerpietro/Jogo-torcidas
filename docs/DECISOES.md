@@ -16485,6 +16485,14 @@ O dono: "faz o rival não recuar sozinho quando a PM separa". Nos testes dos tr�
 - **O braço mais perto da linha**: `pontaBraco` 60 px, com folga de 0 a 16 px (era 70, com até 48). A 110 px da linha, o inimigo mais perto ficava a ~220 px, longe dos 170 px da pedra.
 - **Medido (rua, 30 × 30, em Segura)**: o rival ficou do lado dele os 35 s; as pedras foram 12 nossas e 15 deles, com um caído de cada lado; a cena fechou com "a polícia separou".
 
+## Quem corre some do mapa de novo (dono, 23/11/2026)
+
+O dono: "os bonecos quando correm devem voltar a sumir do mapa, essa ideia de se espalhar não ficou legal". Desde 07/10 ("QUEM CORRE NÃO SOME"), quem chegava na boca de fuga seguia correndo de 290 a 500 px pra fora da briga (`d.longe`, `correrLonge`) e parava lá, virado pra ela; o bonde que correu ficava espalhado pelo mapa.
+
+- **`sumir`**: chegou na boca de fuga, sai da cena. Marca `sumiu`, soma em `sumiram` e zera a velocidade; o desenho não mostra mais quem `sumiu` sem `d.longe`. Vale pros dois lados, na debandada e no CORRE.
+- `correrLonge` e `correndoAinda` ficam (ninguém novo ganha `d.longe`, e a comemoração volta aos 5 s fixos).
+- **Medido (rua, CORRE)**: 19 dos 30 somem na saída em 1,5 s, o resto logo depois, e a cena fecha ("sua torcida foi corrida do lugar").
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
