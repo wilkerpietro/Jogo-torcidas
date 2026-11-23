@@ -1078,14 +1078,17 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const noMeio = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f), q = ponto(ang, r0 + (r1 - r0) * f); return paraPx(q[0], q[1]); };
   /* (se o meio do contorno não cai em degrau — no Rei Pelé, atrás dos gols, o contorno vai do gramado à galeria e o meio caía na
      pista —, o bonde escorrega no mesmo raio até o degrau mais perto) */
-  const pt = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
+  /* (com a caixa sólida do vomitório no raio, às vezes não sobra degrau no mesmo ângulo: o ponto escorrega de lado, de 2 em 2
+     graus, até achar um — só o ponto de nascer do bonde; grade e posto ficam no ângulo deles) */
+  const pt = (ang, f, desliza) => { if (desliza) for (const da of [0, 2, -2, 4, -4, 6, -6]) { const q = pt1(ang + da, f, true); if (q) return q; } return pt1(ang, f, false); };
+  const pt1 = (ang, f, exige) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
     /* (e longe da barreira entre níveis: com o ponto rente a ela, a célula da máscara sai fechada) */
     const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), livreB = q => [[0, 0], [1.6, 0], [-1.6, 0], [0, 1.6], [0, -1.6]].every(([er, et]) => !barreira(ficha, cs * (q + er) - sn * et, sn * (q + er) + cs * et));
     /* (e fora da caixa sólida do vomitório — `naBoca` —, com folga de uma célula) */
     const semBoca = q => [[0, 0], [1.4, 0], [-1.4, 0], [0, 1.4], [0, -1.4]].every(([er, et]) => !naBoca(ficha, cs * (q + er) - sn * et, sn * (q + er) + cs * et));
     const senta = q => naArquibancada(ficha, cs * q, sn * q) && livreB(q) && semBoca(q);
     if (!senta(r)) for (let k = 0.5; k <= 40; k += 0.5) { if (senta(r + k)) { r += senta(r + k + 1.5) ? k + 1.5 : k; break; } if (senta(r - k)) { r -= senta(r - k - 1.5) ? k + 1.5 : k; break; } }
-    if (!senta(r)) r = r0 + (r1 - r0) * f;
+    if (!senta(r)) { if (exige) return null; r = r0 + (r1 - r0) * f; }
     /* (o ponto que não é de sentar — o posto da PM no corredor, o túnel no fundo — também sai de cima da barreira entre níveis) */
     const anda = q => [-1.2, 0, 1.2].every(e => andavel(ficha, cs * (q + e), sn * (q + e))) && livreB(q) && semBoca(q);
     if (!anda(r)) for (let k = 0.5; k <= 8; k += 0.5) { if (anda(r + k)) { r += k; break; } if (anda(r - k)) { r -= k; break; } }
@@ -1122,7 +1125,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
      dividem o setor se arrumam nesse trecho do alambrado sem uma cobrir a outra) */
   const bonde = (id, rot, lado, ang, entrada, jogador, setor) => {
     /* (em que altura da arquibancada o bonde fica: no meio, ou onde a ficha disser — `jogo.fracao`, 0 = na frente, 1 = no fundo) */
-    spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, (j.fracao && j.fracao[id] != null) ? j.fracao[id] : 0.5), jogador ? { jogador: true } : {}));
+    spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, (j.fracao && j.fracao[id] != null) ? j.fracao[id] : 0.5, true), jogador ? { jogador: true } : {}));
     /* (a faixa pendura na beira do lance em que o bonde está: no anel de cima, na mureta da varanda, por cima do de baixo —
        com o bonde lá em cima e a faixa no gramado, uma ficava longe da outra, como no Castelão) */
     const fr = (j.fracao && j.fracao[id] != null) ? j.fracao[id] : 0.5, cc = contornoEm(ang), rb = raioDe(ang, cc.d) + (raioDe(ang, cc.f) - raioDe(ang, cc.d)) * fr;

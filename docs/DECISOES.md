@@ -16418,6 +16418,12 @@ O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. 
 - **O túnel**: o que era o vomitório do lance de baixo fica na saída dele, umas duas fileiras na frente da caixa (ou no corredor da frente, quando a boca abre nele).
 - **Os marcadores**: bondes e postos saem de cima da caixa com uma célula de folga.
 - **A reassadura**: todos os estádios foram reassados.
+- **O ponto de nascer**: quando não sobra degrau no mesmo ângulo, o ponto de nascer do bonde escorrega de lado, de 2 em 2 graus. Grade e posto ficam no ângulo deles.
+- **A conferência**:
+  - Ninguém senta fora do degrau nos 91 estádios.
+  - Nenhum marcador ficou fora do chão principal; a única exceção é o posto da PM do Mangueirão Remo × Paysandu, que já era assim e o jogo põe no chão livre mais perto.
+  - O Arruda ganhou uma ilhota de 3 células, e a Arena das Dunas manteve as duas de 1 célula.
+  - O bonde da Vila Belmiro (visitante 2) e o do Marizão (mandante 1) nascem fora do degrau, como antes da mudança. Eles sentam certo.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
