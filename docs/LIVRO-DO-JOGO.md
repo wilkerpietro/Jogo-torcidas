@@ -3670,7 +3670,7 @@ A cena jogada entrega ao registro da briga o que a PM fez (`dados.pm`: degrau, b
 - **A arquibancada viva** (dono, 23/11/2026; `vidaDaArquibancada`). Em cada setor do estádio:
   - O puxador fica de costas pro jogo, regendo.
   - A bateria segue o nível da sede (2/3/4/6/8/10/12, até ¼ da torcida), com surdo, repique e caixa no corpo.
-  - Há um bandeirão de bambu (pano de 4 × 4 m com física) a cada dez, de 1 a 4.
+  - Há um bandeirão de bambu (pano de 4 × 4 m com física) a cada dez, de 1 a 4, só na torcida mandante: a visitante não leva.
   - O resto canta no tempo da bateria.
   - Na briga, os adereços somem.
 - **O vomitório é sólido** (dono, 23/11/2026). A caixa de concreto da boca fica fora do chão de andar e de sentar (`naBoca`).

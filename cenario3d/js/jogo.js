@@ -49941,7 +49941,9 @@ TO.diaJogo.combate = (function(){
         });
       }
       /* os bandeirões: no fundo, espalhados ao longo do setor */
-      const nBd = gente.length >= 8 ? U.limitar(Math.round(gente.length / 10), 1, 4) : 0;
+      /* (torcida visitante não leva bandeirão — dono, 23/11/2026; o puxador, a bateria e o canto ela leva) */
+      const visitante = (b.lado || gente[0].lado) === 'visitante';
+      const nBd = gente.length >= 8 && !visitante ? U.limitar(Math.round(gente.length / 10), 1, 4) : 0;
       if(nBd){
         const prof = gente.map(fundo).sort((a, c)=>a - c), fMeio = prof[Math.floor(prof.length * 0.5)];
         const atras = [...livre].filter(d=>fundo(d) >= fMeio).sort((a, c)=>lado(a) - lado(c));

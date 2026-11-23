@@ -16439,6 +16439,7 @@ O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. 
   - O pano de 4 × 4 m é de verdade: 9 × 9 partículas presas no bambu, com gravidade, vento e as ligações.
   - O desenho do pano é o de antes: cores da torcida, um de quatro padrões e a sigla.
 - **O resto canta junto** (`jeito: 'arquibancada'`): palma, braço, pulo, no tempo da torcida, o mesmo `gestoParam` da bateria.
+- **A visitante não leva bandeirão** (dono, 23/11/2026: "torcidas visitantes não levam bandeirão"): só a do lado mandante tem os bambus. Puxador, bateria e canto, as duas têm.
 
 Todos olham pro campo, menos o puxador. Na briga, na correria e no chão, o gesto para e o instrumento e o bandeirão somem. O líder fica sem papel.
 
