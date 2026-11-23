@@ -18,9 +18,9 @@
    salas ficam acesas, poucas: quem entra no escuro enxerga pouco.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { montarSede } from './sede3d.js?v=bff46eeab5';
-import { ATLAS } from './modelos_atlas.js?v=bff46eeab5';
-import * as K from './detalhe3d.js?v=bff46eeab5';
+import { montarSede } from './sede3d.js?v=45f73e8c6a';
+import { ATLAS } from './modelos_atlas.js?v=45f73e8c6a';
+import * as K from './detalhe3d.js?v=45f73e8c6a';
 
 const MUNDO = 34 / 1.75;          // unidade do mundo por metro (o cenário 3D)
 const PX = 24;                    // px do tabuleiro por metro (o boneco)
@@ -121,7 +121,7 @@ export function cenarioDaSede(D) {
   const T = D.sedeNoTabuleiro, k = PX / MUNDO;
   const raiz = new THREE.Group(); raiz.name = 'sede3d';
   /* a noite (a invasão furtiva): a luz baixa */
-  raiz.userData.luz = D.noite ? 0.32 : 0.85;
+  raiz.userData.luz = D.noite ? 0.16 : 0.85;
   /* o corte: a parede some acima de 2,3 m (no tabuleiro, em px) */
   const corte = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.3 * PX);
   raiz.userData.corte = true;
@@ -194,6 +194,14 @@ export function cenarioDaSede(D) {
     else placaNoMundo(g, p, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, p.tipo === 'faixa'), false, corte);
   }
   raiz.add(g);
+  /* A NOITE (a furtiva): além da luz baixa, um véu azul-escuro por cima de
+     tudo — a sede, a rua e os bonecos — como a madrugada vista de cima */
+  if (D.noite) {
+    const veu = new THREE.Mesh(new THREE.PlaneGeometry(D.largura + 200, D.altura + 200),
+      new THREE.MeshBasicMaterial({ color: 0x050a1c, transparent: true, opacity: 0.42, depthWrite: false }));
+    veu.rotation.x = -Math.PI / 2; veu.position.set(D.largura / 2, 4.2 * PX, D.altura / 2); veu.renderOrder = 10;
+    raiz.add(veu);
+  }
   atual = raiz;
   return raiz;
 }

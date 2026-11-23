@@ -16300,6 +16300,65 @@ Cada peça do armário perdida custa o mesmo que na agressiva.
 
 **O estado.** `E.roubos = [{id, ladrao, pecas, dinheiro, suspeitos, tentou, investigacao, fim, acusada, culpada}]`.
 
+## A nossa invasão: na marra ou de madrugada (dono, 23/11/2026)
+
+**Quando.** A diretoria sugere, sem data marcada. É o passo `sugestão de invasão`, olhado no 3º dia da semana, no máximo uma vez a cada 42 dias.
+
+**Contra quem** (`TO.invasao.alvosDaNossa`), nessa ordem:
+
+| Motivo | Contra quem | Chance da mensagem na semana |
+|---|---|---|
+| Resgate | quem guarda faixa ou bandeira nossa, de qualquer cidade | 35% |
+| Revanche | a culpada de um roubo que a gente acertou na acusação | 30% |
+| Furto | qualquer rival da nossa cidade | 12% |
+
+Sempre rival de verdade (relação < 20, não irmã) e com sede (nível ≥ 1).
+
+**O planejamento.** A mensagem "Planejar a invasão" abre a tela, com Simular (o dado) ou Ir agora.
+- O alvo e o nível da sede deles.
+- O que tem no armário. A nossa peça fica no armário das tomadas; a deles, no do patrimônio. Sem material deles, só o cofre.
+- O jeito.
+- Quantos vão, entre os disponíveis, os mais fortes primeiro.
+
+**Na marra.** É a cena da sede deles (tamanho do nível deles, portas fechadas): 4 a 8 nossos contra 6 a 12 deles (5 + o nível da sede + 0 a 2).
+- Eles acordam quando a gente passa pelo portão.
+- Quem tira a peça do armário corre pra rua. Chegar lá é levar, e derrubar todos eles também vale.
+- Eles sempre sabem quem foi: relação −10.
+
+**De madrugada.** É a mesma cena, de noite: luz baixa e um véu azul-escuro por cima.
+- **Os nossos**: 2 ou 3. Um tira a peça; com três, outro abre o cofre (`cofreiro`); com dois, o cofre é do líder.
+- **A casa**: três dormem sentados. O vigia fica no lugar mais perto do portão; os outros dois longe dele, fora da presidência e do patrimônio (na hospedagem, quando tem).
+- **O barulho** (`conferirBarulho`, a barra do topo vira BARULHO) acorda a casa ao passar de 100:
+
+  | O que faz barulho | Quanto |
+  |---|---|
+  | Porta apanhando | 5/s por quem bate |
+  | Pedra | 30 |
+  | Bomba | 150 (acorda na hora) |
+  | Andar colado em quem dorme | 70/s a menos de 34 px; 25/s a menos de 60 |
+  | Abrir o cofre | 6/s |
+
+  O barulho baixa 4/s. Quem dorme e apanha acorda na hora. Antes de a casa acordar, os nossos não saem batendo em ninguém (só nas portas). Acordou, vira briga ou fuga.
+- **O cofre** fica na presidência (sem ela, no bar). São 4 s em cima dele pra abrir. O dinheiro é de 10 a 25% do caixa deles, no máximo R$ 30.000.
+  - Quem pega e não é o líder corre pra rua.
+  - Caído ou preso no caminho, o dinheiro fica.
+- **O fim**: a cena acaba sozinha quando a peça e o dinheiro saíram (ou ficaram de vez). O líder com o dinheiro precisa sair pela rua; o botão da saída encerra a qualquer hora com o que já saiu.
+- **Quem viu**: se a casa não acordou, ninguém sabe quem foi, e não tem hostilidade.
+
+**O resultado** (`fecharNossa`).
+- **Resgate**: a peça sai das tomadas deles e volta pras nossas. Faixa dá prestígio +10 e moral +5 (tela).
+- **Furto**: a peça deles vai pras nossas tomadas, com os mesmos números, e eles perdem como quem perde o pano.
+- **O dinheiro** sai do caixa deles e entra no nosso.
+- **Sem nada**: prestígio −5, moral −5.
+- **Revanche feita**: o roubo fica `vingado`.
+
+**Sem cena (Simular).**
+- Na marra: chance de 50% + 6% por cabeça de vantagem (de 15% a 80%).
+- De madrugada:
+  - Viram com 30% (dois) ou 40% (três).
+  - A peça vem com 85% se não viram, 35% se viram.
+  - O cofre vem com 60% de chance quando a peça veio.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

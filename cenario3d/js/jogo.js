@@ -5717,6 +5717,62 @@ TO.i18n.registrar({
   "O material está no armário do patrimônio.": {es:"El material está en el armario del patrimonio.", en:"The gear is in the trophy cabinet."},
   "a sede ainda não viu ninguém": {es:"la sede todavía no vio a nadie", en:"the clubhouse hasn’t seen anyone yet"},
   "invadiram a sede!": {es:"¡invadieron la sede!", en:"they stormed the clubhouse!"},
+  "2 ou 3, no escuro: o vigia cochila e o barulho acorda; o armário e o cofre": {es:"2 o 3, a oscuras: el sereno cabecea y el ruido lo despierta; el armario y la caja fuerte", en:"2 or 3, in the dark: the watchman dozes and noise wakes him; the cabinet and the safe"},
+  "4 a 8 dos nossos contra 6 a 12 deles; as portas das salas caem na pancada ou na bomba": {es:"4 a 8 de los nuestros contra 6 a 12 de ellos; las puertas caen a golpes o con bomba", en:"4 to 8 of ours against 6 to 12 of theirs; room doors go down to blows or a bomb"},
+  "A bandeira da {nome} tá no nosso armário: prestígio +{p}, moral +{m}": {es:"La bandera de {nome} está en nuestro armario: prestigio +{p}, moral +{m}", en:"{nome}’s flag is in our cabinet: prestige +{p}, morale +{m}"},
+  "A bandeira deles está no armário do patrimônio.": {es:"Su bandera está en el armario del patrimonio.", en:"Their flag is in the trophy cabinet."},
+  "A faixa da {nome} tá no nosso armário: prestígio +{p}, moral +{m}": {es:"El trapo de {nome} está en nuestro armario: prestigio +{p}, moral +{m}", en:"{nome}’s banner is in our cabinet: prestige +{p}, morale +{m}"},
+  "A faixa deles está no armário do patrimônio.": {es:"Su trapo está en el armario del patrimonio.", en:"Their banner is in the trophy cabinet."},
+  "A invasão deu certo": {es:"La invasión salió bien", en:"The raid worked"},
+  "A invasão não deu certo": {es:"La invasión no salió", en:"The raid failed"},
+  "A nossa bandeira está no armário das tomadas deles.": {es:"Nuestra bandera está en su armario de trofeos.", en:"Our flag is in their trophy cabinet."},
+  "A nossa bandeira voltou pra casa: prestígio +{p}, moral +{m}": {es:"Nuestra bandera volvió a casa: prestigio +{p}, moral +{m}", en:"Our flag is back home: prestige +{p}, morale +{m}"},
+  "A nossa faixa está no armário das tomadas deles.": {es:"Nuestro trapo está en su armario de trofeos.", en:"Our banner is in their trophy cabinet."},
+  "A nossa faixa voltou pra casa: prestígio +{p}, moral +{m}": {es:"Nuestro trapo volvió a casa: prestigio +{p}, moral +{m}", en:"Our banner is back home: prestige +{p}, morale +{m}"},
+  "A sede da {nome} é de nível {n}.": {es:"La sede de {nome} es de nivel {n}.", en:"{nome}’s clubhouse is level {n}."},
+  "Chefe, a sede da {nome} tá dando mole: de madrugada fica um vigia só, cochilando. Tem material deles no armário e dinheiro no cofre.": {es:"Jefe, la sede de {nome} está regalada: de madrugada queda un solo sereno, cabeceando. Hay material de ellos en el armario y plata en la caja fuerte.", en:"Boss, {nome}’s clubhouse is wide open: overnight there’s one watchman, dozing. Their gear is in the cabinet and there’s cash in the safe."},
+  "Chefe, a {nome} tá com a nossa bandeira pendurada no armário da sede deles. Dá pra ir buscar: na marra, com o bonde, ou de madrugada, sem ninguém ver.": {es:"Jefe, {nome} tiene nuestra bandera colgada en el armario de su sede. Se puede ir a buscarla: a la fuerza, con la banda, o de madrugada, sin que nadie vea.", en:"Boss, {nome} has our flag hanging in their clubhouse cabinet. We can go get it: by force with the crew, or overnight with nobody seeing."},
+  "Chefe, a {nome} tá com a nossa faixa pendurada no armário da sede deles. Dá pra ir buscar: na marra, com o bonde, ou de madrugada, sem ninguém ver.": {es:"Jefe, {nome} tiene nuestro trapo colgado en el armario de su sede. Se puede ir a buscarlo: a la fuerza, con la banda, o de madrugada, sin que nadie vea.", en:"Boss, {nome} has our banner hanging in their clubhouse cabinet. We can go get it: by force with the crew, or overnight with nobody seeing."},
+  "Chefe, foi a {nome} que roubou a nossa sede, e eles seguem rindo. Dá pra devolver o favor: invadir a sede deles, na marra ou de madrugada.": {es:"Jefe, fue {nome} la que robó nuestra sede, y siguen riéndose. Se puede devolver el favor: invadir su sede, a la fuerza o de madrugada.", en:"Boss, it was {nome} who robbed our clubhouse, and they’re still laughing. We can return the favour: raid their clubhouse, by force or overnight."},
+  "De madrugada": {es:"De madrugada", en:"Overnight"},
+  "De madrugada: passe longe de quem dorme, arrombar porta faz barulho e bomba acorda a casa na hora. Acordou, é briga ou fuga. Sair: o líder na rua.": {es:"De madrugada: pasá lejos de los que duermen, forzar puertas hace ruido y la bomba despierta la casa al instante. Si se despiertan, es pelea o fuga. Salir: el líder en la calle.", en:"Overnight: keep away from the sleepers, forcing doors makes noise and a bomb wakes the house at once. If they wake, it’s fight or flight. To leave: the leader on the street."},
+  "Do cofre deles: {valor}": {es:"De su caja fuerte: {valor}", en:"From their safe: {valor}"},
+  "Eles viram quem foi: relação −10 com a {nome}": {es:"Vieron quién fue: relación −10 con {nome}", en:"They saw who it was: relation −10 with {nome}"},
+  "Fomos e voltamos": {es:"Fuimos y volvimos", en:"In and out"},
+  "Fomos na sede da {nome} e voltamos sem nada": {es:"Fuimos a la sede de {nome} y volvimos sin nada", en:"We went to {nome}’s clubhouse and came back with nothing"},
+  "Invadir a sede da {nome}": {es:"Invadir la sede de {nome}", en:"Raid {nome}’s clubhouse"},
+  "Na marra": {es:"A la fuerza", en:"By force"},
+  "Na marra: quem tira a peça do armário sai correndo pra rua; derrubar todo mundo deles também vale.": {es:"A la fuerza: el que saca la pieza del armario sale corriendo a la calle; tumbarlos a todos también vale.", en:"By force: whoever takes the piece from the cabinet runs for the street; dropping all of them counts too."},
+  "Ninguém viu a gente: a {nome} acorda com o armário vazio e não sabe de quem cobrar.": {es:"Nadie nos vio: {nome} se despierta con el armario vacío y no sabe a quién cobrarle.", en:"Nobody saw us: {nome} wakes up to an empty cabinet and doesn’t know who to blame."},
+  "Não tem gente disponível pra ir.": {es:"No hay gente disponible para ir.", en:"Nobody is available to go."},
+  "Não tem material deles no armário: só o cofre.": {es:"No hay material de ellos en el armario: solo la caja fuerte.", en:"None of their gear in the cabinet: just the safe."},
+  "O VIGIA ACORDOU": {es:"EL SERENO DESPERTÓ", en:"THE WATCHMAN WOKE UP"},
+  "O cofre da sede da {nome}": {es:"La caja fuerte de la sede de {nome}", en:"The safe at {nome}’s clubhouse"},
+  "O dinheiro do cofre ficou pra trás.": {es:"La plata de la caja fuerte quedó atrás.", en:"The cash from the safe was left behind."},
+  "O dinheiro do cofre já tá na rua.": {es:"La plata de la caja fuerte ya está en la calle.", en:"The cash from the safe is out on the street."},
+  "O jeito": {es:"El modo", en:"The approach"},
+  "O material ficou na sede da {nome}.": {es:"El material quedó en la sede de {nome}.", en:"The gear stayed at {nome}’s clubhouse."},
+  "O vigia acordou!": {es:"¡El sereno despertó!", en:"The watchman woke up!"},
+  "Planejar a invasão": {es:"Planear la invasión", en:"Plan the raid"},
+  "Pra sair, leve o líder até a rua.": {es:"Para salir, llevá al líder hasta la calle.", en:"To leave, take the leader to the street."},
+  "Saíram com a bandeira da {nome}.": {es:"Salieron con la bandera de {nome}.", en:"They got out with {nome}’s flag."},
+  "Saíram com a faixa da {nome}.": {es:"Salieron con el trapo de {nome}.", en:"They got out with {nome}’s banner."},
+  "Tiramos a bandeira da sede da {nome}": {es:"Sacamos la bandera de la sede de {nome}", en:"We took the flag from {nome}’s clubhouse"},
+  "Tiramos a faixa da sede da {nome}": {es:"Sacamos el trapo de la sede de {nome}", en:"We took the banner from {nome}’s clubhouse"},
+  "Trouxemos a nossa bandeira de volta da sede da {nome}": {es:"Trajimos nuestra bandera de vuelta de la sede de {nome}", en:"We brought our flag back from {nome}’s clubhouse"},
+  "Trouxemos a nossa faixa de volta da sede da {nome}": {es:"Trajimos nuestro trapo de vuelta de la sede de {nome}", en:"We brought our banner back from {nome}’s clubhouse"},
+  "Um dos nossos": {es:"Uno de los nuestros", en:"One of ours"},
+  "Voltamos de mãos vazias: prestígio −5, moral −5": {es:"Volvimos con las manos vacías: prestigio −5, moral −5", en:"We came back empty-handed: prestige −5, morale −5"},
+  "Voltamos sem nada": {es:"Volvimos sin nada", en:"Came back with nothing"},
+  "a revanche do roubo": {es:"la revancha del robo", en:"payback for the theft"},
+  "agressiva ou furtiva, e quem vai": {es:"agresiva o sigilosa, y quién va", en:"by force or by stealth, and who goes"},
+  "buscar o que é nosso": {es:"buscar lo que es nuestro", en:"take back what’s ours"},
+  "o armário e o cofre deles": {es:"su armario y su caja fuerte", en:"their cabinet and their safe"},
+  "saímos da sede": {es:"salimos de la sede", en:"we left the clubhouse"},
+  "saímos da sede com o que dava": {es:"salimos de la sede con lo que se pudo", en:"we left the clubhouse with what we could"},
+  "{quem} abriu o cofre e pegou o dinheiro.": {es:"{quem} abrió la caja fuerte y agarró la plata.", en:"{quem} cracked the safe and took the cash."},
+  'BARULHO':{es:'RUIDO', en:'NOISE'},
+  'ACORDOU':{es:'DESPERTÓ', en:'AWAKE'},
   'Bomba deles na porta.':{es:'Bomba de ellos en la puerta.', en:'Their bomb at the door.'},
   'Arrombaram a porta: {nome}.':{es:'Forzaron la puerta: {nome}.', en:'They broke down the door: {nome}.'},
   'A bomba arrancou a porta: {nome}.':{es:'La bomba arrancó la puerta: {nome}.', en:'The bomb blew the door off: {nome}.'},
@@ -13710,7 +13766,9 @@ TO.dados.cenaDaSede = function(o){
   const outro = com.find(c=>!c.andar && c.tipo === 'bar') || patio;
   const fundo = com.find(c=>!c.andar && c.tipo === 'presidencia') || outro;
   const portao = (r.entradas && r.entradas.portao) ? tb(r.entradas.portao.x, r.entradas.portao.z) : [W / 2, MT + T.h];
-  const arm = (r.armarios || []).find(a=>a.tipo === 'tomadas') || (r.armarios || [])[0];
+  /* o armário do alvo: o das tomadas (o material dos outros) ou, no furto,
+     o do patrimônio (o material da própria dona) */
+  const arm = (r.armarios || []).find(a=>a.tipo === (o.armario || 'tomadas')) || (r.armarios || []).find(a=>a.tipo === 'tomadas') || (r.armarios || [])[0];
   const alvo = arm ? tb(arm.boca.x, arm.boca.z) : centro(outro);
   /* quem chega nasce na calçada, longe da saída (a borda de baixo da rua) */
   const yRua = MT + T.h + RUA * 0.3;
@@ -13762,6 +13820,28 @@ TO.dados.cenaDaSede = function(o){
     gatilho:{x:Math.round(portao[0]), y:Math.round(portao[1] - 20), raio:70, lado:'visitante', rot:'O PORTÃO',
              espera:'a sede ainda não viu ninguém', aviso:'invadiram a sede!'}
   };
+  /* A FURTIVA (a nossa invasão de madrugada, 23/11/2026): a sede escura,
+     ninguém de pé. O vigia cochila sentado perto do portão e os outros
+     dois dormem lá dentro; quem acorda a casa é o BARULHO (no combate,
+     `conferirBarulho`), não o portão. O cofre fica na presidência (sem
+     ela, no bar). A saída é a rua: o líder no portão encerra */
+  if(o.furtiva){
+    delete D.gatilho;
+    D.semSaida = false;
+    D.saida = {perto:'Sair pela rua', longe:'Rua (leve o líder)', feito:'saímos da sede', dica:'Pra sair, leve o líder até a rua.'};
+    const sentados = lugares.filter(l=>l.sentado);
+    const dist = (l, x, y) => Math.hypot(l.x - x, l.y - y);
+    const vig = sentados.slice().sort((a, b)=>dist(a, portao[0], portao[1]) - dist(b, portao[0], portao[1]))[0];
+    /* os outros dois dormem longe do portão, mas fora da presidência (o
+       cofre) e do patrimônio (o armário): na hospedagem, quando tem */
+    const fora = l => l !== vig && !['presidencia', 'patrimonio'].includes(l.comodo);
+    const longe = sentados.filter(fora).sort((a, b)=>(b.comodo === 'hospedagem') - (a.comodo === 'hospedagem') || dist(b, portao[0], portao[1]) - dist(a, portao[0], portao[1]));
+    const hosp = com.find(c=>!c.andar && c.tipo === 'hospedagem');
+    const sp = (l, dx) => l ? {x:l.x, y:l.y, rumo:l.rumo} : hosp ? (([x, y])=>({x:x + dx, y, rumo:0}))(centro(hosp)) : {x:pcx + dx, y:pcy - 40, rumo:0};
+    D.dormir = [sp(vig, 0), sp(longe[0], -18), sp(longe[1], 18)];
+    const pres = com.find(c=>!c.andar && c.tipo === 'presidencia') || com.find(c=>!c.andar && c.tipo === 'bar');
+    if(pres){ const [x, y] = centro(pres); D.cofre = {x, y}; }
+  }
   TO.dados.cenas['sede-cena'] = D;
   return D;
 };
@@ -22967,8 +23047,116 @@ TO.invasao = (function(){
     return _t('A {nome} jura que não foi, e a rua acredita nela: relação −15, prestígio −5, moral −2. Quem roubou segue rindo.', {nome:o.nome});
   }
   const largar = (E, id)=>{ const r = roubo(E, id); if(r && !r.fim) r.fim = 'largou'; };
+  /* =======================================================
+     A NOSSA INVASÃO (dono, 23/11/2026). Uma mensagem solta da diretoria
+     sugere, e ela abre o planejamento: AGRESSIVA (4 a 8 dos nossos contra
+     6 a 12 deles, na cena da sede deles) ou FURTIVA (2 ou 3, de
+     madrugada, na sede escura: o vigia cochila, o barulho acorda; o
+     armário e o cofre). Só vale contra quem guarda material nosso, contra
+     a que roubou a nossa sede ou, pra roubar, contra rival da cidade.
+     ======================================================= */
+  const AGRESSIVA = [4, 8], FURTIVA = [2, 3], DEFESA_DELES = [6, 12];
+  const nivelDeles = (E, id) => {
+    const t = TO.relacoes.mundo(E)[id], o = TO.mundo.torcida(id) || {};
+    return Math.round(t && t.sede != null ? t.sede : (o.sedeNivel || 0));
+  };
+  const rivalDeVerdade = (E, id) => TO.relacoes.nivel(E, id) < 20 && !(TO.mundo.saoIrmas && TO.mundo.saoIrmas(E.torcida.id, id));
+  /* os alvos possíveis, do mais justo pro menos: o resgate (ela guarda
+     peça nossa), a revanche (ela roubou a nossa sede) e o furto (rival da
+     cidade, a faixa dela e o cofre) */
+  function alvosDaNossa(E){
+    const P = PAT(), M = TO.relacoes.mundo(E) || {}, fora = [], ja = new Set();
+    for(const id of Object.keys(M)){
+      if(id === E.torcida.id || !TO.mundo.torcida(id) || !rivalDeVerdade(E, id) || nivelDeles(E, id) < 1) continue;
+      const t = P.faixasIA(E, id); if(!t) continue;
+      const f = (t.faixasTomadas || []).find(x=>x.de === E.torcida.id), b = (t.bandeirasTomadas || []).find(x=>x.de === E.torcida.id);
+      if(f || b){ fora.push({id, motivo:'resgate', material:{tipo:f ? 'faixa' : 'bandeira', torcidaId:E.torcida.id, nome:E.torcida.nome, variante:(f || b).variante || 0, nossa:true}}); ja.add(id); }
+    }
+    const culpadas = roubos(E).filter(r=>r.fim === 'acertou' && r.culpada && !r.vingado).map(r=>r.culpada);
+    const daCidade = (TO.mundo.torcidasEm(E.torcida.mapa) || []).map(o=>o.id);
+    for(const id of new Set(culpadas.concat(daCidade))){
+      if(ja.has(id) || id === E.torcida.id || !rivalDeVerdade(E, id) || nivelDeles(E, id) < 1) continue;
+      const t = P.faixasIA(E, id) || {}, o = TO.mundo.torcida(id) || {nome:id};
+      const tipo = (t.faixas || 0) > 0 ? 'faixa' : (t.bandeiras || 0) > 0 ? 'bandeira' : null;
+      fora.push({id, motivo:culpadas.includes(id) ? 'revanche' : 'furto',
+                 material:tipo ? {tipo, torcidaId:id, nome:o.nome, variante:0, nossa:false} : null});
+    }
+    const ordem = {resgate:0, revanche:1, furto:2};
+    return fora.sort((a, b)=>ordem[a.motivo] - ordem[b.motivo] || TO.relacoes.nivel(E, a.id) - TO.relacoes.nivel(E, b.id));
+  }
+  /* quantos deles na sede, na agressiva: de 6 a 12, mais pra sede maior */
+  const defesaDeles = (E, id) => U.limitar(5 + nivelDeles(E, id) + U.inteiro(0, 2), DEFESA_DELES[0], DEFESA_DELES[1]);
+  /* o dinheiro do cofre deles: de 10 a 25% do caixa, no máximo R$ 30.000 */
+  function cofreDeles(E, id){
+    const t = TO.relacoes.mundo(E)[id];
+    return Math.min(30000, Math.round(Math.max(0, (t && t.caixa) || 0) * U.entre(0.10, 0.25) / 100) * 100);
+  }
+  /* O FIM DA NOSSA: o que veio, o que custou. `r`: {modo, pegouMaterial,
+     dinheiro (o que saiu do cofre), viram (a casa acordou / foi na marra),
+     res (a noite dos membros)} */
+  function fecharNossa(E, alvo, r){
+    const P = PAT(), R = TO.relacoes, o = TO.mundo.torcida(alvo.id) || {nome:alvo.id}, linhas = [];
+    const m = alvo.material;
+    if(r.pegouMaterial && m){
+      const bandeira = m.tipo === 'bandeira', V = bandeira ? P.BANDEIRA : P.FAIXA, t = P.faixasIA(E, alvo.id);
+      if(m.nossa){
+        const lista = t && t[bandeira ? 'bandeirasTomadas' : 'faixasTomadas'];
+        const i = lista ? lista.findIndex(x=>x.de === E.torcida.id) : -1;
+        if(i >= 0) lista.splice(i, 1);
+        (bandeira ? P.bandeirasDe(E) : P.faixasDe(E)).nossas.push({n:1, desde:E.data.ano, resgatada:true});
+        const motivo = bandeira ? _t('Trouxemos a nossa bandeira de volta da sede da {nome}', {nome:o.nome})
+                                : _t('Trouxemos a nossa faixa de volta da sede da {nome}', {nome:o.nome});
+        TO.estado.mexerIndicador(E, 'prestigio', V.ganho / 5, motivo);
+        TO.estado.mexerIndicador(E, 'moral', V.moralGanho / 5, motivo);
+        R.mover(E, alvo.id, 'prestigio', -V.ganho / 5);
+        linhas.push(bandeira ? _t('A nossa bandeira voltou pra casa: prestígio +{p}, moral +{m}', {p:V.ganho, m:V.moralGanho})
+                             : _t('A nossa faixa voltou pra casa: prestígio +{p}, moral +{m}', {p:V.ganho, m:V.moralGanho}));
+      } else {
+        if(t) t[bandeira ? 'bandeiras' : 'faixas'] = Math.max(0, (t[bandeira ? 'bandeiras' : 'faixas'] || 0) - 1);
+        (bandeira ? P.bandeirasDe(E) : P.faixasDe(E)).tomadas.push({de:alvo.id, nome:o.nome, quando:{ano:E.data.ano, semana:E.data.semana}, variante:m.variante || 0});
+        const motivo = bandeira ? _t('Tiramos a bandeira da sede da {nome}', {nome:o.nome}) : _t('Tiramos a faixa da sede da {nome}', {nome:o.nome});
+        TO.estado.mexerIndicador(E, 'prestigio', V.ganho / 5, motivo);
+        TO.estado.mexerIndicador(E, 'moral', V.moralGanho / 5, motivo);
+        R.mover(E, alvo.id, 'prestigio', -V.perda / 5); R.mover(E, alvo.id, 'moral', -V.moralPerda / 5);
+        linhas.push(bandeira ? _t('A bandeira da {nome} tá no nosso armário: prestígio +{p}, moral +{m}', {nome:o.nome, p:V.ganho, m:V.moralGanho})
+                             : _t('A faixa da {nome} tá no nosso armário: prestígio +{p}, moral +{m}', {nome:o.nome, p:V.ganho, m:V.moralGanho}));
+      }
+    } else if(m) linhas.push(_t('O material ficou na sede da {nome}.', {nome:o.nome}));
+    if(r.dinheiro > 0){
+      const t = TO.relacoes.mundo(E)[alvo.id];
+      if(t){ t.caixa = (t.caixa || 0) - r.dinheiro; if(TO.relacoes.lancarIA) TO.relacoes.lancarIA(E, alvo.id, _t('Roubo na sede, de madrugada'), -r.dinheiro); }
+      TO.estado.lancar(E, _t('O cofre da sede da {nome}', {nome:o.nome}), r.dinheiro);
+      linhas.push(_t('Do cofre deles: {valor}', {valor:U.dinheiro(r.dinheiro)}));
+    }
+    const ganhou = r.pegouMaterial || r.dinheiro > 0;
+    if(!ganhou){
+      const motivo = _t('Fomos na sede da {nome} e voltamos sem nada', {nome:o.nome});
+      TO.estado.mexerIndicador(E, 'prestigio', -1, motivo);
+      TO.estado.mexerIndicador(E, 'moral', -1, motivo);
+      R.mover(E, alvo.id, 'prestigio', 1);
+      linhas.push(_t('Voltamos de mãos vazias: prestígio −5, moral −5'));
+    }
+    /* a furtiva que ninguém viu não vira guerra: eles só acham o armário vazio */
+    if(r.viram){ R.hostilidade(E, alvo.id, 10); linhas.push(_t('Eles viram quem foi: relação −10 com a {nome}', {nome:o.nome})); }
+    else if(r.modo === 'furtiva' && ganhou) linhas.push(_t('Ninguém viu a gente: a {nome} acorda com o armário vazio e não sabe de quem cobrar.', {nome:o.nome}));
+    if(alvo.motivo === 'revanche') for(const x of roubos(E)) if(x.culpada === alvo.id) x.vingado = true;
+    if(r.res && TO.membros.aplicarResultadoDaNoite) TO.membros.aplicarResultadoDaNoite(E, r.res);
+    return linhas;
+  }
+  /* sem cena: o dado */
+  function simularNossa(E, alvo, modo, n){
+    if(modo === 'furtiva'){
+      const viram = U.rng() < (n >= 3 ? 0.4 : 0.3);
+      const pega = U.rng() < (viram ? 0.35 : 0.85);
+      return {modo, viram, pegouMaterial:!!alvo.material && pega, dinheiro:(pega && U.rng() < 0.6) ? cofreDeles(E, alvo.id) : 0};
+    }
+    const def = defesaDeles(E, alvo.id);
+    const p = U.limitar(0.5 + (n - def) * 0.06, 0.15, 0.8);
+    return {modo, viram:true, pegouMaterial:!!alvo.material && U.rng() < p, dinheiro:0};
+  }
   return {tomadasNossas, chanceNoAno, planoDoAno, quemInvade, defensores, fechar, simular, ATACANTES, nivelSede,
-          INVESTIGAR, temComercioPerto, roubar, roubo, roubos, investigar, acusar, largar};
+          INVESTIGAR, temComercioPerto, roubar, roubo, roubos, investigar, acusar, largar,
+          AGRESSIVA, FURTIVA, nivelDeles, alvosDaNossa, defesaDeles, cofreDeles, fecharNossa, simularNossa};
 })();
 
 ;
@@ -39255,6 +39443,7 @@ TO.feed = (function(){
     passo('aniversários',   ()=>aniversariosDeHoje(E));
     passo('invasão da sede', ()=>invasaoDeHoje(E));
     passo('investigação do roubo', ()=>investigacaoDeHoje(E));
+    passo('sugestão de invasão', ()=>sugestaoDeInvasaoHoje(E));
     passo('festa no prejuízo', ()=>festaNoPrejuizoHoje(E));
     passo('fechamento do mês', ()=>fechamentoDoMesHoje(E));
     passo('sugestão de compra', ()=>sugestaoDeCompraHoje(E));
@@ -42869,6 +43058,37 @@ TO.feed = (function(){
       botoes: acusar.concat(botoesDeInvestigar(E, r), [{id:'largar', rot:_t('Deixar pra lá'), acao:'roubo-largar', nota:_t('sem efeito')}])
     });
   }
+  /* A NOSSA INVASÃO (23/11/2026): a diretoria sugere, de vez em quando,
+     ir na sede de uma rival — buscar o que é nosso, devolver o roubo ou
+     roubar. A mensagem abre o planejamento (`invasao-nossa-planejar`) */
+  function sugestaoDeInvasaoHoje(E){
+    const IV = TO.invasao;
+    if(!IV || E.estreou === false || E.data.dia !== 3) return null;
+    const N = (E.invasaoNossa = E.invasaoNossa || {});
+    const hoje = E.data.absoluto || 0;
+    if(N.ultima != null && hoje - N.ultima < 42) return null;
+    const alvos = IV.alvosDaNossa(E);
+    if(!alvos.length) return null;
+    const a = alvos[0];
+    if(U.rng() >= (a.motivo === 'resgate' ? 0.35 : a.motivo === 'revanche' ? 0.3 : 0.12)) return null;
+    N.ultima = hoje;
+    const o = TO.mundo.torcida(a.id) || {nome:a.id}, P = {nome:o.nome};
+    const texto = a.motivo === 'resgate'
+      ? (a.material.tipo === 'bandeira'
+          ? _t('Chefe, a {nome} tá com a nossa bandeira pendurada no armário da sede deles. Dá pra ir buscar: na marra, com o bonde, ou de madrugada, sem ninguém ver.', P)
+          : _t('Chefe, a {nome} tá com a nossa faixa pendurada no armário da sede deles. Dá pra ir buscar: na marra, com o bonde, ou de madrugada, sem ninguém ver.', P))
+      : a.motivo === 'revanche'
+        ? _t('Chefe, foi a {nome} que roubou a nossa sede, e eles seguem rindo. Dá pra devolver o favor: invadir a sede deles, na marra ou de madrugada.', P)
+        : _t('Chefe, a sede da {nome} tá dando mole: de madrugada fica um vigia só, cochilando. Tem material deles no armário e dinheiro no cofre.', P);
+    return propor(E, {
+      kind:'invasao-nossa', peso:'decisao', voz:'diretor', chave:`invasao-nossa|${hoje}|${a.id}`,
+      texto, dados:{alvo:a.id, motivo:a.motivo},
+      botoes:[
+        {id:'planejar', rot:_t('Planejar a invasão'), acao:'invasao-nossa-planejar', nota:_t('agressiva ou furtiva, e quem vai')},
+        {id:'nao', rot:_t('Deixar quieto'), acao:'invasao-nossa-nao', nota:_t('sem efeito')}
+      ]
+    });
+  }
   /* o dia da resposta da investigação que demora (a rua, o olheiro) */
   function investigacaoDeHoje(E){
     const hoje = E.data.absoluto || 0;
@@ -44320,6 +44540,16 @@ TO.feed = (function(){
         m.consequencia = txt || _t('Esse assunto já passou.');
         return {ok:true};
       }
+      /* A NOSSA INVASÃO: o planejamento abre na casca; quem fecha é o fim dela */
+      case 'invasao-nossa-planejar': {
+        const a = TO.invasao.alvosDaNossa(E).find(x=>x.id === (m.dados || {}).alvo);
+        if(!a){ marcar(); m.consequencia = _t('Já passou.'); return {ok:true}; }
+        return {ok:true, abrir:{tela:'invasao-nossa', msg:m, cancelavel:true, botao:idBotao}};
+      }
+      case 'invasao-nossa-nao':
+        marcar();
+        m.consequencia = _t('Ficou quieto.');
+        return {ok:true};
       case 'roubo-largar':
         TO.invasao.largar(E, (m.dados || {}).roubo);
         marcar();
@@ -45044,7 +45274,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta, pautaClubeParaTela, decidirPautaClube, reuniaoClubeDeHoje, ofertaDoClubeHoje, aniversariosDeHoje,
           abertura, eventosDoDia, emboscadaDaViagem,
           mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, invasaoDeHoje, investigacaoDeHoje, diaDaReuniao,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, invasaoDeHoje, investigacaoDeHoje, sugestaoDeInvasaoHoje, diaDaReuniao,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
@@ -47749,6 +47979,8 @@ TO.diaJogo.combate = (function(){
       /* cena combinada não tem projétil de lado nenhum: nem pedra, nem
          bomba, nem braço automático (decisão do dono, 17/08/2026) */
       semArmas: !!cfg.semArmas,
+      /* a nossa invasão furtiva (23/11/2026): a casa dorme, o barulho acorda */
+      furtiva: !!cfg.furtiva, barulho:0,
       bombas: bombasDaCena(cfg),
       bombasIniciais: bombasDaCena(cfg),
       /* do outro lado também tem quem junte pedra: sem isso a briga é
@@ -47827,7 +48059,7 @@ TO.diaJogo.combate = (function(){
       versaoGrades:0,
       /* cena com gatilho começa dormindo: quem defende está dentro e
          ainda não sabe de nada. Sem gatilho, tudo acordado, como sempre. */
-      acordou: !D.gatilho && !cfg.festaAniv,       // (na festa cada um fica no seu lugar até a briga)
+      acordou: !D.gatilho && !cfg.festaAniv && !cfg.furtiva,       // (na festa cada um fica no seu lugar até a briga)
       /* nos arredores o humor não é da cena, é de cada bonde */
       bondes:{}
     };
@@ -48089,6 +48321,26 @@ TO.diaJogo.combate = (function(){
     /* `J.faixa` continua apontando pra faixa de quem defende (a
        primeira): é o nome que a ponte e os testes conhecem */
     J.faixa = J.faixas[0] || null;
+    /* A FURTIVA: quem está na sede dorme sentado (o vigia perto do portão,
+       os outros lá dentro); dos nossos, um tira a peça do armário e, com
+       três, outro abre o cofre (`cofreiro`); com dois, o cofre é do líder */
+    if(J.furtiva){
+      const lugares = D.dormir || [];
+      J.discos.filter(d=>d.lado==='mandante').forEach((d, i)=>{
+        const l = lugares[i]; if(!l) return;
+        const q = A.cabe(l.x, l.y, d.r||7) ? l : (A.pontoLivreMaisProximo(l.x, l.y, d.r||7) || l);
+        d.x = q.x; d.y = q.y; d.sentado = true; d.dormindo = true; d.guarda = true;
+        if(typeof l.rumo === 'number') d.rumo = l.rumo;
+      });
+      for(const F of J.faixas) if(F.doArmario) F.equipeN = 1;
+      if(D.cofre){
+        const q = A.cabe(D.cofre.x, D.cofre.y, 8) ? D.cofre : A.pontoLivreMaisProximo(D.cofre.x, D.cofre.y, 8);
+        if(q) J.cofre = {x:q.x, y:q.y};
+        const nossos = J.discos.filter(d=>d.lado==='visitante' && !d.lider);
+        if(J.cofre && nossos.length >= 2) nossos[nossos.length - 1].cofreiro = true;
+      }
+      J.cofreT = 0; J.dinheiroCom = null;
+    }
     /* A REUNIÃO É SÓ NOSSA (22/09/2026): na praça a cena tem portão do
        outro lado e nasceria rival; na roda não há rival nem PM */
     if(cfg.reuniao){
@@ -49029,6 +49281,7 @@ TO.diaJogo.combate = (function(){
     const marca = PF ? nome => { const t = performance.now(); PF[nome] = (PF[nome]||0) + (t - t0); t0 = t; } : null;
     destravarEncalhados(J, dt);
     conferirGatilho(J);
+    conferirBarulho(J, dt); conferirCofre(J, dt);
     conferirBondes(J);
     conferirLinhas(J);
     if(PF) marca('conferir');
@@ -49241,6 +49494,8 @@ TO.diaJogo.combate = (function(){
        portão é uma decisão, e decisão que o disco desobedece no quadro
        seguinte não é decisão nenhuma */
     if(d.entrando) return false;
+    /* na furtiva, com a casa dormindo, ninguém sai batendo: a pancada acorda */
+    if(J.furtiva && !J.acordou) return false;
     if(d.doJogador) return true;
     const b=J.bondes[d.spawn];
     if(!b) return !J.paz;
@@ -49607,6 +49862,66 @@ TO.diaJogo.combate = (function(){
      invasão pelos fundos pegaria todo mundo de costas pra
      sempre. Os dois juntos cobrem os dois casos.
      ======================================================= */
+  /* O BARULHO (a furtiva, 23/11/2026): a casa dorme até o barulho passar
+     de 100. Soma: porta apanhando (5/s por quem bate), pedra (30), bomba (150), e
+     andar colado em quem dorme (70/s a menos de 34 px; 25/s a menos de
+     60). Abaixa sozinho (4/s). Quem dorme e apanha acorda na hora. */
+  function conferirBarulho(J, dt){
+    if(!J.furtiva || J.acordou) return;
+    const dormem = J.discos.filter(d=>d.vivo && d.dormindo);
+    for(const a of J.discos){
+      if(!a.vivo || a.lado!=='visitante' || a.sumiu) continue;
+      for(const z of dormem){
+        const q = U.dist(a.x,a.y,z.x,z.y);
+        if(q < 34) J.barulho += dt*70; else if(q < 60) J.barulho += dt*25;
+      }
+    }
+    J.barulho = Math.max(0, J.barulho - dt*4);
+    J.alerta = Math.min(99, J.barulho);
+    const apanhou = dormem.some(d=>d.hp < d.hpMax);
+    if(J.barulho < 100 && !apanhou) return;
+    J.acordou = true; J.acordouPor = 'barulho'; J.acordouEm = J.t;
+    for(const d of J.discos){ d.guarda = false; if(d.dormindo){ d.dormindo = false; d.sentado = false; } }
+    logar(J, _t('O vigia acordou!'), 'r');
+    aviso(J, _t('O VIGIA ACORDOU'), 'r');
+  }
+  /* O COFRE: quem dos nossos ficar 4 s em cima dele abre e pega o dinheiro
+     (o líder também). Quem pega, se não é o líder, corre pra rua; caído
+     ou preso no caminho, o dinheiro fica */
+  const COFRE_ABRIR = 4;
+  function conferirCofre(J, dt){
+    if(!J.furtiva || !J.cofre || J.dinheiroSaiu || J.dinheiroPerdeu) return;
+    const h = J.dinheiroCom;
+    if(!h){
+      const em = J.discos.find(d=>d.vivo && d.lado==='visitante' && !d.noChao && U.dist(d.x,d.y,J.cofre.x,J.cofre.y) < 20);
+      if(!em){ J.cofreT = Math.max(0, J.cofreT - dt); return; }
+      J.cofreT += dt; if(J.furtiva) J.barulho += dt*6;
+      if(J.cofreT < COFRE_ABRIR) return;
+      J.dinheiroCom = em; em.comDinheiro = true; em.cofreiro = false;
+      logar(J, _t('{quem} abriu o cofre e pegou o dinheiro.', {quem:em.nome || _t('Um dos nossos')}), 'a');
+      return;
+    }
+    if(h.caido || h.preso){ J.dinheiroPerdeu = true; h.comDinheiro = false; J.dinheiroCom = null; logar(J, _t('O dinheiro do cofre ficou pra trás.'), 'r'); fimDaFurtiva(J); return; }
+    const ab = D.faixaAbrigo;
+    if(!h.lider && ab && U.dist(h.x,h.y,ab.x,ab.y) < (ab.raio||40)){
+      J.dinheiroSaiu = true; h.comDinheiro = false; h.vivo = false; h.sumiu = true;
+      logar(J, _t('O dinheiro do cofre já tá na rua.'), 'a');
+      fimDaFurtiva(J);
+    }
+  }
+  /* a furtiva acaba sozinha quando não falta mais nada: a peça saiu (ou
+     ficou de vez) e o cofre também */
+  function fimDaFurtiva(J){
+    if(!J.furtiva || J.fase !== 'ativo') return;
+    const F = (J.faixas || []).find(f=>f.doArmario);
+    const faltaPeca = F && F.estado !== 'fora' && F.estado !== 'tomada';
+    const faltaCofre = J.cofre && !J.dinheiroSaiu && !J.dinheiroPerdeu && !(J.dinheiroCom && J.dinheiroCom.lider);
+    if(faltaPeca || faltaCofre) return;
+    /* o líder com o dinheiro na mão: a saída é dele, pelo portão */
+    if(J.dinheiroCom && J.dinheiroCom.lider) return;
+    acabar(J, 'visitante');
+    if(J.acabou) J.acabou.motivo = _t('saímos da sede com o que dava');
+  }
   function conferirGatilho(J){
     if(J.acordou) return;
     const g=D.gatilho;
@@ -50002,6 +50317,16 @@ TO.diaJogo.combate = (function(){
           continue;
         }
         ax=c.x; ay=c.y;
+      } else if(d.cofreiro && J.cofre && !J.dinheiroCom && !J.dinheiroPerdeu && !d.fugindo && !d.noChao){
+        /* O COFRE (a furtiva): vai até ele e fica abrindo (`conferirCofre`) */
+        const cf=J.cofre; ramo='cofre'; d._olhaPara=null;
+        if(U.dist(d.x,d.y,cf.x,cf.y) < 12){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='cofre'; d._alvo=null;
+          continue;
+        }
+        campo = A.campoDoPonto('cofre', cf.x, cf.y, J.grades, J.versaoGrades);
+        usarCampo = true;
       } else if(d.faixaIndo && d.faixaIndo.estado==='recolhendo' && !d.fugindo && !d.noChao){
         /* A FAIXA: vai até ela e fica ali tirando (ver atualizarFaixa).
            `d.faixaIndo` é a própria faixa — no estádio há uma por lado */
@@ -50015,7 +50340,7 @@ TO.diaJogo.combate = (function(){
            bar e ficava oscilando a 60 px da faixa (correção, 09/09/2026) */
         campo = A.campoDoPonto('faixa:'+F.torcidaId+':'+F.tipo, F.x, F.y, J.grades, J.versaoGrades);
         usarCampo = true;
-      } else if(d.comFaixa && !d.fugindo && D.faixaAbrigo){
+      } else if((d.comFaixa || d.comDinheiro) && !d.fugindo && D.faixaAbrigo){
         /* O ABRIGO DA FAIXA (casa de piscina, 21/09/2026): a cena diz
            onde a peça se esconde — o depósito da casa — e quem a tirou
            corre pra lá e fica, em vez de acompanhar o bonde. Pra tomar
@@ -51578,7 +51903,7 @@ TO.diaJogo.combate = (function(){
       if(recuando(J, a.lado)) continue;
 
       const bate = agressivo(J,a);
-      if(bate || a.entrando) for(const g of J.grades){
+      if(bate || a.entrando || (J.furtiva && !J.acordou && a.lado==='visitante')) for(const g of J.grades){
         if(g.hp<=0 || g.tipo==='fila') continue;   // fila não quebra
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
         g.hp-=a.forca*P.dano*dt*1.6;
@@ -51586,6 +51911,8 @@ TO.diaJogo.combate = (function(){
         /* a porta da sede que não cede na mão: quem tem bomba manda uma
            (`bombaNaPorta`: um de trás joga, quem bate sai de perto) */
         if(g.porta && g.hp>0) bombaNaPorta(J, g, a, dt);
+        /* arrombar porta de madrugada faz barulho */
+        if(J.furtiva) J.barulho += dt*5;
         if(g.hp<=0){
           g.hp=0; J.versaoGrades++;
           /* (a porta da sede não é cordão de PM: não chama a tropa) */
@@ -52211,6 +52538,7 @@ TO.diaJogo.combate = (function(){
           if(J.t - d.frenteEm > 0.4) d.viraPara = Math.atan2(p.x-d.x, p.y-d.y);
           if(d.hp<=0) derrubar(J,d); break;
         }
+        if(J.furtiva) J.barulho += 30;
         for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;
           /* (a porta da sede que cai na pedra abre o caminho na hora) */
           if(g.porta && g.hp<=0){ g.hp=0; J.versaoGrades++; logar(J,_t('Arrombaram a porta: {nome}.', {nome:g.nome||''}),'pm'); }
@@ -52239,6 +52567,7 @@ TO.diaJogo.combate = (function(){
           }
         }
         J.alerta=Math.min(100,J.alerta+16);
+        if(J.furtiva) J.barulho += 150;
       }
     }
     for(const p of J.projeteis) if(p.morto&&p.explosao!==undefined) p.explosao+=dt;
@@ -52661,10 +52990,13 @@ TO.diaJogo.combate = (function(){
      destino, quem está na sede vai à porta que fica no caminho: de cada
      porta de pé, o ponto da frente do lado de cá (o que o campo dele
      alcança) e o de lá; a escolhida é a de menor caminho até a frente
-     mais a reta do lado de lá até o destino. Até a frente segue o campo;
+     mais o caminho do lado de lá até o destino (com as portas abertas). Até a frente segue o campo;
      colado nela, vai reto na folha (e bate) */
   function rumoAtePorta(J, d, alvo){
     let melhor=null, mc=Infinity;
+    /* o campo até o destino como se toda porta estivesse aberta (um por destino) */
+    const kz=Math.round(alvo.x)+':'+Math.round(alvo.y), cs=(J._semPortas=J._semPortas||{});
+    const semPortas=cs[kz] || (cs[kz]=A.criarCampo(alvo.x, alvo.y, null));
     for(const g of J.grades){
       if(g.hp<=0 || !g.porta) continue;
       const nx=-g.uy, ny=g.ux, off=g.esp+14;
@@ -52674,7 +53006,10 @@ TO.diaJogo.combate = (function(){
         const i=Math.floor(d.y/A.CEL)*A.COLS+Math.floor(d.x/A.CEL);
         const dc=c.dist ? c.dist[i] : Infinity;
         if(!(dc<Infinity)) continue;
-        const custo=dc*A.CEL + U.dist(g.x-nx*off*sg, g.y-ny*off*sg, alvo.x, alvo.y);
+        /* (do lado de lá até o destino, pelo caminho com as portas abertas) */
+        const lx=g.x-nx*off*sg, ly=g.y-ny*off*sg;
+        const dl=semPortas.dist[Math.floor(ly/A.CEL)*A.COLS+Math.floor(lx/A.CEL)];
+        const custo=dc*A.CEL + (dl<Infinity ? dl*A.CEL : 4*U.dist(lx, ly, alvo.x, alvo.y));
         if(custo<mc){ mc=custo; melhor={g, c, fx, fy}; }
       }
     }
@@ -53122,7 +53457,7 @@ TO.diaJogo.combate = (function(){
     peneirarEquipe(F);
     const n = F.equipeN || 2;
     const cands = J.discos.filter(d=>d.lado===F.lado && (!F.spawn || d.spawn===F.spawn) && d.vivo && !d.lider && !d.fugindo &&
-      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !d.faixaIndo && !d.comFaixa && !F.equipe.includes(d))
+      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !d.faixaIndo && !d.comFaixa && !d.cofreiro && !d.comDinheiro && !F.equipe.includes(d))
       .sort((a,b)=>U.dist2(a.x,a.y,F.x,F.y)-U.dist2(b.x,b.y,F.x,F.y));
     while(F.equipe.length < n && cands.length) F.equipe.push(cands.shift());
     for(const d of F.equipe) d.faixaIndo = F;
@@ -53176,6 +53511,14 @@ TO.diaJogo.combate = (function(){
       const ab = D.faixaAbrigo;
       if(ab && ab.encerra && F.doArmario && !p.caido && !p.preso && J.fase === 'ativo' && U.dist(p.x, p.y, ab.x, ab.y) < (ab.raio || 40)){
         J.materialSaiu = true;
+        /* na furtiva quem saiu some na rua e a cena segue, se ainda falta o cofre */
+        if(J.furtiva){
+          logar(J, F.tipo === 'bandeira' ? _t('Saíram com a bandeira da {nome}.', {nome:F.nome})
+                                         : _t('Saíram com a faixa da {nome}.', {nome:F.nome}), 'a');
+          p.comFaixa=false; p.vivo=false; p.sumiu=true; F.estado='fora'; F.portador=null;
+          fimDaFurtiva(J);
+          return;
+        }
         logar(J, F.tipo === 'bandeira' ? _t('Saíram com a bandeira da {nome}.', {nome:F.nome})
                                        : _t('Saíram com a faixa da {nome}.', {nome:F.nome}), 'a');
         acabar(J, F.lado);
@@ -57828,6 +58171,9 @@ TO.diaJogo.ponte = (function(){
         `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
     }
     if(el('djBarraAlerta')) el('djBarraAlerta').style.width=J.alerta+'%';
+    /* na furtiva a barra é o barulho (o que acorda a casa), não a PM */
+    { const ra = el('djAlerta') && el('djAlerta').querySelector('.rot');
+      if(ra){ const t = J.furtiva ? (J.acordou ? _t('ACORDOU') : _t('BARULHO')) : 'PM'; if(ra.textContent !== t) ra.textContent = t; } }
     if(el('djBarraPressao')){
       const bp=Math.min(100,J.sobPressao/P.aguentaPM*100);
       el('djBarraPressao').style.width=bp+'%';
@@ -68458,6 +68804,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       else if(t === 'festa-plano') planejarFestaDaMensagem(m);
       else if(t === 'festa-aniv') abrirFesta(m, !!a.simular);
       else if(t === 'invasao-sede') abrirInvasaoDaSede(m, !!a.simular);
+      else if(t === 'invasao-nossa') abrirPlanoDaInvasao(m);
       else if(t === 'tela-assalto') abrirAssaltoSorteio(res=>{
         /* o resultado fecha a pauta (o texto do fim) e a mensagem que abriu a tela */
         const item = m && m.dados && m.dados.item;
@@ -70551,7 +70898,8 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
   }
   function abrirCenaDaSede(o){
     const e = E();
-    const D = TO.dados.cenaDaSede({nivel:o.nivel, torcida:sedeDaTorcida(o.dono), guardados:guardadosDaTorcida(e, o.dono.id), noite:o.noite});
+    const D = TO.dados.cenaDaSede({nivel:o.nivel, torcida:sedeDaTorcida(o.dono), guardados:guardadosDaTorcida(e, o.dono.id),
+                                   noite:o.noite || o.furtiva, furtiva:!!o.furtiva, armario:o.armario});
     if(!D || !$('djPrincipal')) return false;
     /* quem está dentro se espalha pelo pátio e pela sala de dentro */
     D.espalharBonde = 'mandante';
@@ -70567,7 +70915,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
          quem invade traz até 3 bombas do paiol dele */
       config: { escalacao:o.escalacao, intencao:'atacar', bondes:[o.defesa, o.ataque], bombas:0, local:'sede-cena',
                 bombasRival: Math.min(3, (o.rivalId && perfilDe(o.rivalId) && perfilDe(o.rivalId).bombas != null) ? perfilDe(o.rivalId).bombas : 2),
-                materialArmario:o.material, semPM:true, rivalId:o.rivalId,
+                materialArmario:o.material, semPM:true, rivalId:o.rivalId, furtiva:!!o.furtiva,
                 rival:o.rival || null, perfilRival:o.rivalId ? perfilDe(o.rivalId) : null },
       aoTerminar: res=>{
         const J = TO.diaJogo.J;
@@ -70581,10 +70929,87 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         TO.diaJogo.ponte.parar();
         $('telaDiaJogo').classList.add('oculto');
         document.body.classList.remove('em-cena');
-        if(o.aoFim) o.aoFim({res, levaram: saiu || defesaCaiu});
+        /* a furtiva: o dinheiro saiu (ou está na mão do líder que saiu
+           de pé) e a casa viu (acordou) */
+        const h = J && J.dinheiroCom;
+        const dinheiro = !!(J && (J.dinheiroSaiu || (h && h.lider && !h.caido && !h.preso)));
+        if(o.aoFim) o.aoFim({res, levaram: saiu || (!o.furtiva && defesaCaiu), dinheiro, viram: !!(J && J.acordou)});
       }
     });
     return true;
+  }
+  /* A NOSSA INVASÃO (23/11/2026): o planejamento — de que jeito e quem
+     vai — e a cena na sede deles (ou o dado) */
+  function abrirPlanoDaInvasao(m){
+    const e = E(), IV = TO.invasao, d = (m && m.dados) || {};
+    const alvo = IV.alvosDaNossa(e).find(x=>x.id === d.alvo);
+    if(!alvo){ if(m) m.consequencia = _t('Já passou.'); confirmarDecisao(_t('Passou')); atualizarFeed(); return; }
+    const o = TO.mundo.torcida(alvo.id) || {id:alvo.id, nome:alvo.id};
+    const disp = (e.membros || []).filter(TO.membros.disponivel).sort((a, b)=>(b.forca || 0) - (a.forca || 0));
+    const pl = {modo:'agressiva', n:Math.min(6, disp.length)};
+    const faixa = (lo, hi) => [lo, Math.min(hi, disp.length)];
+    let fechar = null, feito = false;
+    const corpo = el('div',{class:'festa-plano'});
+    const pintar = ()=>{
+      const [lo, hi] = pl.modo === 'furtiva' ? faixa(...IV.FURTIVA) : faixa(...IV.AGRESSIVA);
+      pl.n = U.limitar(pl.n, lo, Math.max(lo, hi));
+      corpo.innerHTML = '';
+      const nivel = IV.nivelDeles(e, alvo.id), m0 = alvo.material;
+      const oQue = !m0 ? _t('Não tem material deles no armário: só o cofre.')
+        : m0.nossa ? (m0.tipo === 'bandeira' ? _t('A nossa bandeira está no armário das tomadas deles.') : _t('A nossa faixa está no armário das tomadas deles.'))
+        : (m0.tipo === 'bandeira' ? _t('A bandeira deles está no armário do patrimônio.') : _t('A faixa deles está no armário do patrimônio.'));
+      corpo.appendChild(el('p',{class:'tut-texto', texto:_t('A sede da {nome} é de nível {n}.', {nome:o.nome, n:nivel}) + ' ' + oQue}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O jeito')}));
+      corpo.appendChild(opcoes([
+        {id:'agressiva', rot:_t('Na marra'), nota:_t('4 a 8 dos nossos contra 6 a 12 deles; as portas das salas caem na pancada ou na bomba')},
+        {id:'furtiva', rot:_t('De madrugada'), nota:_t('2 ou 3, no escuro: o vigia cochila e o barulho acorda; o armário e o cofre')}
+      ], pl.modo, id=>{ pl.modo = id; pl.n = id === 'furtiva' ? 2 : 6; pintar(); }));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
+      const nums = []; for(let k = lo; k <= hi; k++) nums.push({id:String(k), rot:String(k)});
+      if(nums.length) corpo.appendChild(opcoes(nums, String(pl.n), id=>{ pl.n = +id; pintar(); }));
+      else corpo.appendChild(el('p',{class:'fp-aviso', texto:_t('Não tem gente disponível pra ir.')}));
+      corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${pl.modo === 'furtiva'
+        ? _t('De madrugada: passe longe de quem dorme, arrombar porta faz barulho e bomba acorda a casa na hora. Acordou, é briga ou fuga. Sair: o líder na rua.')
+        : _t('Na marra: quem tira a peça do armário sai correndo pra rua; derrubar todo mundo deles também vale.')}</span>`}));
+      const nav = el('div',{class:'tut-nav'});
+      const ir = el('button',{class:'bt destaque', texto:_t('Ir agora')});
+      const sim = el('button',{class:'bt', texto:_t('Simular')});
+      const pronto = nums.length > 0;
+      ir.disabled = sim.disabled = !pronto;
+      ir.onclick = ()=>{ feito = true; if(fechar) fechar(); abrirNossaInvasao(m, alvo, pl.modo, disp.slice(0, pl.n), false); };
+      sim.onclick = ()=>{ feito = true; if(fechar) fechar(); abrirNossaInvasao(m, alvo, pl.modo, disp.slice(0, pl.n), true); };
+      nav.append(sim, ir); corpo.appendChild(nav);
+    };
+    pintar();
+    fechar = modal(_t('Invadir a sede da {nome}', {nome:o.nome}), alvo.motivo === 'resgate' ? _t('buscar o que é nosso') : alvo.motivo === 'revanche' ? _t('a revanche do roubo') : _t('o armário e o cofre deles'), corpo, [], 'estreita', true);
+    void feito;
+  }
+  function abrirNossaInvasao(m, alvo, modo, quem, simular){
+    const e = E(), IV = TO.invasao, dono = TO.mundo.torcida(alvo.id) || {id:alvo.id, nome:alvo.id};
+    const concluir = r=>{
+      const linhas = IV.fecharNossa(e, alvo, r);
+      if(m){ m.consequencia = linhas.join(' · '); }
+      const ok = r.pegouMaterial || r.dinheiro > 0;
+      confirmarDecisao(ok ? _t('Fomos e voltamos') : _t('Voltamos sem nada'));
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+      resumoEmModal(ok ? _t('A invasão deu certo') : _t('A invasão não deu certo'), dono.nome, linhas);
+    };
+    if(simular){ concluir(IV.simularNossa(e, alvo, modo, quem.length)); return; }
+    const cN = TO.mundo.coresDaTorcida(e.torcida), cR = TO.mundo.coresDaTorcida(dono);
+    const furtiva = modo === 'furtiva';
+    const nDeles = furtiva ? 3 : IV.defesaDeles(e, alvo.id);
+    const dinheiroDeles = furtiva ? IV.cofreDeles(e, alvo.id) : 0;
+    const ok = abrirCenaDaSede({
+      dono, nossaSede:false, nivel:Math.max(1, IV.nivelDeles(e, alvo.id)), escalacao:quem, rivalId:dono.id, furtiva,
+      armario: alvo.material && !alvo.material.nossa ? 'patrimonio' : 'tomadas',
+      rival:{nome:dono.nome, cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3},
+      defesa:{id:dono.id, lado:'mandante', n:nDeles, nossa:false, nome:dono.nome, cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3, sigla:TO.mundo.siglaTorcida(dono), perfil:perfilDe(dono.id)},
+      ataque:{id:e.torcida.id, lado:'visitante', n:quem.length, nossa:true, nome:e.torcida.nome, cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3, sigla:TO.mundo.siglaTorcida(e.torcida)},
+      material:alvo.material,
+      aoFim: r=>concluir({modo, pegouMaterial:!!alvo.material && r.levaram, dinheiro:r.dinheiro ? dinheiroDeles : 0,
+                          viram: furtiva ? r.viram : true, res:r.res})
+    });
+    if(!ok) concluir(IV.simularNossa(e, alvo, modo, quem.length));
   }
   /* A INVASÃO DA NOSSA SEDE: a mensagem do dia abre a cena (ou o dado) */
   function abrirInvasaoDaSede(m, simular){

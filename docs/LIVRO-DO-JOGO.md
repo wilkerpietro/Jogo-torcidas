@@ -889,6 +889,15 @@ Toda compra passa por `comprar(E, id)` → `comprarSemPost`; se der certo, o fee
   - **Achou**: cobrar dá relação −15, prestígio +5 e moral +5, e a culpada fica marcada pra revanche.
   - **Não achou**: até 4 suspeitos. Acusar a errada custa relação −15, prestígio −5 e moral −2.
   - **O estado** fica em `E.roubos`.
+- **A nossa invasão** (`TO.invasao.alvosDaNossa`/`fecharNossa`). A diretoria sugere no 3º dia da semana, no máximo a cada 42 dias.
+  - **Os alvos**: o resgate (quem guarda peça nossa, 35%), a revanche (a culpada de um roubo, 30%) e o furto (rival da cidade, 12%). Sempre rival (relação < 20, não irmã) e com sede.
+  - **O planejamento** escolhe o jeito e quantos vão, com Simular ou Ir agora.
+  - **Na marra**: 4 a 8 nossos contra 6 a 12 deles. A peça sai correndo pra rua; eles sabem quem foi (relação −10).
+  - **De madrugada**: 2 ou 3 nossos, na sede escura. Três dormem sentados (o vigia perto do portão).
+    - A barra BARULHO acorda a casa em 100: porta 5/s, pedra 30, bomba 150, colado em quem dorme 70/s (25/s perto), cofre 6/s; baixa 4/s.
+    - O cofre: 4 s na presidência, de 10 a 25% do caixa deles (teto R$ 30.000).
+    - Não acordou, ninguém sabe quem foi.
+  - **O resultado**: faixa resgatada ou tomada dá prestígio +10 e moral +5 (tela); voltar sem nada dá −5 e −5.
 
 ### 5.2 Bar, loja e subsede de bairro
 
