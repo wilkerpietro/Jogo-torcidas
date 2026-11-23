@@ -18,9 +18,9 @@
    salas ficam acesas, poucas: quem entra no escuro enxerga pouco.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { montarSede } from './sede3d.js?v=567d536d21';
-import { ATLAS } from './modelos_atlas.js?v=567d536d21';
-import * as K from './detalhe3d.js?v=567d536d21';
+import { montarSede } from './sede3d.js?v=f9b5f434df';
+import { ATLAS } from './modelos_atlas.js?v=f9b5f434df';
+import * as K from './detalhe3d.js?v=f9b5f434df';
 
 const MUNDO = 34 / 1.75;          // unidade do mundo por metro (o cenário 3D)
 const PX = 24;                    // px do tabuleiro por metro (o boneco)
@@ -54,6 +54,10 @@ function malhaDeBlocos(blocos, folha, corte) {
   g.computeVertexNormals();
   return new THREE.Mesh(g, material(folha, corte));
 }
+
+/* a régua por cima da porta fechada da sala (bem visível de cima, inclusive de noite) */
+let matRegua = null;
+const reguaPorta = () => matRegua || (matRegua = new THREE.MeshLambertMaterial({ color: '#d7a256', emissive: '#4a2c08' }));
 
 /* ---------- as placas com texto (a faixa, a placa da sala, o escudo) ---------- */
 let proprios = [];
@@ -167,6 +171,15 @@ export function cenarioDaSede(D) {
     });
     if (!(md < Math.max(f.larg, 0.5 * MUNDO))) sala = -1;
     if (sala < 0) piv.rotation.y = f.ang;
+    /* A PORTA FECHADA SE VÊ DE CIMA (dono, 23/11/2026: a folha fechada, vista de cima, era só um risco fino na parede):
+       por cima da folha da sala, logo abaixo do corte da parede, uma régua cor de madeira clara da largura do vão, que
+       treme e cai junto com a folha */
+    if (sala >= 0) {
+      const regua = new THREE.Mesh(new THREE.BoxGeometry(f.larg, 0.08 * MUNDO, 0.22 * MUNDO), reguaPorta());
+      regua.position.set(f.dir[0] * f.larg / 2, 2.18 * MUNDO, f.dir[1] * f.larg / 2);
+      regua.rotation.y = -Math.atan2(f.dir[1], f.dir[0]);
+      piv.add(regua);
+    }
     g.add(piv);
     if (sala >= 0) folhas.push({ piv, id: 'porta:' + sala, eixo: new THREE.Vector3(f.dir[0], 0, f.dir[1]).normalize(), caiu: 0 });
   }

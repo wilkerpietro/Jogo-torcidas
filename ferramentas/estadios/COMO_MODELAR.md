@@ -851,11 +851,20 @@ gramado). Cada fileira é reesticada até cruzar a reta, e o `de`/`ate` vira só
 referência (onde a reta passa no meio da fundura). Os vizinhos dos dois lados (o
 vão de passagem e o trecho seguinte) levam o mesmo corte, senão sobra cunha.
 
-NÍVEIS SEPARADOS NA MÁSCARA (19/11/2026): o assado põe uma barreira em toda
-divisa de anel com degrau de mais de 1,5 m, aberta só nos acessos do anel mais
-alto: as bocas; sem boca, as escadas; sem escada, as pontas. Se um anel alto
-ficar sem saída (o assado acusa ilha de chão), dê a ele boca (`vomitorios`) ou
-escada (`corredor`).
+NÍVEIS SEPARADOS NA MÁSCARA (19/11/2026; acessos refeitos em 23/11/2026): o
+assado põe uma barreira em toda divisa de anel com degrau de mais de 1,5 m,
+aberta só nos acessos do anel mais alto: as escadas; sem escada, os dois lados
+da caixa de cada boca; sem boca, as pontas. Se um anel alto ficar sem saída (o
+assado acusa ilha de chão), dê a ele escada (`corredor`).
+
+O VOMITÓRIO É SÓLIDO (dono, 23/11/2026: "os vomitórios precisam ter fisica e
+ser impedidos de serem acessados"): a pegada da caixa da boca (as colunas dela,
+das fileiras `vomK0` a `vomK0 + vomRows`) fica fora da máscara de andar e da de
+sentar (`naBoca`). O túnel que cai num vomitório fica na SAÍDA dele, umas duas
+fileiras na frente da caixa (ou no corredor da frente, se a boca abre nele), e
+os bondes e os postos saem de cima da caixa com uma célula de folga. Depois de
+mexer em `vomitorios`, confira no assado que nenhum marcador ficou "fora da
+ilha maior".
 
 QUAL LADO É QUAL NUMA FOTO DE DENTRO: girando pra direita, a ordem é sempre
 fundo norte, lateral leste, fundo sul, lateral oeste. Se a foto mostra

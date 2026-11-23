@@ -13807,6 +13807,10 @@ TO.dados.cenaDaSede = function(o){
     /* a bomba de quem invade é pra arrombar porta, não pra jogar no povo
        (sem isso, três bombas no pátio cheio decidiam a invasão sozinhas) */
     bombaSoNaPorta:true,
+    /* QUEM INVADE NÃO FICA NA CALÇADA (dono, 23/11/2026): quem não vai no
+       armário marcha pra onde estão os de dentro (`marchaAoInimigo` só do
+       lado de quem invade); sem isto, na sede grande, ficavam parados na rua */
+    marchaAoInimigo:'visitante',
     spawns:[
       {id:'casa1', rot:'NO PÁTIO', lado:'mandante', x:Math.round(pcx), y:Math.round(pcy), guarda:true, entrada:'fundo'},
       {id:'casa2', rot:'LÁ DENTRO', lado:'mandante', x:Math.round(ocx), y:Math.round(ocy), guarda:true, entrada:'fundo'},
@@ -50677,7 +50681,7 @@ TO.diaJogo.combate = (function(){
         }
         /* na bancada ninguém espera o rival vir: vai-se por cima da
            grade, que é a única coisa entre um setor e o outro */
-        else if(D.marchaAoInimigo && agressivo(J,d) && setorInimigo(J,d)){
+        else if((D.marchaAoInimigo === true || D.marchaAoInimigo === d.lado) && agressivo(J,d) && setorInimigo(J,d)){
           const s=setorInimigo(J,d);
           campo=A.campoDoPonto('setor:'+s.id, s.x, s.y, J.grades, J.versaoGrades);
           usarCampo=true;
@@ -58203,7 +58207,9 @@ TO.diaJogo.ponte = (function(){
     if(el('djBarraAlerta')) el('djBarraAlerta').style.width=J.alerta+'%';
     /* na furtiva a barra é o barulho (o que acorda a casa), não a PM */
     { const ra = el('djAlerta') && el('djAlerta').querySelector('.rot');
-      if(ra){ const t = J.furtiva ? (J.acordou ? _t('ACORDOU') : _t('BARULHO')) : 'PM'; if(ra.textContent !== t) ra.textContent = t; } }
+      if(ra){ const t = J.furtiva ? (J.acordou ? _t('ACORDOU') : _t('BARULHO')) : 'PM'; if(ra.textContent !== t) ra.textContent = t; }
+      /* sem PM na cena (a sede, a festa) a barra da PM some: ali ela não mede nada */
+      const ba = el('djAlerta'); if(ba){ const some = J.semPM && !J.furtiva; if(ba.style.display !== (some ? 'none' : '')) ba.style.display = some ? 'none' : ''; } }
     if(el('djBarraPressao')){
       const bp=Math.min(100,J.sobPressao/P.aguentaPM*100);
       el('djBarraPressao').style.width=bp+'%';

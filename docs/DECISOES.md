@@ -16392,6 +16392,33 @@ No mesmo teste, o raio foi pra 70 px, com 24 px entre vizinhos.
 - **Vazamento**: nas quatro variantes do Castelão (base, `@ceara`, `@fortaleza@ceara`, `@ceara@fortaleza`), ninguém senta fora do degrau.
 - **Com as grades de verdade**: a visitante, com 150 por bonde, fica toda antes do vão.
 
+## Os acertos da cena da sede e o vomitório sólido (dono, 23/11/2026)
+
+O dono: "pode resolver todos esses pontos. os vomitórios precisam ter fisica e ser impedidos de serem acessados".
+
+**A barra da PM some onde não há PM.** Na cena da sede (a defesa e a nossa invasão na marra) e na festa (`J.semPM`), a barra "PM" do topo some. Na invasão de madrugada ela continua, como BARULHO.
+
+**A porta fechada se vê de cima.** Por cima da folha de cada porta de sala, logo abaixo do corte da parede (2,18 m), fica uma régua cor de madeira clara da largura do vão (`sede3d_cena.js`).
+- Ela treme e cai junto com a folha.
+- Brilha um pouco, pra aparecer também de noite.
+
+**Quem invade não fica na calçada.** Os invasores que não vão no armário marcham pra onde estão os de dentro (`marchaAoInimigo: 'visitante'`, que agora aceita o lado). Na sede de nível 5, três ficavam parados na rua a cena inteira; agora entram todos.
+- O nosso bonde segue o líder como antes.
+- Os de dentro, no nosso ataque, não saem da sede.
+
+**O andar de cima do nível 5 fica fora, por enquanto.** As salas de cima ficam exatamente em cima das de baixo:
+- a academia e a hospedagem, em cima da garagem;
+- o marketing e o criativo, em cima do bar, do patrimônio e da presidência.
+
+O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. O armário e o cofre são do térreo, então a invasão não perde nada. O jeito de ter o andar de cima seria uma cena à parte, em que subir a escada troca de cena; fica pra decisão do dono.
+
+**O vomitório é sólido** (`naBoca` em `estadio_lowpoly.mjs`).
+- **A caixa**: a pegada da caixa de concreto da boca, no meio do lance, era chão andável, e o boneco passava por dentro e por cima dela. Agora ela fica fora da máscara de andar e da de sentar.
+- **Os acessos entre níveis**: a barreira entre dois níveis abria nas bocas e agora abre nas escadas; sem escada, nos dois lados da caixa; sem boca, nas pontas.
+- **O túnel**: o que era o vomitório do lance de baixo fica na saída dele, umas duas fileiras na frente da caixa (ou no corredor da frente, quando a boca abre nele).
+- **Os marcadores**: bondes e postos saem de cima da caixa com uma célula de folga.
+- **A reassadura**: todos os estádios foram reassados.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

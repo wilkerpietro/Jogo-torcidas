@@ -1081,11 +1081,13 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const pt = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f); let r = r0 + (r1 - r0) * f;
     /* (e longe da barreira entre níveis: com o ponto rente a ela, a célula da máscara sai fechada) */
     const cs = Math.cos(ang * RAD), sn = Math.sin(ang * RAD), livreB = q => [[0, 0], [1.6, 0], [-1.6, 0], [0, 1.6], [0, -1.6]].every(([er, et]) => !barreira(ficha, cs * (q + er) - sn * et, sn * (q + er) + cs * et));
-    const senta = q => naArquibancada(ficha, cs * q, sn * q) && livreB(q);
+    /* (e fora da caixa sólida do vomitório — `naBoca` —, com folga de uma célula) */
+    const semBoca = q => [[0, 0], [1.4, 0], [-1.4, 0], [0, 1.4], [0, -1.4]].every(([er, et]) => !naBoca(ficha, cs * (q + er) - sn * et, sn * (q + er) + cs * et));
+    const senta = q => naArquibancada(ficha, cs * q, sn * q) && livreB(q) && semBoca(q);
     if (!senta(r)) for (let k = 0.5; k <= 40; k += 0.5) { if (senta(r + k)) { r += senta(r + k + 1.5) ? k + 1.5 : k; break; } if (senta(r - k)) { r -= senta(r - k - 1.5) ? k + 1.5 : k; break; } }
     if (!senta(r)) r = r0 + (r1 - r0) * f;
     /* (o ponto que não é de sentar — o posto da PM no corredor, o túnel no fundo — também sai de cima da barreira entre níveis) */
-    const anda = q => [-1.2, 0, 1.2].every(e => andavel(ficha, cs * (q + e), sn * (q + e))) && livreB(q);
+    const anda = q => [-1.2, 0, 1.2].every(e => andavel(ficha, cs * (q + e), sn * (q + e))) && livreB(q) && semBoca(q);
     if (!anda(r)) for (let k = 0.5; k <= 8; k += 0.5) { if (anda(r + k)) { r += k; break; } if (anda(r - k)) { r -= k; break; } }
     const p = paraPx(cs * r, sn * r); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
   const meio = arco => (arco[0] + arco[1]) / 2;
@@ -1142,7 +1144,10 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
     const anel = ficha.aneis[0], t = trechoEm(anel, ang); if (!t || t.tipo) return null;
     const G = colunasDe(ficha, anel, t); if (!G.vomCentros.length) return null;
     let melhor = null; for (const c of G.vomCentros) { const a = G.angEm(c), d = Math.abs(((a - ang + 540) % 360) - 180); if (!melhor || d < melhor.d) melhor = { a, d }; }
-    const q = G.pos(melhor.a, G.fc + (1 - G.fc) * (G.vomK0 + G.vomRows * 0.45) / G.N), p = paraPx(q[0], q[1]);
+    /* (a boca é sólida: o túnel fica na saída dela, a fileira logo na frente da caixa — ou no corredor da frente, quando a
+       boca abre nele) */
+    const fq = G.vomK0 > 0 ? G.fc + (1 - G.fc) * Math.max(0.3, G.vomK0 - 1.8) / G.N : G.fc * 0.5;
+    const q = G.pos(melhor.a, fq), p = paraPx(q[0], q[1]);
     return { x: Math.round(p[0]), y: Math.round(p[1]), ang: melhor.a };
   };
   /* (sem vomitório, o túnel fica no fundo da arquibancada; numa arquibancada rasa — menos de 12 m andáveis — ele vem mais pra
@@ -1150,7 +1155,8 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const fundoEm = ang => { const c = contornoEm(ang); return raioDe(ang, c.f) - raioDe(ang, c.d) < 12 ? 0.7 : 0.9; };
   const tunel = (id, rot, lado, ang) => { const v = vomitorioEm(ang);
     /* (o túnel na boca que caiu em cima da barreira entre níveis vai pro fundo do lance, como quando não há boca) */
-    const naBarra = v && (() => { const q = paraMetros0(v.x, v.y); return [-1.2, 0, 1.2].some(e => barreira(ficha, q[0] + e, q[1]) || barreira(ficha, q[0], q[1] + e)); })();
+    const naBarra = v && (() => { const q = paraMetros0(v.x, v.y); return [-1.2, 0, 1.2].some(e => barreira(ficha, q[0] + e, q[1]) || barreira(ficha, q[0], q[1] + e)
+      || naBoca(ficha, q[0] + e, q[1]) || naBoca(ficha, q[0], q[1] + e) || !andavel(ficha, q[0] + e, q[1]) || !andavel(ficha, q[0], q[1] + e)); })();
     return v && !naBarra ? { id, rot, lado, raio: 40, dir: dirPx(v.ang, 1), x: v.x, y: v.y } : Object.assign({ id, rot, lado, raio: 40, dir: dirPx(ang, 1) }, pt(ang, fundoEm(ang))); };
   const entradas = [tunel('portao_mandante', 'TÚNEL MANDANTE', 'mandante', j.tunelMandante == null ? meio(j.mandante1) : j.tunelMandante),
                     tunel('portao_visitante', 'TÚNEL VISITANTE', 'visitante', j.tunelVisitante == null ? meio(j.visitante) : j.tunelVisitante)];
@@ -1242,6 +1248,32 @@ export function naArquibancada(ficha, u, v) {
     if (Math.abs(x) <= t.comp / 2 && y >= -0.6 && y <= t.prof) return true; }
   return false;
 }
+/* O VOMITÓRIO É SÓLIDO (dono, 23/11/2026: "os vomitórios precisam ter fisica e ser impedidos de serem acessados"): a caixa
+   de concreto da boca, no meio do lance, era chão andável na máscara — o boneco passava por dentro e por cima dela. Agora a
+   pegada da caixa (as colunas da boca, das fileiras `vomK0` a `vomK0 + vomRows`) fica fora da máscara de andar e da de sentar.
+   Vale o anel desenhado por último que cobre o ponto, como em `naArquibancada`. */
+export function naBoca(ficha, u, v) {
+  const d = Math.hypot(u, v); if (d < 1e-6) return false;
+  for (let i = ficha.aneis.length - 1; i >= 0; i--) {
+    const anel = ficha.aneis[i], t = trechoNoPonto(anel, u, v); if (!t) continue;
+    if (t.tipo === 'vazio' || t.tipo === 'passagem') return false;
+    const G = colunasDe(ficha, anel, t); if (!G.vomCentros.length) return false;
+    const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora;
+    const reto = t.reto !== false && !!(anel.reto || t.reto) && !curva(cd) && !curva(cf);
+    let ang, f;
+    if (reto) { const p = peDaColuna(cd, cf, u, v); if (!p) return false; ang = p.ang; f = p.f; }
+    else { ang = Math.atan2(v, u) / RAD; const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); f = (d - r0) / ((r1 - r0) || 1); }
+    /* a coluna: onde o ângulo cai entre as divisas das colunas do trecho */
+    const a = t.de + mod360(ang - t.de), A = G.angs;
+    let j = 0; while (j < A.length - 2 && A[j + 1] <= a) j++;
+    const ci = j + Math.max(0, Math.min(1, (a - A[j]) / ((A[j + 1] - A[j]) || 1)));
+    /* a fileira: da frente (depois do corredor) pro fundo */
+    const k = (f - G.fc) / ((1 - G.fc) || 1) * G.N;
+    if (k < G.vomK0 - 0.15 || k > G.vomK0 + G.vomRows + 0.15) return false;
+    return G.vomCentros.some(c => Math.abs(ci - c) <= G.vomMeia + 0.1);
+  }
+  return false;
+}
 /* a máscara de onde se senta, no formato da de andar, em células de `cel` px */
 export function mascaraDaArquibancada(ficha, paraMetros, W, H, cel) {
   const linhas = [];
@@ -1249,7 +1281,7 @@ export function mascaraDaArquibancada(ficha, paraMetros, W, H, cel) {
     const partes = []; let v = 0, n = 0;
     for (let c = 0; c < W / cel; c++) {
       let sim = 0;
-      for (const [fx, fy] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75], [0.5, 0.5]]) { const m = paraMetros(c * cel + fx * cel, r * cel + fy * cel); if (naArquibancada(ficha, m[0], m[1])) sim++; }
+      for (const [fx, fy] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75], [0.5, 0.5]]) { const m = paraMetros(c * cel + fx * cel, r * cel + fy * cel); if (naArquibancada(ficha, m[0], m[1]) && !naBoca(ficha, m[0], m[1])) sim++; }
       const ok = sim >= 3 ? 1 : 0;
       if (ok === v) n++; else { partes.push(n); v = ok; n = 1; }
     }
@@ -1281,8 +1313,9 @@ function acessosDe(ficha, anel, t) {
   let a = memoAcessos.get(t); if (a) return a; a = [];
   if (t.tipo !== 'passagem') {
     const G = colunasDe(ficha, anel, t), rm = (raioDe((t.de + t.ate) / 2, t.dentro || anel.dentro)) || 1, grau = m => m / (rm * RAD);
-    if (G.vomCentros.length) for (const c of G.vomCentros) a.push([G.angEm(c), grau(G.vomMeia * G.larguraCel + 0.6)]);
-    else if (G.corr) for (let i = G.corr; i < G.n; i += G.corr) a.push([G.angEm(i + G.esc / 2), grau(1.2)]);
+    /* (a boca agora é sólida — `naBoca` —: quem sobe vai pelas escadas; sem escada, pelos lados da caixa da boca) */
+    if (G.corr) for (let i = G.corr; i < G.n; i += G.corr) a.push([G.angEm(i + G.esc / 2), grau(1.2)]);
+    else if (G.vomCentros.length) for (const c of G.vomCentros) for (const sg of [-1, 1]) a.push([G.angEm(c + sg * (G.vomMeia + 1.5)), grau(1.2)]);
     if (!a.length) { a.push([t.de, grau(1.6)], [t.ate, grau(1.6)]); }
   } else {
     /* (a passagem elevada — a passarela em cima dos camarotes do Germano Krüger — abre nas pontas) */
@@ -1343,7 +1376,7 @@ export function mascara(ficha, paraMetros, W, H, cel) {
     const partes = []; let v = 0, n = 0;
     for (let c = 0; c < W / cel; c++) {
       let livres = 0;
-      for (const [dx, dy] of [[2, 2], [6, 2], [2, 6], [6, 6], [4, 4]]) { const m = paraMetros(c * cel + dx, r * cel + dy); if (andavel(ficha, m[0], m[1]) && !barreira(ficha, m[0], m[1])) livres++; }
+      for (const [dx, dy] of [[2, 2], [6, 2], [2, 6], [6, 6], [4, 4]]) { const m = paraMetros(c * cel + dx, r * cel + dy); if (andavel(ficha, m[0], m[1]) && !barreira(ficha, m[0], m[1]) && !naBoca(ficha, m[0], m[1])) livres++; }
       const livre = livres >= 4 ? 1 : 0;
       if (livre === v) n++; else { partes.push(n); v = livre; n = 1; }
     }

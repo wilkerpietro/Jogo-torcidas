@@ -27,8 +27,8 @@
    do Blender (cenario3d/modelos/festa/, a lista em `pecas.json`).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader } from './GLTFLoader.js?v=567d536d21';
-import * as K from './detalhe3d.js?v=567d536d21';
+import { GLTFLoader } from './GLTFLoader.js?v=f9b5f434df';
+import * as K from './detalhe3d.js?v=f9b5f434df';
 
 const M = 24;                                   // px do tabuleiro por metro
 const ROT = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 };
@@ -403,7 +403,7 @@ const ARQUIVOS = {
 const PASTA = 'modelos/festa/';
 const glbs = new Map();          // arquivo → Promise<THREE.Object3D|null>
 let lista = null;
-const prontos = () => lista || (lista = fetch(PASTA + 'pecas.json?v=567d536d21')
+const prontos = () => lista || (lista = fetch(PASTA + 'pecas.json?v=f9b5f434df')
   .then(r => r.ok ? r.json() : { arquivos: [] }).then(j => new Set(j.arquivos || [])).catch(() => new Set()));
 function carregarPeca(arquivo) {
   if (glbs.has(arquivo)) return glbs.get(arquivo);
