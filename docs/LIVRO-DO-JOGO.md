@@ -882,6 +882,13 @@ Toda compra passa por `comprar(E, id)` → `comprarSemPost`; se der certo, o fee
   - **O alvo**: o armário das tomadas. Eles levam se a peça chega na rua, ou se todos os nossos caem.
   - **As portas das salas** ficam fechadas e quebram na pancada (55% da vida da grade) ou na bomba. A IA traz até 3 bombas e só as usa em porta.
   - **O terreno de verdade** do mapa 3D: n1 12,9 × 9,3 m, n2 16,2 × 12,8, n3/n4 22,1 × 12,8, n5 30,6 × 12,8. A cena é fixa, 40 × 26,7 m, com os vizinhos dos lados.
+- **Invasão furtiva** (metade das invasões do ano). É de madrugada, sem cena.
+  - **O que levam**: a peça da dona; com 60%, mais uma de outra dona; com 30%, a nossa bandeira; e de 10 a 25% do caixa (teto R$ 30.000).
+  - **A mensagem** da manhã não diz quem foi.
+  - **A investigação**: ouvir a rua (grátis, 30 dias, 35%), olheiro (R$ 3.000, 7 dias, 60%) ou câmera do vizinho (R$ 8.000, na hora, 85%, só com comércio no bairro da sede).
+  - **Achou**: cobrar dá relação −15, prestígio +5 e moral +5, e a culpada fica marcada pra revanche.
+  - **Não achou**: até 4 suspeitos. Acusar a errada custa relação −15, prestígio −5 e moral −2.
+  - **O estado** fica em `E.roubos`.
 
 ### 5.2 Bar, loja e subsede de bairro
 

@@ -16266,6 +16266,40 @@ O pedido: "importe as sedes do antigo mapa 3d pra virar cenário de briga", com 
 - **O efeito**: a de nível 1 aparece pequena e a de nível 5 grande, como são. Nada estica pra encher a tela.
 - **Antes**: os tamanhos eram 14 × 11 m a 31 × 22 m e a cena encolhia em volta da sede, então todas apareciam do mesmo tamanho.
 
+## A invasão furtiva da nossa sede e a investigação (dono, 23/11/2026)
+
+**Quando.** O plano do ano da invasão (`TO.invasao.planoDoAno`, mesma chance pelo material guardado) sai metade agressiva, metade furtiva. A furtiva é de madrugada, com a sede vazia: sem cena, só a mensagem da manhã.
+
+**O que somem.** Tudo sai na hora (`roubar`):
+- A peça da dona, que é quem veio buscar: volta pra ela.
+- Com 60%, mais uma peça de outra dona. Ela fica nas tomadas de quem roubou, e é isso que embaralha a suspeita.
+- Com 30%, a nossa bandeira. Ela fica com quem roubou, e prestígio e moral caem pela metade do peso da bandeira perdida.
+- De 10 a 25% do caixa, no máximo R$ 30.000.
+
+Cada peça do armário perdida custa o mesmo que na agressiva.
+
+**A mensagem.** Chega entre 06:10 e 06:49 e diz o que levaram, não quem.
+
+**A investigação.** Um modo por vez, cada um uma vez só:
+
+| Modo | Custo | Tempo | Chance de achar |
+|---|---|---|---|
+| Ouvir a rua | de graça | 30 dias | 35% |
+| Mandar um olheiro | R$ 3.000 | 7 dias | 60% |
+| Câmera do vizinho | R$ 8.000 | na hora | 85% |
+
+- A câmera só aparece se o bairro da sede tem comércio (mercadinho, posto, joalheria, loja de roupas ou banco).
+- A resposta que demora chega no dia certo pelo passo `investigação do roubo`.
+
+**O resultado.**
+- **Achou**: "Cobrar a X" (relação −15, prestígio +5, moral +5) ou deixar quieto. A cobrada fica marcada como culpada (`E.roubos[].culpada`), pra revanche, a nossa invasão.
+- **Não achou**:
+  - A lista de suspeitos: quem roubou, as donas das outras peças levadas e as rivais da cidade de relação pior (não aliada, não irmã), até quatro, embaralhadas.
+  - Dá pra acusar uma, tentar outro modo que ainda não foi usado, ou deixar pra lá.
+  - Acusar a errada custa relação −15, prestígio −5 e moral −2, e quem roubou fica sem conta.
+
+**O estado.** `E.roubos = [{id, ladrao, pecas, dinheiro, suspeitos, tentou, investigacao, fim, acusada, culpada}]`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

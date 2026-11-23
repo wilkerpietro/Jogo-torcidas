@@ -14,10 +14,10 @@
    DOMContentLoaded: quem usa (a ponte, numa cena aberta pelo jogador)
    chega muito depois.
    ========================================================= */
-import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=55eb448830';
-import { cenarioDaFesta } from './festa3d.js?v=55eb448830';
-import { cenarioDaSede } from './sede3d_cena.js?v=55eb448830';
-import { montarSede } from './sede3d.js?v=55eb448830';
+import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=bff46eeab5';
+import { cenarioDaFesta } from './festa3d.js?v=bff46eeab5';
+import { cenarioDaSede } from './sede3d_cena.js?v=bff46eeab5';
+import { montarSede } from './sede3d.js?v=bff46eeab5';
 
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};

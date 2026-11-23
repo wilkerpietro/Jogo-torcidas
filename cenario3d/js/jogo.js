@@ -5659,6 +5659,64 @@ TO.i18n.registrar({
   'O rival chamou o bonde dele.':   {es:'El rival llamó a su banda.',  en:'The rival called up his crew.'},
   'CONTRA!':                        {es:'¡CONTRA!',                    en:'COUNTER!'},
   'Um módulo da grade foi ao chão.':{es:'Un tramo de la valla se vino abajo.', en:'A section of the fence went down.'},
+  "A gente vai ouvir a rua. Em 30 dias a resposta chega, se chegar.": {es:"Vamos a escuchar la calle. En 30 días llega la respuesta, si llega.", en:"We will listen to the street. The answer comes in 30 days, if it comes."},
+  "A rua falou": {es:"La calle habló", en:"The street talked"},
+  "A {nome} invadiu a sede e levou a bandeira de volta": {es:"{nome} invadió la sede y se llevó su bandera de vuelta", en:"{nome} raided the clubhouse and took their flag back"},
+  "A {nome} invadiu a sede e levou a faixa de volta": {es:"{nome} invadió la sede y se llevó su trapo de vuelta", en:"{nome} raided the clubhouse and took their banner back"},
+  "A {nome} jura que não foi, e a rua acredita nela: relação −15, prestígio −5, moral −2. Quem roubou segue rindo.": {es:"{nome} jura que no fue, y la calle le cree: relación −15, prestigio −5, moral −2. El que robó sigue riéndose.", en:"{nome} swears it wasn’t them, and the street believes it: relation −15, prestige −5, morale −2. The real thief is still laughing."},
+  "A {nome} levou a bandeira dela de volta: prestígio −{p}, moral −{m}": {es:"{nome} se llevó su bandera de vuelta: prestigio −{p}, moral −{m}", en:"{nome} took their flag back: prestige −{p}, morale −{m}"},
+  "A {nome} levou a faixa dela de volta: prestígio −{p}, moral −{m}": {es:"{nome} se llevó su trapo de vuelta: prestigio −{p}, moral −{m}", en:"{nome} took their banner back: prestige −{p}, morale −{m}"},
+  "Acusamos a {nome} sem prova": {es:"Acusamos a {nome} sin pruebas", en:"We accused {nome} without proof"},
+  "Acusar a {nome}": {es:"Acusar a {nome}", en:"Accuse {nome}"},
+  "As imagens da câmera chegaram": {es:"Llegaron las imágenes de la cámara", en:"The camera footage arrived"},
+  "As imagens da câmera do vizinho": {es:"Las imágenes de la cámara del vecino", en:"The neighbour’s camera footage"},
+  "Chefe, a {nome} tá na porta da nossa sede! Vieram buscar a bandeira deles que tá no armário do patrimônio. Tem uns dos nossos lá dentro.": {es:"¡Jefe, {nome} está en la puerta de nuestra sede! Vinieron a buscar su bandera, que está en el armario del patrimonio. Hay algunos de los nuestros adentro.", en:"Boss, {nome} is at our clubhouse door! They came for their flag in the trophy cabinet. Some of ours are inside."},
+  "Chefe, a {nome} tá na porta da nossa sede! Vieram buscar a faixa deles que tá no armário do patrimônio. Tem uns dos nossos lá dentro.": {es:"¡Jefe, {nome} está en la puerta de nuestra sede! Vinieron a buscar su trapo, que está en el armario del patrimonio. Hay algunos de los nuestros adentro.", en:"Boss, {nome} is at our clubhouse door! They came for their banner in the trophy cabinet. Some of ours are inside."},
+  "Chefe, arrombaram a sede de madrugada. A porta dos fundos tá no chão e o armário do patrimônio aberto: levaram {lista}. Ninguém viu nada. Quer que a gente vá atrás de quem foi?": {es:"Jefe, forzaron la sede de madrugada. La puerta de atrás está en el piso y el armario del patrimonio abierto: se llevaron {lista}. Nadie vio nada. ¿Querés que vayamos a buscar quién fue?", en:"Boss, someone broke into the clubhouse overnight. The back door is down and the trophy cabinet is open: they took {lista}. Nobody saw a thing. Want us to find out who did it?"},
+  "Cobramos a {nome} na frente de todo mundo, e ela não negou. Relação −15, prestígio +5, moral +5. A conta fica pra revanche.": {es:"Le cobramos a {nome} delante de todos, y no lo negó. Relación −15, prestigio +5, moral +5. La cuenta queda para la revancha.", en:"We called out {nome} in front of everyone, and they didn’t deny it. Relation −15, prestige +5, morale +5. The score will be settled later."},
+  "Cobramos a {nome} pelo roubo da sede": {es:"Le cobramos a {nome} el robo de la sede", en:"We called out {nome} for the clubhouse theft"},
+  "Cobrar a {nome}": {es:"Cobrarle a {nome}", en:"Call out {nome}"},
+  "Câmera do vizinho": {es:"Cámara del vecino", en:"Neighbour’s camera"},
+  "Defender a sede": {es:"Defender la sede", en:"Defend the clubhouse"},
+  "Deixamos pra lá.": {es:"Lo dejamos pasar.", en:"We let it go."},
+  "Deixar com quem está lá": {es:"Dejarlo a los que están ahí", en:"Leave it to those inside"},
+  "Falta caixa: {valor}.": {es:"Falta caja: {valor}.", en:"Not enough cash: {valor}."},
+  "Já passou.": {es:"Ya pasó.", en:"It’s over."},
+  "Já tem uma investigação andando.": {es:"Ya hay una investigación en marcha.", en:"An investigation is already under way."},
+  "Levaram": {es:"Se lo llevaron", en:"They took it"},
+  "Levaram o material": {es:"Se llevaron el material", en:"They took the gear"},
+  "Mandar um olheiro": {es:"Mandar un espía", en:"Send a scout"},
+  "Não tem comércio com câmera perto da sede.": {es:"No hay comercio con cámara cerca de la sede.", en:"There is no shop with a camera near the clubhouse."},
+  "O olheiro atrás de quem roubou a sede": {es:"El espía detrás de quien robó la sede", en:"The scout after whoever robbed the clubhouse"},
+  "O olheiro saiu atrás ({valor}). Em 7 dias ele volta.": {es:"El espía salió a buscar ({valor}). En 7 días vuelve.", en:"The scout is on it ({valor}). He’ll be back in 7 days."},
+  "O olheiro voltou": {es:"Volvió el espía", en:"The scout is back"},
+  "Ouvir a rua": {es:"Escuchar la calle", en:"Listen to the street"},
+  "Pagamos as imagens da câmera: a resposta tá no feed.": {es:"Pagamos las imágenes de la cámara: la respuesta está en el feed.", en:"We paid for the camera footage: the answer is in the feed."},
+  "Roubaram a nossa bandeira da sede": {es:"Robaron nuestra bandera de la sede", en:"They stole our flag from the clubhouse"},
+  "Roubaram o armário do patrimônio": {es:"Robaron el armario del patrimonio", en:"They robbed the trophy cabinet"},
+  "Roubo na sede, de madrugada": {es:"Robo en la sede, de madrugada", en:"Overnight theft at the clubhouse"},
+  "Sede defendida": {es:"Sede defendida", en:"Clubhouse defended"},
+  "Seguramos a sede contra a {nome}": {es:"Aguantamos la sede contra {nome}", en:"We held the clubhouse against {nome}"},
+  "Seguramos a sede: a {nome} saiu sem nada. Prestígio +3, moral +5": {es:"Aguantamos la sede: {nome} se fue sin nada. Prestigio +3, moral +5", en:"We held the clubhouse: {nome} left empty-handed. Prestige +3, morale +5"},
+  "a cena na sede: 5 deles contra quem está lá": {es:"la escena en la sede: 5 de ellos contra los que están ahí", en:"the clubhouse scene: 5 of them against whoever is inside"},
+  "a nossa bandeira": {es:"nuestra bandera", en:"our flag"},
+  "de graça · 30 dias · 35% de achar": {es:"gratis · 30 días · 35% de encontrar", en:"free · 30 days · 35% to find out"},
+  "o dado resolve": {es:"lo resuelve el dado", en:"the dice decide"},
+  "o que acharam": {es:"lo que encontraron", en:"whatever they found"},
+  "relação −15 · prestígio +5 · moral +5": {es:"relación −15 · prestigio +5 · moral +5", en:"relation −15 · prestige +5 · morale +5"},
+  "se errar: relação −15, prestígio −5": {es:"si te equivocás: relación −15, prestigio −5", en:"if wrong: relation −15, prestige −5"},
+  "sem custo; ninguém paga pelo roubo": {es:"sin costo; nadie paga por el robo", en:"no cost; nobody pays for the theft"},
+  "uma peça do armário do patrimônio": {es:"una pieza del armario del patrimonio", en:"one piece from the trophy cabinet"},
+  "{como}, e não deu em nada. Na boca do povo, os suspeitos são: {lista}. Dá pra acusar uma, tentar de outro jeito ou deixar pra lá.": {es:"{como}, y no dio en nada. En boca de la gente, los sospechosos son: {lista}. Se puede acusar a una, probar de otra forma o dejarlo pasar.", en:"{como}, and it came to nothing. Word on the street names these suspects: {lista}. You can accuse one, try another way or let it go."},
+  "{como}: quem roubou a sede foi a {nome}. Tem gente deles com a nossa coisa na mão.": {es:"{como}: quien robó la sede fue {nome}. Hay gente de ellos con nuestras cosas en la mano.", en:"{como}: the clubhouse was robbed by {nome}. Some of theirs have our stuff."},
+  "{n} peças do armário do patrimônio": {es:"{n} piezas del armario del patrimonio", en:"{n} pieces from the trophy cabinet"},
+  "{valor} do caixa": {es:"{valor} de la caja", en:"{valor} from the till"},
+  "{valor} · 7 dias · 60% de achar": {es:"{valor} · 7 días · 60% de encontrar", en:"{valor} · 7 days · 60% to find out"},
+  "{valor} · na hora · 85% de achar": {es:"{valor} · al instante · 85% de encontrar", en:"{valor} · right away · 85% to find out"},
+  "Rua (leve o líder)": {es:"Calle (llevá al líder)", en:"Street (take the leader)"},
+  "O material está no armário do patrimônio.": {es:"El material está en el armario del patrimonio.", en:"The gear is in the trophy cabinet."},
+  "a sede ainda não viu ninguém": {es:"la sede todavía no vio a nadie", en:"the clubhouse hasn’t seen anyone yet"},
+  "invadiram a sede!": {es:"¡invadieron la sede!", en:"they stormed the clubhouse!"},
   'Bomba deles na porta.':{es:'Bomba de ellos en la puerta.', en:'Their bomb at the door.'},
   'Arrombaram a porta: {nome}.':{es:'Forzaron la puerta: {nome}.', en:'They broke down the door: {nome}.'},
   'A bomba arrancou a porta: {nome}.':{es:'La bomba arrancó la puerta: {nome}.', en:'The bomb blew the door off: {nome}.'},
@@ -22791,7 +22849,126 @@ TO.invasao = (function(){
     const p = U.limitar(0.65 - (n - 6) * 0.07, 0.2, 0.65);
     return U.rng() < p;
   }
-  return {tomadasNossas, chanceNoAno, planoDoAno, quemInvade, defensores, fechar, simular, ATACANTES, nivelSede};
+  /* =======================================================
+     A INVASÃO FURTIVA DA NOSSA SEDE (dono, 23/11/2026): de madrugada,
+     ninguém na sede. Levam dinheiro do caixa e peças do armário do
+     patrimônio, e a mensagem da manhã não diz quem foi. Pra saber, a
+     investigação: ouvir a rua (de graça, 30 dias, 35%), mandar um
+     olheiro (R$ 3.000, 7 dias, 60%) ou a câmera do vizinho (R$ 8.000,
+     na hora, 85% — só com comércio no bairro da sede). Sem resposta, a
+     lista de suspeitos; acusar a errada custa relação e prestígio.
+     ======================================================= */
+  const INVESTIGAR = {
+    rua:     {custo:0,    dias:30, chance:0.35},
+    olheiro: {custo:3000, dias:7,  chance:0.60},
+    camera:  {custo:8000, dias:0,  chance:0.85}
+  };
+  const roubos = E => (E.roubos = E.roubos || []);
+  const roubo = (E, id) => roubos(E).find(r=>r.id === id) || null;
+  /* tem comércio no bairro da sede? (é ele que tem câmera na rua) */
+  function temComercioPerto(E){
+    const b = E.torcida && E.torcida.bairroSede;
+    if(!b || !TO.mapa || !TO.mapa.estruturas) return false;
+    const NEUTRO = new Set((TO.mapa.TIPOS_NEUTRO || []).filter(t=>t !== 'hospital'));
+    try{ return TO.mapa.estruturas(E).some(x=>x.bairro === b && NEUTRO.has(x.tipo)); }catch(err){ return false; }
+  }
+  /* tira a peça das nossas tomadas e põe na mão de quem levou */
+  function levarTomada(E, ladrao, x){
+    const P = PAT(), bandeira = x.tipo === 'bandeira', V = bandeira ? P.BANDEIRA : P.FAIXA;
+    const lista = bandeira ? P.bandeirasDe(E).tomadas : P.faixasDe(E).tomadas;
+    const i = lista.findIndex(y=>y.de === x.de && (y.variante || 0) === (x.variante || 0));
+    if(i < 0) return false;
+    lista.splice(i, 1);
+    const t = P.faixasIA(E, ladrao);
+    if(t){
+      if(x.de === ladrao) t[bandeira ? 'bandeiras' : 'faixas'] += 1;
+      else t[bandeira ? 'bandeirasTomadas' : 'faixasTomadas'].push({de:x.de, nome:x.nome, ano:E.data.ano, variante:x.variante || 0});
+    }
+    const motivo = _t('Roubaram o armário do patrimônio');
+    TO.estado.mexerIndicador(E, 'prestigio', -V.ganho / 5, motivo);
+    TO.estado.mexerIndicador(E, 'moral', -V.moralGanho / 5, motivo);
+    return true;
+  }
+  /* O ROUBO: o que some na madrugada. A peça da dona (a que veio buscar),
+     às vezes mais uma de outra (pra embaralhar quem foi), às vezes a nossa
+     bandeira, e um pedaço do caixa */
+  function roubar(E, pl){
+    const ladrao = pl.material.de, pecas = [];
+    if(levarTomada(E, ladrao, pl.material)) pecas.push({tipo:pl.material.tipo, de:pl.material.de, nome:pl.material.nome});
+    const outras = tomadasNossas(E).filter(x=>x.de !== ladrao);
+    if(outras.length && U.rng() < 0.6){
+      const x = U.escolher(outras);
+      if(levarTomada(E, ladrao, x)) pecas.push({tipo:x.tipo, de:x.de, nome:x.nome});
+    }
+    const P = PAT(), nossas = P.bandeirasDe(E).nossas;
+    if(nossas.length && U.rng() < 0.3){
+      nossas.pop();
+      const t = P.faixasIA(E, ladrao);
+      if(t) t.bandeirasTomadas.push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano, variante:0});
+      const motivo = _t('Roubaram a nossa bandeira da sede');
+      TO.estado.mexerIndicador(E, 'prestigio', -P.BANDEIRA.perda / 5 * 0.5, motivo);
+      TO.estado.mexerIndicador(E, 'moral', -P.BANDEIRA.moralPerda / 5 * 0.5, motivo);
+      pecas.push({tipo:'bandeira', de:E.torcida.id, nome:E.torcida.nome, nossa:true});
+    }
+    const caixa = Math.max(0, E.dinheiro || 0);
+    const dinheiro = Math.min(30000, Math.round(caixa * U.entre(0.10, 0.25) / 100) * 100);
+    if(dinheiro > 0) TO.estado.lancar(E, _t('Roubo na sede, de madrugada'), -dinheiro);
+    TO.relacoes.mover(E, ladrao, 'prestigio', 1);
+    const r = {id:'roubo-' + E.data.ano + '-' + (E.data.absoluto || 0), ano:E.data.ano, abs:E.data.absoluto || 0,
+               ladrao, pecas, dinheiro, suspeitos:suspeitosDe(E, ladrao, pecas), tentou:[], investigacao:null, fim:null};
+    roubos(E).push(r);
+    pl.feita = true; pl.levaram = true; pl.roubo = r.id;
+    return r;
+  }
+  /* OS SUSPEITOS: quem levou, as donas das outras peças levadas e as
+     rivais da cidade de relação pior, até quatro, embaralhados */
+  function suspeitosDe(E, ladrao, pecas){
+    const R = TO.relacoes, ids = new Set([ladrao]);
+    for(const p of pecas) if(!p.nossa && p.de) ids.add(p.de);
+    const daCidade = (TO.mundo.torcidasEm(E.torcida.mapa) || [])
+      .filter(o=>o.id !== E.torcida.id && !ids.has(o.id) && R.nivel(E, o.id) < 20
+                && !(TO.mundo.saoIrmas && TO.mundo.saoIrmas(E.torcida.id, o.id)))
+      .sort((a, b)=>R.nivel(E, a.id) - R.nivel(E, b.id));
+    for(const o of daCidade){ if(ids.size >= 4) break; ids.add(o.id); }
+    return U.embaralhar([...ids]);
+  }
+  /* manda investigar: paga, marca o dia da resposta (a câmera é na hora) */
+  function investigar(E, id, modo){
+    const r = roubo(E, id), I = INVESTIGAR[modo];
+    if(!r || !I || r.fim) return {ok:false, msg:_t('Esse assunto já passou.')};
+    if(r.investigacao) return {ok:false, msg:_t('Já tem uma investigação andando.')};
+    if(modo === 'camera' && !temComercioPerto(E)) return {ok:false, msg:_t('Não tem comércio com câmera perto da sede.')};
+    if(I.custo && (E.dinheiro || 0) < I.custo) return {ok:false, msg:_t('Falta caixa: {valor}.', {valor:U.dinheiro(I.custo)})};
+    if(I.custo) TO.estado.lancar(E, modo === 'camera' ? _t('As imagens da câmera do vizinho') : _t('O olheiro atrás de quem roubou a sede'), -I.custo);
+    r.tentou.push(modo);
+    r.investigacao = {modo, ate:(E.data.absoluto || 0) + I.dias, achou: U.rng() < I.chance, entregue:false};
+    return {ok:true, r};
+  }
+  /* ACUSAR: a certa vira guerra aberta (e a revanche); a errada custa */
+  function acusar(E, id, alvo){
+    const r = roubo(E, id);
+    if(!r || r.fim) return null;
+    const R = TO.relacoes, o = TO.mundo.torcida(alvo) || {nome:alvo};
+    r.acusada = alvo;
+    if(alvo === r.ladrao){
+      r.fim = 'acertou'; r.culpada = alvo;
+      R.hostilidade(E, alvo, 15);
+      const motivo = _t('Cobramos a {nome} pelo roubo da sede', {nome:o.nome});
+      TO.estado.mexerIndicador(E, 'prestigio', 1, motivo);
+      TO.estado.mexerIndicador(E, 'moral', 1, motivo);
+      R.mover(E, alvo, 'prestigio', -1);
+      return _t('Cobramos a {nome} na frente de todo mundo, e ela não negou. Relação −15, prestígio +5, moral +5. A conta fica pra revanche.', {nome:o.nome});
+    }
+    r.fim = 'errou';
+    R.hostilidade(E, alvo, 15);
+    const motivo = _t('Acusamos a {nome} sem prova', {nome:o.nome});
+    TO.estado.mexerIndicador(E, 'prestigio', -1, motivo);
+    TO.estado.mexerIndicador(E, 'moral', -0.4, motivo);
+    return _t('A {nome} jura que não foi, e a rua acredita nela: relação −15, prestígio −5, moral −2. Quem roubou segue rindo.', {nome:o.nome});
+  }
+  const largar = (E, id)=>{ const r = roubo(E, id); if(r && !r.fim) r.fim = 'largou'; };
+  return {tomadasNossas, chanceNoAno, planoDoAno, quemInvade, defensores, fechar, simular, ATACANTES, nivelSede,
+          INVESTIGAR, temComercioPerto, roubar, roubo, roubos, investigar, acusar, largar};
 })();
 
 ;
@@ -39077,6 +39254,7 @@ TO.feed = (function(){
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
     passo('invasão da sede', ()=>invasaoDeHoje(E));
+    passo('investigação do roubo', ()=>investigacaoDeHoje(E));
     passo('festa no prejuízo', ()=>festaNoPrejuizoHoje(E));
     passo('fechamento do mês', ()=>fechamentoDoMesHoje(E));
     passo('sugestão de compra', ()=>sugestaoDeCompraHoje(E));
@@ -42627,8 +42805,80 @@ TO.feed = (function(){
       ]
     });
   }
-  /* (a furtiva, de madrugada: a mensagem e a investigação — fase seguinte) */
-  function furtivaDeHoje(E, pl){ void E; void pl; return null; }
+  /* A FURTIVA (23/11/2026): de madrugada, com a sede vazia. A mensagem
+     chega de manhã, diz o que sumiu e não diz quem foi; os botões são a
+     investigação (`TO.invasao.investigar`) */
+  const NOMES_INVESTIGAR = () => ({
+    rua:     {rot:_t('Ouvir a rua'),        nota:_t('de graça · 30 dias · 35% de achar')},
+    olheiro: {rot:_t('Mandar um olheiro'),  nota:_t('{valor} · 7 dias · 60% de achar', {valor:U.dinheiro(3000)})},
+    camera:  {rot:_t('Câmera do vizinho'),  nota:_t('{valor} · na hora · 85% de achar', {valor:U.dinheiro(8000)})}
+  });
+  function botoesDeInvestigar(E, r){
+    const IV = TO.invasao, N = NOMES_INVESTIGAR(), fora = [];
+    for(const modo of ['rua', 'olheiro', 'camera']){
+      if(r.tentou.includes(modo)) continue;
+      if(modo === 'camera' && !IV.temComercioPerto(E)) continue;
+      fora.push({id:'inv-' + modo, rot:N[modo].rot, acao:'roubo-investigar', modo, nota:N[modo].nota});
+    }
+    return fora;
+  }
+  function furtivaDeHoje(E, pl){
+    const IV = TO.invasao, r = IV.roubar(E, pl);
+    const partes = [];
+    if(r.dinheiro > 0) partes.push(_t('{valor} do caixa', {valor:U.dinheiro(r.dinheiro)}));
+    const doArmario = r.pecas.filter(p=>!p.nossa).length;
+    if(doArmario === 1) partes.push(_t('uma peça do armário do patrimônio'));
+    else if(doArmario > 1) partes.push(_t('{n} peças do armário do patrimônio', {n:doArmario}));
+    if(r.pecas.some(p=>p.nossa)) partes.push(_t('a nossa bandeira'));
+    const lista = partes.length > 1 ? partes.slice(0, -1).join(', ') + _t(' e ') + partes[partes.length - 1] : (partes[0] || _t('o que acharam'));
+    const botoes = botoesDeInvestigar(E, r).concat([{id:'largar', rot:_t('Deixar pra lá'), acao:'roubo-largar', nota:_t('sem custo; ninguém paga pelo roubo')}]);
+    return propor(E, {
+      kind:'invasao-furtiva', peso:'decisao', voz:'diretor', hora:'06:' + String(10 + (r.abs % 40)).padStart(2, '0'),
+      chave:`roubo|${r.id}`,
+      texto:_t('Chefe, arrombaram a sede de madrugada. A porta dos fundos tá no chão e o armário do patrimônio aberto: levaram {lista}. Ninguém viu nada. Quer que a gente vá atrás de quem foi?', {lista}),
+      dados:{roubo:r.id},
+      botoes
+    });
+  }
+  /* O RESULTADO DA INVESTIGAÇÃO: achou (cobrar ou deixar quieto) ou não
+     (a lista de suspeitos, e o que ainda dá pra tentar) */
+  function resultadoDoRoubo(E, r){
+    const nome = id => (TO.mundo.torcida(id) || {nome:id}).nome;
+    const inv = r.investigacao;
+    inv.entregue = true;
+    const COMO = {rua:_t('A rua falou'), olheiro:_t('O olheiro voltou'), camera:_t('As imagens da câmera chegaram')};
+    if(inv.achou){
+      return propor(E, {
+        kind:'roubo-resultado', peso:'decisao', voz:'diretor', chave:`roubo-achou|${r.id}`,
+        texto:_t('{como}: quem roubou a sede foi a {nome}. Tem gente deles com a nossa coisa na mão.', {como:COMO[inv.modo], nome:nome(r.ladrao)}),
+        dados:{roubo:r.id},
+        botoes:[
+          {id:'cobrar', rot:_t('Cobrar a {nome}', {nome:nome(r.ladrao)}), acao:'roubo-acusar', alvo:r.ladrao, nota:_t('relação −15 · prestígio +5 · moral +5')},
+          {id:'quieto', rot:_t('Deixar quieto'), acao:'roubo-largar', nota:_t('sem efeito')}
+        ]
+      });
+    }
+    r.investigacao = null;
+    const acusar = r.suspeitos.map(id=>({id:'acusar-' + id, rot:_t('Acusar a {nome}', {nome:nome(id)}), acao:'roubo-acusar', alvo:id,
+                                         nota:_t('se errar: relação −15, prestígio −5')}));
+    return propor(E, {
+      kind:'roubo-resultado', peso:'decisao', voz:'diretor', chave:`roubo-nada|${r.id}|${inv.modo}`,
+      texto:_t('{como}, e não deu em nada. Na boca do povo, os suspeitos são: {lista}. Dá pra acusar uma, tentar de outro jeito ou deixar pra lá.',
+               {como:COMO[inv.modo], lista:r.suspeitos.map(nome).join(', ')}),
+      dados:{roubo:r.id},
+      botoes: acusar.concat(botoesDeInvestigar(E, r), [{id:'largar', rot:_t('Deixar pra lá'), acao:'roubo-largar', nota:_t('sem efeito')}])
+    });
+  }
+  /* o dia da resposta da investigação que demora (a rua, o olheiro) */
+  function investigacaoDeHoje(E){
+    const hoje = E.data.absoluto || 0;
+    for(const r of (E.roubos || [])){
+      const inv = r.investigacao;
+      if(r.fim || !inv || inv.entregue || inv.ate > hoje) continue;
+      return resultadoDoRoubo(E, r);
+    }
+    return null;
+  }
 
   /* A BRIGA NA NOSSA FESTA (23/11/2026): no dia seguinte, a mensagem —
      de que lado a gente fica, cortar com as duas ou pagar a trégua */
@@ -44051,6 +44301,30 @@ TO.feed = (function(){
       }
       case 'festa-planejar':
         return {ok:true, abrir:{tela:'festa-plano', msg:m, cancelavel:true, botao:idBotao}};
+      /* A FURTIVA (23/11/2026): a investigação, a acusação e o deixar pra lá */
+      case 'roubo-investigar': {
+        const IV = TO.invasao, id = (m.dados || {}).roubo;
+        const r0 = IV.investigar(E, id, b.modo);
+        if(!r0.ok) return {ok:false, msg:r0.msg};
+        marcar();
+        const I = IV.INVESTIGAR[b.modo];
+        if(!I.dias){ resultadoDoRoubo(E, r0.r); m.consequencia = _t('Pagamos as imagens da câmera: a resposta tá no feed.'); }
+        else m.consequencia = b.modo === 'rua'
+          ? _t('A gente vai ouvir a rua. Em 30 dias a resposta chega, se chegar.')
+          : _t('O olheiro saiu atrás ({valor}). Em 7 dias ele volta.', {valor:U.dinheiro(I.custo)});
+        return {ok:true};
+      }
+      case 'roubo-acusar': {
+        const txt = TO.invasao.acusar(E, (m.dados || {}).roubo, b.alvo);
+        marcar();
+        m.consequencia = txt || _t('Esse assunto já passou.');
+        return {ok:true};
+      }
+      case 'roubo-largar':
+        TO.invasao.largar(E, (m.dados || {}).roubo);
+        marcar();
+        m.consequencia = _t('Deixamos pra lá.');
+        return {ok:true};
       case 'festa-ir':
       case 'festa-simular': {
         const P = TO.festaAniv.plano(E);
@@ -44770,7 +45044,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta, pautaClubeParaTela, decidirPautaClube, reuniaoClubeDeHoje, ofertaDoClubeHoje, aniversariosDeHoje,
           abertura, eventosDoDia, emboscadaDaViagem,
           mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, invasaoDeHoje, diaDaReuniao,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, invasaoDeHoje, investigacaoDeHoje, diaDaReuniao,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
