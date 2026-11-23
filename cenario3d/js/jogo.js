@@ -5461,6 +5461,52 @@ TO.i18n.registrar({
   'CHAMAR':   {es:'LLAMAR',    en:'RALLY'},
   'O bonde partiu pra cima.': {es:'La banda fue al frente.', en:'The crew charged.'},
   'Qual o alvo': {es:'Cuál es el blanco', en:'Pick the target'},
+  "A briga na arquibancada quebrou o acordo com o clube: os 10% a mais de ingressos acabaram nesta temporada.": {es:"La pelea en la tribuna rompió el acuerdo con el club: el 10% extra de entradas se acabó esta temporada.", en:"The fight in the stands broke the deal with the club: the extra 10% of tickets is gone this season."},
+  "Caravana para {destino} bancada pelo {clube} — rateio dos {n} no ônibus": {es:"Caravana a {destino} pagada por {clube} — aporte de los {n} en el bus", en:"Caravan to {destino} paid by {clube} — share from the {n} on the bus"},
+  "Chefe, a diretoria do {clube} chamou as torcidas pra uma reunião. Tem pauta que mexe com a gente.": {es:"Jefe, la directiva de {clube} llamó a las barras a una reunión. Hay temas que nos tocan.", en:"Boss, the {clube} board called the supporter groups to a meeting. Some items concern us."},
+  "Ir à reunião": {es:"Ir a la reunión", en:"Go to the meeting"},
+  "Repasse de ingressos": {es:"Reparto de entradas", en:"Ticket allotment"},
+  "A {nome} quer receber o mesmo repasse de ingressos que a torcida de primeiro escalão. A diretoria do {clube} quer ouvir a gente antes de decidir.": {es:"La {nome} quiere recibir el mismo reparto de entradas que la barra principal. La directiva de {clube} quiere escucharnos antes de decidir.", en:"{nome} wants the same ticket allotment as the top supporter group. The {clube} board wants to hear us before deciding."},
+  "Apoiar o pedido": {es:"Apoyar el pedido", en:"Back the request"},
+  "+10 com a {nome} · −3 de moral · o clube decide": {es:"+10 con la {nome} · −3 de moral · el club decide", en:"+10 with {nome} · −3 morale · the club decides"},
+  "Rejeitar o pedido": {es:"Rechazar el pedido", en:"Reject the request"},
+  "−12 com a {nome} · +3 de moral": {es:"−12 con la {nome} · +3 de moral", en:"−12 with {nome} · +3 morale"},
+  "Mais ingressos, menos briga": {es:"Más entradas, menos peleas", en:"More tickets, fewer fights"},
+  "O {clube} libera 10% a mais de ingressos até o fim da temporada se a torcida prometer menos briga na arquibancada.": {es:"{clube} libera un 10% más de entradas hasta el fin de la temporada si la barra promete menos peleas en la tribuna.", en:"{clube} grants 10% more tickets until the end of the season if the group promises fewer fights in the stands."},
+  "Prometer": {es:"Prometer", en:"Promise"},
+  "+10% de ingressos · a primeira briga na arquibancada acaba com o bônus": {es:"+10% de entradas · la primera pelea en la tribuna termina el bono", en:"+10% tickets · the first fight in the stands ends the bonus"},
+  "Não prometer": {es:"No prometer", en:"Don't promise"},
+  "Material pra loja": {es:"Material para la tienda", en:"Merchandise for the shop"},
+  "O {clube} quer doar uniformes e acessórios oficiais pra torcida vender na loja.": {es:"{clube} quiere donar camisetas y accesorios oficiales para que la barra los venda en la tienda.", en:"{clube} wants to donate official kits and accessories for the group to sell in its shop."},
+  "Aceitar a doação": {es:"Aceptar la donación", en:"Accept the donation"},
+  "loja +15% de faturamento por 60 dias": {es:"tienda +15% de facturación por 60 días", en:"shop +15% revenue for 60 days"},
+  "Apoiou o repasse de ingressos pra {nome}": {es:"Apoyó el reparto de entradas para {nome}", en:"Backed the ticket allotment for {nome}"},
+  "nossa cota de ingressos −20% até o fim da temporada": {es:"nuestra cuota de entradas −20% hasta el fin de la temporada", en:"our ticket share −20% until the end of the season"},
+  "A gente apoiou e o clube atendeu: a {nome} passa a receber a cota de primeiro escalão, e a nossa cai 20% até o fim da temporada.": {es:"Apoyamos y el club aceptó: la {nome} pasa a recibir la cuota principal, y la nuestra baja 20% hasta el fin de la temporada.", en:"We backed it and the club agreed: {nome} gets the top allotment, and ours drops 20% until the end of the season."},
+  "A gente apoiou, mas o clube não atendeu: as cotas ficam como estão.": {es:"Apoyamos, pero el club no aceptó: las cuotas quedan como están.", en:"We backed it, but the club said no: the allotments stay as they are."},
+  "Rejeitou o repasse de ingressos pra {nome}": {es:"Rechazó el reparto de entradas para {nome}", en:"Rejected the ticket allotment for {nome}"},
+  "A gente bateu o pé: cota de primeiro escalão é de quem enche o estádio. O clube deixou como está.": {es:"Nos plantamos: la cuota principal es de quien llena el estadio. El club lo dejó como está.", en:"We stood firm: the top allotment belongs to whoever fills the stadium. The club left it as it is."},
+  "+10% de ingressos até o fim da temporada, enquanto não houver briga na arquibancada": {es:"+10% de entradas hasta el fin de la temporada, mientras no haya pelea en la tribuna", en:"+10% tickets until the end of the season, as long as there's no fight in the stands"},
+  "Fechado: menos briga na arquibancada, e o clube libera 10% a mais de ingressos até o fim da temporada.": {es:"Trato hecho: menos peleas en la tribuna, y el club libera un 10% más de entradas hasta el fin de la temporada.", en:"Deal: fewer fights in the stands, and the club grants 10% more tickets until the end of the season."},
+  "A gente não prometeu nada. Os ingressos seguem como estão.": {es:"No prometimos nada. Las entradas siguen como están.", en:"We promised nothing. Tickets stay as they are."},
+  "O material chega nesta semana: a loja fatura 15% a mais nos próximos 60 dias.": {es:"El material llega esta semana: la tienda factura 15% más en los próximos 60 días.", en:"The merchandise arrives this week: the shop earns 15% more over the next 60 days."},
+  "Chefe, o {clube} quer bancar a festa da torcida no jogo contra o {adv}: um mosaico por conta do clube, pra empurrar o time.": {es:"Jefe, {clube} quiere pagar la fiesta de la barra en el partido contra {adv}: un mosaico por cuenta del club, para empujar al equipo.", en:"Boss, {clube} wants to pay for our display in the game against {adv}: a mosaic on the club, to push the team."},
+  "+1 mosaico no estoque": {es:"+1 mosaico en el stock", en:"+1 mosaic in stock"},
+  "Chefe, o {clube} vai bancar a nossa caravana pro jogo contra o {adv}. Sem custo de estrada: o rateio de quem embarca fica todo com a gente.": {es:"Jefe, {clube} va a pagar nuestra caravana para el partido contra {adv}. Sin costo de ruta: el aporte de los que suben queda todo con nosotros.", en:"Boss, {clube} will pay for our caravan to the game against {adv}. No road costs: the share paid by those on board is all ours."},
+  "caravana sem custo": {es:"caravana sin costo", en:"free caravan"},
+  "Mosaico no estoque, por conta do clube: sobe no próximo jogo com a torcida no estádio.": {es:"Mosaico en el stock, por cuenta del club: sube en el próximo partido con la barra en el estadio.", en:"Mosaic in stock, on the club: it goes up at the next game with the group in the stadium."},
+  "Caravana bancada pelo clube: sem custo de estrada, e o rateio de quem embarca vira receita.": {es:"Caravana pagada por el club: sin costo de ruta, y el aporte de los que suben se vuelve ingreso.", en:"Caravan paid by the club: no road costs, and the share paid by those on board becomes income."},
+  "Relação com a {nome}: {d}": {es:"Relación con la {nome}: {d}", en:"Relations with {nome}: {d}"},
+  "Moral da torcida: {d}": {es:"Moral de la barra: {d}", en:"Group morale: {d}"},
+  "Nada mudou.": {es:"Nada cambió.", en:"Nothing changed."},
+  "Fim da reunião": {es:"Fin de la reunión", en:"End of the meeting"},
+  "O que mudou": {es:"Lo que cambió", en:"What changed"},
+  "Encerrar": {es:"Cerrar", en:"Close"},
+  "Reunião feita": {es:"Reunión hecha", en:"Meeting held"},
+  "Pauta {n} de {t}": {es:"Tema {n} de {t}", en:"Item {n} of {t}"},
+  "Próxima pauta →": {es:"Próximo tema →", en:"Next item →"},
+  "Ver o resumo": {es:"Ver el resumen", en:"See the summary"},
+  "Reunião com o clube": {es:"Reunión con el club", en:"Meeting with the club"},
   'Quantos vão': {es:'Cuántos van', en:'How many go'},
   '{min} a {max} · {pct}% de cadeia · pena de {pena} dias': {es:'{min} a {max} · {pct}% de cárcel · pena de {pena} días', en:'{min} to {max} · {pct}% jail chance · {pena}-day sentence'},
   'Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.': {es:'Los {n} se sortean entre los disponibles. Si caen, caen todos — y la plata se queda allá.', en:'The {n} are drawn from those available. If it goes wrong, everyone is caught — and the money stays there.'},
@@ -21913,7 +21959,13 @@ TO.relacaoClube = (function(){
     return real;
   }
 
-  const multLoja      = E => 1 + faixaDe(nivel(E)).lojaBuff;
+  /* OS ACORDOS DA REUNIÃO COM O CLUBE (dono, 23/11/2026), que valem até o fim da temporada (`acordoClube.ano`): o repasse
+     pra torcida menor corta 20% da nossa cota, e a promessa de menos briga na arquibancada dá 10% a mais — até a primeira
+     briga na arquibancada (`quebrada`). A doação de material soma 15% na loja por 60 dias (`doacaoClubeAte`). */
+  const acordo = E => { const a = E && E.acordoClube; return a && E.data && a.ano === E.data.ano ? a : null; };
+  const multIngressos = E => { const a = acordo(E); return a ? (a.repasse ? 0.8 : 1) * (a.promessa && !a.quebrada ? 1.10 : 1) : 1; };
+  const doacaoAtiva = E => !!E && (E.doacaoClubeAte || 0) > ((E.data && E.data.absoluto) || 0);
+  const multLoja      = E => 1 + faixaDe(nivel(E)).lojaBuff + (doacaoAtiva(E) ? 0.15 : 0);
   const abateCaravana = E => faixaDe(nivel(E)).caravana;
   const pctIngressos  = E => faixaDe(nivel(E)).ingressos;
 
@@ -21923,7 +21975,7 @@ TO.relacaoClube = (function(){
   function ingressosDoJogo(E){
     const pct = pctIngressos(E);
     if(!pct) return {n:0, valor:0, pct:0};
-    const n = Math.round((E.membros || []).length * pct);
+    const n = Math.round((E.membros || []).length * pct * multIngressos(E));
     return {n, valor: n * PRECO_INGRESSO, pct};
   }
 
@@ -21962,6 +22014,11 @@ TO.relacaoClube = (function(){
     const t = PONTOS_BRIGA[tipo];
     if(!t) return 0;
     const delta = casa ? t.casa : t.fora;
+    /* a briga na arquibancada quebra a promessa da reunião: o bônus de ingressos acaba */
+    const ac = tipo === 'arquibancada' ? acordo(E) : null;
+    if(ac && ac.promessa && !ac.quebrada){ ac.quebrada = true;
+      if(TO.feed && TO.feed.propor) TO.feed.propor(E, {kind:'clube', peso:'info', tipo:'ruim', voz:'diretor', chave:`promessa-quebrada|${E.data.ano}`,
+        texto:_t('A briga na arquibancada quebrou o acordo com o clube: os 10% a mais de ingressos acabaram nesta temporada.')}); }
     mexer(E, delta, tipo === 'arquibancada'
       ? (casa ? _t('Briga na arquibancada, jogo em casa') : _t('Briga na arquibancada, jogo fora'))
       : (casa ? _t('Briga nos arredores do estádio, jogo em casa') : _t('Briga nos arredores do estádio, jogo fora')),
@@ -21990,7 +22047,7 @@ TO.relacaoClube = (function(){
     .filter(x => x === 'D').length;
 
   return {PRECO_INGRESSO, FAIXAS, faixaDe, nivel, mexer,
-          multLoja, abateCaravana, pctIngressos, ingressosDoJogo,
+          multLoja, abateCaravana, pctIngressos, ingressosDoJogo, acordo, multIngressos, doacaoAtiva,
           pontosPorPresenca, pontosPorBriga,
           registrarResultadoClube, sequenciaRuim, derrotasRecentes};
 })();
@@ -27169,6 +27226,14 @@ TO.financeiro = (function(){
        76 a 100 cobre 20% do que a caravana custaria. Só entra quando
        há despesa de verdade — frota cheia já zerou o custo antes
        disto rodar. */
+    /* A CARAVANA BANCADA PELO CLUBE (dono, 23/11/2026, no jogo importante fora): não tem custo de estrada, e o rateio de
+       quem embarca fica todo com a torcida */
+    if((E.caravanaBancada || {})[chave]){
+      const clube = (TO.mundo.time(E.torcida.clubeId) || {}).nome || '';
+      if(est && est.rateio > 0) TO.estado.lancar(E, _t('Caravana para {destino} bancada pelo {clube} — rateio dos {n} no ônibus', {destino, clube, n:est.vao}), est.rateio);
+      delete E.caravanaBancada[chave];
+      return {valor:0, destino, bancada:true};
+    }
     const abate = TO.relacaoClube ? TO.relacaoClube.abateCaravana(E) : 0;
     const ajudaDoClube = abate && valor > 0 ? Math.round(valor * abate) : 0;
     if(ajudaDoClube) valor -= ajudaDoClube;
@@ -38262,6 +38327,8 @@ TO.feed = (function(){
     passo('briga de bairro', ()=>bairroDeHoje(E));
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
+    passo('reunião com o clube', ()=>reuniaoClubeDeHoje(E));
+    passo('oferta do clube', ()=>ofertaDoClubeHoje(E));
     passo('bote do dia',    ()=>boteDeHoje(E));
     passo('assalto do dia', ()=>assaltoDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
@@ -38888,6 +38955,147 @@ TO.feed = (function(){
      "de dois em dois meses" viraria "de quatro em quatro".
      ========================================================= */
   const ASSUNTOS_CLUBE_ANO = 12;
+  /* =======================================================
+     A REUNIÃO COM O CLUBE (dono, 23/11/2026: "Reunião com o clube (40%
+     de chance de ocorrer em uma temporada e se ocorrer é 1x no ano)").
+     A mensagem chama pra reunião; o botão abre a janela que passa as
+     pautas uma por uma e, no fim, mostra o que mudou
+     (`abrirReuniaoClube`, na casca). As pautas:
+       · a torcida menor do clube quer o mesmo repasse de ingressos da de
+         primeiro escalão — apoiar (+10 com ela, −3 de moral, e o clube
+         atende em metade das vezes: a nossa cota cai 20% até o fim da
+         temporada) ou rejeitar (−12 com ela, +3 de moral);
+       · mais ingressos (+10% até o fim da temporada) se a torcida
+         prometer menos briga na arquibancada — a primeira briga lá
+         acaba com o bônus (`TO.relacaoClube.pontosPorBriga`);
+       · a doação de uniforme e acessórios pra loja vender (+15% de
+         faturamento por 60 dias), só com a relação boa ou ótima.
+     ======================================================= */
+  const DOACAO_DIAS = 60;
+  function planoReuniaoClube(E){
+    const P = (E.reuniaoClube = E.reuniaoClube || {});
+    if(!P[E.data.ano]){ const h = TO.mapa.hash(`reuniao-clube|${E.data.ano}|${E.torcida.id}`);
+      /* (numa semana entre a 14ª e a 37ª: de abril a setembro) */
+      P[E.data.ano] = {vai: h % 100 < 40, semana: 14 + Math.floor(h / 100) % 24}; }
+    return P[E.data.ano];
+  }
+  /* a torcida menor do nosso clube que vai pedir o repasse: a maior das menores */
+  function torcidaMenorDoClube(E){
+    const meu = (E.membros || []).length;
+    const outras = M().jogaveis().filter(o => o.clubeId === E.torcida.clubeId && o.id !== E.torcida.id && !o.incompleta)
+      .map(o => ({o, n: TO.acoes.efetivoDePe(E, o) || 0})).filter(x => x.n > 0 && x.n < meu).sort((a, b) => b.n - a.n);
+    return outras.length ? outras[0].o : null;
+  }
+  function pautasDaReuniaoClube(E){
+    const p = [], menor = torcidaMenorDoClube(E);
+    if(menor) p.push({tipo:'repasse', id:menor.id, nome:menor.nome});
+    p.push({tipo:'promessa'});
+    if(TO.relacaoClube.nivel(E) >= 51) p.push({tipo:'doacao'});
+    return p;
+  }
+  function reuniaoClubeDeHoje(E){
+    if(E.estreou === false || !TO.relacaoClube || !E.torcida.clubeId) return null;
+    const pl = planoReuniaoClube(E);
+    if(!pl.vai || pl.feita || E.data.semana < pl.semana) return null;
+    if(!diaComumFeed(E, E.data.dia)) return null;
+    pl.feita = true;
+    const clube = (M().time(E.torcida.clubeId) || {}).nome || _t('clube');
+    return propor(E, {kind:'reuniao-clube', peso:'decisao', voz:'diretor', chave:`reuniao-clube|${E.data.ano}`,
+      texto:_t('Chefe, a diretoria do {clube} chamou as torcidas pra uma reunião. Tem pauta que mexe com a gente.', {clube}),
+      dados:{pautas: pautasDaReuniaoClube(E)},
+      botoes:[{id:'ir', rot:_t('Ir à reunião'), acao:'reuniao-clube'}]});
+  }
+  /* a pauta como a janela mostra: o texto e as escolhas, com o efeito no botão */
+  function pautaClubeParaTela(E, pt){
+    const clube = (M().time(E.torcida.clubeId) || {}).nome || _t('clube');
+    if(pt.tipo === 'repasse') return {titulo:_t('Repasse de ingressos'),
+      texto:_t('A {nome} quer receber o mesmo repasse de ingressos que a torcida de primeiro escalão. A diretoria do {clube} quer ouvir a gente antes de decidir.', {nome:pt.nome, clube}),
+      opcoes:[{id:'apoiar', rot:_t('Apoiar o pedido'), nota:_t('+10 com a {nome} · −3 de moral · o clube decide', {nome:pt.nome})},
+              {id:'rejeitar', rot:_t('Rejeitar o pedido'), nota:_t('−12 com a {nome} · +3 de moral', {nome:pt.nome})}]};
+    if(pt.tipo === 'promessa') return {titulo:_t('Mais ingressos, menos briga'),
+      texto:_t('O {clube} libera 10% a mais de ingressos até o fim da temporada se a torcida prometer menos briga na arquibancada.', {clube}),
+      opcoes:[{id:'aceitar', rot:_t('Prometer'), nota:_t('+10% de ingressos · a primeira briga na arquibancada acaba com o bônus')},
+              {id:'recusar', rot:_t('Não prometer'), nota:_t('sem efeito')}]};
+    return {titulo:_t('Material pra loja'),
+      texto:_t('O {clube} quer doar uniformes e acessórios oficiais pra torcida vender na loja.', {clube}),
+      opcoes:[{id:'aceitar', rot:_t('Aceitar a doação'), nota:_t('loja +15% de faturamento por 60 dias')}]};
+  }
+  /* a escolha numa pauta: aplica e devolve o texto e o que mudou (pro resumo do fim) */
+  function decidirPautaClube(E, pt, op){
+    const R = TO.relacoes, ef = {moral:0, rel:{}, outros:[]};
+    const moral = (d, motivo) => { TO.estado.mexerIndicador(E, 'moral', d / 5, motivo); ef.moral += d; };
+    const a = TO.relacaoClube.acordo(E) || (E.acordoClube = {ano:E.data.ano});
+    if(pt.tipo === 'repasse'){
+      if(op === 'apoiar'){
+        R.hostilidade(E, pt.id, -10); ef.rel[pt.id] = {nome:pt.nome, d:10};
+        moral(-3, _t('Apoiou o repasse de ingressos pra {nome}', {nome:pt.nome}));
+        const atende = U.rng() < 0.5;
+        if(atende){ a.repasse = true; ef.outros.push(_t('nossa cota de ingressos −20% até o fim da temporada')); }
+        return {texto: atende
+          ? _t('A gente apoiou e o clube atendeu: a {nome} passa a receber a cota de primeiro escalão, e a nossa cai 20% até o fim da temporada.', {nome:pt.nome})
+          : _t('A gente apoiou, mas o clube não atendeu: as cotas ficam como estão.'), ef};
+      }
+      R.hostilidade(E, pt.id, 12); ef.rel[pt.id] = {nome:pt.nome, d:-12};
+      moral(3, _t('Rejeitou o repasse de ingressos pra {nome}', {nome:pt.nome}));
+      return {texto:_t('A gente bateu o pé: cota de primeiro escalão é de quem enche o estádio. O clube deixou como está.'), ef};
+    }
+    if(pt.tipo === 'promessa'){
+      if(op === 'aceitar'){ a.promessa = true; a.quebrada = false;
+        ef.outros.push(_t('+10% de ingressos até o fim da temporada, enquanto não houver briga na arquibancada'));
+        return {texto:_t('Fechado: menos briga na arquibancada, e o clube libera 10% a mais de ingressos até o fim da temporada.'), ef}; }
+      return {texto:_t('A gente não prometeu nada. Os ingressos seguem como estão.'), ef};
+    }
+    if(pt.tipo === 'doacao'){
+      E.doacaoClubeAte = (E.data.absoluto || 0) + DOACAO_DIAS;
+      ef.outros.push(_t('loja +15% de faturamento por 60 dias'));
+      return {texto:_t('O material chega nesta semana: a loja fatura 15% a mais nos próximos 60 dias.'), ef};
+    }
+    return {texto:'', ef};
+  }
+
+  /* =======================================================
+     O CLUBE BANCA A FESTA OU A CARAVANA (dono, 23/11/2026: "Clube pode
+     querer bancar festas em jogos importantes. Clube pode querer bancar
+     caravana em jogos importantes fora de casa"). Jogo importante:
+     mata-mata, as duas últimas rodadas ou o clássico (o clube de um dos
+     nossos maiores rivais). Com a relação boa ou ótima, 30% de chance,
+     uns dias antes do jogo: em casa o clube dá um mosaico (sobe no
+     próximo jogo com a torcida no estádio); fora, banca a caravana — sem
+     custo de estrada, e o rateio de quem embarca vira receita.
+     ======================================================= */
+  function jogoImportante(E, j){
+    if(j.mata) return true;
+    if(j.rodadas && j.rodada && j.rodada >= j.rodadas - 1) return true;
+    const eu = M().torcida(E.torcida.id) || E.torcida;
+    return (eu.maioresRivais || []).some(id => (M().torcida(id) || {}).clubeId === j.adversario);
+  }
+  function ofertaDoClubeHoje(E){
+    if(E.estreou === false || !TO.relacaoClube || !E.torcida.clubeId) return null;
+    if(TO.relacaoClube.nivel(E) < 51) return null;
+    const meu = M().time(E.torcida.clubeId); if(!meu) return null;
+    const hoje = (E.data.semana - 1) * 7 + E.data.dia;
+    const of = (E.ofertasClube = E.ofertasClube || {});
+    for(const k of Object.keys(of)) if(!k.startsWith(E.data.ano + '|')) delete of[k];
+    const jogos = [E.data.semana, E.data.semana + 1].flatMap(sm => TO.competicoes.jogosDaSemana(E, meu.id, sm)).filter(j => !j.jogado);
+    for(const j of jogos){
+      const falta = (j.semana - 1) * 7 + j.dia - hoje;
+      if(falta < 2 || falta > 5) continue;
+      const k = `${E.data.ano}|${j.semana}|${j.dia}|${j.adversario}`;
+      if(of[k] != null) continue;
+      of[k] = jogoImportante(E, j) && TO.mapa.hash(`oferta-clube|${k}|${E.torcida.id}`) % 100 < 30 ? 1 : 0;
+      if(!of[k]) continue;
+      const adv = (M().time(j.adversario) || {}).nome || '';
+      if(j.casa) return propor(E, {kind:'clube', peso:'decisao', voz:'diretor', chave:`oferta-clube|${k}`,
+        texto:_t('Chefe, o {clube} quer bancar a festa da torcida no jogo contra o {adv}: um mosaico por conta do clube, pra empurrar o time.', {clube:meu.nome, adv}),
+        botoes:[{id:'aceitar', rot:_t('Aceitar'), acao:'clube-festa', nota:_t('+1 mosaico no estoque')}]});
+      return propor(E, {kind:'clube', peso:'decisao', voz:'diretor', chave:`oferta-clube|${k}`,
+        texto:_t('Chefe, o {clube} vai bancar a nossa caravana pro jogo contra o {adv}. Sem custo de estrada: o rateio de quem embarca fica todo com a gente.', {clube:meu.nome, adv}),
+        dados:{chave:`${E.data.ano}-${j.semana}-${j.adversario}`},
+        botoes:[{id:'aceitar', rot:_t('Aceitar'), acao:'clube-caravana', nota:_t('caravana sem custo')}]});
+    }
+    return null;
+  }
+
   function assuntoClubeDeHoje(E){
     if(!TO.relacaoClube || !E.torcida.clubeId) return;
     const sa = TO.relacoes.semanaAbs(E);
@@ -42991,6 +43199,22 @@ TO.feed = (function(){
          Fechar a tela sem encerrar deixa a mesa de pé. */
       case 'abrir-reuniao':
         return {ok:true, abrir:{tela:'tela-reuniao', msg:m, cancelavel:true, botao:idBotao}};
+      /* a reunião com o clube abre a janela das pautas; quem responde é o fim dela (`confirmarDecisao`) */
+      case 'reuniao-clube':
+        return {ok:true, abrir:{tela:'reuniao-clube', msg:m, cancelavel:true, botao:idBotao}};
+      case 'clube-festa': {
+        marcar();
+        const est = TO.festas.estoque(E); est.mosaico = (est.mosaico || 0) + 1;
+        m.consequencia = _t('Mosaico no estoque, por conta do clube: sobe no próximo jogo com a torcida no estádio.');
+        return {ok:true};
+      }
+      case 'clube-caravana': {
+        marcar();
+        const d = m.dados || {};
+        if(d.chave) (E.caravanaBancada = E.caravanaBancada || {})[d.chave] = true;
+        m.consequencia = _t('Caravana bancada pelo clube: sem custo de estrada, e o rateio de quem embarca vira receita.');
+        return {ok:true};
+      }
       /* a pauta solta do modo rápido (10/10/2026): o efeito é o da mesa */
       case 'pauta': {
         const r = decidirPauta(E, (m.dados||{}).item, idBotao);
@@ -43680,7 +43904,7 @@ TO.feed = (function(){
   }
 
   return {_filialSugestaoDeHoje: filialSugestaoDeHoje, _filialDeHoje: filialDeHoje, _quemAtacaASubsede: quemAtacaASubsede, INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
-          propor, dropar, pendentes, travado, decisaoAberta,
+          propor, dropar, pendentes, travado, decisaoAberta, pautaClubeParaTela, decidirPautaClube, reuniaoClubeDeHoje, ofertaDoClubeHoje,
           abertura, eventosDoDia, emboscadaDaViagem,
           mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, diaDaReuniao,
@@ -66904,6 +67128,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
                                           abrirPainel('calendario'); }
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'tela-reuniao') abrirReuniaoEmCena(m);
+      else if(t === 'reuniao-clube') abrirReuniaoClube(m);
       else if(t === 'tela-assalto') abrirAssaltoSorteio(res=>{
         /* o resultado fecha a pauta (o texto do fim) e a mensagem que abriu a tela */
         const item = m && m.dados && m.dados.item;
@@ -68580,6 +68805,69 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
      (`TO.acoes.executarAssalto`). `aoFim(r)`: o resultado (ou null,
      se deixou quieto) fecha a pauta e a mensagem que abriram a tela.
      ======================================================= */
+  /* =======================================================
+     A JANELA DA REUNIÃO COM O CLUBE (dono, 23/11/2026: "popup que vai
+     passando as pautas uma por uma até finalizar. no fim da reunião,
+     mostra o resumo do que mudou nas relações e nos demais índices").
+     Uma pauta por vez: o texto, as escolhas com o efeito no botão e,
+     escolhida, o que aconteceu e "Próxima pauta". No fim, o resumo: a
+     relação com cada torcida, a moral e os acordos. Fechar o resumo
+     responde a mensagem que chamou a reunião.
+     ======================================================= */
+  function abrirReuniaoClube(m){
+    const e = E(), F = TO.feed, pautas = ((m && m.dados) || {}).pautas || [];
+    const clube = (TO.mundo.time(e.torcida.clubeId) || {}).nome || '';
+    const soma = {moral:0, rel:{}, outros:[]};
+    let i = 0, decidida = null, fechar = null;
+    const corpo = el('div',{class:'reuniao-clube'});
+    const juntar = ef => { soma.moral += ef.moral || 0;
+      for(const [id, r] of Object.entries(ef.rel || {})){ const x = soma.rel[id] || (soma.rel[id] = {nome:r.nome, d:0}); x.d += r.d; }
+      soma.outros.push(...(ef.outros || [])); };
+    const sinal = n => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(Math.round(n));
+    const resumo = ()=>{
+      const linhas = [];
+      for(const r of Object.values(soma.rel)) if(r.d) linhas.push(_t('Relação com a {nome}: {d}', {nome:r.nome, d:sinal(r.d)}));
+      if(soma.moral) linhas.push(_t('Moral da torcida: {d}', {d:sinal(soma.moral)}));
+      linhas.push(...soma.outros);
+      return linhas.length ? linhas.map(l => l.charAt(0).toUpperCase() + l.slice(1)) : [_t('Nada mudou.')];
+    };
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      if(i >= pautas.length){
+        corpo.appendChild(el('div',{class:'tut-passo', texto:_t('Fim da reunião')}));
+        corpo.appendChild(el('h3',{texto:_t('O que mudou')}));
+        const ul = el('ul',{class:'rc-resumo'});
+        for(const l of resumo()) ul.appendChild(el('li',{texto:l}));
+        corpo.appendChild(ul);
+        const bt = el('button',{class:'bt destaque', texto:_t('Encerrar')});
+        bt.onclick = ()=>{ if(m) m.consequencia = resumo().join(' · '); if(fechar) fechar(); confirmarDecisao(_t('Reunião feita')); TO.estado.salvar(); pintarTopo(); atualizarFeed(); };
+        const nav = el('div',{class:'tut-nav'}); nav.appendChild(bt); corpo.appendChild(nav);
+        return;
+      }
+      const pt = pautas[i], tela = F.pautaClubeParaTela(e, pt);
+      corpo.appendChild(el('div',{class:'tut-passo', texto:_t('Pauta {n} de {t}', {n:i + 1, t:pautas.length})}));
+      corpo.appendChild(el('h3',{texto:tela.titulo}));
+      corpo.appendChild(el('p',{class:'tut-texto', texto:tela.texto}));
+      if(!decidida){
+        const bts = el('div',{class:'msg-bts'});
+        for(const o of tela.opcoes){
+          const b = el('button',{class:'bt'}); b.innerHTML = `<span>${o.rot}</span>` + (o.nota ? `<small>${o.nota}</small>` : '');
+          b.onclick = ()=>{ const r = F.decidirPautaClube(e, pt, o.id); juntar(r.ef); decidida = r.texto; pintar(); };
+          bts.appendChild(b);
+        }
+        corpo.appendChild(bts);
+      } else {
+        corpo.appendChild(el('p',{class:'rc-feito', texto:decidida}));
+        const nav = el('div',{class:'tut-nav'});
+        const bt = el('button',{class:'bt destaque', texto: i + 1 < pautas.length ? _t('Próxima pauta →') : _t('Ver o resumo')});
+        bt.onclick = ()=>{ i++; decidida = null; pintar(); };
+        nav.appendChild(bt); corpo.appendChild(nav);
+      }
+    };
+    pintar();
+    fechar = modal(_t('Reunião com o clube'), clube, corpo, [], 'estreita', true);
+  }
+
   function abrirAssaltoSorteio(aoFim){
     const e = E(), A = TO.acoes.ASSALTOS;
     const disp = e.membros.filter(TO.membros.disponivel).length;

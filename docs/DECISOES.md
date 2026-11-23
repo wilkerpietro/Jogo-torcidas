@@ -16070,6 +16070,33 @@ Foi a primeira de quatro fases. As outras, em ordem: reunião com o clube, festa
 
 **Medido:** em dois anos simulados, 3 e 3. De ponta a ponta no navegador, posto de gasolina com 10: R$ 4.084 na conta e a mensagem fechada.
 
+## A reunião com o clube e as ofertas do clube (dono, 23/11/2026)
+
+É a segunda das quatro fases do pedido de mais momentos interativos. As respostas do dono na rodada de perguntas:
+- **Formato:** "popup que vai passando as pautas uma por uma até finalizar. no fim da reunião, mostra o resumo do que mudou nas relações e nos demais índices".
+- **Repasse:** "apoiar ou rejeitar".
+- **Promessa:** "+10% de ingressos até o fim da temporada. se envolver numa briga perdemos o bonus".
+- **Doação:** "sim, com essa trava de relação".
+- **Clube banca festa ou caravana em jogo importante:** "concordo".
+
+**A reunião.** Acontece em 40% das temporadas, uma vez, num dia comum entre abril e setembro, só depois da estreia. A diretoria avisa ("Ir à reunião"), e a janela passa as pautas:
+1. **Repasse de ingressos:** a maior das torcidas menores do nosso clube quer a cota de primeiro escalão.
+   - Apoiar: +10 com ela e −3 de moral. O clube atende em metade das vezes; atendendo, a nossa cota cai 20% até o fim da temporada.
+   - Rejeitar: −12 com ela e +3 de moral.
+2. **Mais ingressos, menos briga:** prometer dá +10% de ingressos até o fim da temporada. A primeira briga na arquibancada acaba com o bônus, e a diretoria avisa.
+3. **Material pra loja:** com a relação boa ou ótima, a loja fatura +15% por 60 dias.
+
+No fim, o resumo mostra a relação com cada torcida, a moral e os acordos.
+
+**As ofertas.** O jogo importante é o mata-mata, as duas últimas rodadas ou o clássico. Com a relação boa ou ótima, 30% de chance, de 2 a 5 dias antes:
+- **Em casa:** o clube dá um mosaico (sobe no próximo jogo com a torcida no estádio).
+- **Fora:** banca a caravana. Não tem custo de estrada, e o rateio de quem embarca vira receita.
+
+**Medido:**
+- Reunião de ponta a ponta (Leões da TUF, a Jovem Garra pedindo o repasse): +10 com ela, −3 de moral, cota ×0,8 × 1,10, loja de 1,15 pra 1,30. A briga na arquibancada quebrou a promessa e avisou.
+- Em 4 temporadas com a relação ótima: a reunião veio em 4 de 4 anos na TUF e em 1 de 5 na Cearamor (o sorteio é por ano). Vieram umas 2,5 ofertas por ano.
+- A caravana paga pelo clube: em vez de pagar R$ 1.620, a torcida recebeu R$ 2.430 de rateio dos 135 no ônibus.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

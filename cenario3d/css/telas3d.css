@@ -442,3 +442,11 @@ body.jogo3d #djPalco{margin-inline:auto;border-color:var(--linha);border-radius:
 .tutorial .tut-nav{display:flex;justify-content:space-between;gap:10px}
 .tutorial .tut-nav .bt{min-height:44px;flex:1 1 0}
 .tut-abrir{padding:14px 16px}
+
+/* a reunião com o clube (23/11/2026): uma pauta por vez e o resumo do fim */
+.reuniao-clube h3 { margin: 4px 0 8px; font-family: var(--titulo, inherit); letter-spacing: .04em; }
+.reuniao-clube .msg-bts { display: grid; gap: 8px; margin-top: 12px; }
+.reuniao-clube .msg-bts .bt { text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.reuniao-clube .msg-bts .bt small { opacity: .72; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.reuniao-clube .rc-feito { border-left: 3px solid var(--ouro, #e6b93c); padding: 6px 10px; margin: 12px 0; }
+.reuniao-clube .rc-resumo { margin: 8px 0 12px; padding-left: 18px; line-height: 1.6; }

@@ -492,6 +492,17 @@ Ganhos por caravana e por festa caem pela metade a cada repetição com a mesma 
 
 ### 2.6 Relação com o clube
 
+**A reunião com o clube (23/11/2026).** Acontece em 40% das temporadas, uma vez, num dia comum entre a semana 14 e a 37 (`E.reuniaoClube[ano] = {vai, semana, feita}`), só depois da estreia. A mensagem "Ir à reunião" abre a janela que passa as pautas uma por uma (`abrirReuniaoClube`) e fecha com o resumo do que mudou. As pautas (`pautasDaReuniaoClube`, `decidirPautaClube`):
+- **Repasse de ingressos:** só se houver uma torcida menor do nosso clube; pede a maior das menores.
+  - Apoiar: relação com ela +10 e moral −3. O clube atende em 50%, e então `acordoClube.repasse` faz a nossa cota ×0,8 até o fim da temporada.
+  - Rejeitar: relação com ela −12 e moral +3.
+- **Mais ingressos, menos briga:** prometer dá `acordoClube.promessa`, ×1,10 na cota até o fim da temporada. A primeira briga na arquibancada (`pontosPorBriga`) marca `quebrada`, e uma mensagem avisa.
+- **Material pra loja:** só com a relação a partir de 51. Soma +0,15 em `multLoja` por 60 dias (`E.doacaoClubeAte`).
+
+**O clube banca a festa ou a caravana (23/11/2026).** Vale em jogo importante: mata-mata, as duas últimas rodadas ou o clássico (o clube de um dos nossos maiores rivais). Precisa da relação a partir de 51; a chance é de 30% pelo hash, de 2 a 5 dias antes (`ofertaDoClubeHoje`).
+- **Em casa:** +1 mosaico no estoque.
+- **Fora:** `E.caravanaBancada[chave]`. Em `cobrarCaravana` a viagem sai sem custo, e o rateio de quem embarca vira receita.
+
 Ver 4.8 (faixas e efeitos). Movimentos: presença no estádio/caravana (+1 a +6), briga no dia de jogo (−4 a −10), protesto no CT (−8 ou +2), veredicto (−15), entrevista (−20 a +3; elogio só sobe até 70).
 
 ## 3. Membros
@@ -739,7 +750,7 @@ Multiplicadores:
 - **Multiplicador do bairro**: `TO.mundo.multiplicador(bairro)` (fora do escopo). Para filial, `multFilial` usa um bairro da cidade escolhido por hash (`torcida|filial|cidade`).
 - **Dano do bar**: bar quebrado em ataque rende **metade por 45 dias** (`DANO_BAR`); `barMaisVisado` = o bar de maior nível é o que quebra.
 - **Corte do domínio**: `TO.dominio.fator × TO.dominio.fatorTorcida` do bairro (fora do escopo; a nota da tela fala em "rende 15% menos" em bairro dominado por outra).
-- **Multiplicador do clube na loja** (`relacaoClube.multLoja`): relação com o clube 51–75 → ×1,05; 76–100 → ×1,15 ("material oficial"); abaixo, ×1.
+- **Multiplicador do clube na loja** (`relacaoClube.multLoja`): relação com o clube 51–75 → ×1,05; 76–100 → ×1,15 ("material oficial"); abaixo, ×1. Com a doação da reunião com o clube, soma +0,15 por 60 dias. A cota de ingressos (`ingressosDoJogo`) também leva os acordos da reunião (×0,8 do repasse, ×1,10 da promessa).
 
 ### 4.3 Despesas
 
