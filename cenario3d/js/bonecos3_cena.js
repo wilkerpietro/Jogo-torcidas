@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=63965107a7';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=55eb448830';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2739,6 +2739,7 @@ let escalaDoTabuleiro = () => 1;
     f.bx = d.x; f.bz = d.y; f.balt = d.alt;
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
+    panoNaMao(c, d);
     if(c.anel){
       const cor = anelDe(J, d);
       const hex = cor === 'lado' ? corLado(d.lado, false) : cor;
@@ -3125,6 +3126,24 @@ let escalaDoTabuleiro = () => 1;
     return true;
   }
 
+  /* A PEÇA NA MÃO (a invasão de sede, 23/11/2026): quem carrega a faixa
+     ou a bandeira (`d.comFaixa`) leva o pano dobrado nos braços, na cor
+     da dona — na sede o chão é 3D e a faixa do 2D fica por baixo dele */
+  function panoNaMao(c, d){
+    const F = d.comFaixa;
+    if(!F){ if(c.pano) c.pano.visible = false; return; }
+    if(!c.pano){
+      const g = new THREE.Group();
+      const mt = new THREE.MeshLambertMaterial({color:(F.cores && F.cores.cor) || '#c0392b'}); mt._propria = true;
+      const m2 = new THREE.MeshLambertMaterial({color:(F.cores && F.cores.cor2) || '#f2f2f2'}); m2._propria = true;
+      const a = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 9), mt); a.position.set(0, 0, 0); g.add(a);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(14.2, 1.6, 9.2), m2); b.position.set(0, 1.2, 0); g.add(b);
+      g.position.set(0, 21, 7);
+      c.raiz.add(g); c.pano = g;
+    }
+    c.pano.visible = true;
+  }
+
   /* O CENÁRIO EM 3D JUNTO DOS BONECOS (a festa de aniversário, 23/11/2026):
      a cena de cima é o chão pintado; o que tem altura — o palco, o bar, o
      camarote — entra aqui, na mesma cena e na mesma câmera dos bonecos, e
@@ -3134,6 +3153,8 @@ let escalaDoTabuleiro = () => 1;
     if(cenarioExtra && cenarioExtra.parent) cenarioExtra.parent.remove(cenarioExtra);
     cenarioExtra = g || null;
     alturaDoCenario = (cenarioExtra && cenarioExtra.userData.alturaEm) || null;
+    /* o cenário cortado na altura da cabeça (a sede): o corte é por material */
+    if(renderer) renderer.localClippingEnabled = !!(cenarioExtra && cenarioExtra.userData.corte);
     if(cenarioExtra && scene) scene.add(cenarioExtra);
     luzDoCenario();
   }
@@ -3658,6 +3679,8 @@ void main() {`)
   }
   function atualizarCena(J, dt){
     quadroN++; tAnim += dt;
+    /* o cenário que tem peça viva (as portas da sede) acompanha a briga */
+    if(cenarioExtra && cenarioExtra.userData.aCadaQuadro) cenarioExtra.userData.aCadaQuadro(J, dt);
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
     if(mini && mini.cena !== scene) miniDe();
     if(mini) mini.n = 0;

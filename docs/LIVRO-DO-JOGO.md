@@ -877,6 +877,11 @@ Toda compra passa por `comprar(E, id)` → `comprarSemPost`; se der certo, o fee
 - Subir de nível grava `E.inauguracao = {tipo:'sede', nivel, quando, contada:false}` (o feed usa para a inauguração).
 - **Bar grátis**: na primeira vez que `financeiro.patrimonio(E)` roda com sede ≥ 2 e nenhum bar, a torcida ganha um bar nível 1 (`gratis:true`) num bairro fora da zona da sede, escolhido por hash; `barGratisDado` impede repetir.
 - Sede em bairro dominado por outra torcida: a festa na sede rende 15% menos (nota da tela; o fator vem de `TO.dominio.fator`).
+- **Invasão da nossa sede** (`TO.invasao`, 23/11/2026). Ela acontece em cena, na sede 3D do nível. O sorteio é anual pelo material rival guardado nas tomadas: 1–2 peças 5%, 3–5 10%, 6–8 20%, 9+ 30%.
+  - **Os lados**: 5 deles contra 6–12 nossos.
+  - **O alvo**: o armário das tomadas. Eles levam se a peça chega na rua, ou se todos os nossos caem.
+  - **As portas das salas** ficam fechadas e quebram na pancada (55% da vida da grade) ou na bomba. A IA traz até 3 bombas e só as usa em porta.
+  - **O terreno de verdade** do mapa 3D: n1 12,9 × 9,3 m, n2 16,2 × 12,8, n3/n4 22,1 × 12,8, n5 30,6 × 12,8. A cena é fixa, 40 × 26,7 m, com os vizinhos dos lados.
 
 ### 5.2 Bar, loja e subsede de bairro
 

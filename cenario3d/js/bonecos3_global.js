@@ -14,8 +14,10 @@
    DOMContentLoaded: quem usa (a ponte, numa cena aberta pelo jogador)
    chega muito depois.
    ========================================================= */
-import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=63965107a7';
-import { cenarioDaFesta } from './festa3d.js?v=63965107a7';
+import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=55eb448830';
+import { cenarioDaFesta } from './festa3d.js?v=55eb448830';
+import { cenarioDaSede } from './sede3d_cena.js?v=55eb448830';
+import { montarSede } from './sede3d.js?v=55eb448830';
 
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
@@ -24,7 +26,10 @@ TO.diaJogo = TO.diaJogo || {};
 /* O CENÁRIO EM 3D DA CENA (a casa de festas, 23/11/2026): quem monta a
    cena (a ponte) diz qual é; a que tem peças em 3D entra junto dos
    bonecos, e as outras tiram o que estava */
-const CENARIOS = { festa: cenarioDaFesta };
+const CENARIOS = { festa: cenarioDaFesta, 'sede-cena': cenarioDaSede };
+/* a planta da sede (paredes, portas, móveis, cômodos, armários), sem a
+   geometria: é dela que a cena da invasão tira a máscara de caminhada */
+TO.diaJogo.plantaDaSede = sede => montarSede(sede, {}, { so2d: true });
 function cenario(id, D){
   const f = CENARIOS[id];
   let g = null;

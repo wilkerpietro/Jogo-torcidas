@@ -16215,6 +16215,57 @@ A planta da festa continua desenhada em 1152 × 768 e sai multiplicada por K = 5
 
 **Medido:** aos 32 s, 41 dançando, 8 no bar e 13 andando. A briga forçada acabou em 47 s.
 
+## A invasão da nossa sede, em cena na sede 3D (dono, 23/11/2026)
+
+O pedido: "importe as sedes do antigo mapa 3d pra virar cenário de briga", com o modelo 3D vivo (não uma foto). A invasão agressiva é a primeira a usar.
+
+- **Quando**: `TO.invasao.planoDoAno` sorteia uma vez por ano, pela quantidade de material rival guardado nas nossas tomadas:
+
+  | Material rival guardado | Chance no ano |
+  |---|---|
+  | 1–2 | 5% |
+  | 3–5 | 10% |
+  | 6–8 | 20% |
+  | 9 ou mais | 30% |
+
+  Quem invade é a rival de menor relação dona de uma peça guardada, nunca aliada (relação ≥ 20) nem irmã.
+- **A mensagem do dia** (`invasaoDeHoje`) traz "Defender a sede" e "Simular".
+- **A cena**: `TO.dados.cenaDaSede` monta o tabuleiro a partir da planta da sede (`sede3d.js`, `montarSede` com `so2d`). As paredes e os móveis viram bloqueio. O armário das tomadas é o alvo, e o portão dá pra calçada e pra rua. O desenho é o modelo vivo (`sede3d_cena.js`), com as paredes cortadas a 2,3 m.
+- **Os lados**: 5 deles contra 6–12 dos nossos. Os nossos ficam no pátio e no bar e acordam quando alguém passa pelo portão.
+- **O desfecho**:
+  - Eles levam se quem pega a peça no armário chega na rua com ela, ou se todos os nossos caem. Levando, a peça volta pra eles, com prestígio −10, moral −5 e hostilidade +10.
+  - Defendendo, ficamos com a peça, com prestígio e moral pra cima.
+
+## As portas das salas da sede fecham e quebram; a sede no tamanho de verdade (dono, 23/11/2026)
+
+**As portas.** O dono: "as portas dos compartimentos da sede ficam fechadas e tem que ficar batendo até quebrar, igual ocorre nas grades das arquibancadas, ou então pode jogar bomba que a porta vai quebrar".
+
+- **O que fecha**: cada porta com nome (patrimônio, presidência, hospedagem, marketing, academia…) é uma grade de um módulo, fechando o vão (`montarSede` devolve `portasSalas`; a cena faz delas `grades` com `porta:true`).
+- **Na mão**: a porta tem 55% da vida da grade da arquibancada, uns 10 s de pancada.
+- **Na bomba**: a bomba que cai a menos de 3/4 do raio derruba a porta na hora. A pedra também tira vida da porta.
+- **O caminho**: sem rota até o armário, quem invade vai até a porta do caminho pelo corredor (`rumoAtePorta`), não em linha reta contra a parede, e bate nela.
+- **A bomba deles**: depois de 2,5 s de pancada, um de trás (a 60–170 px da porta, com visão dela) manda uma bomba na porta.
+  - Quem invade traz até 3 bombas do paiol.
+  - Na sede, a IA só usa bomba em porta (`bombaSoNaPorta`): três bombas no pátio cheio decidiam a invasão sozinhas.
+- **Sem PM**: porta arrombada não é cordão de PM, então não chama tropa nem sobe o alerta.
+- **Quem defende** não nasce em sala de porta fechada: fica no pátio e no bar.
+- **No 3D**: as folhas são as portas vivas da `sede3d.js`. A da sala fica fechada e treme quando apanha. Quando a grade vai a zero, ela cai no chão em 0,35 s. O portão da rua e as outras ficam abertas.
+
+**O tamanho.** O dono: "voce ta distorcendo o tamanho das sedes pra caber na cena. tem que preservar o tamanho de cada uma".
+
+- **O terreno**: agora é o que o mapa 3D (`planta.html`) dá pra cada nível, medido lá:
+
+  | Nível | Terreno |
+  |---|---|
+  | 1 | barracão de 250 × 180 (12,9 × 9,3 m) |
+  | 2 | 16,2 × 12,8 m |
+  | 3 e 4 | 22,1 × 12,8 m |
+  | 5 | o quarteirão, 30,6 × 12,8 m |
+
+- **A cena tem tamanho fixo**: 960 × 640 px, 40 × 26,7 m, a mesma régua da festa. A sede fica no meio da quadra, com as casas dos vizinhos dos lados (casa térrea recuada, telhado, muro baixo) e a calçada e a rua na frente.
+- **O efeito**: a de nível 1 aparece pequena e a de nível 5 grande, como são. Nada estica pra encher a tela.
+- **Antes**: os tamanhos eram 14 × 11 m a 31 × 22 m e a cena encolhia em volta da sede, então todas apareciam do mesmo tamanho.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

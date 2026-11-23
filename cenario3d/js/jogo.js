@@ -5659,6 +5659,9 @@ TO.i18n.registrar({
   'O rival chamou o bonde dele.':   {es:'El rival llamó a su banda.',  en:'The rival called up his crew.'},
   'CONTRA!':                        {es:'¡CONTRA!',                    en:'COUNTER!'},
   'Um módulo da grade foi ao chão.':{es:'Un tramo de la valla se vino abajo.', en:'A section of the fence went down.'},
+  'Bomba deles na porta.':{es:'Bomba de ellos en la puerta.', en:'Their bomb at the door.'},
+  'Arrombaram a porta: {nome}.':{es:'Forzaron la puerta: {nome}.', en:'They broke down the door: {nome}.'},
+  'A bomba arrancou a porta: {nome}.':{es:'La bomba arrancó la puerta: {nome}.', en:'The bomb blew the door off: {nome}.'},
   'Um PM foi ao chão.':             {es:'Un policía cayó.',            en:'A cop went down.'},
   'Chegou reforço da PM.':          {es:'Llegaron refuerzos de la policía.', en:'Police backup arrived.'},
   'Seu líder caiu.':                {es:'Tu líder cayó.',              en:'Your leader is down.'},
@@ -13570,6 +13573,140 @@ TO.dados.cenas = (function(){
 
   return cenas;
 })();
+
+/* =========================================================
+   A SEDE COMO CENA (a invasão de sede, 23/11/2026)
+   O dono: "importe as sedes do antigo mapa 3d pra virar cenário de
+   briga" e, perguntado se a cena seria uma foto, "prefiro que seja o
+   modelo 3d vivo mesmo". A cena sai da planta da sede (js/sede3d.js,
+   `TO.diaJogo.plantaDaSede`): as paredes (com o vão das portas) e os
+   móveis que bloqueiam viram o bloqueio; os cômodos dão onde quem está
+   dentro fica; o armário das TOMADAS (o material dos rivais) é o alvo
+   de quem invade; o portão dá pra calçada e pra rua, que é por onde se
+   chega e por onde se foge. O desenho é o modelo vivo
+   (js/sede3d_cena.js), na cena dos bonecos.
+   `o`: {nivel, torcida (a dona da sede, no formato da sede3d), guardados,
+   noite}. Devolve a cena (e guarda em TO.dados.cenas['sede-cena']).
+   ========================================================= */
+TO.dados.cenaDaSede = function(o){
+  const P = TO.diaJogo && TO.diaJogo.plantaDaSede;
+  if(!P) return null;
+  const MUNDO = 34 / 1.75, K = 24 / MUNDO, CEL = 8;
+  /* O TAMANHO DE VERDADE (o dono, 23/11/2026: "voce ta distorcendo o
+     tamanho das sedes pra caber na cena. tem que preservar o tamanho de
+     cada uma"): o terreno que o mapa 3D (planta.html) dá pra cada nível,
+     medido lá — o nível 1 é o barracão de 250 × 180 do canto da quadra
+     (12,9 × 9,3 m), o 2 a fatia de 16,2 m, o 3 e o 4 o terreno de 22,1 m
+     e o 5 o quarteirão inteiro (30,6 m); o fundo é o da quadra, 12,8 m */
+  const TAM = {1:[250 / MUNDO, 180 / MUNDO], 2:[16.2, 12.8], 3:[22.1, 12.8], 4:[22.1, 12.8], 5:[30.6, 12.8]};
+  const nivel = Math.max(1, Math.min(5, Math.round(o.nivel || 1)));
+  const [Lm, Am] = TAM[nivel];
+  const sede = {area:{x0:0, x1:Lm * MUNDO, y0:0, y1:Am * MUNDO}, frente:'s', nivel, lado:'mandante',
+                torcida:o.torcida || null, guardados:o.guardados || null};
+  let r;
+  try{ r = P(sede); }catch(err){ console.error('a planta da sede:', err); return null; }
+  const pl = r.planta2d || [];
+  const bx1 = Math.max(...pl.map(p=>p.x1)), by1 = Math.max(...pl.map(p=>p.y1));
+  /* A CENA TEM TAMANHO FIXO (40 × 26,7 m, a régua da festa): a sede fica
+     no meio da quadra, do tamanho dela, com as casas dos vizinhos dos
+     lados e a calçada e a rua na frente — a de nível 1 aparece pequena e a
+     de nível 5 grande, como são. Nada estica pra encher a tela */
+  const W = 960, H = 640, RUA = 250;
+  const T = {w:bx1 * K, h:by1 * K};
+  const ML = Math.round((W - T.w) / 2), MT = Math.round(H - RUA - T.h);
+  T.x = ML; T.y = MT;
+  const tb = (x, z) => [ML + x * K, MT + z * K];
+  /* o bloqueio: parede (a de dentro, de 15 cm, engorda até a célula da
+     malha, senão o povo passa por ela) e móvel */
+  const blocos = [];
+  for(const p of pl){
+    if(p.tipo !== 'parede' && p.tipo !== 'movel') continue;
+    let x = ML + p.x0 * K, y = MT + p.y0 * K, w = (p.x1 - p.x0) * K, h = (p.y1 - p.y0) * K;
+    if(p.tipo === 'parede'){
+      if(w < CEL){ x -= (CEL - w) / 2; w = CEL; }
+      if(h < CEL){ y -= (CEL - h) / 2; h = CEL; }
+    }
+    blocos.push({x, y, w, h, tipo:p.tipo});
+  }
+  /* os vizinhos: dos lados e no fundo do terreno ninguém passa */
+  blocos.push({x:0, y:0, w:W, h:MT - 2, tipo:'vizinho'});
+  blocos.push({x:0, y:0, w:ML - 2, h:MT + T.h, tipo:'vizinho'});
+  blocos.push({x:ML + T.w + 2, y:0, w:W - ML - T.w - 2, h:MT + T.h, tipo:'vizinho'});
+  /* as casas dos vizinhos (o desenho): lotes de 8 a 10 m de frente dos
+     dois lados, do fundo da quadra até a calçada */
+  const vizinhos = [];
+  for(const [a, b, rumo] of [[0, ML - 2, -1], [ML + T.w + 2, W, 1]]){
+    let x = rumo < 0 ? b : a, i = 0;
+    while(rumo < 0 ? x > a + 40 : x < b - 40){
+      const larg = (8 + ((i * 7 + nivel * 3) % 5) * 0.5) * 24;
+      const x0 = rumo < 0 ? Math.max(a, x - larg) : x, x1 = rumo < 0 ? x : Math.min(b, x + larg);
+      vizinhos.push({x0, x1, y0:Math.max(0, MT - 120), y1:MT + T.h, i:i + (rumo > 0 ? 10 : 0)});
+      x = rumo < 0 ? x0 : x1; i++;
+    }
+  }
+  /* onde fica cada coisa */
+  const com = r.comodos || [];
+  const centro = c => tb((c.x0 + c.x1) / 2, (c.z0 + c.z1) / 2);
+  const patio = com.find(c=>c.tipo === 'patio' && !c.andar) || com[0];
+  /* (as salas de porta fechada ficam de fora: quem defende não nasce trancado) */
+  const outro = com.find(c=>!c.andar && c.tipo === 'bar') || patio;
+  const fundo = com.find(c=>!c.andar && c.tipo === 'presidencia') || outro;
+  const portao = (r.entradas && r.entradas.portao) ? tb(r.entradas.portao.x, r.entradas.portao.z) : [W / 2, MT + T.h];
+  const arm = (r.armarios || []).find(a=>a.tipo === 'tomadas') || (r.armarios || [])[0];
+  const alvo = arm ? tb(arm.boca.x, arm.boca.z) : centro(outro);
+  /* quem chega nasce na calçada, longe da saída (a borda de baixo da rua) */
+  const yRua = MT + T.h + RUA * 0.3;
+  const [pcx, pcy] = centro(patio), [ocx, ocy] = centro(outro), [fcx, fcy] = centro(fundo);
+  /* os lugares de quem está dentro (sentado, no balcão, no churrasco): a vida da sede */
+  const lugares = (r.lugares || []).filter(l=>!l.andar).map(l=>{ const [x, y] = tb(l.x, l.z); return {x, y, gesto:l.gesto, sentado:l.sentado, rumo:l.rumo, comodo:l.comodo}; });
+  const retangulo = b => ({rot:b.tipo, pontos:[[b.x, b.y], [b.x + b.w, b.y], [b.x + b.w, b.y + b.h], [b.x, b.y + b.h]]});
+  /* AS PORTAS DAS SALAS (o dono, 23/11/2026: "as portas dos compartimentos
+     da sede ficam fechadas e tem que ficar batendo até quebrar, igual
+     ocorre nas grades das arquibancadas, ou então pode jogar bomba que a
+     porta vai quebrar"): cada porta com nome (patrimônio, presidência,
+     academia...) é uma grade de um módulo só, fechando o vão. Na mão ela
+     aguenta uns segundos de pancada; a bomba que cai perto derruba
+     (`porta:true`, no combate) */
+  const grades = (r.portasSalas || []).map((p, i)=>{
+    const [ax, ay] = tb(p.de.x, p.de.z), [bx, by] = tb(p.ate.x, p.ate.z);
+    /* (a grade passa um pouco do vão dos dois lados, pra não sobrar fresta na parede engordada) */
+    const ux = bx - ax, uy = by - ay, n = Math.hypot(ux, uy) || 1, f = 3;
+    return {id:'porta:' + i, nome:p.nome, porta:true, modulos:1, vida:0.55,
+            de:{x:ax - ux / n * f, y:ay - uy / n * f}, ate:{x:bx + ux / n * f, y:by + uy / n * f},
+            espessura:Math.max(CEL, (p.esp || 0) * K)};
+  });
+  const D = {
+    id:'sede-cena', nome:'Sede', pintura:'sede-cena', local:'Na sede',
+    largura:W, altura:H, celula:CEL, imagem:null,
+    poligonos:{caminhavel:[{rot:'chão', pontos:[[0, 0], [W, 0], [W, H], [0, H]]}], bloqueio:blocos.map(retangulo)},
+    blocos, enfeites:[], varais:[], grades, pmPostos:[], portasQuebram:grades.length > 0,
+    sede, sedeNoTabuleiro:T, vizinhos, noite:!!o.noite, nivelSede:nivel, lugares,
+    /* o armário das tomadas: é a ele que quem invade vai */
+    armario:{x:alvo[0], y:alvo[1]},
+    /* a saída com o material: a rua. Quem chega nela com a peça na mão levou */
+    faixaAbrigo:{x:portao[0], y:H - 40, raio:36, encerra:true},
+    saida:{perto:'Sair pela rua', longe:'Rua (leve o líder)', feito:'saíram da sede', dica:'O material está no armário do patrimônio.'},
+    /* não tem "sair": quem defende ganharia escondido no fundo; quem invade sai com a peça */
+    semSaida:true, semRecuoPM:true,
+    /* a bomba de quem invade é pra arrombar porta, não pra jogar no povo
+       (sem isso, três bombas no pátio cheio decidiam a invasão sozinhas) */
+    bombaSoNaPorta:true,
+    spawns:[
+      {id:'casa1', rot:'NO PÁTIO', lado:'mandante', x:Math.round(pcx), y:Math.round(pcy), guarda:true, entrada:'fundo'},
+      {id:'casa2', rot:'LÁ DENTRO', lado:'mandante', x:Math.round(ocx), y:Math.round(ocy), guarda:true, entrada:'fundo'},
+      {id:'rua1', rot:'NA RUA', lado:'visitante', x:Math.round(portao[0]), y:Math.round(yRua), jogador:true, entrada:'rua'}
+    ],
+    entradas:[
+      {id:'rua', rot:'A RUA', lado:'visitante', x:Math.round(portao[0]), y:H - 6, raio:30, dir:[0, 1]},
+      {id:'fundo', rot:'OS FUNDOS', lado:'mandante', x:Math.round(fcx), y:Math.round(fcy), raio:30, dir:[0, -1]}
+    ],
+    /* quem está dentro só levanta quando alguém passa pelo portão */
+    gatilho:{x:Math.round(portao[0]), y:Math.round(portao[1] - 20), raio:70, lado:'visitante', rot:'O PORTÃO',
+             espera:'a sede ainda não viu ninguém', aviso:'invadiram a sede!'}
+  };
+  TO.dados.cenas['sede-cena'] = D;
+  return D;
+};
 
 /* A cena da sede pelo NÍVEL (22/09/2026): `sede-1` a `sede-5`, e o
    nível 6 (o Complexo) usa a foto do 5 — decisão do dono, 10/09/2026.
@@ -22560,6 +22697,101 @@ TO.festaAniv = (function(){
   return {ALUGUEL, PRECO_MIN, PRECO_MAX, PRECO_PADRAO, BAR_POR_CABECA, TREGUA_CUSTO, GENEROS, ARTISTAS, DISCURSOS,
           artista, previsao, plano, marcar, aliadasConvidadas, lugaresDasAliadas, sortearBriga, rivaisEntreSi,
           maiorRival, provocou, discursar, fechar, decidirBriga};
+})();
+
+;
+
+/* =========================================================
+   A INVASÃO DE SEDE (pedido do dono, 23/11/2026)
+   "uma torcida pode fazer uma missão de recuperar a faixa ou a bandeira
+   tomada pela nossa torcida invadindo a nossa sede e indo no armário na
+   parte de patrimônio tentar recuperar". De forma AGRESSIVA (5 deles
+   entram e enfrentam os 6 a 12 nossos que estão na sede) ou FURTIVA (de
+   madrugada; só se sabe de manhã o que levaram, não quem).
+   A chance no ano vem do material de rival que a gente guarda: nenhum,
+   0; 1–2, 5%; 3–5, 10%; 6–8, 20%; 9 ou mais, 30%. Sem sede (nível 0),
+   nada. Quem vem é uma das donas do material, a de relação pior.
+   ========================================================= */
+TO.invasao = (function(){
+  const U = TO.util;
+  const PAT = () => TO.patrimonio;
+  const ATACANTES = 5, DEFESA = [6, 12];
+  /* o material de rival guardado nas nossas tomadas */
+  function tomadasNossas(E){
+    const P = PAT(), fora = [];
+    (P.faixasDe(E).tomadas || []).forEach((x, i)=>fora.push({tipo:'faixa', i, de:x.de, nome:x.nome, variante:x.variante || 0}));
+    (P.bandeirasDe(E).tomadas || []).forEach((x, i)=>fora.push({tipo:'bandeira', i, de:x.de, nome:x.nome, variante:x.variante || 0}));
+    return fora;
+  }
+  const chanceNoAno = n => n <= 0 ? 0 : n <= 2 ? 0.05 : n <= 5 ? 0.10 : n <= 8 ? 0.20 : 0.30;
+  const nivelSede = E => Math.min(5, Math.round((E.torcida && E.torcida.sedeNivel != null) ? E.torcida.sedeNivel : 1));
+  /* O PLANO DO ANO: na primeira vez que o ano é olhado, o dado diz se tem
+     invasão, em que semana e dia, de que jeito e de quem */
+  function planoDoAno(E){
+    const ano = E.data.ano, I = (E.invasoes = E.invasoes || {});
+    if(I[ano]) return I[ano];
+    const lista = tomadasNossas(E);
+    const p = nivelSede(E) >= 1 ? chanceNoAno(lista.length) : 0;
+    const vai = U.rng() < p;
+    const semanaHoje = E.data.semana || 1;
+    I[ano] = {vai, chance:p, semana: vai ? U.inteiro(Math.min(52, semanaHoje + 1), 52) : null, dia:U.inteiro(1, 7),
+              modo: U.rng() < 0.5 ? 'agressiva' : 'furtiva', feita:false};
+    return I[ano];
+  }
+  /* quem vem: entre as donas do material, a de relação pior (rival, não aliada) */
+  function quemInvade(E){
+    const R = TO.relacoes, lista = tomadasNossas(E).filter(x=>x.de && x.de !== E.torcida.id && TO.mundo.torcida(x.de));
+    const cands = lista.filter(x=>R.nivel(E, x.de) < 20 && !(TO.mundo.saoIrmas && TO.mundo.saoIrmas(E.torcida.id, x.de)));
+    if(!cands.length) return null;
+    cands.sort((a, b)=>R.nivel(E, a.de) - R.nivel(E, b.de));
+    return cands[0];
+  }
+  /* quantos dos nossos estão na sede na hora: de 6 a 12, dos disponíveis */
+  function defensores(E){
+    const disp = (E.membros || []).filter(TO.membros.disponivel);
+    const n = Math.min(disp.length, U.inteiro(DEFESA[0], DEFESA[1]));
+    return U.embaralhar(disp.slice()).slice(0, n);
+  }
+  /* O FIM: o material saiu (eles levaram) ou ficou (a gente segurou) */
+  function fechar(E, inv, levaram, res){
+    const P = PAT(), R = TO.relacoes, m = inv.material;
+    const bandeira = m.tipo === 'bandeira', V = bandeira ? P.BANDEIRA : P.FAIXA;
+    const linhas = [];
+    const o = TO.mundo.torcida(m.de) || {nome:m.nome};
+    if(levaram){
+      const lista = bandeira ? P.bandeirasDe(E).tomadas : P.faixasDe(E).tomadas;
+      const i = lista.findIndex(x=>x.de === m.de && (x.variante || 0) === (m.variante || 0));
+      if(i >= 0) lista.splice(i, 1);
+      const t = P.faixasIA(E, m.de);
+      if(t) t[bandeira ? 'bandeiras' : 'faixas'] += 1;
+      const motivo = bandeira ? _t('A {nome} invadiu a sede e levou a bandeira de volta', {nome:o.nome})
+                              : _t('A {nome} invadiu a sede e levou a faixa de volta', {nome:o.nome});
+      TO.estado.mexerIndicador(E, 'prestigio', -V.ganho / 5, motivo);
+      TO.estado.mexerIndicador(E, 'moral', -V.moralGanho / 5, motivo);
+      R.mover(E, m.de, 'prestigio', V.ganho / 5); R.mover(E, m.de, 'moral', V.moralGanho / 5);
+      linhas.push(bandeira ? _t('A {nome} levou a bandeira dela de volta: prestígio −{p}, moral −{m}', {nome:o.nome, p:V.ganho, m:V.moralGanho})
+                           : _t('A {nome} levou a faixa dela de volta: prestígio −{p}, moral −{m}', {nome:o.nome, p:V.ganho, m:V.moralGanho}));
+    } else {
+      const motivo = _t('Seguramos a sede contra a {nome}', {nome:o.nome});
+      TO.estado.mexerIndicador(E, 'prestigio', 3 / 5, motivo);
+      TO.estado.mexerIndicador(E, 'moral', 5 / 5, motivo);
+      R.mover(E, m.de, 'prestigio', -1); R.mover(E, m.de, 'moral', -1);
+      linhas.push(_t('Seguramos a sede: a {nome} saiu sem nada. Prestígio +3, moral +5', {nome:o.nome}));
+    }
+    R.hostilidade(E, m.de, 10);
+    if(res && TO.membros.aplicarResultadoDaNoite){
+      const r2 = TO.membros.aplicarResultadoDaNoite(E, res);
+      void r2;
+    }
+    inv.feita = true; inv.levaram = !!levaram;
+    return linhas;
+  }
+  /* sem cena: o dado, 5 deles contra os nossos que estão lá */
+  function simular(E, inv, n){
+    const p = U.limitar(0.65 - (n - 6) * 0.07, 0.2, 0.65);
+    return U.rng() < p;
+  }
+  return {tomadasNossas, chanceNoAno, planoDoAno, quemInvade, defensores, fechar, simular, ATACANTES, nivelSede};
 })();
 
 ;
@@ -38844,6 +39076,7 @@ TO.feed = (function(){
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
+    passo('invasão da sede', ()=>invasaoDeHoje(E));
     passo('festa no prejuízo', ()=>festaNoPrejuizoHoje(E));
     passo('fechamento do mês', ()=>fechamentoDoMesHoje(E));
     passo('sugestão de compra', ()=>sugestaoDeCompraHoje(E));
@@ -42368,6 +42601,35 @@ TO.feed = (function(){
       ]
     };
   }
+  /* A INVASÃO DA NOSSA SEDE (23/11/2026): no dia marcado do ano, a
+     agressiva chega como mensagem — defender (a cena na sede) ou deixar
+     com quem está lá (o dado). A furtiva é de madrugada (`furtivaDeHoje`) */
+  function invasaoDeHoje(E){
+    const IV = TO.invasao;
+    if(!IV || E.estreou === false) return null;
+    const pl = IV.planoDoAno(E);
+    if(!pl.vai || pl.feita || pl.avisada || pl.semana !== E.data.semana || pl.dia !== E.data.dia) return null;
+    const m = IV.quemInvade(E);
+    if(!m){ pl.feita = true; return null; }
+    pl.material = m; pl.avisada = true;
+    if(pl.modo === 'furtiva') return furtivaDeHoje(E, pl);
+    const o = TO.mundo.torcida(m.de) || {nome:m.nome};
+    return propor(E, {
+      kind:'invasao-sede', peso:'decisao', voz:'diretor',
+      chave:`invasao|${E.data.ano}|${m.de}`,
+      texto: m.tipo === 'bandeira'
+        ? _t('Chefe, a {nome} tá na porta da nossa sede! Vieram buscar a bandeira deles que tá no armário do patrimônio. Tem uns dos nossos lá dentro.', {nome:o.nome})
+        : _t('Chefe, a {nome} tá na porta da nossa sede! Vieram buscar a faixa deles que tá no armário do patrimônio. Tem uns dos nossos lá dentro.', {nome:o.nome}),
+      dados:{ano:E.data.ano, de:m.de},
+      botoes:[
+        {id:'defender', rot:_t('Defender a sede'), acao:'invasao-defender', nota:_t('a cena na sede: 5 deles contra quem está lá')},
+        {id:'deixar', rot:_t('Deixar com quem está lá'), acao:'invasao-simular', nota:_t('o dado resolve')}
+      ]
+    });
+  }
+  /* (a furtiva, de madrugada: a mensagem e a investigação — fase seguinte) */
+  function furtivaDeHoje(E, pl){ void E; void pl; return null; }
+
   /* A BRIGA NA NOSSA FESTA (23/11/2026): no dia seguinte, a mensagem —
      de que lado a gente fica, cortar com as duas ou pagar a trégua */
   function mensagemBrigaNaFesta(E, b){
@@ -43780,6 +44042,13 @@ TO.feed = (function(){
         return {ok:true, abrir:{tela:'reuniao-clube', msg:m, cancelavel:true, botao:idBotao}};
       /* A FESTA DE ANIVERSÁRIO (23/11/2026): o planejamento (pauta solta), a
          festa no dia e a mensagem da briga entre aliadas */
+      /* a invasão da nossa sede: a cena abre na casca, e quem fecha é o fim dela */
+      case 'invasao-defender':
+      case 'invasao-simular': {
+        const pl = TO.invasao && (E.invasoes || {})[(m.dados || {}).ano];
+        if(!pl || pl.feita){ marcar(); m.consequencia = _t('Já passou.'); return {ok:true}; }
+        return {ok:true, abrir:{tela:'invasao-sede', msg:m, cancelavel:true, botao:idBotao, args:{simular: b.acao === 'invasao-simular'}}};
+      }
       case 'festa-planejar':
         return {ok:true, abrir:{tela:'festa-plano', msg:m, cancelavel:true, botao:idBotao}};
       case 'festa-ir':
@@ -44501,7 +44770,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta, pautaClubeParaTela, decidirPautaClube, reuniaoClubeDeHoje, ofertaDoClubeHoje, aniversariosDeHoje,
           abertura, eventosDoDia, emboscadaDaViagem,
           mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, diaDaReuniao,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, invasaoDeHoje, diaDaReuniao,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
@@ -45845,8 +46114,16 @@ TO.diaJogo.cenario = (function(){
     c.drawImage(festaFundo(D, W, H), 0, 0);
   }
 
+  /* a sede (a invasão): o chão de quem não tem placa — o 3D é o modelo vivo */
+  function sedeCena(c, D, W, H){
+    c.fillStyle = '#3a3a3e'; c.fillRect(0, 0, W, H);
+    const T = D.sedeNoTabuleiro;
+    if(T){ c.fillStyle = '#8a8478'; c.fillRect(T.x, T.y, T.w, T.h); }
+    c.fillStyle = '#2a2824';
+    for(const b of D.blocos || []) if(b.tipo !== 'vizinho') c.fillRect(b.x, b.y, b.w, b.h);
+  }
   const CENAS = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct, festa};
+                 bar, comercio, ct, festa, 'sede-cena':sedeCena};
   const pintar = (c, D, W, H) => {
     const f = CENAS[D && D.pintura];
     if(!f) return false;
@@ -46533,7 +46810,9 @@ TO.diaJogo.arredores = (function(){
           x:g.de.x+vx*t, y:g.de.y+vy*t,
           ux:vx/comp, uy:vy/comp,          // direção da grade
           meia, esp:(g.espessura||10)/2,
-          hpMax:1, hp:1, tremor:0          // hp real vem de P.vidaMureta
+          hpMax:1, hp:1, tremor:0,         // hp real vem de P.vidaMureta
+          /* a porta de sala da sede (`cenaDaSede`): a vida é uma fração da grade, e a bomba derruba */
+          porta:!!g.porta, vida:g.vida||1, nome:g.nome||null
         });
       }
     }
@@ -47248,6 +47527,8 @@ TO.diaJogo.combate = (function(){
          briga entre aliadas (`brigaFesta`, que vira uma delas pro outro
          lado) termina */
       festaAniv: !!cfg.festaAniv, brigaFesta: null,
+      /* a cena sem polícia (a invasão de sede: ninguém chama a PM pra dentro da sede) */
+      semPM: !!cfg.semPM,
       config_perfilRival: cfg.perfilRival || null,
       /* fichas prontas pro lado deles (a zona deles na casa de piscina):
          cada grupo tira a sua fatia, na ordem, em vez de cada spawn
@@ -47277,7 +47558,7 @@ TO.diaJogo.combate = (function(){
       bondes:{}
     };
 
-    for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
+    for(const g of J.grades){ g.hpMax=P.vidaGrade*(g.vida||1); g.hp=g.hpMax; }
     /* a reunião não tem PM (a praça tem posto; a roda não) */
     if(!cfg.reuniao && !cfg.festaAniv) for(const p of D.pmPostos) J.policiais.push(new Policial(p));
 
@@ -47513,6 +47794,24 @@ TO.diaJogo.combate = (function(){
                             ? 'visitante' : 'mandante'] || null;
     conferirPortoes(J);
     J.faixas = montarFaixas(J, cfg);
+    /* O MATERIAL NO ARMÁRIO (a invasão de sede, 23/11/2026): a faixa ou a
+       bandeira guardada nas tomadas é a peça de quem invade — eles mandam
+       quem tira (uma bandeira, um; uma faixa, dois) e quem sai com ela
+       corre pra rua (`D.faixaAbrigo`); chegar lá é levar. Quem defende
+       derruba o portador e a peça fica */
+    if(cfg.materialArmario && D.armario){
+      const m = cfg.materialArmario, o = TO.mundo.torcida(m.torcidaId) || {id:m.torcidaId, nome:m.nome};
+      const PAT = TO.patrimonio, bandeira = m.tipo === 'bandeira';
+      const F = {tipo:bandeira ? 'bandeira' : 'faixa', lado:'visitante', spawn:null, torcidaId:o.id, nome:m.nome || o.nome, nossa:!!m.nossa,
+                 cores:TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {}, x:D.armario.x, y:D.armario.y,
+                 w:bandeira ? 19 : 40, h:19, dir:null, estado:'exposta', equipe:[], portador:null, equipeN:bandeira ? 1 : 2,
+                 semente:U.rng() * 6.28, tChegou:null, tEscolha:0, tomadaPor:null, variante:m.variante || 0, subsede:null,
+                 img:PAT && PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, bandeira ? 'bandeira' : 'faixa', m.variante || 0) : null,
+                 doArmario:true};
+      F.base = {x:F.x, y:F.y};
+      J.faixas.push(F);
+      J.faixa = J.faixa || F;
+    }
     /* `J.faixa` continua apontando pra faixa de quem defende (a
        primeira): é o nome que a ponte e os testes conhecem */
     J.faixa = J.faixas[0] || null;
@@ -49850,7 +50149,11 @@ TO.diaJogo.combate = (function(){
            vira alvo. Enquanto houver volta, o campo já mandou dar a volta. */
         if(c.semRota){
           let g=null, md=1e9;
-          for(const x of J.grades){
+          /* na sede, a porta que importa é a do caminho, e até ela se vai
+             pelo corredor (`rumoAtePorta`), não em linha reta pela parede */
+          const pt = D.portasQuebram && campo.alvo ? rumoAtePorta(J, d, campo.alvo) : null;
+          if(pt){ dirx=pt.dx; diry=pt.dy; }
+          else for(const x of J.grades){
             if(x.hp<=0 || x.tipo==='fila') continue;
             const dd=U.dist(d.x,d.y,x.x,x.y);
             if(dd<md){md=dd;g=x;}
@@ -51006,10 +51309,18 @@ TO.diaJogo.combate = (function(){
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
         g.hp-=a.forca*P.dano*dt*1.6;
         g.tremor=Math.min(5,g.tremor+0.5); a.hostil=3.5;
+        /* a porta da sede que não cede na mão: quem tem bomba manda uma
+           (`bombaNaPorta`: um de trás joga, quem bate sai de perto) */
+        if(g.porta && g.hp>0) bombaNaPorta(J, g, a, dt);
         if(g.hp<=0){
-          g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13);
-          logar(J,_t('Um módulo da grade foi ao chão.'),'pm');
-          romperCordao(J);
+          g.hp=0; J.versaoGrades++;
+          /* (a porta da sede não é cordão de PM: não chama a tropa) */
+          if(g.porta) logar(J,_t('Arrombaram a porta: {nome}.', {nome:g.nome||''}),'pm');
+          else {
+            J.alerta=Math.min(100,J.alerta+13);
+            logar(J,_t('Um módulo da grade foi ao chão.'),'pm');
+            romperCordao(J);
+          }
         }
       }
 
@@ -51326,7 +51637,7 @@ TO.diaJogo.combate = (function(){
     }
     /* ---- a viatura: o relógio da briga ---- */
     const caidos = J.caidos.mandante + J.caidos.visitante;
-    if(!J.viatura && !J.paz && !J.festaAniv && (f >= 1 || caidos >= 1))
+    if(!J.viatura && !J.paz && !J.festaAniv && !J.semPM && (f >= 1 || caidos >= 1))
       J.viatura = {chamadaEm:J.t, chegaEm:J.t + U.entre(VIATURA.de, VIATURA.ate), chegou:false, avisou:false};
     const v = J.viatura;
     if(v && !v.chegou){
@@ -51626,7 +51937,10 @@ TO.diaJogo.combate = (function(){
           if(J.t - d.frenteEm > 0.4) d.viraPara = Math.atan2(p.x-d.x, p.y-d.y);
           if(d.hp<=0) derrubar(J,d); break;
         }
-        for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
+        for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;
+          /* (a porta da sede que cai na pedra abre o caminho na hora) */
+          if(g.porta && g.hp<=0){ g.hp=0; J.versaoGrades++; logar(J,_t('Arrombaram a porta: {nome}.', {nome:g.nome||''}),'pm'); }
+          break;}
       } else {
         p.explosao=0; som(J,'bomba'); tremerCamera(J,1);
         for(const d of alvos){
@@ -51643,7 +51957,11 @@ TO.diaJogo.combate = (function(){
           const dist=U.dist(g.x,g.y,p.x,p.y);
           if(g.hp>0&&dist<RAIO_BOMBA){
             g.hp-=110-dist*0.6; g.tremor=5;
-            if(g.hp<=0){g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13); romperCordao(J);}
+            /* a porta de sala não aguenta bomba do lado dela */
+            if(g.porta && dist<RAIO_BOMBA*0.75) g.hp=0;
+            if(g.hp<=0){g.hp=0; J.versaoGrades++;
+              if(g.porta) logar(J,_t('A bomba arrancou a porta: {nome}.', {nome:g.nome||''}),'pm');
+              else { J.alerta=Math.min(100,J.alerta+13); romperCordao(J); }}
           }
         }
         J.alerta=Math.min(100,J.alerta+16);
@@ -52023,7 +52341,8 @@ TO.diaJogo.combate = (function(){
          juntos no raio — e nunca em cima do próprio pé. Uma por vez
          por lado: `cdBraco[lado]` é o intervalo entre bombas do lado. */
       let melhor=null, maior=0;
-      if(J.bombasRival>0 && J.t >= (J.cdBraco[ladoIA]||0)) for(const a of alvos){
+      /* (na sede, a bomba deles é pra porta: `bombaNaPorta`) */
+      if(J.bombasRival>0 && !D.bombaSoNaPorta && J.t >= (J.cdBraco[ladoIA]||0)) for(const a of alvos){
         const da=U.dist(b.x,b.y,a.x,a.y);
         if(da > P.alcanceBomba*0.6 || da < RAIO_BOMBA*0.8) continue;
         if(!A.livre(b.x,b.y,a.x,a.y)) continue;
@@ -52063,6 +52382,62 @@ TO.diaJogo.combate = (function(){
         logar(J,_t('Bomba deles.'),'a');
       }
     }
+  }
+  /* O CAMINHO ATÉ A PORTA FECHADA (a sede, 23/11/2026). Sem rota até o
+     destino, quem está na sede vai à porta que fica no caminho: de cada
+     porta de pé, o ponto da frente do lado de cá (o que o campo dele
+     alcança) e o de lá; a escolhida é a de menor caminho até a frente
+     mais a reta do lado de lá até o destino. Até a frente segue o campo;
+     colado nela, vai reto na folha (e bate) */
+  function rumoAtePorta(J, d, alvo){
+    let melhor=null, mc=Infinity;
+    for(const g of J.grades){
+      if(g.hp<=0 || !g.porta) continue;
+      const nx=-g.uy, ny=g.ux, off=g.esp+14;
+      for(const sg of [1,-1]){
+        const fx=g.x+nx*off*sg, fy=g.y+ny*off*sg;
+        const c=A.campoDoPonto('porta:'+g.grade+':'+sg, fx, fy, J.grades, J.versaoGrades);
+        const i=Math.floor(d.y/A.CEL)*A.COLS+Math.floor(d.x/A.CEL);
+        const dc=c.dist ? c.dist[i] : Infinity;
+        if(!(dc<Infinity)) continue;
+        const custo=dc*A.CEL + U.dist(g.x-nx*off*sg, g.y-ny*off*sg, alvo.x, alvo.y);
+        if(custo<mc){ mc=custo; melhor={g, c, fx, fy}; }
+      }
+    }
+    if(!melhor) return null;
+    const {g, c, fx, fy}=melhor;
+    if(U.dist(d.x,d.y,fx,fy) > 18){
+      const p=c.passo(d.x,d.y);
+      if(!p.semRota && (p.dx||p.dy)) return {dx:p.dx, dy:p.dy};
+    }
+    const gx=g.x-d.x, gy=g.y-d.y, gd=hyp(gx,gy)||1;
+    return {dx:gx/gd, dy:gy/gd};
+  }
+  /* A BOMBA NA PORTA (a sede, 23/11/2026): o lado da IA, depois de uns
+     segundos de pancada numa porta de sala, manda uma bomba nela se ainda
+     tem no paiol. Joga quem está de 60 a 170 px da porta e a vê; sem
+     ninguém nessa distância, segue na mão */
+  function bombaNaPorta(J, g, a, dt){
+    const ladoIA = (J.ladoNosso||'mandante')==='mandante' ? 'visitante' : 'mandante';
+    if(a.lado!==ladoIA || J.semArmas || !(J.bombasRival>0)) return;
+    g.apanhando=(g.apanhando||0)+dt;
+    if(g.apanhando<2.5 || J.t<(J.cdBraco[ladoIA]||0)) return;
+    let quem=null, md=1e9;
+    for(const b of J.discos){
+      if(b.lado!==ladoIA || !b.vivo || b.fugindo || b.atordoado>0 || b.derrubado>0) continue;
+      const dd=U.dist(b.x,b.y,g.x,g.y);
+      if(dd<60 || dd>170 || !A.livre(b.x,b.y,g.x,g.y)) continue;
+      if(Math.abs(dd-110)<md){ md=Math.abs(dd-110); quem=b; }
+    }
+    if(!quem) return;
+    g.apanhando=0;
+    J.bombasRival--; J.cdBraco[ladoIA]=J.t+P.cdBomba*1.5;
+    quem.cdBracoAte=J.t+P.cdBomba*2.2; quem.hostil=4.0; quem.arremesso={t:0.55, tipo:'bomba'};
+    quem.viraPara=rumoPara(quem, g);
+    J.armas[quem.lado].bomba++;
+    J.projeteis.push(new Projetil(quem.x,quem.y,g.x,g.y,'bomba',quem.lado));
+    J.alerta=Math.min(100,J.alerta+10);
+    logar(J,_t('Bomba deles na porta.'),'a');
   }
   function alternarRecuo(J){
     if(J.fase!=='ativo'||emFuga(J)) return;
@@ -52523,6 +52898,16 @@ TO.diaJogo.combate = (function(){
       const p = F.portador;
       if(!p) { F.estado='exposta'; return; }
       F.x = p.x; F.y = p.y;
+      /* a saída que encerra (a invasão de sede): o portador chegou na rua com a peça */
+      const ab = D.faixaAbrigo;
+      if(ab && ab.encerra && F.doArmario && !p.caido && !p.preso && J.fase === 'ativo' && U.dist(p.x, p.y, ab.x, ab.y) < (ab.raio || 40)){
+        J.materialSaiu = true;
+        logar(J, F.tipo === 'bandeira' ? _t('Saíram com a bandeira da {nome}.', {nome:F.nome})
+                                       : _t('Saíram com a faixa da {nome}.', {nome:F.nome}), 'a');
+        acabar(J, F.lado);
+        if(J.acabou) J.acabou.motivo = F.tipo === 'bandeira' ? _t('saíram com a bandeira') : _t('saíram com a faixa');
+        return;
+      }
       /* `vivo` é falso também pra quem SAIU pelo túnel — e quem saiu
          levou a peça. Só entrega quem cai ferido ou preso. */
       if(p.caido || p.preso){
@@ -57196,7 +57581,8 @@ TO.diaJogo.ponte = (function(){
     atualizarPad();
 
     const be=el('djBtEntrar');
-    if(be){
+    if(be) be.style.display = D.semSaida ? 'none' : '';
+    if(be && !D.semSaida){
       const s = D.saida || SAIDA_PADRAO;
       if(entradaDeVerdade()){
         /* nos arredores a ordem vale sempre, inclusive no meio da briga:
@@ -57407,6 +57793,7 @@ TO.diaJogo.ponte = (function(){
     if(J && J.reuniao) return;
     /* na festa a saída é o botão da faixa de cima */
     if(J && J.festaAniv && !J.brigaFesta) return;
+    if(D.semSaida) return;
     const s = D.saida || SAIDA_PADRAO;
     /* NOS ARREDORES O BOTÃO É UMA ORDEM.
        Todo mundo caminha pro próprio portão e a cena fecha quando
@@ -67796,6 +68183,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       else if(t === 'reuniao-clube') abrirReuniaoClube(m);
       else if(t === 'festa-plano') planejarFestaDaMensagem(m);
       else if(t === 'festa-aniv') abrirFesta(m, !!a.simular);
+      else if(t === 'invasao-sede') abrirInvasaoDaSede(m, !!a.simular);
       else if(t === 'tela-assalto') abrirAssaltoSorteio(res=>{
         /* o resultado fecha a pauta (o texto do fim) e a mensagem que abriu a tela */
         const item = m && m.dados && m.dados.item;
@@ -69847,6 +70235,107 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       }
     }
     J.discos = J.discos.filter(d=>!d.sumiu);
+  }
+
+  /* =======================================================
+     A CENA NA SEDE (a invasão de sede, 23/11/2026): a sede de verdade em
+     3D (TO.dados.cenaDaSede + js/sede3d_cena.js), quem é dono dela
+     dentro (o lado mandante, parado até alguém passar pelo portão) e
+     quem invade na rua (o visitante), com a peça do armário das tomadas
+     de alvo. `o`: {dono (a torcida da sede), nossaSede, nivel, defesa
+     (bonde de quem está dentro), ataque (bonde de quem invade),
+     escalacao (os nossos), material, guardados, noite, aoFim(r)}.
+     ======================================================= */
+  function sedeDaTorcida(t){
+    const c = TO.mundo.coresDaTorcida(t);
+    return {id:t.id, cor:c.cor, cor2:c.cor2, cor3:c.cor3, sigla:TO.mundo.siglaTorcida(t), nome:t.nome};
+  }
+  /* o que a torcida guarda nos armários (pro modelo da sede desenhar): as
+     dela e as tomadas, na cor de quem era dona */
+  function guardadosDaTorcida(e, id){
+    const PAT = TO.patrimonio, cor = de => { const t = TO.mundo.torcida(de); const c = t ? TO.mundo.coresDaTorcida(t) : {}; return {cor:c.cor, cor2:c.cor2}; };
+    if(id === e.torcida.id){
+      const f = PAT.faixasDe(e), b = PAT.bandeirasDe(e);
+      return {proprias:{faixas:f.nossas.length, bandeiras:b.nossas.length},
+              tomadas:[].concat(f.tomadas.map(x=>Object.assign({tipo:'faixa', de:x.de}, cor(x.de))), b.tomadas.map(x=>Object.assign({tipo:'bandeira', de:x.de}, cor(x.de))))};
+    }
+    const t = PAT.faixasIA(e, id) || {};
+    return {proprias:{faixas:t.faixas || 0, bandeiras:t.bandeiras || 0},
+            tomadas:[].concat((t.faixasTomadas || []).map(x=>Object.assign({tipo:'faixa', de:x.de}, cor(x.de))), (t.bandeirasTomadas || []).map(x=>Object.assign({tipo:'bandeira', de:x.de}, cor(x.de))))};
+  }
+  /* o resumo do fim (a invasão): as linhas do que mudou e um botão */
+  function resumoEmModal(titulo, sub, linhas){
+    const corpo = el('div',{class:'reuniao-clube'});
+    const ul = el('ul',{class:'rc-resumo'});
+    for(const l of linhas) ul.appendChild(el('li',{texto:l}));
+    corpo.appendChild(ul);
+    let fechar = null;
+    const bt = el('button',{class:'bt destaque', texto:_t('Fechar')});
+    bt.onclick = ()=>{ if(fechar) fechar(); };
+    const nav = el('div',{class:'tut-nav'}); nav.appendChild(bt); corpo.appendChild(nav);
+    fechar = modal(titulo, sub || '', corpo, [], 'estreita', true);
+  }
+  function abrirCenaDaSede(o){
+    const e = E();
+    const D = TO.dados.cenaDaSede({nivel:o.nivel, torcida:sedeDaTorcida(o.dono), guardados:guardadosDaTorcida(e, o.dono.id), noite:o.noite});
+    if(!D || !$('djPrincipal')) return false;
+    /* quem está dentro se espalha pelo pátio e pela sala de dentro */
+    D.espalharBonde = 'mandante';
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    TO.estado.bloquear(true);
+    pararTudo('cena');
+    simularProxima = false;
+    const zoomAntes = TO.diaJogo.ponte.zoom;
+    abrirPalco({
+      canvas: $('djPrincipal'),
+      /* com pedra e bomba (o dono, 23/11/2026: a porta fechada quebra na pancada ou na bomba);
+         quem invade traz até 3 bombas do paiol dele */
+      config: { escalacao:o.escalacao, intencao:'atacar', bondes:[o.defesa, o.ataque], bombas:0, local:'sede-cena',
+                bombasRival: Math.min(3, (o.rivalId && perfilDe(o.rivalId) && perfilDe(o.rivalId).bombas != null) ? perfilDe(o.rivalId).bombas : 2),
+                materialArmario:o.material, semPM:true, rivalId:o.rivalId,
+                rival:o.rival || null, perfilRival:o.rivalId ? perfilDe(o.rivalId) : null },
+      aoTerminar: res=>{
+        const J = TO.diaJogo.J;
+        const F = J && (J.faixas || []).find(f=>f.doArmario);
+        /* levaram: o portador chegou na rua, ou saiu de cena com a peça, ou quem defende caiu todo */
+        const saiu = !!(J && (J.materialSaiu || (F && F.estado === 'na-mao' && F.portador && (F.portador.sumiu || F.portador.entrou))));
+        const defesaCaiu = !!(res && !res.reuniao && res.nossoLado && (o.nossaSede ? !res.ganhamos : res.ganhamos) && !(F && F.estado === 'tomada'));
+        TO.diaJogo.ponte.zoom = zoomAntes;
+        TO.estado.bloquear(false);
+        soltarTudo('cena');
+        TO.diaJogo.ponte.parar();
+        $('telaDiaJogo').classList.add('oculto');
+        document.body.classList.remove('em-cena');
+        if(o.aoFim) o.aoFim({res, levaram: saiu || defesaCaiu});
+      }
+    });
+    return true;
+  }
+  /* A INVASÃO DA NOSSA SEDE: a mensagem do dia abre a cena (ou o dado) */
+  function abrirInvasaoDaSede(m, simular){
+    const e = E(), IV = TO.invasao, pl = (e.invasoes || {})[(m.dados || {}).ano];
+    if(!pl || pl.feita || !pl.material){ if(m) m.consequencia = _t('Já passou.'); confirmarDecisao(_t('Passou')); atualizarFeed(); return; }
+    const mat = pl.material, dono = TO.mundo.torcida(mat.de) || {id:mat.de, nome:mat.nome};
+    const nossos = IV.defensores(e);
+    const concluir = (levaram, res)=>{
+      const linhas = IV.fechar(e, pl, levaram, res);
+      if(m) m.consequencia = linhas.join(' · ');
+      confirmarDecisao(levaram ? _t('Levaram') : _t('Sede defendida'));
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+      resumoEmModal(levaram ? _t('Levaram o material') : _t('Sede defendida'), dono.nome, linhas);
+    };
+    if(simular || !nossos.length){ concluir(IV.simular(e, pl, nossos.length), null); return; }
+    const cN = TO.mundo.coresDaTorcida(e.torcida), cR = TO.mundo.coresDaTorcida(dono);
+    const ok = abrirCenaDaSede({
+      dono:e.torcida, nossaSede:true, nivel:IV.nivelSede(e), escalacao:nossos, rivalId:dono.id,
+      rival:{nome:dono.nome, cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3},
+      defesa:{id:e.torcida.id, lado:'mandante', n:nossos.length, nossa:true, nome:e.torcida.nome, cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3, sigla:TO.mundo.siglaTorcida(e.torcida)},
+      ataque:{id:dono.id, lado:'visitante', n:IV.ATACANTES, nossa:false, nome:dono.nome, cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3, sigla:TO.mundo.siglaTorcida(dono), perfil:perfilDe(dono.id)},
+      material:{tipo:mat.tipo, torcidaId:dono.id, nome:dono.nome, variante:mat.variante, nossa:false},
+      aoFim: r=>concluir(r.levaram, r.res)
+    });
+    if(!ok) concluir(IV.simular(e, pl, nossos.length), null);
   }
 
   let festaCena = null;

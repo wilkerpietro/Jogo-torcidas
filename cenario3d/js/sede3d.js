@@ -74,7 +74,7 @@
    (em ferramentas/planta_html) prova que em toda sede dos três mapas
    um corpo de 70 cm entra em todo cômodo; mexeu na mobília, rode ele.
    ========================================================= */
-import { Construtor, METRO, arSplit } from './construtor3d.js?v=63965107a7';
+import { Construtor, METRO, arSplit } from './construtor3d.js?v=55eb448830';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -3023,7 +3023,18 @@ export function montarSede(sede, destino = {}, opc = {}) {
     });
     andarMundo = { h1: hCima * M, piso: yC, escada: { pe, topo }, varanda: { oeste: ponto(xW, zBr, yC), leste: ponto(xE, zBr, yC) }, portas: portasDeCima };
   }
-  return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), teto: tetoMundo, bandeira,
+  /* AS PORTAS DAS SALAS no mundo (as que têm nome: patrimônio,
+     presidência...; o portão da rua e o bar ficam de fora): as duas
+     pontas do vão, no meio da espessura da parede, e o nome. O cenário a
+     pé da invasão faz de cada uma um obstáculo que se quebra */
+  const portasSalas = ctx.portas.filter(p => p.nome && p.tipo === 'porta').map(p => {
+    const w = p.parede, X = p.ao === 'u';
+    const meio = X ? (w.z0 + w.z1) / 2 : (w.x0 + w.x1) / 2;
+    const a = X ? noMundo(p.c - p.w / 2, meio) : noMundo(meio, p.c - p.w / 2);
+    const b = X ? noMundo(p.c + p.w / 2, meio) : noMundo(meio, p.c + p.w / 2);
+    return { nome: p.nome, de: { x: a[0], z: a[1] }, ate: { x: b[0], z: b[1] }, larg: p.w * M, esp: (X ? w.z1 - w.z0 : w.x1 - w.x0) * M };
+  });
+  return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), portasSalas, teto: tetoMundo, bandeira,
            comodos: comodosMundo, lugares: lugaresMundo, armarios: armariosMundo, vagas, entradas, andar: andarMundo, nivel: P.N };
 }
 /* a cor que se lê sobre a cor da torcida: a primeira das dela que se
