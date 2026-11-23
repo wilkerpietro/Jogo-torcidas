@@ -3694,6 +3694,51 @@ header.capa-cidade{background-size:cover; background-position:center;
 #djComandos .form-btn small{display:inline; margin-top:0; margin-left:5px}
 
 /* =========================================================
+   OS TRÊS COMANDOS (23/11/2026): nas brigas o painel de baixo são
+   três botões grandes — Pra cima, Segura, Corre — e a pausa; o painel
+   de sempre e o pad do celular saem. Na faixa de cima, a barra de quem
+   está ganhando (a nossa cor contra a deles, o meio marcado).
+   ========================================================= */
+#djPalco.comandos #djComandos, #djPalco.comandos #djPad{display:none !important}
+#djCmd{position:absolute; left:50%; transform:translateX(-50%); bottom:12px; z-index:6;
+  display:flex; gap:8px; align-items:stretch; line-height:1.2;
+  background:rgba(12,12,14,.84); border:1px solid rgba(255,255,255,.10); border-radius:6px;
+  padding:6px 8px; max-width:calc(100% - 24px)}
+#djCmd[hidden]{display:none}
+#djCmd .cmd{font:700 15px var(--mono); letter-spacing:.05em; text-transform:uppercase;
+  min-width:104px; padding:10px 16px; border-radius:4px; cursor:pointer;
+  border:1px solid #3d3d39; background:#252522; color:var(--texto);
+  display:flex; flex-direction:column; align-items:center; gap:3px; white-space:nowrap}
+#djCmd .cmd small{font-size:10px; font-weight:400; letter-spacing:0; opacity:.6; text-transform:none}
+#djCmd .cmd:hover:not(:disabled){border-color:#6b6b63}
+#djCmd .cmd.on{background:var(--ouro); border-color:var(--ouro); color:#15140f}
+#djCmd .cmd-segura.on{background:#4f9a76; border-color:#7fc2a0; color:#0d1712}
+#djCmd .cmd-corre.on, #djCmd .cmd-corre.armado{background:#b8483a; border-color:#d9705f; color:#fff}
+#djCmd .cmd-corre.armado{animation:cmdPisca .5s steps(2) infinite}
+@keyframes cmdPisca{50%{opacity:.55}}
+#djCmd .cmd:disabled{opacity:.35; cursor:default}
+#djCmd .cmd-pausa, #djCmd .cmd-entrar{min-width:0; font-size:13px}
+#djFaixa .fx-balanca{gap:7px; flex:0 1 auto}
+#djFaixa .fx-balanca[hidden]{display:none}
+.fx-balanca .rot{font-size:11px; letter-spacing:.08em; white-space:nowrap; opacity:.9}
+.fx-balanca .barra{position:relative; flex:0 1 130px; width:130px; min-width:60px; height:10px; border-radius:5px;
+  overflow:hidden; background:var(--cor-eles, #2a5fa8); box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.fx-balanca .barra i{position:absolute; left:0; top:0; bottom:0; width:50%; background:var(--cor-nos, #d9a441);
+  transition:width .5s}
+.fx-balanca .barra::after{content:''; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px;
+  background:rgba(0,0,0,.75)}
+.fx-balanca .pm-segura{font-size:10px; font-style:normal; color:#7fc2a0; white-space:nowrap;
+  border:1px solid rgba(127,194,160,.45); border-radius:3px; padding:1px 5px}
+.fx-balanca .pm-segura:empty{display:none}
+@media (max-width: 900px){
+  body.em-cena #djPalco #djCmd{position:static; transform:none; flex:none; width:100%; max-width:none;
+    border-radius:0; border-width:1px 0 0; padding:6px; box-sizing:border-box}
+  #djCmd .cmd{flex:1 1 0; min-width:0; padding:12px 4px; font-size:14px}
+  #djCmd .cmd small{display:none}
+  #djCmd .cmd-pausa{flex:0 0 52px}
+}
+
+/* =========================================================
    A REUNIÃO DA DIRETORIA NO PÁTIO DA SEDE (fase B, 22/09/2026)
    O palco é o mesmo da briga; o que muda é o que fica por cima
    dele. Sem PM, sem placar, sem botão de briga: a faixa vira o

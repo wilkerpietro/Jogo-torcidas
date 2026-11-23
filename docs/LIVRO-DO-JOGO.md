@@ -3300,6 +3300,24 @@ dano  = max(1, bruto) × P.dano × 0,55 × 0,9
 
 ### 2.4 Os comandos do jogador
 
+**Nas brigas são só três comandos (23/11/2026).** Na rua, na praça, nos arredores, no estádio, na invasão de sede na marra e na briga da festa, o jogador não anda com o presidente: ele vai sozinho e bate sozinho, como qualquer disco. O jogador planeja antes e, na cena, dá a ordem do momento:
+
+| Tecla | Botão | Faz |
+|---|---|---|
+| 1 | PRA CIMA | O presidente anda até o rival mais perto, pelo caminho (com grade no meio, vai nela e quem encosta quebra). Espera o bonde se ele ficou muito pra trás. O bonde massacra; os braços tacam pedra e bomba. |
+| 2 | SEGURA | O presidente para. O bonde fecha em volta da faixa e de quem caiu (postura Proteger), só bate em quem chega; os braços tacam pedra de longe. |
+| 3 (duas vezes) | CORRE | O bonde inteiro corre pela mesma saída (a que o presidente pegaria), com o presidente no meio. Não tem volta. |
+| espaço | ❚❚ | Pausa. A velocidade (no relógio) vai a 1×, 2× e 4×. |
+| Enter | ENTRAR | Só nos arredores: todo mundo pro portão. |
+
+- **Os nossos braços (`repartirLinhas`)**: o nosso bonde ganha arremessadores como o rival (até 3, os mais fortes da retaguarda). Jogam pela mesma régua da IA: pedra no rival a até 170 px; bomba quando 4 ou mais rivais estão juntos no raio, gastando as bombas que levamos.
+- **Ordem com que a cena abre (`comandoInicial`)**: PRA CIMA na rua, na praça e na nossa invasão; SEGURA nos arredores, na arquibancada, na noite de paz e quando defendemos a sede.
+- **A barra de quem está ganhando (`balancaDaBriga`)**, na faixa de cima: a fração de cada lado ainda de pé (× 1,5), ±0,3 por faixa tomada, ±0,35 por debandada, de −1 a +1.
+- **A câmera** segue o meio entre o presidente e o rival mais perto, devagar, quando há zoom (no celular, sempre).
+- O assalto e a invasão furtiva continuam com o líder no controle, pela tabela abaixo.
+
+Tabela do controle manual (assalto, furtiva, bancada):
+
 | Tecla | Botão no toque | Faz |
 |---|---|---|
 | WASD / setas | bola de controle (vetor livre) | Anda com o presidente. |
@@ -3635,7 +3653,8 @@ O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráfic
 
 - **Compasso**: decisão 1,5 s; recado comum 2,2 s; jornal 3,5 s; o que só vai pra Notícias 0,5 s; dia sem nada 120 ms. Tudo dividido pela velocidade (1× ou 2×).
 - **Almanaque na caixa de entrada**: "Começa a disputa" sete dias antes de cada competição nossa (inclusive antes do primeiro jogo) e a edição do campeão.
-- **A polícia aparta**: o reforço da PM (26 a 36 s depois do primeiro caído ou do primeiro aviso) faz uma linha no meio dos dois lados. A rival e as torcidas aliadas se afastam e param; o bonde do jogador volta pra formação. Só bate quem acabou de apanhar; se o presidente segue batendo, a briga continua normal. Cinco segundos sem hostilidade, com a linha formada, e a cena fecha: "a polícia apartou a briga", com o resultado pela conta de caídos. Não vale nos arredores do estádio.
+- **A PM separa de verdade, nos três comandos (23/11/2026)**: com a linha da PM no meio, os dois lados (o nosso também) vão pro seu lado e ficam de frente pra ela, provocando. Os braços ficam a 70 px da linha e seguem tacando pedra e bomba por cima; quem pressiona (o nosso em PRA CIMA; o rival quando está 15% maior) põe a linha de frente a 95 px. A linha fica entre as FRENTES dos dois lados (os 8 de cada lado mais perto do outro), não entre os centros. **O vão**: trecho da linha sem PM firme no posto (dois vizinhos a mais de 52 px, ou a ponta da linha quando ali é chão livre). Com vão, o presidente e a linha de frente de quem pressiona passam por ele e a briga volta ali; quem está do outro lado perto do vão se defende; quem já passou pro lado de lá briga. **O fim**: 35 s com a linha formada e ninguém se pegando na mão (pedra não conta), a cena fecha — "a polícia separou" — e sai por cima quem a barra diz (mais de 0,1 pra um lado), senão ninguém.
+- **A polícia aparta** (sem os três comandos): o reforço da PM (26 a 36 s depois do primeiro caído ou do primeiro aviso) faz uma linha no meio dos dois lados. A rival e as torcidas aliadas se afastam e param; o bonde do jogador volta pra formação. Só bate quem acabou de apanhar; se o presidente segue batendo, a briga continua normal. Cinco segundos sem hostilidade, com a linha formada, e a cena fecha: "a polícia apartou a briga", com o resultado pela conta de caídos. Não vale nos arredores do estádio.
 
 ### 4.12 A polícia no Futebol e Porrada (14/11/2026)
 

@@ -5772,6 +5772,27 @@ TO.i18n.registrar({
   "saímos da sede": {es:"salimos de la sede", en:"we left the clubhouse"},
   "saímos da sede com o que dava": {es:"salimos de la sede con lo que se pudo", en:"we left the clubhouse with what we could"},
   "{quem} abriu o cofre e pegou o dinheiro.": {es:"{quem} abrió la caja fuerte y agarró la plata.", en:"{quem} cracked the safe and took the cash."},
+  /* os três comandos (23/11/2026) */
+  "Pra cima": {es:"A por ellos", en:"Charge"},
+  "Segura": {es:"Aguanten", en:"Hold"},
+  "Corre": {es:"Corran", en:"Run"},
+  "espaço": {es:"espacio", en:"space"},
+  "PAUSA": {es:"PAUSA", en:"PAUSED"},
+  "NÓS": {es:"NOSOTROS", en:"US"},
+  "ELES": {es:"ELLOS", en:"THEM"},
+  "PRA CIMA!": {es:"¡A POR ELLOS!", en:"CHARGE!"},
+  "SEGURA!": {es:"¡AGUANTEN!", en:"HOLD!"},
+  "Ordem: pra cima.": {es:"Orden: a por ellos.", en:"Order: charge."},
+  "Ordem: segura — o bonde fecha e só responde.": {es:"Orden: aguanten — la banda se cierra y solo responde.", en:"Order: hold — the crew closes ranks and only answers back."},
+  "CORRER? Toque de novo pra confirmar": {es:"¿CORRER? Tocá de nuevo para confirmar", en:"RUN? Tap again to confirm"},
+  "VÃO NO CORDÃO": {es:"HUECO EN EL CORDÓN", en:"GAP IN THE LINE"},
+  "PM separa em {s}s": {es:"La policía separa en {s}s", en:"Police split it in {s}s"},
+  "a polícia separou, e a gente saiu por cima": {es:"la policía separó, y salimos ganando", en:"the police split it up, and we came out on top"},
+  "a polícia separou, e eles saíram por cima": {es:"la policía separó, y ellos salieron ganando", en:"the police split it up, and they came out on top"},
+  "a polícia separou a briga, sem ninguém por cima": {es:"la policía separó la pelea, sin ganador", en:"the police split the fight up, with no one on top"},
+  "A polícia separou a briga": {es:"La policía separó la pelea", en:"The police split the fight up"},
+  "Bomba nossa.": {es:"Bomba nuestra.", en:"Our bomb."},
+  "<kbd>1</kbd> pra cima · <kbd>2</kbd> segura · <kbd>3</kbd> corre (duas vezes) · <kbd>espaço</kbd> pausa · velocidade no relógio": {es:"<kbd>1</kbd> a por ellos · <kbd>2</kbd> aguanten · <kbd>3</kbd> corran (dos veces) · <kbd>espacio</kbd> pausa · velocidad en el reloj", en:"<kbd>1</kbd> charge · <kbd>2</kbd> hold · <kbd>3</kbd> run (twice) · <kbd>space</kbd> pause · speed on the clock"},
   'BARULHO':{es:'RUIDO', en:'NOISE'},
   'ACORDOU':{es:'DESPERTÓ', en:'AWAKE'},
   'Bomba deles na porta.':{es:'Bomba de ellos en la puerta.', en:'Their bomb at the door.'},
@@ -47990,6 +48011,13 @@ TO.diaJogo.combate = (function(){
       semArmas: !!cfg.semArmas,
       /* a nossa invasão furtiva (23/11/2026): a casa dorme, o barulho acorda */
       furtiva: !!cfg.furtiva, barulho:0,
+      /* OS TRÊS COMANDOS (23/11/2026, ver `darComando`): nas brigas o
+         presidente vai sozinho e o jogador só manda — pra cima, segura ou
+         corre. O assalto, a furtiva, a reunião e a arquibancada de assistir
+         continuam como eram */
+      comandos: cfg.comandos != null ? !!cfg.comandos
+              : !(cfg.reuniao || cfg.assistir || cfg.furtiva || /^assalto/.test(D.id || '')),
+      comando:null, comandoEm:0,
       bombas: bombasDaCena(cfg),
       bombasIniciais: bombasDaCena(cfg),
       /* do outro lado também tem quem junte pedra: sem isso a briga é
@@ -48366,6 +48394,7 @@ TO.diaJogo.combate = (function(){
        em C e tirava da cena quem não coube. As cadeiras são da cena; a
        roda é da reunião. */
     if(cfg.reuniao && D.cadeiras && D.cadeiras.length) sentarNaRoda(J);
+    if(J.comandos) J.comando = comandoInicial(J);
     return J;
   }
 
@@ -49165,7 +49194,8 @@ TO.diaJogo.combate = (function(){
       nascidos.push(d);
     }
     J.total[s.lado] += qtd;
-    repartirLinhas(nascidos, meu);
+    /* (nos três comandos a pedra nossa também é automática: o nosso bonde ganha braços, como o deles) */
+    repartirLinhas(nascidos, meu && !J.comandos);
   }
 
   /* =======================================================
@@ -49574,6 +49604,8 @@ TO.diaJogo.combate = (function(){
     J.total = {mandante:J.discos.filter(d=>d.lado === 'mandante' && !d.guarda).length, visitante:deles.length};
     J.brigaFesta = {agressora:spawnA, vitima:spawnV, t:J.t};
     J.paz = false; J.semAnel = false;
+    /* (nos três comandos o nosso bonde entra pra separar: pra cima) */
+    if(J.comandos) J.comando = 'pracima';
     logar(J, _t('Briga na festa: o camarote partiu pra cima do outro.'), 'r');
     return true;
   }
@@ -49791,8 +49823,16 @@ TO.diaJogo.combate = (function(){
   /* ---------- líder ---------- */
   function moverLider(J,dt,teclas,podeControlar){
     const l=J.discos.find(d=>d.lider&&d.vivo);
-    if(!l||l.fugindo||l.entrando||!podeControlar) return;
+    /* (nos três comandos o presidente anda sozinho: o teclado não move ele) */
+    const auto = comandosAtivos(J);
+    if(!l||l.fugindo||l.entrando||!(podeControlar||auto)) return;
     if(l.segurando||l.seguradoPor||l.derrubado>0){ l.vx=l.vy=0; return; }
+    if(auto){
+      const q = pilotarLider(J, l);
+      if(q) andarLider(J, l, q.x, q.y, dt, q.fator || 1);
+      else { l.vx = l.vy = 0; }
+      return;
+    }
     let dx=0,dy=0;
     /* A CENA 3D MANDA UM VETOR, NÃO TECLAS. Lá o W é "pra onde a câmera
        olha", e quem sabe pra onde a câmera olha é o renderizador — ele
@@ -49824,12 +49864,17 @@ TO.diaJogo.combate = (function(){
     if(m) J.partindo = null;
     else if(J.partindo){ const q = rumoDaPartida(J, l); if(q){ dx = q.x; dy = q.y; m = hyp(dx,dy); } }
     if(!m) return;
+    andarLider(J, l, dx, dy, dt, 1);
+  }
+  function andarLider(J, l, dx, dy, dt, fator){
+    const m = hyp(dx,dy);
+    if(!m) return;
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma
        regra dos discos, e pelo mesmo motivo (ver `inimigoFugindo`) */
     const cacando = J.discos.some(o=>o.vivo && o.fugindo && inimigos(l.lado,o.lado));
     /* A DEFESA SAIU DO JOGO (dono, 16/10/2026). No meio do golpe o pé
        planta: anda a 35% até o braço voltar */
-    const v = P.velocidade * (cacando ? 1.25 : 1) * (l.ataque ? 0.35 : 1) * (l.gas > J.t ? 0.6 : 1);
+    const v = P.velocidade * (cacando ? 1.25 : 1) * (l.ataque ? 0.35 : 1) * (l.gas > J.t ? 0.6 : 1) * fator;
     const px=l.x, py=l.y;
     A.mover(l, dx/m*v*dt, dy/m*v*dt);
     A.barrarGrades(l,J.grades);
@@ -50364,7 +50409,7 @@ TO.diaJogo.combate = (function(){
       /* o presidente segue no teclado enquanto a cena corre: só provoca
          quando o jogador o deixa parado (o bonecos3 olha `andando`) */
       if(d.lider && J.fase !== 'comemorando' && !d.entrando && !d.fugindo){
-        d.comemorando = !!venceu[d.lado]; continue;
+        d.comemorando = !!venceu[d.lado] || !!d._provocando; continue;
       }
       if(J.fase === 'comemorando' || (venceu[d.lado] && !d.fugindo && !d.entrando &&
          !d.comFaixa && !d.faixaIndo &&
@@ -50600,15 +50645,23 @@ TO.diaJogo.combate = (function(){
         if(achou){ campo = A.campoDoPonto('escolta:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades); usarCampo=true; }
         else { ax=escolta.x; ay=escolta.y; }
         ramo='escolta-faixa';
-      } else if(tregua(J) && J.aparta.meio && !d.doJogador && !recua){
+      } else if(J.aparta && J.aparta.meio && !recua && (J.comandos ? separado(J, d) && !d.comFaixa && !d.faixaIndo : tregua(J) && !d.doJogador)){
         /* A POLÍCIA APARTA: quem não é do bonde do jogador se afasta da
-           linha da PM, pro lado dele, e fica lá de frente pra ela */
+           linha da PM, pro lado dele, e fica lá de frente pra ela.
+           Nos três comandos, os dois lados — e quem fica na ponta é o
+           braço (a pedra tem de chegar do outro lado) e, de quem pressiona,
+           a linha de frente; o resto fica atrás, provocando */
         const mp = J.aparta.meio, sg = d.lado === 'mandante' ? 1 : -1;
         const jaFoi = ((d.x - mp.x)*mp.nx + (d.y - mp.y)*mp.ny) * sg;
-        if(jaFoi >= APARTA.dist + ((d._ord||0) % 5) * 12){
+        const pr = J.aparta.pressiona;
+        const fica = !J.comandos ? APARTA.dist
+                   : d.arremessador ? APARTA.pontaBraco
+                   : (pr && pr[d.lado] && d.linha === 'frente') ? APARTA.pontaFrente : APARTA.dist;
+        if(jaFoi >= fica + ((d._ord||0) % 5) * 12){
           d.vx*=0.8; d.vy*=0.8; A.mover(d, d.vx*dt, d.vy*dt); A.barrarGrades(d,J.grades);
           d._ramo='apartado'; d._alvo=null;
           d.rumo = Math.atan2(mp.x - d.x, mp.y - d.y);
+          if(J.comandos && !d.arremesso) d.comemorando = true;
           continue;
         }
         ax = d.x + sg*mp.nx*140; ay = d.y + sg*mp.ny*140; ramo='apartado';
@@ -50680,10 +50733,10 @@ TO.diaJogo.combate = (function(){
         }
         /* quem protege o material não sai caçando: só o que chegar perto */
         const protege = J.postura==='proteger' && d.doJogador;
-        if(!alvo && !J.paz && agressivo(J,d) && !protege && !tregua(J))
+        if(!alvo && !J.paz && agressivo(J,d) && !protege && !separado(J,d))
           alvo = buscaLonga(J,d, 240, '_alvoLongo');
         /* (com a PM apartando, o bonde do jogador só responde a quem está em cima dele) */
-        if(tregua(J) && alvo && U.dist2(d.x,d.y,alvo.x,alvo.y) > 55*55) alvo = null;
+        if(separado(J,d) && alvo && U.dist2(d.x,d.y,alvo.x,alvo.y) > 55*55) alvo = null;
         if(alvo && !alvo.fugindo){
           J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
         }
@@ -50724,13 +50777,17 @@ TO.diaJogo.combate = (function(){
           const q = postoDaRetaguarda(J, d, visto);
           ax=q.x; ay=q.y; ramo='retaguarda'; d._olhaPara=visto;
         }
-        else if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
+        else if(alvo && agressivo(J,d)){
+          ax=alvo.x; ay=alvo.y;
+          /* (com a PM no meio, quem vai no rival passa pelo vão do cordão) */
+          const vb = viaBrecha(J, d, ax, ay); if(vb){ ax = vb[0]; ay = vb[1]; }
+        }
         /* PROTEGER O MATERIAL: sem ninguém em cima, volta pra roda da peça */
         else if(protege && (gp = pontoDeGuarda(J, d))){ ax=gp.x; ay=gp.y; ramo='guarda-material'; }
         /* veio pra brigar e não tem ninguém por perto: vai até onde o
            rival está. Sem isto ele só ficava disposto — andava pro
            próprio portão e a hostilidade não encontrava ninguém. */
-        else if(agressivo(J,d) && meuBonde && meuBonde.alvo && !tregua(J)){
+        else if(agressivo(J,d) && meuBonde && meuBonde.alvo && !separado(J,d)){
           const s=D.spawns.find(x=>x.id===meuBonde.alvo);
           if(s){ campo=campoDoSpawn(s); usarCampo=true; }
         }
@@ -50909,7 +50966,7 @@ TO.diaJogo.combate = (function(){
       /* (quem é do bonde do jogador e ficou pra trás aperta o passo até alcançar o líder: os dois andam na mesma
          velocidade, e sem isso quem saiu atrasado chegava na briga depois de o líder já ter caído sozinho) */
       const alcancando = d.doJogador && lider && !d.lider && !d.entrando && !recua && U.dist2(d.x,d.y,lider.x,lider.y) > 100*100;
-      const vel=P.velocidade*(d.fugindo||d._cacando||d.fugaBomba?1.25:ramo==='vadia'?(U.dist(d.x,d.y,(gp||d).x,(gp||d).y)<150?0.45:0.9):recua?1.15:passeio?0.5:alcancando?1.22:1);
+      const vel=P.velocidade*(d.lider && d.fugindo && J.fugaBloco ? fatorDoPresidente(J, d) : 1)*(d.fugindo||d._cacando||d.fugaBomba?1.25:ramo==='vadia'?(U.dist(d.x,d.y,(gp||d).x,(gp||d).y)<150?0.45:0.9):recua?1.15:passeio?0.5:alcancando?1.22:1);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
            a 8 px mantém micromovimento que, com 60 discos na tela,
@@ -51276,6 +51333,12 @@ TO.diaJogo.combate = (function(){
        os vomitórios como pontos de fuga) pula a entrada de origem e a
        boca do lado: cada um corre pro ponto mais perto dele que não passa
        por dentro do inimigo */
+    /* O BONDE CORRE JUNTO (os três comandos, 23/11/2026: "a fuga tá
+       esquisita"): cada um pela saída do seu spawn espalhava o bonde em
+       três direções. Na ordem CORRE é uma saída só, a que o presidente
+       pegaria (`darComando`), pra quem tiver rota até ela */
+    const fb = J.fugaBloco;
+    if(fb && d.doJogador && !fb.campo.passo(d.x,d.y).semRota) return fb;
     const ini = centroDoInimigo(J, d.lado);
     if(!D.fugaNaMaisPerto){
       const e = D.entradas.find(x=>x.id===d.entrada) ||
@@ -51324,6 +51387,17 @@ TO.diaJogo.combate = (function(){
               (evita && (acha('desvia', false) || acha('campo', false))) || null;
     if(r) d._fugaChave = r.chave;
     return r;
+  }
+  /* O PRESIDENTE NO MEIO DO BONDE QUE CORRE: com gente demais na frente
+     dele, ele aperta o passo; com quase todo mundo atrás, segura um pouco */
+  function fatorDoPresidente(J, l){
+    if(J.t < (J._fpEm || 0)) return J._fp || 1;
+    J._fpEm = J.t + 0.5;
+    const ds = J.fugaBloco.destino, dl = U.dist2(l.x, l.y, ds.x, ds.y);
+    let frente = 0, n = 0;
+    for(const d of J.discos) if(d.doJogador && d.vivo && d.fugindo && !d.lider){ n++; if(U.dist2(d.x, d.y, ds.x, ds.y) < dl) frente++; }
+    J._fp = !n ? 1 : frente/n > 0.6 ? 1.15 : frente/n < 0.35 ? 0.88 : 1;
+    return J._fp;
   }
   /* usada pelos testes e pelo editor: só o destino, sem o campo */
   function alvoDeFuga(J, d){ const r=rotaDeFuga(J,d); return r && r.destino; }
@@ -51627,7 +51701,8 @@ TO.diaJogo.combate = (function(){
   function bater(J,d,tipo){
     /* o jogador apertou de novo com o braço ainda indo: guarda o golpe
        pro fim deste (a sequência sai sem buraco) */
-    if(d.lider && d.doJogador && d.ataque && d.ataque.tipo!=='agarrar' && d.ataque.t > d.ataque.impacto*0.5){ d.filaGolpe = true; return false; }
+    const manual = d.lider && d.doJogador && !comandosAtivos(J);
+    if(manual && d.ataque && d.ataque.tipo!=='agarrar' && d.ataque.t > d.ataque.impacto*0.5){ d.filaGolpe = true; return false; }
     if(!podeBater(J,d)) return false;
     const pf = perfilDe(d);
     /* segurando alguém: o golpe é a joelhada nele, e sempre entra */
@@ -51638,8 +51713,10 @@ TO.diaJogo.combate = (function(){
       return true;
     }
     /* o boneco do jogador mira sozinho: vira pro inimigo mais perto ao
-       alcance e o golpe entra (ver `alvoDoJogador`) */
-    const meu = d.lider && d.doJogador;
+       alcance e o golpe entra (ver `alvoDoJogador`). No piloto dos três
+       comandos ele é um disco como os outros: golpe na frente, braço no
+       tempo de todo mundo */
+    const meu = manual;
     const b = meu ? alvoDoJogador(J,d) : alvoNaFrente(J,d);
     if(meu && b) d.rumo = rumoPara(d,b);
     if(!tipo) tipo = (pf.chuta && U.rng() < d.chutador && !(b && b.derrubado>0)) ? 'chute' : 'soco';
@@ -51689,7 +51766,7 @@ TO.diaJogo.combate = (function(){
   }
   function agarrar(J,d){
     if(!podeAgarrar(J,d)) return false;
-    const meu = d.lider && d.doJogador;
+    const meu = d.lider && d.doJogador && !comandosAtivos(J);
     let b = meu ? alvoDoJogador(J,d) : alvoNaFrente(J,d,true);
     if(b && b.derrubado>0) b = null;
     if(!b || b.seguradoPor || b.segurando) return false;
@@ -51797,6 +51874,139 @@ TO.diaJogo.combate = (function(){
     if(c.semRota || !(c.dx || c.dy)){ J.partindo = null; return null; }
     return {x:c.dx, y:c.dy};
   }
+  /* =======================================================
+     OS TRÊS COMANDOS (dono, 23/11/2026: "e se a dinamica da briga virar
+     algo que só tem tres botoes: pra cima, segura e corre? fica algo que
+     eu não controlo, igual football manager, eu só planejo tudo e assisto
+     dando os comandos com os botões")
+     Nas brigas — rua, praça, arredores, estádio, a invasão na marra e a
+     briga da festa — o presidente não anda no teclado: vai sozinho, bate
+     sozinho em quem estiver ao alcance, e o bonde inteiro segue a ordem
+     do momento:
+       · PRA CIMA — o presidente anda até o rival mais perto, pelo caminho
+         (grade no meio, ele vai nela e o bonde quebra); o bonde massacra e
+         os nossos braços tacam pedra — e bomba quando o rival junta gente;
+       · SEGURA — o presidente para onde está; o bonde fecha em volta da
+         faixa e de quem caiu (a postura Proteger), só bate em quem chega,
+         e os braços tacam pedra de longe;
+       · CORRE — o bonde inteiro corre junto, pela MESMA saída (a que o
+         presidente pegaria). Não tem volta.
+     Com a PM no meio ninguém anda pra cima dela: cada lado fica do seu,
+     provocando e tacando pedra, e quem está em PRA CIMA procura o vão do
+     cordão (`acharBrecha`). O assalto e a invasão furtiva continuam no
+     controle do líder (decisão do dono).
+     ======================================================= */
+  const COMANDOS = ['pracima', 'segura', 'corre'];
+  function comandosAtivos(J){
+    return !!(J && J.comandos && !J.reuniao && !J.assistir && !(J.festaAniv && !J.brigaFesta));
+  }
+  /* a ordem com que a cena abre: na rua a briga já é o motivo de estar ali
+     (o bonde parte pra cima, como antes); nos arredores, na arquibancada e
+     na noite de paz, segura — partir é decisão do jogador */
+  function comandoInicial(J){
+    if(J.paz) return 'segura';
+    if(D.marchaAoInimigo) return (D.marchaAoInimigo === true || D.marchaAoInimigo === J.ladoNosso) ? 'pracima' : 'segura';
+    if(!D.id || D.id === 'arredores' || /^estadio/.test(D.id) || D.assentos) return 'segura';
+    return 'pracima';
+  }
+  function darComando(J, c){
+    if(!comandosAtivos(J) || J.fase !== 'ativo' || !COMANDOS.includes(c)) return false;
+    /* correr não tem volta: o bonde já virou as costas */
+    if(J.comando === 'corre' || emFuga(J) || J.debandou[ladoDoJogador(J)] || c === J.comando) return false;
+    J.comando = c; J.comandoEm = J.t;
+    J.recuando = false; J.partindo = null;
+    const meus = J.discos.filter(d => d.doJogador && d.vivo && !d.lider);
+    if(c === 'pracima'){
+      J.postura = 'massacrar';
+      J.paz = false;
+      repartirCacadores(J);
+      for(const d of meus){ d.hostil = Math.max(d.hostil || 0, 2); d.respirou = false; }
+      aviso(J, _t('PRA CIMA!'), '#f0d68a');
+      logar(J, _t('Ordem: pra cima.'), 'r');
+    } else if(c === 'segura'){
+      J.postura = 'proteger';
+      repartirCacadores(J);
+      aviso(J, _t('SEGURA!'), '#7fc2a0');
+      logar(J, _t('Ordem: segura — o bonde fecha e só responde.'), 'r');
+    } else {
+      /* a saída do bonde é uma só: a que o presidente pegaria */
+      const l = J.discos.find(d => d.lider && d.vivo && d.doJogador);
+      J.fugaBloco = null;
+      const r = l ? rotaDeFuga(J, l) : null;
+      if(r && r.campo) J.fugaBloco = {destino:r.destino, campo:r.campo, chave:r.chave};
+      mandarFugir(J);
+    }
+    return true;
+  }
+  /* o presidente no piloto: pra onde ele anda agora (nada: fica parado) */
+  function pilotarLider(J, l){
+    l._provocando = false;
+    const ap = J.aparta;
+    /* A PM NO MEIO: cada um do seu lado, de frente pra linha, provocando */
+    if(ap && ap.meio && separado(J, l)){
+      const mp = ap.meio, sg = l.lado === 'mandante' ? 1 : -1;
+      const jaFoi = ((l.x - mp.x)*mp.nx + (l.y - mp.y)*mp.ny) * sg;
+      if(jaFoi < (J.comando === 'pracima' ? 100 : APARTA.dist)) return {x:sg*mp.nx, y:sg*mp.ny};
+      l._provocando = true;
+      if(!l.ataque) l.viraPara = Math.atan2(mp.x - l.x, mp.y - l.y);
+      return null;
+    }
+    const m = inimigoMaisPerto(J, l);
+    if(J.comando !== 'pracima'){
+      if(m && m.d < 260 && l.viraPara == null && !l.ataque) l.viraPara = rumoPara(l, m.o);
+      return null;
+    }
+    if(!m) return null;
+    const o = m.o;
+    /* no contato, para: quem bate é `iaLuta`, como em todo disco */
+    if(m.d < alcanceDe(l, o)*1.05){ if(l.viraPara == null && !l.ataque) l.viraPara = rumoPara(l, o); return null; }
+    let ax = o.x, ay = o.y;
+    const vb = viaBrecha(J, l, ax, ay); if(vb){ ax = vb[0]; ay = vb[1]; }
+    /* não vai sozinho na frente: com o bonde muito atrás, espera ele chegar */
+    let sx = 0, sy = 0, n = 0;
+    for(const d of J.discos) if(d.doJogador && d.vivo && !d.lider && !d.fugindo){ sx += d.x; sy += d.y; n++; }
+    const atras = n ? U.dist(l.x, l.y, sx/n, sy/n) : 0;
+    const fator = m.d < 150 ? 1 : atras > 170 ? 0.55 : atras > 115 ? 0.85 : 1;
+    if(!A.atravessaGrade(l.x, l.y, ax, ay, J.grades) && visadaLivre(l.x, l.y, ax, ay)) return {x:ax - l.x, y:ay - l.y, fator};
+    /* pelo caminho, com as grades de pé; sem rota, pelo caminho sem elas:
+       ele vai na grade, e quem encosta nela quebra (`contatos`) */
+    const qx = Math.round(ax/64)*64, qy = Math.round(ay/64)*64, c0 = J._campoCmd;
+    let campo = c0 && c0.qx === qx && c0.qy === qy && c0.v === J.versaoGrades ? c0.campo : null;
+    if(!campo){
+      let px = qx, py = qy;
+      if(!A.caminhavel(px, py)){ const q = A.pontoLivreMaisProximo(ax, ay, 7); px = q.x; py = q.y; }
+      campo = A.criarCampo(px, py, A.celulasDeGrades(J.grades));
+      if(campo.passo(l.x, l.y).semRota) campo = A.criarCampo(px, py, null);
+      J._campoCmd = {qx, qy, v:J.versaoGrades, campo};
+    }
+    const c = campo.passo(l.x, l.y);
+    if(c.semRota || !(c.dx || c.dy)) return {x:ax - l.x, y:ay - l.y, fator};
+    return {x:c.dx, y:c.dy, fator};
+  }
+  /* QUEM ESTÁ GANHANDO (a barra de cima, nos três comandos): de −1 (eles
+     por cima) a +1 (nós). A conta é a fração de cada lado que ainda está
+     de pé na briga — o bonde de 30 que perdeu 5 está melhor que o de 10
+     que perdeu 5 —, mais a faixa tomada e quem correu */
+  function balancaDaBriga(J){
+    const eu = ladoDoJogador(J), ele = OUTRO_LADO[eu];
+    const pe = {mandante:0, visitante:0};
+    for(const d of J.discos)
+      if(d.vivo && !d.fugindo && !d.sumiu && !(J.festaAniv && d.guarda)) pe[d.lado]++;
+    const fr = l => Math.min(1, pe[l] / Math.max(1, J.total[l] || 0));
+    let s = (fr(eu) - fr(ele)) * 1.5;
+    for(const F of (J.faixas || [])) if(F.estado === 'tomada') s += F.lado === eu ? -0.3 : 0.3;
+    if(J.debandou[ele]) s += 0.35;
+    if(J.debandou[eu]) s -= 0.35;
+    return U.limitar(s, -1, 1);
+  }
+  /* o meio da briga, pra câmera: entre o presidente e o rival mais perto */
+  function frenteDaBriga(J){
+    const l = J.discos.find(d => d.lider && d.vivo && d.doJogador);
+    if(!l) return null;
+    const m = inimigoMaisPerto(J, l);
+    if(m && m.d < 420) return {x:(l.x + m.o.x)/2, y:(l.y + m.o.y)/2};
+    return {x:l.x, y:l.y};
+  }
   function iaChamar(J){
     const ladoIA = OUTRO_LADO[ladoDoJogador(J)];
     if(J.t < (J._iaChamaEm||8)) return;
@@ -51809,6 +52019,8 @@ TO.diaJogo.combate = (function(){
   }
 
   function acertar(J,a,b){
+    /* (a mão entre os dois lados: é o que a linha da PM mede pra fechar a cena separada) */
+    if(a.lado !== b.lado) J._contatoEm = J.t;
     const chute = !!(a.ataque && a.ataque.tipo==='chute');
     const joelhada = !!(a.ataque && a.ataque.tipo==='joelhada');
     /* no chão não se defende — e quem apanha no chão fica lá */
@@ -51962,7 +52174,8 @@ TO.diaJogo.combate = (function(){
         if(q <= alcanceDe(d,d._alvoFaixa)*1.3){ perto = d._alvoFaixa; md = q; }
       }
       d.inimigoPerto = perto ? md : 999; d.aliadosPerto = aliados;
-      if(d.lider) continue;
+      /* (nos três comandos o presidente bate sozinho, como qualquer um) */
+      if(d.lider && !comandosAtivos(J)) continue;
       if(d.fugindo || d.atordoado>0 || d.derrubado>0 || d.fugaBomba || d.entrando) continue;
       if(!agressivo(J,d)) continue;
       if(maoNoBolso(J,d)) continue;
@@ -52195,7 +52408,10 @@ TO.diaJogo.combate = (function(){
      `calma` segundos sem ninguém hostil (a hostilidade de cada um dura 3 s
      depois do último golpe), a cena fecha: "a polícia apartou a briga".
      Nos arredores não vale: lá a cena acaba no portão. */
-  const APARTA = {dist:150, calma:5, vao:26, pmsMin:3, pmsMax:8, porPm:50};
+  const APARTA = {dist:150, calma:5, vao:26, pmsMin:3, pmsMax:8, porPm:50,
+                  /* (os três comandos) quanto tempo a linha segura os dois lados sem ninguém se pegar na mão até a cena
+                     fechar; e a distância de quem fica na ponta (o braço, mais perto pra pedra chegar do outro lado) */
+                  separada:35, pontaBraco:70, pontaFrente:95};
   const apartaVale = () => !fugaPelaEntrada() && !D.semApartar;
   /* COM A PM NO MEIO, A MÃO FICA NO BOLSO: só bate quem acabou de apanhar
      (legítima defesa) — e o bonde do jogador, se o presidente seguir
@@ -52204,10 +52420,124 @@ TO.diaJogo.combate = (function(){
      e caíam mais 13 nos dez segundos depois de a viatura chegar. */
   /* (a trégua é dos dois lados ou de nenhum: enquanto o presidente bate, a
      rival briga como sempre — senão ela ficaria parada apanhando) */
-  const tregua = J => !!J.aparta && !J._liderHostil;
+  /* (nos três comandos o presidente é piloto automático: quem decide se a
+     briga continua é a ordem e o vão no cordão, não o soco dele) */
+  const tregua = J => !!J.aparta && (J.comandos || !J._liderHostil);
   function maoNoBolso(J, d){
-    if(!tregua(J) || d.lider) return false;
+    if(J.comandos ? !separado(J, d) : (!tregua(J) || d.lider)) return false;
     return !(d.apanhou > 0);
+  }
+  /* =======================================================
+     A PM SEPARA DE VERDADE (dono, 23/11/2026: "A presença da polícia deve
+     separar de verdade as torcidas e uma ir pra cada lado, tentando
+     hostilidade ainda, se a policia der espaço, e arremessando bombas e
+     pedras de longe"). Nos três comandos, com a linha da PM no meio:
+       · os DOIS lados (o nosso também) recuam pro seu lado da linha e
+         ficam ali, de frente, provocando; os braços ficam na ponta
+         (`pontaBraco`) e seguem tacando pedra e bomba por cima da PM;
+       · quem PRESSIONA (o nosso em PRA CIMA; o deles quando está maior)
+         fica mais perto da linha e procura o VÃO: um trecho da linha sem
+         PM firme no posto — entre dois PMs longe um do outro, ou na ponta
+         da linha, se ali dá pra passar (`acharBrecha`). Achou, quem está
+         perto do vão passa por ele e a briga volta ali; quem está do
+         outro lado perto do vão se defende;
+       · `separada` segundos sem ninguém se pegar na mão, a cena fecha: "a
+         polícia separou", e quem sai por cima é quem a barra diz
+         (`balancaDaBriga`).
+     ======================================================= */
+  /* a frente de um lado: a média dos seus oito mais perto do centro do outro */
+  function frenteDoLado(J, lado, alvo){
+    const os = [];
+    for(const d of J.discos) if(d.vivo && !d.sumiu && !d.fugindo && d.lado === lado) os.push([U.dist2(d.x, d.y, alvo.x, alvo.y), d]);
+    if(!os.length) return null;
+    os.sort((a, b) => a[0] - b[0]);
+    const k = Math.min(8, os.length);
+    let x = 0, y = 0;
+    for(let i = 0; i < k; i++){ x += os[i][1].x; y += os[i][1].y; }
+    return {x:x/k, y:y/k};
+  }
+  function ladoDaLinha(J, d){
+    const mp = J.aparta && J.aparta.meio;
+    if(!mp) return 0;
+    return ((d.x - mp.x)*mp.nx + (d.y - mp.y)*mp.ny) * (d.lado === 'mandante' ? 1 : -1);
+  }
+  function naBrecha(J, d){
+    const ap = J.aparta, b = ap && ap.brecha;
+    /* quem já passou pro lado de lá está na briga, com ou sem vão */
+    if(ap && ap.meio && ladoDaLinha(J, d) < -14) return true;
+    if(!b || !ap.pressiona) return false;
+    const q = U.dist2(d.x, d.y, b.x, b.y);
+    /* de quem pressiona, vão o presidente e a linha de frente (a
+       retaguarda e os braços ficam do lado de cá); do outro lado, quem
+       está perto do vão se defende */
+    if(ap.pressiona[d.lado]) return (d.lider || d.linha === 'frente') && q < 480*480;
+    return q < 140*140;
+  }
+  const separado = (J, d) => tregua(J) && !(J.comandos && naBrecha(J, d));
+  /* o caminho até o alvo cruza a linha da PM longe do vão? vai pelo vão */
+  function viaBrecha(J, d, ax, ay){
+    const ap = J.aparta, mp = ap && ap.meio, b = ap && ap.brecha;
+    if(!J.comandos || !mp || !b) return null;
+    const s0 = (d.x - mp.x)*mp.nx + (d.y - mp.y)*mp.ny, s1 = (ax - mp.x)*mp.nx + (ay - mp.y)*mp.ny;
+    if(s0*s1 > 0 || Math.abs(s0) < 14) return null;
+    const k = s0/(s0 - s1), cx = d.x + (ax - d.x)*k, cy = d.y + (ay - d.y)*k;
+    if(U.dist2(cx, cy, b.x, b.y) < 28*28) return null;
+    return [b.x, b.y];
+  }
+  /* quem está empurrando a linha: o nosso lado na ordem PRA CIMA; o deles
+     quando está bem maior (e não recuando) */
+  function pressionaLinha(J, lado){
+    if(lado === ladoDoJogador(J)) return J.comando === 'pracima';
+    if(recuando(J, lado)) return false;
+    const eles = dePe(J, lado), nos = dePe(J, OUTRO_LADO[lado]);
+    return eles >= 3 && eles >= nos*1.15;
+  }
+  /* O VÃO: na linha (as coordenadas ao longo dela), os PMs firmes no posto;
+     vão é onde dois vizinhos ficaram a mais de 52 px, ou a ponta da linha
+     quando ali é chão livre (a rua mais larga que o cordão). O vão que já
+     estava aberto continua sendo o mesmo enquanto existir, pra ninguém
+     ficar indo e voltando entre dois */
+  function acharBrecha(J, vivos){
+    const ap = J.aparta, mp = ap.meio, tx = -mp.ny, ty = mp.nx;
+    const ts = [];
+    for(const p of vivos){
+      if(!p.aparta || p.atordoado > 0 || p.caido) continue;
+      if(U.dist(p.x, p.y, p.postoX, p.postoY) > 30) continue;
+      ts.push((p.x - mp.x)*tx + (p.y - mp.y)*ty);
+    }
+    ts.sort((a, b) => a - b);
+    const cands = [];
+    if(!ts.length) cands.push(0);
+    else {
+      for(let i = 1; i < ts.length; i++) if(ts[i] - ts[i-1] > 52) cands.push((ts[i] + ts[i-1])/2);
+      cands.push(ts[0] - 36, ts[ts.length - 1] + 36);
+    }
+    const ok = [];
+    for(const t of cands){
+      if(Math.abs(t) > 280) continue;
+      const x = mp.x + tx*t, y = mp.y + ty*t;
+      if(!A.livrePara(x, y, A.raioMalha(8))) continue;
+      ok.push({x, y, t});
+    }
+    if(!ok.length) return null;
+    const v = ap.brecha;
+    if(v){ const mesma = ok.find(c => U.dist2(c.x, c.y, v.x, v.y) < 50*50); if(mesma) return {x:mesma.x, y:mesma.y, desde:v.desde}; }
+    ok.sort((a, b) => Math.abs(a.t) - Math.abs(b.t));
+    return {x:ok[0].x, y:ok[0].y, desde:J.t};
+  }
+  function encerrarSeparada(J){
+    if(J.fase !== 'ativo') return;
+    const eu = ladoDoJogador(J), s = balancaDaBriga(J);
+    const vence = s > 0.1 ? eu : s < -0.1 ? OUTRO_LADO[eu] : null;
+    J.fase = 'acabando';
+    J.acabou = {lado:null, venceu: vence ? vence === 'mandante' : J.caidos.visitante >= J.caidos.mandante,
+                correram:false, apartada:true, separada:true, balanca:s,
+                tranquila: J.caidos.mandante + J.caidos.visitante === 0,
+                motivo: vence === eu ? _t('a polícia separou, e a gente saiu por cima')
+                      : vence ? _t('a polícia separou, e eles saíram por cima')
+                      : _t('a polícia separou a briga, sem ninguém por cima')};
+    aviso(J, _t('A polícia separou a briga'), '#5fa87d');
+    logar(J, J.acabou.motivo, 'pm');
   }
   function encerrarApartada(J){
     if(J.fase !== 'ativo') return;
@@ -52265,7 +52595,12 @@ TO.diaJogo.combate = (function(){
       if(J.aparta){
         const ap = J.aparta;
         /* (o centro de quem NÃO é visitante é o do mandante, e vice-versa) */
-        const cm = centroDoInimigo(J, 'visitante'), cv = centroDoInimigo(J, 'mandante');
+        let cm = centroDoInimigo(J, 'visitante'), cv = centroDoInimigo(J, 'mandante');
+        /* (nos três comandos a linha fica entre as FRENTES, não entre os
+           centros: o bonde mais espalhado tinha o centro mais longe, a
+           linha andava pro lado dele, ele recuava de novo — e a PM ia
+           empurrando um lado até a parede) */
+        if(J.comandos && cm && cv){ const fm = frenteDoLado(J, 'mandante', cv), fv = frenteDoLado(J, 'visitante', cm); if(fm && fv){ cm = fm; cv = fv; } }
         if(cm && cv){
           const q = hyp(cm.x - cv.x, cm.y - cv.y) || 1;
           const novo = {x:(cm.x + cv.x)/2, y:(cm.y + cv.y)/2, nx:(cm.x - cv.x)/q, ny:(cm.y - cv.y)/q};
@@ -52285,7 +52620,16 @@ TO.diaJogo.combate = (function(){
            depois de ela chegar, se alguém ficou preso no caminho) */
         const formada = J.t - ap.desde > 12 ||
           vivos.some(p => p.aparta) && vivos.every(p => !p.aparta || U.dist(p.x, p.y, p.postoX, p.postoY) < 45);
-        if(J._nHostis > 0 || !formada) ap.calmoDesde = J.t;
+        if(J.comandos){
+          /* (os três comandos: a pedra por cima da PM não conta — o relógio
+             zera com a mão, e com a linha ainda se formando) */
+          ap.pressiona = {mandante:pressionaLinha(J, 'mandante'), visitante:pressionaLinha(J, 'visitante')};
+          ap.brecha = ap.meio && (ap.pressiona.mandante || ap.pressiona.visitante) ? acharBrecha(J, vivos) : null;
+          if(!formada || ap.quietoDesde == null) ap.quietoDesde = J.t;
+          ap.quietoDesde = Math.max(ap.quietoDesde, J._contatoEm || 0);
+          if(J.t - ap.quietoDesde >= APARTA.separada && !J.entrando && !emFuga(J)) encerrarSeparada(J);
+        }
+        else if(J._nHostis > 0 || !formada) ap.calmoDesde = J.t;
         else if(J.t - ap.calmoDesde >= APARTA.calma && !J.entrando) encerrarApartada(J);
       }
       let px = 0, py = 0, n = 0;
@@ -52984,6 +53328,7 @@ TO.diaJogo.combate = (function(){
     J.debandouPor[meu] = 'ordem';
     (J.correuEm=J.correuEm||{})[meu]=J.correuEm[meu]??J.t;
     J.fugaOrdenada = true;
+    if(J.comandos) J.comando = 'corre';
     /* recuo ligado junto da fuga só atrapalha: são duas ordens de andar
        pra trás no mesmo bonde, e a fuga é a que vale */
     J.recuando = false;
@@ -53056,19 +53401,31 @@ TO.diaJogo.combate = (function(){
     if(J.t < (J.cdBraco._varredura||0)) return;
     J.cdBraco._varredura = J.t + 0.15;   // seis olhadas por segundo bastam
 
+    /* OS NOSSOS BRAÇOS TAMBÉM (os três comandos, 23/11/2026): sem o líder
+       no teclado não há quem jogue a pedra nossa — o nosso bonde ganhou
+       braços (`repartirLinhas`) e eles jogam pela mesma régua da IA, com
+       as bombas que a gente levou. Em PRA CIMA e em SEGURA; correndo, não.
+       E com a PM no meio a pedra segue voando por cima dela: é a
+       hostilidade de longe que sobra a quem foi separado. */
+    const nosso = OUTRO_LADO[ladoIA];
+    const lados = comandosAtivos(J) && !emFuga(J) ? [ladoIA, nosso] : [ladoIA];
+    if(J.cdBraco[nosso] == null) J.cdBraco[nosso] = J.t + 6;
+    for(const lado of lados){
+    const daIA = lado === ladoIA;
     let alvos=null;
     for(const b of J.discos){
-      if(b.lado!==ladoIA || !b.arremessador || !b.vivo || b.fugindo || b.fugaBomba) continue;
+      if(b.lado!==lado || !b.arremessador || !b.vivo || b.fugindo || b.fugaBomba) continue;
       if(b.atordoado>0 || b.derrubado>0 || J.t < (b.cdBracoAte||0)) continue;
       if(!agressivo(J,b)) continue;
-      /* (com a PM no meio ninguém joga pedra nem bomba de longe) */
-      if(maoNoBolso(J,b)) continue;
+      /* (com a PM no meio ninguém joga pedra nem bomba de longe — menos
+         nos três comandos, em que a pedra por cima da linha é o que sobra) */
+      if(!J.comandos && maoNoBolso(J,b)) continue;
       if(b.guarda && !J.acordou) continue;
       /* já está no contato: usa a mão, não a pedra */
       if(b.linha==='frente' && inimigoAlcancavel(J,b,40)) continue;
       if(!alvos){
-        alvos=J.discos.filter(d=>d.vivo && inimigos(ladoIA,d.lado) && !d.fugindo);
-        if(!alvos.length) return;
+        alvos=J.discos.filter(d=>d.vivo && inimigos(lado,d.lado) && !d.fugindo);
+        if(!alvos.length) break;
       }
 
       /* bomba automática é só da IA: a nossa bomba é decisão do
@@ -53077,7 +53434,8 @@ TO.diaJogo.combate = (function(){
          por lado: `cdBraco[lado]` é o intervalo entre bombas do lado. */
       let melhor=null, maior=0;
       /* (na sede, a bomba deles é pra porta: `bombaNaPorta`) */
-      if(J.bombasRival>0 && !D.bombaSoNaPorta && J.t >= (J.cdBraco[ladoIA]||0)) for(const a of alvos){
+      const paiol = daIA ? J.bombasRival : J.bombas;
+      if(paiol>0 && !D.bombaSoNaPorta && J.t >= (J.cdBraco[lado]||0)) for(const a of alvos){
         const da=U.dist(b.x,b.y,a.x,a.y);
         if(da > P.alcanceBomba*0.6 || da < RAIO_BOMBA*0.8) continue;
         if(!A.livre(b.x,b.y,a.x,a.y)) continue;
@@ -53101,7 +53459,7 @@ TO.diaJogo.combate = (function(){
          que impede que um único braço decida a briga sozinho */
       const erro = tipo==='bomba' ? 34 : 22;
       const ax = alvo.x + U.entre(-erro,erro), ay = alvo.y + U.entre(-erro,erro);
-      if(tipo==='bomba'){ J.bombasRival--; J.cdBraco[ladoIA] = J.t + P.cdBomba*1.5; }
+      if(tipo==='bomba'){ if(daIA) J.bombasRival--; else J.bombas--; J.cdBraco[lado] = J.t + P.cdBomba*1.5; }
       /* cada braço tem a cadência dele, bem mais lenta que a do jogador:
          com três tacando, o lado da IA soma uma pedra a cada 2,5 s.
          Medido na bancada: com 2,4–3,6× eram 20 pedras por briga contra
@@ -53114,8 +53472,9 @@ TO.diaJogo.combate = (function(){
       J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
       if(tipo==='bomba'){
         J.alerta=Math.min(100,J.alerta+10);
-        logar(J,_t('Bomba deles.'),'a');
+        logar(J,daIA ? _t('Bomba deles.') : _t('Bomba nossa.'),daIA ? 'a' : 'r');
       }
+    }
     }
   }
   /* O CAMINHO ATÉ A PORTA FECHADA (a sede, 23/11/2026). Sem rota até o
@@ -53938,7 +54297,9 @@ TO.diaJogo.combate = (function(){
           iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado,
           mandarEntrar, mandarFugir, emFuga, conferirPortoes,
           POSTURAS, NOME_POSTURA, alternarPostura, repartirCacadores,
-          passoPM, algemar, centroDaBriga, GAS, VIATURA};
+          passoPM, algemar, centroDaBriga, GAS, VIATURA,
+          /* os três comandos (23/11/2026) */
+          COMANDOS, comandosAtivos, darComando, balancaDaBriga, frenteDaBriga, APARTA};
 })();
 ;
 
@@ -57666,7 +58027,10 @@ TO.diaJogo.ponte = (function(){
     if(cfg) config=cfg;
     J = C.criarEstado(config); mira=null;
     TO.diaJogo.J = J;
+    pausado = false; corrArmadaEm = -9;
+    if(!velocidadesDe().includes(velocidade)){ velocidade = 1; atualizarBotaoVelocidade(); }
     atualizarBotoes();
+    atualizarComandos();
   }
 
   /* =======================================================
@@ -57685,8 +58049,12 @@ TO.diaJogo.ponte = (function(){
      dobro de CPU de simulação e a física fica idêntica à de 1×.
      ======================================================= */
   let velocidade = 1;
-  const velocidades = [1, 2];
+  /* (nos três comandos tem 4× e pausa: o jogador assiste e manda, e a
+     briga de trezentos é comprida) */
+  const velocidadesDe = () => (J && C.comandosAtivos(J)) ? [1, 2, 4] : [1, 2];
+  let pausado = false;
   function alternarVelocidade(){
+    const velocidades = velocidadesDe();
     velocidade = velocidades[(velocidades.indexOf(velocidade)+1) % velocidades.length];
     atualizarBotaoVelocidade();
     return velocidade;
@@ -57778,7 +58146,7 @@ TO.diaJogo.ponte = (function(){
       /* na cena de perto o WASD é relativo à câmera: o renderizador resolve
          (e a bola de controle também — `vetorDaCena`) */
       teclas.vetor = (tres && T) ? vetorDaCena() : null;
-      if(J && !ED.ativo){
+      if(J && !ED.ativo && !pausado){
         for(let p=0; p<passos && !(J.acabou && J.fase==='acabando'); p++)
           for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
         /* a rua não para porque a briga começou: quem ainda estava andando
@@ -57881,11 +58249,27 @@ TO.diaJogo.ponte = (function(){
     return J.discos.find(d=>d.lado===meu&&d.vivo) || null;
   }
 
+  /* A CÂMERA NOS TRÊS COMANDOS segue a linha de frente — o meio entre o
+     presidente e o rival mais perto —, devagar, e não o líder: o jogador
+     assiste a briga, não o boneco dele */
+  let focoCmd = null;
+  function focoDaCamera(){
+    if(J && C.comandosAtivos(J)){
+      const f = C.frenteDaBriga(J);
+      if(f){
+        if(!focoCmd || focoCmd.J !== J) focoCmd = {J, x:f.x, y:f.y};
+        const k = Math.min(1, (dtQuadro || 0.016)*2.5);
+        focoCmd.x += (f.x - focoCmd.x)*k; focoCmd.y += (f.y - focoCmd.y)*k;
+        return focoCmd;
+      }
+    }
+    return focoDoZoom();
+  }
   function ajustar(c,alvo,W,H){
     const zz=Math.max(1, zoom*kMundo());   /* (zoom afastado numa cena grande não encolhe a cena comum que vier depois) */
     const s=Math.min(alvo.width/W, alvo.height/H)*zz;
     let cx=W/2, cy=H/2;
-    if(zz>1){ const f=focoDoZoom(); if(f){cx=f.x; cy=f.y;} }
+    if(zz>1){ const f=focoDaCamera(); if(f){cx=f.x; cy=f.y;} }
     /* o ponto de foco vai pro centro do canvas, mas a câmera não passa
        da borda da cena: encostou no canto, o foco sai do centro */
     let ox=alvo.width/2 - cx*s, oy=alvo.height/2 - cy*s;
@@ -58333,6 +58717,7 @@ TO.diaJogo.ponte = (function(){
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
     atualizarPad();
+    atualizarComandos();
 
     const be=el('djBtEntrar');
     if(be) be.style.display = D.semSaida ? 'none' : '';
@@ -58495,6 +58880,8 @@ TO.diaJogo.ponte = (function(){
     const espera = D.gatilho && !J.acordou && D.gatilho.espera;
     if(n.dica) n.dica.innerHTML = ED.ativo
       ? _t('<kbd>F2</kbd> sair do editor')
+      : C.comandosAtivos(J)
+      ? _t('<kbd>1</kbd> pra cima · <kbd>2</kbd> segura · <kbd>3</kbd> corre (duas vezes) · <kbd>espaço</kbd> pausa · velocidade no relógio')
       : espera
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
@@ -58534,6 +58921,125 @@ TO.diaJogo.ponte = (function(){
     liga('djBtCamera', trocarCamera3d);
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
+  }
+  /* =======================================================
+     OS TRÊS COMANDOS NA TELA (23/11/2026)
+     Nas brigas o painel de baixo vira três botões grandes — Pra cima,
+     Segura, Corre —, a pausa e, nos arredores, a ordem de entrar; na
+     faixa de cima, a barra de quem está ganhando e, com a PM no meio,
+     quanto falta pra ela separar de vez (ou o aviso do vão no cordão).
+     Some o resto: bater, pedra, bomba, postura, recuar, fugir e o pad
+     do celular (`#djPalco.comandos`, jogo.css).
+     ======================================================= */
+  let corrArmadaEm = -9;
+  const CORRE_ARMADO = 2200;
+  function montarPainelDeComandos(){
+    const palco = $('djPalco');
+    if(!palco) return null;
+    let p = $('djCmd');
+    if(!p){
+      p = document.createElement('div');
+      p.id = 'djCmd'; p.hidden = true;
+      const bt = (c, rot, tecla) => `<button class="cmd cmd-${c}" data-c="${c}"><span>${rot}</span><small>${tecla}</small></button>`;
+      p.innerHTML = bt('pracima', _t('Pra cima'), '1') + bt('segura', _t('Segura'), '2') + bt('corre', _t('Corre'), '3') +
+                    bt('pausa', '❚❚', _t('espaço')) + bt('entrar', _t('Entrar pelo portão'), 'enter');
+      p.addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if(b) tocarComando(b.dataset.c); });
+      palco.appendChild(p);
+    }
+    const fx = $('djFaixa');
+    if(!$('djBalanca') && fx){
+      const bz = document.createElement('div');
+      bz.id = 'djBalanca'; bz.className = 'fx fx-balanca'; bz.hidden = true;
+      bz.innerHTML = '<span class="rot nos"></span><div class="barra"><i></i></div><span class="rot eles"></span><em class="pm-segura"></em>';
+      fx.insertBefore(bz, $('djPlacar') || null);
+    }
+    return p;
+  }
+  /* as duas cores da barra: a mais forte de cada torcida (branco quase
+     toda torcida tem, e a barra virava uma faixa branca só) e, se der a
+     mesma dos dois lados, a outra cor de quem está do lado de lá */
+  function coresDaBalanca(J, meu){
+    const rgb = c => { const h = String(c || '').replace('#',''); if(!/^[0-9a-f]{6}$/i.test(h)) return null;
+      return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)]; };
+    const luz = c => { const v = rgb(c); return v ? (v[0]*299 + v[1]*587 + v[2]*114)/1000 : 255; };
+    const perto = (a, b) => { const x = rgb(a), y = rgb(b); return !x || !y || Math.hypot(x[0]-y[0], x[1]-y[1], x[2]-y[2]) < 90; };
+    const doLado = l => { const d = J.discos.find(o => (l === meu ? o.lado === meu : o.lado !== meu) && o.cor);
+      const cs = d ? [d.cor, d.cor2, d.cor3].filter(c => rgb(c)) : [];
+      return cs.slice().sort((a, b) => luz(a) - luz(b)); };
+    const n = doLado(meu), e = doLado('eles');
+    const nos = n.find(c => luz(c) < 200) || n[0] || '#d9a441';
+    const eles = e.find(c => luz(c) < 200 && !perto(c, nos)) || e.find(c => !perto(c, nos)) || (perto('#c94f3d', nos) ? '#2a5fa8' : '#c94f3d');
+    return [nos, eles];
+  }
+  function tocarComando(c){
+    if(!J) return;
+    if(c === 'pausa'){ alternarPausa(); return; }
+    if(c === 'entrar'){ if(entradaDeVerdade()) mandarEntrarOuSair(); return; }
+    if(c === 'corre' && J.comando !== 'corre' && !C.emFuga(J)){
+      /* correr não tem volta: o botão pede o segundo toque */
+      const agora = performance.now();
+      if(agora - corrArmadaEm > CORRE_ARMADO){
+        corrArmadaEm = agora;
+        C.aviso(J, _t('CORRER? Toque de novo pra confirmar'), '#d9705f');
+        atualizarComandos(); return;
+      }
+    }
+    corrArmadaEm = -9;
+    if(C.darComando(J, c) && c === 'corre') marcarFugaNoPad();
+    atualizarComandos();
+  }
+  function alternarPausa(){
+    if(!J || !C.comandosAtivos(J)) return;
+    pausado = !pausado;
+    /* (o aviso fica na tela enquanto o relógio da cena está parado) */
+    if(pausado) C.aviso(J, _t('PAUSA'), '#f0d68a'); else J.avisoAte = J.t + 0.2;
+    atualizarComandos();
+  }
+  function atualizarComandos(){
+    if(!J) return;
+    const on = C.comandosAtivos(J);
+    const palco = $('djPalco');
+    if(palco && palco.classList.contains('comandos') !== on) palco.classList.toggle('comandos', on);
+    const p = $('djCmd') || (on ? montarPainelDeComandos() : null);
+    const bz = $('djBalanca');
+    if(p && p.hidden === on) p.hidden = !on;
+    if(bz && bz.hidden === on) bz.hidden = !on;
+    if(!on){ pausado = false; return; }
+    if(!p) return;
+    const meu = C.ladoDoJogador(J);
+    const correu = J.comando === 'corre' || C.emFuga(J) || !!(J.debandou && J.debandou[meu]);
+    const armada = performance.now() - corrArmadaEm < CORRE_ARMADO;
+    for(const b of p.querySelectorAll('button[data-c]')){
+      const c = b.dataset.c, rot = b.firstChild;
+      if(c === 'pausa'){ b.classList.toggle('on', pausado); const t = pausado ? '▶' : '❚❚'; if(rot.textContent !== t) rot.textContent = t; continue; }
+      if(c === 'entrar'){
+        const vale = entradaDeVerdade() && !D.semSaida;
+        if(b.style.display !== (vale ? '' : 'none')) b.style.display = vale ? '' : 'none';
+        b.disabled = !!J.entrando || correu || J.fase !== 'ativo';
+        continue;
+      }
+      b.classList.toggle('on', J.comando === c || (c === 'corre' && correu));
+      b.classList.toggle('armado', c === 'corre' && armada && !correu);
+      b.disabled = J.fase !== 'ativo' || correu;
+    }
+    if(bz){
+      const s = C.balancaDaBriga(J);
+      const i = bz.querySelector('i');
+      if(i) i.style.width = (50 + s*50).toFixed(1) + '%';
+      if(bz._J !== J){
+        bz._J = J;
+        const cb = coresDaBalanca(J, meu);
+        bz.style.setProperty('--cor-nos', cb[0]);
+        bz.style.setProperty('--cor-eles', cb[1]);
+        bz.querySelector('.nos').textContent = _t('NÓS');
+        bz.querySelector('.eles').textContent = _t('ELES');
+      }
+      const em = bz.querySelector('.pm-segura'), ap = J.aparta;
+      const falta = ap && ap.quietoDesde != null && J.fase === 'ativo'
+        ? Math.max(0, Math.ceil(C.APARTA.separada - (J.t - ap.quietoDesde))) : null;
+      const txt = falta == null ? '' : ap.brecha ? _t('VÃO NO CORDÃO') : _t('PM separa em {s}s', {s:falta});
+      if(em.textContent !== txt) em.textContent = txt;
+    }
   }
   /* O botão e o ENTER fazem a MESMA coisa.
      Antes o atalho tinha caminho próprio — `noPortao` e encerra —, e
@@ -58928,6 +59434,16 @@ TO.diaJogo.ponte = (function(){
       /* na reunião só se anda: bater, chamar, correr, pedra, bomba e o
          ENTER do portão não têm o que fazer numa roda de cadeiras */
       if(J.reuniao) return;
+      /* OS TRÊS COMANDOS: 1, 2 e 3 (o 3 duas vezes), espaço pausa; o resto
+         do teclado da briga não vale — o presidente vai sozinho */
+      if(C.comandosAtivos(J)){
+        if(k==='1') tocarComando('pracima');
+        else if(k==='2') tocarComando('segura');
+        else if(k==='3') tocarComando('corre');
+        else if(k===' ' || k==='p'){ e.preventDefault(); alternarPausa(); }
+        else if(k==='enter' && entradaDeVerdade()) mandarEntrarOuSair();
+        return;
+      }
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
       /* a postura também no B: no 3D o V é da câmera */
       if(k==='v'||k==='b'){C.alternarPostura(J);atualizarBotoes();}
