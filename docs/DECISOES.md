@@ -16200,6 +16200,21 @@ Andando, o jeito é o de `rua`. Quem trava 3 s fica por ali. As aliadas ficam em
 
 **Medido:** 120 bonecos na cena. Aos 32 s, 45 dançando, 6 no bar, 1 na roda e 12 andando. A briga forçada acabou em 46 s (8 contra 22).
 
+## A arena da festa ainda menor (dono, 23/11/2026)
+
+O dono: "vamos ajustar o tamanho do espaço da festa pra ficar menor pra dar ainda mais sensação de casa cheia".
+
+A planta da festa continua desenhada em 1152 × 768 e sai multiplicada por K = 5/6. A cena tem 960 × 640 px (40 × 26,7 m), e o público é o mesmo: uns 45% a mais de gente por metro quadrado.
+
+**O que encolhe e o que não encolhe:**
+- Encolhem as peças de pegada: palco de 13,3 × 6,7 m (ainda 2:1), tendas, camarote, banheiros e espetinhos.
+- Não encolhem o boneco, a mesa de plástico, o poste e o tablado da bateria (4 × 3 m). As `alturas` do tablado são calculadas a partir do meio do palco.
+- Parede fina (trava, gradil, muro) não fica abaixo de 8 px, a célula da malha. Mais fina que isso, o povo vazaria por ela.
+
+**A vida da festa** (banda, lugares do bar, rodas, pista, aliadas, quem trabalha) lê o mesmo K (`escala` da cena). Os vãos do guarda-corpo do camarote também vão por K.
+
+**Medido:** aos 32 s, 41 dançando, 8 no bar e 13 andando. A briga forçada acabou em 47 s.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

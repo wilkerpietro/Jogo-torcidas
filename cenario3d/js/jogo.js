@@ -13331,7 +13331,15 @@ TO.dados.cenas = (function(){
      `porCenario`). 24 px por metro.
      ======================================================= */
   const festa = (()=>{
-    const FW = 1152, FH = 768;
+    /* A ARENA ENCOLHE PELA ESCALA (dono, 23/11/2026: "ajustar o tamanho do
+       espaço da festa pra ficar menor pra dar ainda mais sensação de casa
+       cheia"): a planta abaixo é desenhada em 1152 × 768 e sai multiplicada
+       por K — 960 × 640 px, 40 × 26,7 m. O boneco, a mesa e o poste seguem
+       no tamanho de verdade; o palco, as tendas e o camarote encolhem junto
+       (o palco fica com 13,3 × 6,7 m, ainda 2:1). A vida da festa lê o
+       mesmo K (`escala`). */
+    const K = 5 / 6;
+    const FW = Math.round(1152 * K), FH = Math.round(768 * K);
     const pecas = [];
     const pc = (tipo, x, y, w, h, extra) => pecas.push(Object.assign({tipo, x, y, w, h}, extra || {}));
     /* só bloqueio (o desenho é de outra peça) */
@@ -13347,8 +13355,8 @@ TO.dados.cenas = (function(){
        trava em volta e a grade */
     pc('palco', 384, 70, 384, 192, {frente:'s', chao:true});
     trava(384, 64, 384, 8); trava(378, 70, 8, 192); trava(768, 70, 8, 192); trava(384, 260, 384, 8);
-    pc('telao', 242, 150, 96, 90, {frente:'s'});
-    pc('telao', 814, 150, 96, 90, {frente:'s'});
+    pc('telao', 220, 150, 96, 90, {frente:'s'});
+    pc('telao', 836, 150, 96, 90, {frente:'s'});
     pc('gradil', 360, 286, 432, 8);
     /* a torre de som no meio da pista */
     pc('torre-som', 546, 490, 60, 60, {frente:'n'});
@@ -13356,7 +13364,7 @@ TO.dados.cenas = (function(){
     for(const y of [300, 430, 560]) pc('tenda-bar', 30, y, 130, 110, {frente:'e'});
     /* o camarote elevado, à direita: o deque a 3 m, as escadas do lado
        da pista e o guarda-corpo (o bloqueio dele é a `trava`) */
-    pc('camarote-alto', 900, 300, 230, 380, {frente:'w', chao:true, vaos:[[-4.58, -2.92], [2.92, 4.58]]});
+    pc('camarote-alto', 900, 300, 230, 380, {frente:'w', chao:true, vaos:[[-4.58 * K, -2.92 * K], [2.92 * K, 4.58 * K]]});
     pc('escada', 852, 380, 48, 40, {frente:'w', chao:true});
     pc('escada', 852, 560, 48, 40, {frente:'w', chao:true});
     trava(900, 300, 8, 80); trava(900, 420, 8, 140); trava(900, 600, 8, 80);
@@ -13376,18 +13384,29 @@ TO.dados.cenas = (function(){
       pc('poste', x, y, 12, 12, {giro});
     for(const [x, y] of [[330, 680], [430, 690], [812, 600]]) pc('mesa', x, y, 30, 30);
     for(const [x, y] of [[176, 690], [500, 712], [652, 712], [840, 470]]) pc('lixeira', x, y, 16, 16);
+    /* a escala: tudo vezes K; o que é parede fina não fica mais fino que
+       a célula da malha (8 px), senão o povo vaza por ela */
+    const ek = v => Math.round(v * K);
+    for(const p of pecas){
+      p.x = ek(p.x); p.y = ek(p.y); p.w = ek(p.w); p.h = ek(p.h);
+      if(/^(trava|gradil|tapume)$/.test(p.tipo)){ p.w = Math.max(8, p.w); p.h = Math.max(8, p.h); }
+    }
     const blocos = pecas.filter(p => !p.chao).map(p => ({x:p.x, y:p.y, w:p.w, h:p.h, tipo:p.tipo}));
+    /* o tablado da bateria é a peça do palco (4 × 3 m, em metros: não
+       encolhe), no meio dele e 1,2 m pra trás */
+    const PX = ek(384), PY = ek(70), PW = ek(384), PH = ek(192);
     const alturas = [
-      {x:528, y:101, w:96, h:72, alt:2.2},          // o tablado da bateria
-      {x:384, y:70, w:384, h:192, alt:1.8},         // o palco
-      {x:900, y:300, w:230, h:380, alt:3},          // o camarote
-      {x:852, y:380, w:48, h:40, alt:3, rampa:'x'},
-      {x:852, y:560, w:48, h:40, alt:3, rampa:'x'}
+      {x:PX + PW / 2 - 48, y:PY + PH / 2 - 29 - 36, w:96, h:72, alt:2.2},   // o tablado da bateria
+      {x:PX, y:PY, w:PW, h:PH, alt:1.8},                                     // o palco
+      {x:ek(900), y:ek(300), w:ek(230), h:ek(380), alt:3},                   // o camarote
+      {x:ek(852), y:ek(380), w:ek(48), h:ek(40), alt:3, rampa:'x'},
+      {x:ek(852), y:ek(560), w:ek(48), h:ek(40), alt:3, rampa:'x'}
     ];
+    const lugar = o => Object.assign({}, o, {x:ek(o.x), y:ek(o.y)});
     const retangulo = b => ({rot:b.tipo, pontos:[[b.x, b.y], [b.x+b.w, b.y], [b.x+b.w, b.y+b.h], [b.x, b.y+b.h]]});
     return montar({
       id:'festa', nome:'Festa de aniversário', pintura:'festa', local:'Na festa de aniversário',
-      largura:FW, altura:FH,
+      largura:FW, altura:FH, escala:K,
       poligonos:{caminhavel:[{rot:'chão', pontos:[[0,0],[FW,0],[FW,FH],[0,FH]]}], bloqueio:blocos.map(retangulo)},
       blocos, pecas, alturas, enfeites:[], varais:[], grades:[],
       saida:{perto:'Sair da festa', longe:'Portaria (leve o líder)', feito:'a festa acabou',
@@ -13409,10 +13428,10 @@ TO.dados.cenas = (function(){
         {id:'cam-so', rot:'ALIADAS', lado:'mandante', x:265, y:580, guarda:true, entrada:'portaria'},
         {id:'cam-ne', rot:'CAMAROTE', lado:'mandante', x:1015, y:390, guarda:true, entrada:'portaria'},
         {id:'cam-se', rot:'CAMAROTE', lado:'mandante', x:1015, y:590, guarda:true, entrada:'portaria'}
-      ],
+      ].map(lugar),
       entradas:[
-        {id:'portaria', rot:'PORTARIA', lado:'mandante', x:576, y:762, raio:44, dir:[0,1]}
-      ]
+        {id:'portaria', rot:'PORTARIA', lado:'mandante', x:576, y:762, raio:40, dir:[0,1]}
+      ].map(lugar)
     });
   })();
 
@@ -69696,7 +69715,11 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     forro:     [['canta', 576, 236], ['cavaco', 506, 216], ['surdo', 646, 216], ['pandeiro', 690, 236], ['caixa', 576, 118]],
     rap:       [['canta', 556, 238], ['aponta', 600, 238], ['reger', 576, 184], ['braco', 660, 228]]
   };
-  const PALCO = {x:576, y:166};
+  /* (as coordenadas da vida são as da planta de 1152 × 768: saem
+     multiplicadas pela escala da cena, a mesma das peças) */
+  const KF = () => (TO.dados.cenas.festa && TO.dados.cenas.festa.escala) || 1;
+  const ek = ([x, y]) => [x * KF(), y * KF()];
+  const PALCO = {get x(){ return 576 * KF(); }, get y(){ return 166 * KF(); }};
   /* as rodinhas das aliadas: as do lado esquerdo em pé na frente dos
      bares, as do direito no deque do camarote */
   const AREAS_VIP = {
@@ -69720,9 +69743,9 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       const x = perto ? 576 + (Math.random() + Math.random() - 1) * 190 : 380 + Math.random() * 400;
       const y = perto ? 305 + Math.random() * Math.random() * 170 : 305 + Math.random() * 330;
       if(Math.abs(x - 576) < 45 && Math.abs(y - 520) < 45) continue;      // a torre de som
-      return [x, y];
+      return ek([x, y]);
     }
-    return [576, 330];
+    return ek([576, 330]);
   };
   /* o caminho: reto (a arena não tem cercado no meio; o que esbarra, desliza) */
   const rotaAte = (d, x, y) => [[x, y]];
@@ -69730,11 +69753,11 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
   function proximoDestino(v){
     const r = Math.random();
     if(r < 0.55){ const [x, y] = sorteiaPista(); return {tipo:'danca', x, y, dur:[35, 90]}; }
-    if(r < 0.72){ const [x, y] = U.escolher(LUGARES.bar); return {tipo:'bar', x:x + (Math.random() - 0.5) * 10, y:y + (Math.random() - 0.5) * 30, dur:[10, 22]}; }
-    if(r < 0.88){ const [x, y] = U.escolher(LUGARES.roda), a = Math.random() * 6.28;
+    if(r < 0.72){ const [x, y] = ek(U.escolher(LUGARES.bar)); return {tipo:'bar', x:x + (Math.random() - 0.5) * 10, y:y + (Math.random() - 0.5) * 30, dur:[10, 22]}; }
+    if(r < 0.88){ const [x, y] = ek(U.escolher(LUGARES.roda)), a = Math.random() * 6.28;
       return {tipo:'roda', cx:x, cy:y, x:x + Math.cos(a) * 24, y:y + Math.sin(a) * 18, dur:[20, 45]}; }
-    if(r < 0.95){ const [x, y] = U.escolher(LUGARES.espetinho); return {tipo:'espetinho', x:x + (Math.random() - 0.5) * 40, y, dur:[8, 16]}; }
-    const [x, y] = U.escolher(LUGARES.banheiro); return {tipo:'banheiro', x, y, dur:[6, 12]};
+    if(r < 0.95){ const [x, y] = ek(U.escolher(LUGARES.espetinho)); return {tipo:'espetinho', x:x + (Math.random() - 0.5) * 40, y, dur:[8, 16]}; }
+    const [x, y] = ek(U.escolher(LUGARES.banheiro)); return {tipo:'banheiro', x, y, dur:[6, 12]};
   }
   function chegar(R, d, v, J){
     const t = v.destino;
@@ -69795,19 +69818,19 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       if(d.spawn === 'palco'){
         const b = banda.shift();
         if(!b){ d.vivo = false; d.sumiu = true; continue; }
-        d.x = b[1]; d.y = b[2]; d.rumo = 0; d.jeito = 'festa'; d.gestoForcado = b[0]; d.gestoParam = R.ritmo;
+        [d.x, d.y] = ek([b[1], b[2]]); d.rumo = 0; d.jeito = 'festa'; d.gestoForcado = b[0]; d.gestoParam = R.ritmo;
         d._vida = {fixo:true};
       } else if(d.spawn === 'staff'){
         const s = STAFF.shift();
         if(!s){ d.vivo = false; d.sumiu = true; continue; }
-        d.x = s[1]; d.y = s[2]; d.rumo = s[3]; d.jeito = 'festa'; d.gestoForcado = s[0];
+        [d.x, d.y] = ek([s[1], s[2]]); d.rumo = s[3]; d.jeito = 'festa'; d.gestoForcado = s[0];
         d._vida = {fixo:true};
       } else if(/^cam-/.test(d.spawn)){
         /* a aliada se espalha na área dela em duas ou três rodinhas (nasceu em coluna, como bonde) */
         const g = grupos[d.spawn], A = AREAS_VIP[d.spawn], i = g.indexOf(d);
         let rumoRoda = 0;
         if(A){
-          const rodas = A.rodas, [cx, cy] = rodas[i % rodas.length], k = Math.floor(i / rodas.length), n = Math.ceil(g.length / rodas.length);
+          const rodas = A.rodas, [cx, cy] = ek(rodas[i % rodas.length]), k = Math.floor(i / rodas.length), n = Math.ceil(g.length / rodas.length);
           const a = k / n * 6.28 + (i % rodas.length);
           d.x = cx + Math.cos(a) * 22; d.y = cy + Math.sin(a) * 18;
           rumoRoda = rumoPara(d, cx, cy);
