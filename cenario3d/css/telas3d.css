@@ -450,3 +450,21 @@ body.jogo3d #djPalco{margin-inline:auto;border-color:var(--linha);border-radius:
 .reuniao-clube .msg-bts .bt small { opacity: .72; font-size: 12px; text-transform: none; letter-spacing: 0; }
 .reuniao-clube .rc-feito { border-left: 3px solid var(--ouro, #e6b93c); padding: 6px 10px; margin: 12px 0; }
 .reuniao-clube .rc-resumo { margin: 8px 0 12px; padding-left: 18px; line-height: 1.6; }
+
+/* A FESTA DE ANIVERSÁRIO (23/11/2026): o planejamento, o discurso e a briga */
+body.em-festa .tela-cheia:not(#telaDiaJogo) { z-index: 65; }
+.festa-plano .fp-fama { color: #e6b93c; letter-spacing: .05em; font-size: .9em; margin-left: 4px; }
+.festa-plano .fp-preco { display: flex; align-items: center; gap: 12px; margin: 4px 0; }
+.festa-plano .fp-preco input[type=range] { flex: 1; accent-color: var(--rubro-vivo, #c0392b); }
+.festa-plano .fp-preco b { min-width: 72px; text-align: right; font-size: 1.1em; }
+.festa-plano .fp-prev { display: grid; gap: 4px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.04); }
+.festa-plano .fp-linha { display: flex; justify-content: space-between; gap: 12px; font-size: .92em; }
+.festa-plano .fp-linha span { color: var(--fraco, #9a9a9a); }
+.festa-plano .fp-saldo { border-top: 1px solid rgba(255,255,255,.1); padding-top: 4px; margin-top: 2px; }
+.festa-plano .fp-saldo.bom b { color: #6cbf6a; }
+.festa-plano .fp-saldo.ruim b { color: #d9534f; }
+.festa-plano .fp-aviso { color: #e89a3c; margin: 6px 0 0; font-size: .9em; }
+.festa-discurso .msg-bts { display: grid; gap: 8px; margin-top: 12px; }
+.festa-discurso .msg-bts .bt { text-align: left; display: flex; flex-direction: column; gap: 2px; }
+/* na festa, enquanto não tem briga, o celular só anda: os botões de briga somem */
+body.em-festa:not(.festa-brigando) #djPad .pad-acoes { display: none; }

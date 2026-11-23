@@ -14,14 +14,26 @@
    DOMContentLoaded: quem usa (a ponte, numa cena aberta pelo jogador)
    chega muito depois.
    ========================================================= */
-import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, bonecos } from './bonecos3_cena.js?v=d15ba1afaa';
+import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=fde238184f';
+import { cenarioDaFesta } from './festa3d.js?v=fde238184f';
 
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
 /* (as fotos dos posts da rede social — a da briga e a do post, cartaz.js —
    e o canvas que perdeu o contexto, main.js: vieram do jogo 2D, 06/10/2026) */
+/* O CENÁRIO EM 3D DA CENA (a casa de festas, 23/11/2026): quem monta a
+   cena (a ponte) diz qual é; a que tem peças em 3D entra junto dos
+   bonecos, e as outras tiram o que estava */
+const CENARIOS = { festa: cenarioDaFesta };
+function cenario(id, D){
+  const f = CENARIOS[id];
+  let g = null;
+  try { g = f ? f(D) : null; } catch (err) { console.error('o cenário 3D da cena não montou:', err); }
+  porCenario(g);
+  return !!g;
+}
 TO.diaJogo.bonecos3 = {
-  montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu,
+  montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, cenario,
   get ativo(){ return bonecos.ativo; },
   get escalaDeCima(){ return bonecos.escala; },
   set escalaDeCima(v){ bonecos.escala = v; }

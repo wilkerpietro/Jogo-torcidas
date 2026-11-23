@@ -447,7 +447,8 @@ Efeitos do prestígio: fator comercial (até +0,4 no multiplicador de bar/loja/s
 | Pressionar o clube (ação manual) | +0,8 se chegou / −1,2 se falhou |
 | Deixar quieto um bote | −1 (−5) |
 | Vingança frustrada | −1,0 (−5) |
-| Festa de aniversário da torcida ou do clube | grande +2, simples +1, nada −2 |
+| Festa de aniversário da torcida | show: fama × 2 (+2 com 70% da casa); discurso: exaltar +5, provocar +4, cobrar +3; briga: separar e ganhar +3, perder ou ficar de fora −3; nada −10 |
+| Festa de aniversário do clube | grande +2, simples +1, nada −2 |
 | Veredicto da campanha | protestar +1,0; segurar −1,0; festa +1,0 |
 | Segurar a torcida no protesto do CT | −0,6 (−3) |
 | Entrevista | de −0,6 a +0,6 conforme a resposta |
@@ -1368,7 +1369,8 @@ Não confundir com as de arquibancada:
 | Festa | Onde | Regra |
 |---|---|---|
 | Festa na sede | ação de expediente | 6.2 |
-| Aniversário da torcida / do clube | pauta da reunião (9.7) | grande ou simples; custo na hora, receita no dia |
+| Aniversário da torcida | pauta da reunião (9.7) → planejamento (`TO.festaAniv`) | atração (30, de R$ 2.500 a 70.000) + aluguel R$ 8.000 pagos na hora; ingresso R$ 10–80; no dia, cena 3D na arena (`festa3d.js`) com discurso e a chance de briga entre aliadas rivais (10%, 4% com o discurso de união) |
+| Aniversário do clube | pauta da reunião (9.7) | grande ou simples; custo na hora, receita no dia |
 | Festa da campanha | mensagem `veredicto` (9.5) | R$ 10.000, volta 9.000–16.000, moral +1,0 |
 | Aniversário de aliada | convites (9.7) | ir custa R$ 2.000 |
 

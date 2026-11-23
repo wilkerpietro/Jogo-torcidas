@@ -5461,6 +5461,116 @@ TO.i18n.registrar({
   'CHAMAR':   {es:'LLAMAR',    en:'RALLY'},
   'O bonde partiu pra cima.': {es:'La banda fue al frente.', en:'The crew charged.'},
   'Qual o alvo': {es:'Cuál es el blanco', en:'Pick the target'},
+  "Escolhe a atração.": {es:"Elige la atracción.", en:"Pick the act."},
+  "Falta caixa: o aluguel e o cachê saem {valor}.": {es:"Falta caja: el alquiler y el caché salen {valor}.", en:"Not enough cash: the rent and the fee come to {valor}."},
+  "Festa de aniversário — aluguel e cachê": {es:"Fiesta de aniversario — alquiler y caché", en:"Anniversary party — rent and fee"},
+  "Moral da torcida: +{d}": {es:"Moral de la barra: +{d}", en:"Firm morale: +{d}"},
+  "Discurso na festa: exaltou a torcida": {es:"Discurso en la fiesta: exaltó a la barra", en:"Party speech: hyped up the firm"},
+  "Discurso na festa: provocou o rival": {es:"Discurso en la fiesta: provocó al rival", en:"Party speech: taunted the rival"},
+  "Relação com a {nome}: −10 · eles vêm com mais vontade no próximo mês": {es:"Relación con {nome}: −10 · vienen con más ganas el próximo mes", en:"Relation with {nome}: −10 · they'll come harder next month"},
+  "Relação com a {nome}: +6": {es:"Relación con {nome}: +6", en:"Relation with {nome}: +6"},
+  "Nenhuma aliada na festa pra ouvir.": {es:"Ninguna aliada en la fiesta para escuchar.", en:"No ally at the party to hear it."},
+  "Discurso na festa: cobrou a diretoria do clube": {es:"Discurso en la fiesta: le reclamó a la directiva del club", en:"Party speech: called out the club board"},
+  "Cobrou a diretoria no palco da festa": {es:"Le reclamó a la directiva desde el escenario de la fiesta", en:"Called out the board from the party stage"},
+  "Relação com o clube: −8": {es:"Relación con el club: −8", en:"Relation with the club: −8"},
+  "Público: {n} pessoas": {es:"Público: {n} personas", en:"Crowd: {n} people"},
+  "Ingressos e bar: {valor}": {es:"Entradas y bar: {valor}", en:"Tickets and bar: {valor}"},
+  "Saldo da festa: {valor}": {es:"Saldo de la fiesta: {valor}", en:"Party balance: {valor}"},
+  "Moral do show: +{d}": {es:"Moral del show: +{d}", en:"Show morale: +{d}"},
+  "{n} aliada veio: +3 de relação": {es:"{n} aliada vino: +3 de relación", en:"{n} ally came: +3 relation"},
+  "{n} aliadas vieram: +3 de relação com cada": {es:"{n} aliadas vinieron: +3 de relación con cada una", en:"{n} allies came: +3 relation with each"},
+  "Quebra-quebra na festa de aniversário": {es:"Destrozos en la fiesta de aniversario", en:"Damage at the anniversary party"},
+  "A festa acabou em briga": {es:"La fiesta terminó en pelea", en:"The party ended in a brawl"},
+  "A {a} e a {v} quebraram a casa: {valor} de prejuízo · moral −3": {es:"{a} y {v} destrozaron el local: {valor} de pérdida · moral −3", en:"{a} and {v} wrecked the venue: {valor} in damage · morale −3"},
+  "Separou a briga na nossa festa": {es:"Separó la pelea en nuestra fiesta", en:"Broke up the fight at our party"},
+  "A gente separou e pôs a {a} pra fora: relação −10 com ela, +5 com a {v} · moral +3": {es:"Separamos y echamos a {a}: relación −10 con ella, +5 con {v} · moral +3", en:"We broke it up and threw {a} out: relation −10 with them, +5 with {v} · morale +3"},
+  "Apanhou separando a briga na nossa festa": {es:"Cobró separando la pelea en nuestra fiesta", en:"Took a beating breaking up the fight at our party"},
+  "A {a} levou a melhor até em cima da gente: relação −15 · moral −3": {es:"{a} se impuso hasta contra nosotros: relación −15 · moral −3", en:"{a} came out on top even against us: relation −15 · morale −3"},
+  "Ficamos com a {a}: +10 com ela, −20 com a {v}.": {es:"Nos quedamos con {a}: +10 con ella, −20 con {v}.", en:"We sided with {a}: +10 with them, −20 with {v}."},
+  "Ficamos com a {v}: +10 com ela, −20 com a {a}.": {es:"Nos quedamos con {v}: +10 con ella, −20 con {a}.", en:"We sided with {v}: +10 with them, −20 with {a}."},
+  "Cortamos com as duas: −30 de relação com a {a} e com a {v}.": {es:"Cortamos con las dos: −30 de relación con {a} y con {v}.", en:"We cut ties with both: −30 relation with {a} and {v}."},
+  "Trégua paga entre a {a} e a {v}": {es:"Tregua pagada entre {a} y {v}", en:"Paid truce between {a} and {v}"},
+  "Pagamos a trégua ({valor}): as duas se acertam (+25 entre elas) e sobem +3 com a gente.": {es:"Pagamos la tregua ({valor}): las dos se arreglan (+25 entre ellas) y suben +3 con nosotros.", en:"We paid for the truce ({valor}): they make peace (+25 between them) and go up +3 with us."},
+  "Público previsto": {es:"Público previsto", en:"Expected crowd"},
+  "{n} de {max} possíveis": {es:"{n} de {max} posibles", en:"{n} of {max} possible"},
+  "Ingressos": {es:"Entradas", en:"Tickets"},
+  "Aluguel + cachê (pago agora)": {es:"Alquiler + caché (se paga ahora)", en:"Rent + fee (paid now)"},
+  "Saldo previsto": {es:"Saldo previsto", en:"Expected balance"},
+  "Moral do show": {es:"Moral del show", en:"Show morale"},
+  "Falta caixa: o aluguel e o cachê saem {valor}, e a gente tem {caixa}.": {es:"Falta caja: el alquiler y el caché salen {valor}, y tenemos {caixa}.", en:"Not enough cash: the rent and the fee come to {valor}, and we have {caixa}."},
+  "A torcida completa {n} anos no dia {d}. A casa de festas sai {aluguel}; a atração é o que puxa o público e a moral.": {es:"La barra cumple {n} años el {d}. El salón de fiestas sale {aluguel}; la atracción es lo que arrastra al público y la moral.", en:"The firm turns {n} on {d}. The venue costs {aluguel}; the act is what pulls the crowd and the morale."},
+  "O ritmo": {es:"El ritmo", en:"The genre"},
+  "A atração": {es:"La atracción", en:"The act"},
+  "cachê de {valor}": {es:"caché de {valor}", en:"fee of {valor}"},
+  "O ingresso": {es:"La entrada", en:"The ticket"},
+  "Caro afasta o público; barato enche a casa, mas cada um paga menos. Atração famosa segura melhor o ingresso caro.": {es:"Cara aleja al público; barata llena el local, pero cada uno paga menos. Una atracción famosa aguanta mejor la entrada cara.", en:"Pricey keeps people away; cheap fills the place, but each pays less. A famous act holds a pricey ticket better."},
+  "A previsão": {es:"La previsión", en:"The forecast"},
+  "Os camarotes": {es:"Los palcos", en:"The VIP boxes"},
+  "Aliadas convidadas: {lista}.": {es:"Aliadas invitadas: {lista}.", en:"Invited allies: {lista}."},
+  "A {a} e a {b} são rivais entre si: ficam em lados opostos da casa, mas pode sair briga.": {es:"{a} y {b} son rivales entre sí: quedan en lados opuestos del local, pero puede haber pelea.", en:"{a} and {b} are rivals: they get opposite sides of the venue, but a fight can break out."},
+  "Nenhuma aliada pra convidar: os camarotes ficam com a nossa diretoria.": {es:"Ninguna aliada para invitar: los palcos quedan para nuestra directiva.", en:"No ally to invite: the boxes go to our board."},
+  "A festa de aniversário": {es:"La fiesta de aniversario", en:"The anniversary party"},
+  "{n} anos da torcida": {es:"{n} años de la barra", en:"{n} years of the firm"},
+  "Marcar a festa": {es:"Agendar la fiesta", en:"Book the party"},
+  "Festa marcada: {artista} no dia {d}.": {es:"Fiesta agendada: {artista} el {d}.", en:"Party booked: {artista} on {d}."},
+  "Passou": {es:"Pasó", en:"Gone"},
+  "Festa marcada": {es:"Fiesta agendada", en:"Party booked"},
+  "O presidente sobe no palco, a música baixa e a casa inteira olha. O que ele fala?": {es:"El presidente sube al escenario, la música baja y todo el local mira. ¿Qué dice?", en:"The president takes the stage, the music drops and the whole place looks up. What does he say?"},
+  "O discurso": {es:"El discurso", en:"The speech"},
+  "no palco da festa": {es:"en el escenario de la fiesta", en:"on the party stage"},
+  "A {a} partiu pra cima da {v} no camarote! A casa parou. O nosso bonde entra pra separar ou fica de fora?": {es:"¡{a} fue al frente contra {v} en el palco! El local se paró. ¿Nuestra banda entra a separar o se queda afuera?", en:"{a} went at {v} in the box! The place froze. Does our crew step in to break it up or stay out?"},
+  "Entrar pra separar": {es:"Entrar a separar", en:"Step in to break it up"},
+  "o bonde vai pra cima da {a} — ganhar põe ela pra fora; perder custa caro": {es:"la banda va contra {a} — ganar la echa del local; perder sale caro", en:"the crew goes at {a} — winning throws them out; losing costs dearly"},
+  "as duas se resolvem, a casa quebra e a festa acaba mais cedo": {es:"las dos se arreglan solas, el local queda destrozado y la fiesta termina antes", en:"they settle it themselves, the venue gets wrecked and the party ends early"},
+  "Briga na festa": {es:"Pelea en la fiesta", en:"Fight at the party"},
+  "{a} × {v}": {es:"{a} × {v}", en:"{a} × {v}"},
+  "Sem discurso no palco.": {es:"Sin discurso en el escenario.", en:"No speech on stage."},
+  "O que a festa deixou": {es:"Lo que dejó la fiesta", en:"What the party left"},
+  "A {a} e a {v} vão cobrar uma posição: a mensagem chega no feed.": {es:"{a} y {v} van a exigir una postura: el mensaje llega al feed.", en:"{a} and {v} will want us to take a side: the message lands in the feed."},
+  "Festa feita": {es:"Fiesta hecha", en:"Party done"},
+  "A festa dos {n} anos": {es:"La fiesta de los {n} años", en:"The {n}th anniversary party"},
+  "A festa já passou.": {es:"La fiesta ya pasó.", en:"The party is over."},
+  "Convidados": {es:"Invitados", en:"Guests"},
+  "Festa dos {n} anos": {es:"Fiesta de los {n} años", en:"{n}th anniversary party"},
+  "{artista} no palco": {es:"{artista} en el escenario", en:"{artista} on stage"},
+  "Discursar": {es:"Dar el discurso", en:"Give the speech"},
+  "Encerrar a festa": {es:"Terminar la fiesta", en:"End the party"},
+  "discurso: {d}": {es:"discurso: {d}", en:"speech: {d}"},
+  "A casa respondeu: {d}.": {es:"El local respondió: {d}.", en:"The crowd answered: {d}."},
+  "a festa acabou em briga": {es:"la fiesta terminó en pelea", en:"the party ended in a brawl"},
+  "briga: {a} × {v}": {es:"pelea: {a} × {v}", en:"fight: {a} × {v}"},
+  "a festa acabou": {es:"la fiesta terminó", en:"the party is over"},
+  "Dia {d} a torcida completa {n} anos. Bora fazer a festa numa casa de festas: palco, bar, camarote pras aliadas e uma atração. Escolhe a atração e o preço do ingresso.": {es:"El {d} la barra cumple {n} años. Hagamos la fiesta en un salón: escenario, bar, palcos para las aliadas y una atracción. Elige la atracción y el precio de la entrada.", en:"On {d} the firm turns {n}. Let's throw the party at a venue: stage, bar, boxes for the allies and an act. Pick the act and the ticket price."},
+  "Planejar a festa": {es:"Planear la fiesta", en:"Plan the party"},
+  "aluguel de {aluguel} + o cachê da atração · ingresso de {min} a {max}": {es:"alquiler de {aluguel} + el caché de la atracción · entrada de {min} a {max}", en:"rent of {aluguel} + the act's fee · ticket from {min} to {max}"},
+  "A {a} partiu pra cima da {v} na nossa festa. As duas são aliadas nossas e as duas cobram uma posição. O que a gente faz?": {es:"{a} fue contra {v} en nuestra fiesta. Las dos son aliadas nuestras y las dos exigen una postura. ¿Qué hacemos?", en:"{a} went at {v} at our party. Both are our allies and both want us to take a side. What do we do?"},
+  "Ficar com a {a}": {es:"Quedarse con {a}", en:"Side with {a}"},
+  "+10 com a {a} · −20 com a {v}": {es:"+10 con {a} · −20 con {v}", en:"+10 with {a} · −20 with {v}"},
+  "Ficar com a {v}": {es:"Quedarse con {v}", en:"Side with {v}"},
+  "+10 com a {v} · −20 com a {a}": {es:"+10 con {v} · −20 con {a}", en:"+10 with {v} · −20 with {a}"},
+  "Cortar com as duas": {es:"Cortar con las dos", en:"Cut ties with both"},
+  "−30 com cada uma": {es:"−30 con cada una", en:"−30 with each"},
+  "Pagar a trégua": {es:"Pagar la tregua", en:"Pay for a truce"},
+  "{valor} · +25 entre elas e +3 com a gente": {es:"{valor} · +25 entre ellas y +3 con nosotros", en:"{valor} · +25 between them and +3 with us"},
+  "Festa marcada pro dia {d}: {artista}, ingresso a {preco}. Previsão de {n} pessoas. {custo} pagos agora.": {es:"Fiesta agendada para el {d}: {artista}, entrada a {preco}. Previsión de {n} personas. {custo} pagados ahora.", en:"Party booked for {d}: {artista}, tickets at {preco}. Expected crowd of {n}. {custo} paid now."},
+  "Hoje é a festa dos {n} anos! A casa tá montada, {artista} no palco e as aliadas confirmadas nos camarotes. Bora?": {es:"¡Hoy es la fiesta de los {n} años! El local está armado, {artista} en el escenario y las aliadas confirmadas en los palcos. ¿Vamos?", en:"Today is the {n}th anniversary party! The venue is set, {artista} on stage and the allies confirmed in the boxes. Shall we?"},
+  "a cena da festa, com o discurso no palco": {es:"la escena de la fiesta, con el discurso en el escenario", en:"the party scene, with the speech on stage"},
+  "Só o resultado": {es:"Solo el resultado", en:"Just the result"},
+  "escolhe o discurso e vê o saldo": {es:"elige el discurso y mira el saldo", en:"pick the speech and see the balance"},
+  "Falta caixa pra trégua: {valor}.": {es:"Falta caja para la tregua: {valor}.", en:"Not enough cash for the truce: {valor}."},
+  "Briga na festa: o camarote partiu pra cima do outro.": {es:"Pelea en la fiesta: un palco fue contra el otro.", en:"Fight at the party: one box went at the other."},
+  "Funk": {es:"Funk", en:"Funk"},
+  "Pagode": {es:"Pagode", en:"Pagode"},
+  "Sertanejo": {es:"Sertanejo", en:"Sertanejo"},
+  "Rap": {es:"Rap", en:"Rap"},
+  "Exaltar a torcida": {es:"Exaltar a la barra", en:"Hype up the firm"},
+  "+5 de moral": {es:"+5 de moral", en:"+5 morale"},
+  "Provocar o rival": {es:"Provocar al rival", en:"Taunt the rival"},
+  "+4 de moral · −10 com o maior rival · mais chance de ataque no próximo mês": {es:"+4 de moral · −10 con el mayor rival · más chance de ataque el próximo mes", en:"+4 morale · −10 with the biggest rival · higher attack chance next month"},
+  "Pedir união dos aliados": {es:"Pedir unión a las aliadas", en:"Call for unity among allies"},
+  "+6 com cada aliada presente · a chance de briga entre elas cai de 10% pra 4%": {es:"+6 con cada aliada presente · la chance de pelea entre ellas baja de 10% a 4%", en:"+6 with each ally present · the chance of a fight between them drops from 10% to 4%"},
+  "Cobrar a diretoria do clube": {es:"Reclamarle a la directiva del club", en:"Call out the club board"},
+  "+3 de moral · −8 de relação com o clube": {es:"+3 de moral · −8 de relación con el club", en:"+3 morale · −8 relation with the club"},
   "A briga na arquibancada quebrou o acordo com o clube: os 10% a mais de ingressos acabaram nesta temporada.": {es:"La pelea en la tribuna rompió el acuerdo con el club: el 10% extra de entradas se acabó esta temporada.", en:"The fight in the stands broke the deal with the club: the extra 10% of tickets is gone this season."},
   "Caravana para {destino} bancada pelo {clube} — rateio dos {n} no ônibus": {es:"Caravana a {destino} pagada por {clube} — aporte de los {n} en el bus", en:"Caravan to {destino} paid by {clube} — share from the {n} on the bus"},
   "Chefe, a diretoria do {clube} chamou as torcidas pra uma reunião. Tem pauta que mexe com a gente.": {es:"Jefe, la directiva de {clube} llamó a las barras a una reunión. Hay temas que nos tocan.", en:"Boss, the {clube} board called the supporter groups to a meeting. Some items concern us."},
@@ -13195,13 +13305,118 @@ TO.dados.cenas = (function(){
     pmPostos:[{x:614, y:700}, {x:1229, y:889}]
   });
 
+  /* =======================================================
+     A FESTA DE ANIVERSÁRIO, O SHOW (23/11/2026; refeita no mesmo dia
+     com as fotos do dono: "precisa ter um visual mais de festa, com
+     palco com grid, iluminação, camarote elevado ao lado direito, bares
+     do lado esquerdo"; e de novo: "retire o jogo de luz, retire essas
+     lâmpadas pequenas no meio. O cenário precisa ser similar ao cenário
+     antigo do mapa 3d" — as peças saem do kit do mapa, festa3d.js).
+     Arena a céu aberto, à noite, cercada de muro pré-moldado:
+     o palco no fundo (norte) com o grid de treliça, os telões dos dois
+     lados e os feixes de luz; a torre de som no meio da pista; as tendas
+     vermelhas dos bares à esquerda, com dois cercadinhos VIP na frente
+     delas; à direita o camarote elevado (3 m), com duas escadas; os
+     banheiros químicos, o espetinho, os balões e o pórtico na entrada.
+     A lista `pecas` é a planta: o chão (pintura `festa`) e as peças em
+     3D (festa3d.js, com os bonecos) saem dela; as que ocupam chão viram
+     bloqueio. `alturas` é o chão que sobe: o deque do camarote e as
+     escadas (o boneco anda em cima, bonecos3_cena.js `porCenario`).
+     24 px por metro.
+     ======================================================= */
+  const festa = (()=>{
+    const pecas = [];
+    const pc = (tipo, x, y, w, h, extra) => pecas.push(Object.assign({tipo, x, y, w, h}, extra || {}));
+    /* só bloqueio (o desenho é de outra peça) */
+    const trava = (x, y, w, h) => pc('trava', x, y, w, h, {sem3d:true});
+    /* o tapume em volta, com o vão da entrada embaixo */
+    pc('tapume', 16, 16, 1504, 14);
+    pc('tapume', 16, 16, 14, 990);
+    pc('tapume', 1506, 16, 14, 990);
+    pc('tapume', 16, 992, 674, 14);
+    pc('tapume', 846, 992, 674, 14);
+    /* o palco com o grid, os dois telões e a grade da frente */
+    pc('palco', 488, 110, 560, 210, {frente:'s'});
+    pc('telao', 356, 200, 120, 100, {frente:'s'});
+    pc('telao', 1060, 200, 120, 100, {frente:'s'});
+    pc('gradil', 470, 355, 596, 8);
+    /* a torre de som no meio da pista */
+    pc('torre-som', 733, 660, 70, 70, {frente:'n'});
+    /* as tendas dos bares, à esquerda, viradas pra pista */
+    for(const y of [380, 530, 680, 830]) pc('tenda-bar', 40, y, 150, 120, {frente:'e'});
+    /* os dois cercadinhos VIP na frente dos bares (as aliadas do lado esquerdo) */
+    for(const [id, y] of [['no', 400], ['so', 680]]){
+      pc('cercado', 260, y, 180, 200, {id, chao:true});
+      pc('gradil', 260, y, 180, 8);
+      pc('gradil', 260, y + 192, 180, 8);
+      pc('gradil', 432, y, 8, 70);
+      pc('gradil', 432, y + 130, 8, 70);
+      pc('mesa-alta', 300, y + 40, 26, 26);
+      pc('mesa-alta', 360, y + 130, 26, 26);
+    }
+    /* o camarote elevado, à direita: o deque a 3 m, as escadas do lado
+       da pista, e o guarda-corpo (o bloqueio dele é a `trava`) */
+    pc('camarote-alto', 1200, 380, 290, 520, {frente:'w', chao:true});
+    pc('escada', 1140, 480, 60, 50, {frente:'w', chao:true});
+    pc('escada', 1140, 760, 60, 50, {frente:'w', chao:true});
+    trava(1200, 380, 8, 100); trava(1200, 530, 8, 230); trava(1200, 810, 8, 90);
+    trava(1482, 380, 8, 520); trava(1200, 380, 290, 8); trava(1200, 892, 290, 8);
+    trava(1208, 636, 274, 8);
+    trava(1140, 472, 60, 8); trava(1140, 530, 60, 8);
+    trava(1140, 752, 60, 8); trava(1140, 810, 60, 8);
+    /* os banheiros químicos, o espetinho, a portaria */
+    pc('banheiro-quimico', 1228, 930, 262, 50, {frente:'n'});
+    pc('espetinho', 236, 930, 96, 44, {frente:'n'});
+    pc('espetinho', 420, 930, 96, 44, {frente:'n'});
+    pc('catraca', 700, 950, 28, 36, {frente:'n'});
+    pc('catraca', 808, 950, 28, 36, {frente:'n'});
+    pc('portico', 690, 986, 156, 10, {frente:'s', chao:true});
+    /* os postes de iluminação da arena, as mesas de plástico na frente
+       dos bares e as lixeiras */
+    for(const [x, y, giro] of [[60, 60, -0.8], [1470, 60, -2.4], [60, 960, 0.8], [1120, 960, 2.4], [470, 960, 1.57]])
+      pc('poste', x, y, 12, 12, {giro});
+    for(const [x, y] of [[480, 650], [560, 700], [500, 860], [600, 900], [1000, 880], [1090, 830]]) pc('mesa', x, y, 30, 30);
+    for(const [x, y] of [[214, 640], [690, 920], [846, 920], [1110, 620]]) pc('lixeira', x, y, 16, 16);
+    const blocos = pecas.filter(p => !p.chao).map(p => ({x:p.x, y:p.y, w:p.w, h:p.h, tipo:p.tipo}));
+    const alturas = [
+      {x:1200, y:380, w:290, h:520, alt:3},
+      {x:1140, y:480, w:60, h:50, alt:3, rampa:'x'},
+      {x:1140, y:760, w:60, h:50, alt:3, rampa:'x'}
+    ];
+    return montar({
+      id:'festa', nome:'Festa de aniversário', pintura:'festa', local:'Na festa de aniversário',
+      blocos, pecas, alturas, enfeites:[], varais:[], grades:[],
+      saida:{perto:'Sair da festa', longe:'Portaria (leve o líder)', feito:'a festa acabou',
+             dica:'Curta a festa. O discurso e o fim da festa ficam na faixa de cima.'},
+      pmPostos:[],
+      spawns:[
+        {id:'entrada', rot:'A DIRETORIA', lado:'mandante', x:768, y:920, jogador:true, entrada:'portaria'},
+        {id:'pista1', rot:'NA PISTA', lado:'mandante', x:620, y:430, guarda:true, entrada:'portaria'},
+        {id:'pista2', rot:'NA PISTA', lado:'mandante', x:920, y:430, guarda:true, entrada:'portaria'},
+        {id:'pista3', rot:'NA PISTA', lado:'mandante', x:560, y:600, guarda:true, entrada:'portaria'},
+        {id:'pista4', rot:'NA PISTA', lado:'mandante', x:980, y:600, guarda:true, entrada:'portaria'},
+        {id:'pista5', rot:'NA PISTA', lado:'mandante', x:640, y:800, guarda:true, entrada:'portaria'},
+        {id:'pista6', rot:'NA PISTA', lado:'mandante', x:900, y:800, guarda:true, entrada:'portaria'},
+        {id:'bar1', rot:'NO BAR', lado:'mandante', x:222, y:450, guarda:true, entrada:'portaria'},
+        {id:'bar2', rot:'NO BAR', lado:'mandante', x:222, y:880, guarda:true, entrada:'portaria'},
+        {id:'cam-no', rot:'ÁREA VIP', lado:'mandante', x:350, y:500, guarda:true, entrada:'portaria'},
+        {id:'cam-so', rot:'ÁREA VIP', lado:'mandante', x:350, y:780, guarda:true, entrada:'portaria'},
+        {id:'cam-ne', rot:'CAMAROTE', lado:'mandante', x:1345, y:510, guarda:true, entrada:'portaria'},
+        {id:'cam-se', rot:'CAMAROTE', lado:'mandante', x:1345, y:770, guarda:true, entrada:'portaria'}
+      ],
+      entradas:[
+        {id:'portaria', rot:'PORTARIA', lado:'mandante', x:768, y:1010, raio:50, dir:[0,1]}
+      ]
+    });
+  })();
+
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre, ...lojas,
                  bar, comercio, ct, 'casa-piscina':casaPiscina, subsede, ...sedes,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,
                  'emb-posto':embPosto, 'emb-onibus':embOnibus,
                  'estadio-10':estadio10, 'estadio-20':estadio20,
-                 'estadio-40':estadio40, ...BAIRRO_CENAS};
+                 'estadio-40':estadio40, festa, ...BAIRRO_CENAS};
   /* OS ESTÁDIOS LOW-POLY (dono, 14/11/2026: "cada estádio do jogo [...] as
      cenas continuam ocorrendo vistas de cima, mas agora não mais numa
      imagem e sim nesses estádios lowpoly"): cada estádio modelado é uma
@@ -18874,8 +19089,10 @@ TO.relacoes = (function(){
       /* de −55 pra baixo a chance cresce; em −100, com torcida bem
          ousada, é quase um ataque por mês */
       const cobra = !!dividaIA(E, o.id, E.torcida.id);
+      /* (provocado no palco da nossa festa, ele vem com o dobro de vontade por 30 dias) */
       const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * briga
-                     * (cobra ? COBRANCA_MULT : FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id));
+                     * (cobra ? COBRANCA_MULT : FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id))
+                     * (TO.festaAniv && TO.festaAniv.provocou(E, o.id) ? 2 : 1);
       if(U.rng() > chance) continue;
 
       /* concentração e pista só existem em semana de jogo em casa */
@@ -22050,6 +22267,274 @@ TO.relacaoClube = (function(){
           multLoja, abateCaravana, pctIngressos, ingressosDoJogo, acordo, multIngressos, doacaoAtiva,
           pontosPorPresenca, pontosPorBriga,
           registrarResultadoClube, sequenciaRuim, derrotasRecentes};
+})();
+
+;
+
+/* =========================================================
+   A FESTA DE ANIVERSÁRIO DA TORCIDA (pedido do dono, 23/11/2026)
+   Uma por ano, no aniversário da torcida, numa casa de festas
+   alugada: R$ 8.000 de aluguel mais o cachê da atração, e o ingresso
+   de R$ 10 a 80. O público sai da moral, do preço e da fama da
+   atração (a previsão aparece antes de confirmar); a receita é o
+   ingresso mais o bar. Na festa as aliadas ficam nos camarotes — as
+   que são rivais entre si em lados opostos —, o presidente sobe no
+   palco e escolhe o discurso, e duas aliadas rivais podem sair na
+   mão (10%; 4% se o discurso pediu união). Depois, a mensagem: de que
+   lado a gente fica.
+   ========================================================= */
+TO.festaAniv = (function(){
+  const U = TO.util;
+  const ALUGUEL = 8000;
+  const PRECO_MIN = 10, PRECO_MAX = 80, PRECO_PADRAO = 30;
+  const BAR_POR_CABECA = 5;            // o que o bar deixa limpo por pessoa
+  const CHANCE_BRIGA = 0.10, CHANCE_BRIGA_UNIAO = 0.04;
+  const TREGUA_CUSTO = 5000;
+  const GENEROS = [
+    {id:'funk',      nome:'Funk'},
+    {id:'pagode',    nome:'Pagode'},
+    {id:'sertanejo', nome:'Sertanejo'},
+    {id:'forro',     nome:'Forró'},
+    {id:'rap',       nome:'Rap'}
+  ];
+  /* trinta atrações inventadas: 10 de funk, 5 de pagode, 5 de
+     sertanejo, 5 de forró e 5 de rap. Fama de 1 a 5 estrelas; o cachê
+     sobe com ela */
+  const ARTISTAS = [
+    {id:'mc-vulto',        nome:'MC Vulto do Asfalto',      genero:'funk',      fama:5, cache:60000},
+    {id:'mc-lumi',         nome:'MC Lumi Lunar',            genero:'funk',      fama:4, cache:40000},
+    {id:'mc-trovaozinho',  nome:'MC Trovãozinho da Laje',   genero:'funk',      fama:4, cache:34000},
+    {id:'dj-tamborzao',    nome:'DJ Tamborzão Neon',        genero:'funk',      fama:3, cache:22000},
+    {id:'mc-juju',         nome:'MC Juju do Morro Alto',    genero:'funk',      fama:3, cache:18000},
+    {id:'mc-kaka',         nome:'MC Kaká Turbina',          genero:'funk',      fama:3, cache:15000},
+    {id:'mc-lele',         nome:'MC Lelê Rajada',           genero:'funk',      fama:2, cache:9000},
+    {id:'dj-grave',        nome:'DJ Grave de Concreto',     genero:'funk',      fama:2, cache:7000},
+    {id:'mc-biel',         nome:'MC Biel Faixa Preta',      genero:'funk',      fama:1, cache:4000},
+    {id:'mc-nando',        nome:'MC Nando Pipa Alta',       genero:'funk',      fama:1, cache:3000},
+    {id:'roda-de-bamba',   nome:'Grupo Roda de Bamba',      genero:'pagode',    fama:5, cache:50000},
+    {id:'batuque-na-laje', nome:'Batuque na Laje',          genero:'pagode',    fama:4, cache:30000},
+    {id:'samba-de-sobra',  nome:'Samba de Sobra',           genero:'pagode',    fama:3, cache:16000},
+    {id:'beco-estreito',   nome:'Pagode do Beco Estreito',  genero:'pagode',    fama:2, cache:8000},
+    {id:'cavaquinho',      nome:'Cavaquinho de Fundo',      genero:'pagode',    fama:1, cache:3000},
+    {id:'dalvan-delmiro',  nome:'Dalvan & Delmiro',         genero:'sertanejo', fama:5, cache:70000},
+    {id:'edinho-viola',    nome:'Edinho Viola Branca',      genero:'sertanejo', fama:4, cache:36000},
+    {id:'bras-bruninho',   nome:'Brás & Bruninho',          genero:'sertanejo', fama:3, cache:18000},
+    {id:'lara-lauro',      nome:'Lara Moura & Lauro',       genero:'sertanejo', fama:2, cache:9000},
+    {id:'ze-porteira',     nome:'Zé Porteira',              genero:'sertanejo', fama:1, cache:3000},
+    {id:'pe-de-brasa',     nome:'Forró Pé de Brasa',        genero:'forro',     fama:5, cache:45000},
+    {id:'xote-eletrico',   nome:'Trio Xote Elétrico',       genero:'forro',     fama:4, cache:26000},
+    {id:'mandacaru-neon',  nome:'Banda Mandacaru Neon',     genero:'forro',     fama:3, cache:14000},
+    {id:'lia-sanfona',     nome:'Lia Sanfona',              genero:'forro',     fama:2, cache:7000},
+    {id:'ze-do-fole',      nome:'Zé do Fole Rachado',       genero:'forro',     fama:1, cache:2500},
+    {id:'kalibre-norte',   nome:'Kalibre Norte',            genero:'rap',       fama:5, cache:55000},
+    {id:'preta-verso',     nome:'Preta Verso',              genero:'rap',       fama:4, cache:30000},
+    {id:'rima-de-concreto',nome:'Rima de Concreto',         genero:'rap',       fama:3, cache:15000},
+    {id:'vandalo-sul',     nome:'Vândalo Sul',              genero:'rap',       fama:2, cache:8000},
+    {id:'marmita-lirica',  nome:'Marmita Lírica',           genero:'rap',       fama:1, cache:3000}
+  ];
+  const artista = id => ARTISTAS.find(a => a.id === id) || null;
+
+  /* os quatro discursos do presidente no palco */
+  const DISCURSOS = [
+    {id:'exaltar',  rot:'Exaltar a torcida',            nota:'+5 de moral'},
+    {id:'provocar', rot:'Provocar o rival',             nota:'+4 de moral · −10 com o maior rival · mais chance de ataque no próximo mês'},
+    {id:'uniao',    rot:'Pedir união dos aliados',      nota:'+6 com cada aliada presente · a chance de briga entre elas cai de 10% pra 4%'},
+    {id:'cobrar',   rot:'Cobrar a diretoria do clube',  nota:'+3 de moral · −8 de relação com o clube'}
+  ];
+
+  /* A PREVISÃO (o que a tela mostra antes de confirmar). O público
+     possível sai do tamanho da torcida (cada membro traz uns três), do
+     bairro, do prestígio e da fama da atração; quem vai de fato sai da
+     moral (o interesse) e do preço (caro afasta, barato atrai). Atração
+     famosa segura melhor o ingresso caro. */
+  function previsao(E, idArtista, preco){
+    const a = artista(idArtista);
+    if(!a) return null;
+    const p = U.limitar(Math.round(+preco || PRECO_PADRAO), PRECO_MIN, PRECO_MAX);
+    const membros = (E.membros || []).filter(m => !m.preso).length;
+    const prest = (E.indicadores && E.indicadores.prestigio) || 0;            // 0 a 20
+    const moral = ((E.indicadores && E.indicadores.moral) || 0) / 20;        // 0 a 1
+    const potencial = Math.round(membros * 4 + 250 + a.fama * 140 + prest * 15);
+    const interesse = U.limitar(0.35 + moral * 0.45 + a.fama * 0.04, 0.2, 1);
+    const kPreco = U.limitar(1.25 - (p - PRECO_MIN) / (PRECO_MAX - PRECO_MIN) * 0.95
+                             + a.fama * 0.03 * (p / PRECO_MAX), 0.25, 1.25);
+    const publico = Math.round(potencial * U.limitar(interesse * kPreco, 0.05, 1));
+    const ingressos = publico * p, bar = publico * BAR_POR_CABECA;
+    const custo = ALUGUEL + a.cache;
+    /* a moral do show (na escala de 0 a 100): a fama da atração, e
+       casa cheia ainda soma */
+    const lotacao = publico / Math.max(1, potencial);
+    const moralShow = a.fama * 2 + (lotacao >= 0.7 ? 2 : 0);
+    return {artista:a, preco:p, potencial, publico, ingressos, bar, receita:ingressos + bar,
+            custo, lucro:ingressos + bar - custo, moral:moralShow, lotacao};
+  }
+
+  /* a festa do ano (marcada na pauta do aniversário) */
+  const plano = E => (E && E.festaAniv) || null;
+  function marcar(E, o){
+    const pv = previsao(E, o.artista, o.preco);
+    if(!pv) return {ok:false, msg:_t('Escolhe a atração.')};
+    if(E.dinheiro < pv.custo) return {ok:false, msg:_t('Falta caixa: o aluguel e o cachê saem {valor}.', {valor:U.dinheiro(pv.custo)})};
+    TO.estado.lancar(E, _t('Festa de aniversário — aluguel e cachê'), -pv.custo);
+    E.festaAniv = {ano:o.anoCivil, idade:o.idade, data:o.data, artista:pv.artista.id, preco:pv.preco,
+                   custo:pv.custo, previsto:pv.publico, feita:false};
+    return {ok:true, pv};
+  }
+
+  /* AS ALIADAS CONVIDADAS: Aliado ou Irmandade (relação ≥ 20) e as
+     irmãs de clube, as quatro mais próximas */
+  function aliadasConvidadas(E){
+    const R = TO.relacoes, M = TO.mundo;
+    return M.jogaveis()
+      .filter(o => o.id !== E.torcida.id && !o.incompleta &&
+                   (R.nivel(E, o.id) >= 20 || (M.saoIrmas && M.saoIrmas(E.torcida.id, o.id))))
+      .sort((a, b) => R.nivel(E, b.id) - R.nivel(E, a.id))
+      .slice(0, 4)
+      .map(o => ({id:o.id, nome:o.nome, membros:(R.mundo(E) || {})[o.id] ? Math.round(R.mundo(E)[o.id].membros || o.membros || 20) : (o.membros || 20)}));
+  }
+  const rivaisEntreSi = (E, a, b) => TO.relacoes.ehMaiorRival(E, a, b) || TO.relacoes.relacaoDelas(E, a, b) < -15;
+  /* OS CAMAROTES: dois de cada lado (oeste e leste). Aliada que é
+     rival de outra vai pro lado oposto ao dela */
+  function lugaresDasAliadas(E, aliadas){
+    const lado = {oeste:[], leste:[]};
+    for(const a of aliadas){
+      const rivalNoOeste = lado.oeste.some(x => rivaisEntreSi(E, x.id, a.id));
+      const rivalNoLeste = lado.leste.some(x => rivaisEntreSi(E, x.id, a.id));
+      let l = rivalNoOeste && !rivalNoLeste ? 'leste'
+            : rivalNoLeste && !rivalNoOeste ? 'oeste'
+            : lado.oeste.length <= lado.leste.length ? 'oeste' : 'leste';
+      if(lado[l].length >= 2) l = l === 'oeste' ? 'leste' : 'oeste';
+      if(lado[l].length >= 2) continue;
+      lado[l].push(a);
+    }
+    const fora = [];
+    lado.oeste.forEach((a, i) => fora.push(Object.assign({camarote: i ? 'so' : 'no'}, a)));
+    lado.leste.forEach((a, i) => fora.push(Object.assign({camarote: i ? 'se' : 'ne'}, a)));
+    return fora;
+  }
+  /* a briga entre aliadas: só entre duas presentes que são rivais entre
+     si. Quem parte pra cima é sorteado */
+  function sortearBriga(E, aliadas, discurso){
+    const pares = [];
+    for(let i = 0; i < aliadas.length; i++)
+      for(let j = i + 1; j < aliadas.length; j++)
+        if(rivaisEntreSi(E, aliadas[i].id, aliadas[j].id)) pares.push([aliadas[i], aliadas[j]]);
+    if(!pares.length) return null;
+    if(U.rng() >= (discurso === 'uniao' ? CHANCE_BRIGA_UNIAO : CHANCE_BRIGA)) return null;
+    const par = U.escolher(pares), k = U.rng() < 0.5 ? 0 : 1;
+    return {agressora:par[k], vitima:par[1 - k]};
+  }
+
+  /* o maior rival (pro discurso que provoca): o de relação mais baixa
+     entre os maiores rivais; sem nenhum, o de relação mais baixa */
+  function maiorRival(E){
+    const R = TO.relacoes;
+    const todas = TO.mundo.jogaveis().filter(o => o.id !== E.torcida.id && !o.incompleta);
+    const maiores = todas.filter(o => R.ehMaiorRival(E, E.torcida.id, o.id));
+    const lista = (maiores.length ? maiores : todas).sort((a, b) => R.nivel(E, a.id) - R.nivel(E, b.id));
+    return lista[0] || null;
+  }
+  /* depois de provocar no palco, o rival vem com mais vontade no mês */
+  const provocou = (E, id) => !!(E && E.provocacaoFesta && E.provocacaoFesta.id === id &&
+                                 (E.provocacaoFesta.ate || 0) > ((E.data && E.data.absoluto) || 0));
+
+  /* O DISCURSO: o efeito na hora, e as linhas pro resumo */
+  function discursar(E, id, aliadas){
+    const R = TO.relacoes, linhas = [];
+    const moral = (d, motivo) => { TO.estado.mexerIndicador(E, 'moral', d / 5, motivo); linhas.push(_t('Moral da torcida: +{d}', {d})); };
+    if(id === 'exaltar') moral(5, _t('Discurso na festa: exaltou a torcida'));
+    else if(id === 'provocar'){
+      moral(4, _t('Discurso na festa: provocou o rival'));
+      const r = maiorRival(E);
+      if(r){
+        R.hostilidade(E, r.id, 10);
+        E.provocacaoFesta = {id:r.id, ate:((E.data && E.data.absoluto) || 0) + 30};
+        linhas.push(_t('Relação com a {nome}: −10 · eles vêm com mais vontade no próximo mês', {nome:r.nome}));
+      }
+    } else if(id === 'uniao'){
+      for(const a of aliadas){ R.hostilidade(E, a.id, -6); linhas.push(_t('Relação com a {nome}: +6', {nome:a.nome})); }
+      if(!aliadas.length) linhas.push(_t('Nenhuma aliada na festa pra ouvir.'));
+    } else if(id === 'cobrar'){
+      moral(3, _t('Discurso na festa: cobrou a diretoria do clube'));
+      if(TO.relacaoClube) TO.relacaoClube.mexer(E, -8, _t('Cobrou a diretoria no palco da festa'));
+      linhas.push(_t('Relação com o clube: −8'));
+    }
+    return linhas;
+  }
+
+  /* O FIM DA FESTA: receita, moral do show, a aliada que veio e, se
+     teve briga, o que ela custou. `r`: {discurso, briga:{agressora,
+     vitima, desfecho:'fora'|'ganhou'|'perdeu'}, cedo}. Devolve as linhas
+     do resumo. */
+  function fechar(E, r){
+    const P = plano(E);
+    if(!P || P.feita) return {linhas:[]};
+    P.feita = true;
+    const pv = previsao(E, P.artista, P.preco) || {publico:P.previsto || 0, preco:P.preco, moral:0};
+    const linhas = [];
+    /* o público de verdade: a previsão com um sorteio de ±10%; a briga
+       que esvaziou a casa leva o bar junto */
+    let publico = Math.round(pv.publico * U.entre(0.9, 1.1));
+    const ingressos = publico * pv.preco;
+    let bar = publico * BAR_POR_CABECA;
+    if(r && r.cedo) bar = Math.round(bar * 0.6);
+    TO.estado.lancar(E, _t('Festa de aniversário da torcida — receita'), ingressos + bar);
+    linhas.push(_t('Público: {n} pessoas', {n:U.numero(publico)}));
+    linhas.push(_t('Ingressos e bar: {valor}', {valor:U.dinheiro(ingressos + bar)}));
+    linhas.push(_t('Saldo da festa: {valor}', {valor:U.dinheiro(ingressos + bar - (P.custo || 0))}));
+    if(pv.moral){
+      TO.estado.mexerIndicador(E, 'moral', pv.moral / 5, _t('Festa de aniversário da torcida'));
+      linhas.push(_t('Moral do show: +{d}', {d:pv.moral}));
+    }
+    for(const a of (r && r.aliadas) || []){
+      TO.relacoes.hostilidade(E, a.id, -3);
+      TO.relacoes.marcarAjuda(E, a.id);
+    }
+    if(r && r.aliadas && r.aliadas.length)
+      linhas.push(_tn(r.aliadas.length, '{n} aliada veio: +3 de relação', '{n} aliadas vieram: +3 de relação com cada'));
+    const b = r && r.briga;
+    if(b){
+      if(b.desfecho === 'fora'){
+        const quebra = U.inteiro(2000, 5000);
+        TO.estado.lancar(E, _t('Quebra-quebra na festa de aniversário'), -quebra);
+        TO.estado.mexerIndicador(E, 'moral', -3 / 5, _t('A festa acabou em briga'));
+        linhas.push(_t('A {a} e a {v} quebraram a casa: {valor} de prejuízo · moral −3', {a:b.agressora.nome, v:b.vitima.nome, valor:U.dinheiro(-quebra)}));
+      } else if(b.desfecho === 'ganhou'){
+        TO.relacoes.hostilidade(E, b.agressora.id, 10);
+        TO.relacoes.hostilidade(E, b.vitima.id, -5);
+        TO.estado.mexerIndicador(E, 'moral', 3 / 5, _t('Separou a briga na nossa festa'));
+        linhas.push(_t('A gente separou e pôs a {a} pra fora: relação −10 com ela, +5 com a {v} · moral +3', {a:b.agressora.nome, v:b.vitima.nome}));
+      } else if(b.desfecho === 'perdeu'){
+        TO.relacoes.hostilidade(E, b.agressora.id, 15);
+        TO.estado.mexerIndicador(E, 'moral', -3 / 5, _t('Apanhou separando a briga na nossa festa'));
+        linhas.push(_t('A {a} levou a melhor até em cima da gente: relação −15 · moral −3', {a:b.agressora.nome}));
+      }
+    }
+    return {linhas, publico, receita:ingressos + bar};
+  }
+
+  /* O DIA SEGUINTE DA BRIGA (a mensagem do feed): de que lado a gente fica */
+  function decidirBriga(E, d, op){
+    const R = TO.relacoes, a = d.agressora, v = d.vitima;
+    if(op === 'lado-a'){ R.hostilidade(E, a.id, -10); R.hostilidade(E, v.id, 20);
+      return _t('Ficamos com a {a}: +10 com ela, −20 com a {v}.', {a:a.nome, v:v.nome}); }
+    if(op === 'lado-v'){ R.hostilidade(E, v.id, -10); R.hostilidade(E, a.id, 20);
+      return _t('Ficamos com a {v}: +10 com ela, −20 com a {a}.', {a:a.nome, v:v.nome}); }
+    if(op === 'cortar'){ R.hostilidade(E, a.id, 30); R.hostilidade(E, v.id, 30);
+      return _t('Cortamos com as duas: −30 de relação com a {a} e com a {v}.', {a:a.nome, v:v.nome}); }
+    if(op === 'tregua'){
+      if(E.dinheiro < TREGUA_CUSTO) return null;
+      TO.estado.lancar(E, _t('Trégua paga entre a {a} e a {v}', {a:a.nome, v:v.nome}), -TREGUA_CUSTO);
+      R.moverRelacao(E, a.id, v.id, 25);
+      R.hostilidade(E, a.id, -3); R.hostilidade(E, v.id, -3);
+      return _t('Pagamos a trégua ({valor}): as duas se acertam (+25 entre elas) e sobem +3 com a gente.', {valor:U.dinheiro(-TREGUA_CUSTO)});
+    }
+    return '';
+  }
+
+  return {ALUGUEL, PRECO_MIN, PRECO_MAX, PRECO_PADRAO, BAR_POR_CABECA, TREGUA_CUSTO, GENEROS, ARTISTAS, DISCURSOS,
+          artista, previsao, plano, marcar, aliadasConvidadas, lugaresDasAliadas, sortearBriga, rivaisEntreSi,
+          maiorRival, provocou, discursar, fechar, decidirBriga};
 })();
 
 ;
@@ -38813,6 +39298,25 @@ TO.feed = (function(){
     if(time && time.fundacao)
       meus.push({tipo:'clube', id:'clube|'+E.torcida.clubeId,
                  fundacao:time.fundacao, nome:time.nome, fonte:time});
+    /* O DIA DA FESTA DE ANIVERSÁRIO (23/11/2026): a festa marcada no
+       planejamento vira mensagem — ir pra festa (a cena) ou só o resultado */
+    {
+      const P = TO.festaAniv && TO.festaAniv.plano(E);
+      const hojeIso = `${hoje.getFullYear()}-${hoje.getMonth()+1}-${hoje.getDate()}`;
+      if(P && !P.feita && P.data === hojeIso){
+        const a = TO.festaAniv.artista(P.artista);
+        propor(E, {
+          kind:'festa-aniv', peso:'decisao', voz:'diretor',
+          chave:`festa-aniv|${P.ano}`,
+          texto:_t('Hoje é a festa dos {n} anos! A casa tá montada, {artista} no palco e as aliadas confirmadas nos camarotes. Bora?', {n:P.idade, artista:a ? a.nome : ''}),
+          dados:{ano:P.ano},
+          botoes:[
+            {id:'ir', rot:_t('Ir pra festa'), acao:'festa-ir', nota:_t('a cena da festa, com o discurso no palco')},
+            {id:'simular', rot:_t('Só o resultado'), acao:'festa-simular', nota:_t('escolhe o discurso e vê o saldo')}
+          ]
+        });
+      }
+    }
     for(const q of meus){
       const F = FESTA_ANIV[q.tipo];
       /* a pergunta "que festa vamos fazer?" foi pra reunião do dia 5
@@ -41292,7 +41796,8 @@ TO.feed = (function(){
       /* "Ver os alvos" do assalto abre a tela de sempre, pela porta do
          cartão antigo */
       botoes:(it.botoes||[]).map(b=>({id:b.id, rot:b.rot, nota:b.nota,
-        acao: b.acao === 'assalto-ver' || b.acao === 'assalto-planejar' ? 'tela-assalto' : 'pauta'}))});
+        acao: b.acao === 'assalto-ver' || b.acao === 'assalto-planejar' ? 'tela-assalto'
+            : b.acao === 'festa-planejar' ? 'festa-planejar' : 'pauta'}))});
   }
 
   /* =======================================================
@@ -41758,6 +42263,26 @@ TO.feed = (function(){
       const anoCivil = aniv.getFullYear(), idade = anoCivil - q.fundacao;
       if(idade <= 0) continue;
       const F = FESTA_ANIV[q.tipo];
+      /* A FESTA DE ANIVERSÁRIO DA TORCIDA (dono, 23/11/2026): a pauta abre
+         o planejamento — a atração, o ingresso e a previsão — e a festa
+         vira cena no dia (`TO.festaAniv`). O aniversário do clube segue
+         com a festa grande / simples de sempre */
+      if(q.tipo === 'torcida'){
+        const FA = TO.festaAniv;
+        fora.push({
+          chave:`aniv-${q.tipo}|${anoCivil}`, tipo:'aniversario', voz:_t('Diretoria'),
+          rot:_t('Aniversário da torcida'),
+          texto:_t('Dia {d} a torcida completa {n} anos. Bora fazer a festa numa casa de festas: palco, bar, camarote pras aliadas e uma atração. Escolhe a atração e o preço do ingresso.', {d:fmtDia(aniv), n:idade}),
+          dados:{tipo:q.tipo, anoCivil, idade, data:`${aniv.getFullYear()}-${aniv.getMonth()+1}-${aniv.getDate()}`, dia:fmtDia(aniv)},
+          botoes:[
+            {id:'planejar', rot:_t('Planejar a festa'), acao:'festa-planejar',
+             nota:_t('aluguel de {aluguel} + o cachê da atração · ingresso de {min} a {max}',
+                     {aluguel:U.dinheiro(FA.ALUGUEL), min:U.dinheiro(FA.PRECO_MIN), max:U.dinheiro(FA.PRECO_MAX)})},
+            {id:'nada', rot:_t('Não fazer nada'), acao:'aniv-festa', nota:_t('{moral} de moral', {moral:F.nada.moral*5})}
+          ]
+        });
+        continue;
+      }
       fora.push({
         chave:`aniv-${q.tipo}|${anoCivil}`, tipo:'aniversario', voz:_t('Diretoria'),
         rot: q.tipo === 'torcida' ? _t('Aniversário da torcida') : _t('Aniversário do {clube}', {clube:q.nome}),
@@ -41817,6 +42342,32 @@ TO.feed = (function(){
         {id:'nada', rot:_t('Deixar quieto'), acao:'assalto-nao', nota:_t('sem efeito')}
       ]
     };
+  }
+  /* A BRIGA NA NOSSA FESTA (23/11/2026): no dia seguinte, a mensagem —
+     de que lado a gente fica, cortar com as duas ou pagar a trégua */
+  function mensagemBrigaNaFesta(E, b){
+    const FA = TO.festaAniv, P = {a:b.agressora.nome, v:b.vitima.nome};
+    return propor(E, {
+      kind:'festa-briga', peso:'decisao', voz:'diretor',
+      chave:`festa-briga|${E.data.ano}|${b.agressora.id}|${b.vitima.id}`,
+      texto:_t('A {a} partiu pra cima da {v} na nossa festa. As duas são aliadas nossas e as duas cobram uma posição. O que a gente faz?', P),
+      dados:{agressora:b.agressora, vitima:b.vitima},
+      botoes:[
+        {id:'lado-a', rot:_t('Ficar com a {a}', P), acao:'festa-briga', nota:_t('+10 com a {a} · −20 com a {v}', P)},
+        {id:'lado-v', rot:_t('Ficar com a {v}', P), acao:'festa-briga', nota:_t('+10 com a {v} · −20 com a {a}', P)},
+        {id:'cortar', rot:_t('Cortar com as duas'), acao:'festa-briga', nota:_t('−30 com cada uma')},
+        {id:'tregua', rot:_t('Pagar a trégua'), acao:'festa-briga', nota:_t('{valor} · +25 entre elas e +3 com a gente', {valor:U.dinheiro(FA.TREGUA_CUSTO)})}
+      ]
+    });
+  }
+  /* a festa marcada pela tela do planejamento fecha a pauta do aniversário */
+  function fecharPautaFesta(E, idItem, pv){
+    const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
+    if(!it || it.decidido) return {ok:false};
+    it.decidido = {botao:'planejar', rot:_t('Festa marcada')};
+    it.consequencia = _t('Festa marcada pro dia {d}: {artista}, ingresso a {preco}. Previsão de {n} pessoas. {custo} pagos agora.',
+      {d:(it.dados || {}).dia || '', artista:pv.artista.nome, preco:U.dinheiro(pv.preco), n:U.numero(pv.publico), custo:U.dinheiro(-pv.custo)});
+    return {ok:true, item:it};
   }
   /* o assalto feito pela tela fecha a pauta com o resultado dele */
   function fecharPautaAssalto(E, idItem, r){
@@ -43202,6 +43753,24 @@ TO.feed = (function(){
       /* a reunião com o clube abre a janela das pautas; quem responde é o fim dela (`confirmarDecisao`) */
       case 'reuniao-clube':
         return {ok:true, abrir:{tela:'reuniao-clube', msg:m, cancelavel:true, botao:idBotao}};
+      /* A FESTA DE ANIVERSÁRIO (23/11/2026): o planejamento (pauta solta), a
+         festa no dia e a mensagem da briga entre aliadas */
+      case 'festa-planejar':
+        return {ok:true, abrir:{tela:'festa-plano', msg:m, cancelavel:true, botao:idBotao}};
+      case 'festa-ir':
+      case 'festa-simular': {
+        const P = TO.festaAniv.plano(E);
+        if(!P || P.feita){ marcar(); m.consequencia = _t('A festa já passou.'); return {ok:true}; }
+        return {ok:true, abrir:{tela:'festa-aniv', msg:m, cancelavel:true, botao:idBotao,
+                                args:{simular: b.acao === 'festa-simular'}}};
+      }
+      case 'festa-briga': {
+        const txt = TO.festaAniv.decidirBriga(E, m.dados || {}, idBotao);
+        if(txt === null) return {ok:false, msg:_t('Falta caixa pra trégua: {valor}.', {valor:U.dinheiro(TO.festaAniv.TREGUA_CUSTO)})};
+        marcar();
+        m.consequencia = txt;
+        return {ok:true};
+      }
       case 'clube-festa': {
         marcar();
         const est = TO.festas.estoque(E); est.mosaico = (est.mosaico || 0) + 1;
@@ -43904,10 +44473,10 @@ TO.feed = (function(){
   }
 
   return {_filialSugestaoDeHoje: filialSugestaoDeHoje, _filialDeHoje: filialDeHoje, _quemAtacaASubsede: quemAtacaASubsede, INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
-          propor, dropar, pendentes, travado, decisaoAberta, pautaClubeParaTela, decidirPautaClube, reuniaoClubeDeHoje, ofertaDoClubeHoje,
+          propor, dropar, pendentes, travado, decisaoAberta, pautaClubeParaTela, decidirPautaClube, reuniaoClubeDeHoje, ofertaDoClubeHoje, aniversariosDeHoje,
           abertura, eventosDoDia, emboscadaDaViagem,
           mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, diaDaReuniao,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, fecharPautaFesta, mensagemBrigaNaFesta, diaDaReuniao,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
@@ -45216,8 +45785,62 @@ TO.diaJogo.cenario = (function(){
     c.beginPath(); c.arc(k.x - sx*6, k.y - sy*6, 9, 0, Math.PI*2); c.fill();
   }
 
+  /* A ARENA DA FESTA (a festa de aniversário, 23/11/2026): o chão — a
+     terra batida da arena à noite, a luz do palco derramada na pista, o
+     carpete das áreas VIP — fica pronto num canvas guardado; por cima,
+     a cada quadro, as manchas de luz andando. O que tem altura é 3D
+     (festa3d.js, com os bonecos); aqui só a pegada, que é o que aparece
+     quando não há placa de vídeo. */
+  let festaCache = null, festaChave = '';
+  function festaFundo(D, W, H){
+    const E = TO.estado && TO.estado.E;
+    const cores = E && E.torcida ? TO.mundo.coresDaTorcida(E.torcida) : {cor:'#c0392b', cor2:'#f1f1f1'};
+    const chave = `${W}x${H}|${cores.cor}|${cores.cor2}`;
+    if(festaCache && festaChave === chave) return festaCache;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    /* fora do tapume: a rua escura */
+    c.fillStyle = '#0b0b0e'; c.fillRect(0, 0, W, H);
+    /* a arena: a placa de concreto, com marca de pisada */
+    c.fillStyle = '#6f6a62'; c.fillRect(30, 30, W - 60, H - 52);
+    c.strokeStyle = 'rgba(40,38,34,.5)'; c.lineWidth = 2;
+    for(let x = 30; x < W - 30; x += 72){ c.beginPath(); c.moveTo(x, 30); c.lineTo(x, H - 22); c.stroke(); }
+    for(let y = 30; y < H - 22; y += 72){ c.beginPath(); c.moveTo(30, y); c.lineTo(W - 30, y); c.stroke(); }
+    for(let i = 0; i < 900; i++){
+      const s = hash(`festa-chao|${i}`);
+      c.fillStyle = (s % 3) ? 'rgba(0,0,0,.18)' : 'rgba(120,100,80,.10)';
+      c.fillRect(30 + (s % (W - 60)), 30 + ((s >>> 9) % (H - 60)), 2 + (s % 5), 2 + ((s >>> 4) % 4));
+    }
+    /* o fosso entre o palco e a grade */
+    c.fillStyle = '#16151a'; c.fillRect(470, 320, 596, 36);
+    /* o carpete das áreas VIP, na cor da torcida, escurecido */
+    for(const p of (D.pecas || []).filter(p => p.tipo === 'cercado')){
+      c.fillStyle = '#2a1c22'; c.fillRect(p.x, p.y, p.w, p.h);
+      c.strokeStyle = cores.cor || '#7a2a2a'; c.lineWidth = 6; c.globalAlpha = 0.7;
+      c.strokeRect(p.x + 10, p.y + 12, p.w - 20, p.h - 24); c.globalAlpha = 1;
+      c.strokeStyle = 'rgba(255,255,255,.05)'; c.lineWidth = 1;
+      for(let k = 0; k < p.w; k += 14){ c.beginPath(); c.moveTo(p.x + k, p.y); c.lineTo(p.x + k, p.y + p.h); c.stroke(); }
+    }
+    /* a calçada da entrada, do lado de fora */
+    c.fillStyle = '#34343a'; c.fillRect(690, 1000, 156, H - 1000);
+    /* a pegada das peças (sem placa de vídeo é o que fica) */
+    const COR = {tapume:'#2a2a30', palco:'#141418', telao:'#0e0e12', gradil:'#9aa0a6', 'torre-som':'#3a3a40',
+                 'tenda-bar':'#b52c2c', 'camarote-alto':'#2e2a2c', escada:'#55555c',
+                 'banheiro-quimico':'#2a64b8', espetinho:'#a8a8ac', catraca:'#7d8186'};
+    for(const p of D.pecas || []){
+      const k = COR[p.tipo]; if(!k) continue;
+      c.fillStyle = k; c.fillRect(p.x, p.y, p.w, p.h);
+    }
+    festaCache = cv; festaChave = chave;
+    return cv;
+  }
+  function festa(c, D, W, H){
+    /* (o chão de verdade é o 3D, festa3d.js; este é o de quem não tem placa) */
+    c.drawImage(festaFundo(D, W, H), 0, 0);
+  }
+
   const CENAS = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct};
+                 bar, comercio, ct, festa};
   const pintar = (c, D, W, H) => {
     const f = CENAS[D && D.pintura];
     if(!f) return false;
@@ -46614,6 +47237,11 @@ TO.diaJogo.combate = (function(){
          quem a desmonta é o fim da partida ou a tensão que estoura (aí
          abre a cena de briga de verdade, em tela cheia). */
       assistir: !!cfg.assistir,
+      /* A FESTA DE ANIVERSÁRIO (23/11/2026): todo mundo do mesmo lado,
+         dançando; a cena não acaba sozinha — só pelo botão ou quando a
+         briga entre aliadas (`brigaFesta`, que vira uma delas pro outro
+         lado) termina */
+      festaAniv: !!cfg.festaAniv, brigaFesta: null,
       config_perfilRival: cfg.perfilRival || null,
       /* fichas prontas pro lado deles (a zona deles na casa de piscina):
          cada grupo tira a sua fatia, na ordem, em vez de cada spawn
@@ -46638,14 +47266,14 @@ TO.diaJogo.combate = (function(){
       versaoGrades:0,
       /* cena com gatilho começa dormindo: quem defende está dentro e
          ainda não sabe de nada. Sem gatilho, tudo acordado, como sempre. */
-      acordou: !D.gatilho,
+      acordou: !D.gatilho && !cfg.festaAniv,       // (na festa cada um fica no seu lugar até a briga)
       /* nos arredores o humor não é da cena, é de cada bonde */
       bondes:{}
     };
 
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
     /* a reunião não tem PM (a praça tem posto; a roda não) */
-    if(!cfg.reuniao) for(const p of D.pmPostos) J.policiais.push(new Policial(p));
+    if(!cfg.reuniao && !cfg.festaAniv) for(const p of D.pmPostos) J.policiais.push(new Policial(p));
 
     /* ---- povoa cada spawn ----
        Com escalação, cada disco É um membro: nome, força, defesa e moral
@@ -48082,11 +48710,35 @@ TO.diaJogo.combate = (function(){
     if(!J.paz && !brigando && J.caidos.mandante+J.caidos.visitante===0) J.paz=true;
   }
 
+  /* A BRIGA NA FESTA (23/11/2026): a aliada que parte pra cima vira o
+     outro lado da cena, e a festa vira briga de verdade — quem estava
+     dançando para, e a cena passa a acabar como toda briga acaba */
+  function brigaNaFesta(J, spawnA, spawnV){
+    if(!J || !J.festaAniv || J.brigaFesta || J.fase !== 'ativo') return false;
+    const deles = J.discos.filter(d=>d.spawn === spawnA && d.vivo);
+    if(!deles.length) return false;
+    for(const d of deles){ d.lado = 'visitante'; d.guarda = false; }
+    /* quem briga é a agressora, a vítima e o nosso bonde (que entrou pra
+       separar); o público e as outras aliadas param de dançar e assistem
+       do lugar (a guarda só segura enquanto a casa não "acorda") */
+    for(const d of J.discos){
+      d.jeito = null;
+      if(d.spawn === spawnV || d.doJogador) d.guarda = false;
+    }
+    J.total = {mandante:J.discos.filter(d=>d.lado === 'mandante' && !d.guarda).length, visitante:deles.length};
+    J.brigaFesta = {agressora:spawnA, vitima:spawnV, t:J.t};
+    J.paz = false;
+    logar(J, _t('Briga na festa: o camarote partiu pra cima do outro.'), 'r');
+    return true;
+  }
+
   function conferirFim(J){
     if(J.fase!=='ativo') return;
     /* a reunião não acaba por briga: acaba pelo botão de encerrar
        (22/09/2026) */
     if(J.reuniao) return;
+    /* a festa sem briga também não (o botão de encerrar a fecha) */
+    if(J.festaAniv && !J.brigaFesta) return;
     /* Nos arredores o fim é outro e é mais simples: acabou quando o
        presidente entrou pelo portão. Lá não se toma nada de ninguém —
        o que se faz é chegar e entrar, e depois disso não há mais cena
@@ -48379,6 +49031,7 @@ TO.diaJogo.combate = (function(){
   function conferirGatilho(J){
     if(J.acordou) return;
     const g=D.gatilho;
+    if(!g) return;                       // (a festa: sem gatilho, quem acorda a casa é a briga)
     const atacantes=J.discos.filter(d=>d.vivo && d.lado===(g.lado||'mandante'));
     let por=null;
     /* dois jeitos de a cena declarar o gatilho, porque são duas
@@ -50667,7 +51320,7 @@ TO.diaJogo.combate = (function(){
     }
     /* ---- a viatura: o relógio da briga ---- */
     const caidos = J.caidos.mandante + J.caidos.visitante;
-    if(!J.viatura && !J.paz && (f >= 1 || caidos >= 1))
+    if(!J.viatura && !J.paz && !J.festaAniv && (f >= 1 || caidos >= 1))
       J.viatura = {chamadaEm:J.t, chegaEm:J.t + U.entre(VIATURA.de, VIATURA.ate), chegou:false, avisou:false};
     const v = J.viatura;
     if(v && !v.chegou){
@@ -52133,7 +52786,7 @@ TO.diaJogo.combate = (function(){
     }
   }
 
-  return {_lugaresNaArquibancada: lugaresNaArquibancada, _lugaresNoSetor: lugaresNoSetor, FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
+  return {_lugaresNaArquibancada: lugaresNaArquibancada, _lugaresNoSetor: lugaresNoSetor, FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, brigaNaFesta, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil, fichasDaZona,
@@ -55839,6 +56492,10 @@ TO.diaJogo.ponte = (function(){
     if(tres && cv) cv.classList.remove('sobre-gl');
 
     A.usarCena(local, (opc.config||{}).estadioLP);
+    /* O CENÁRIO EM 3D (a casa de festas, 23/11/2026): as peças com altura
+       entram na cena dos bonecos; as outras cenas tiram o que estava */
+    { const B3 = TO.diaJogo.bonecos3;
+      if(B3 && B3.cenario) B3.cenario(bonecos && T === B3 ? String(local || '') : null, A.D); }
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();
@@ -56742,6 +57399,8 @@ TO.diaJogo.ponte = (function(){
     /* a reunião acaba pelo botão de encerrar (fase B): o portão não é
        saída de reunião, e o pad do celular também chega por aqui */
     if(J && J.reuniao) return;
+    /* na festa a saída é o botão da faixa de cima */
+    if(J && J.festaAniv && !J.brigaFesta) return;
     const s = D.saida || SAIDA_PADRAO;
     /* NOS ARREDORES O BOTÃO É UMA ORDEM.
        Todo mundo caminha pro próprio portão e a cena fecha quando
@@ -67114,7 +67773,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     const e = E();
     const r = TO.feed.responder(e, id, idBotao);
     atualizarFeed();
-    if(!r.ok) return;
+    if(!r.ok){ if(r.msg) aviso(r.msg, 'ruim'); return; }
     if(r.abrir){
       const t = r.abrir.tela, a = r.abrir.args || {}, m = r.abrir.msg;
       /* o botão Simular chega marcado daqui: o palco lê a marca uma vez
@@ -67129,6 +67788,8 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'tela-reuniao') abrirReuniaoEmCena(m);
       else if(t === 'reuniao-clube') abrirReuniaoClube(m);
+      else if(t === 'festa-plano') planejarFestaDaMensagem(m);
+      else if(t === 'festa-aniv') abrirFesta(m, !!a.simular);
       else if(t === 'tela-assalto') abrirAssaltoSorteio(res=>{
         /* o resultado fecha a pauta (o texto do fim) e a mensagem que abriu a tela */
         const item = m && m.dados && m.dados.item;
@@ -68866,6 +69527,295 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     };
     pintar();
     fechar = modal(_t('Reunião com o clube'), clube, corpo, [], 'estreita', true);
+  }
+
+  /* =======================================================
+     A FESTA DE ANIVERSÁRIO (pedido do dono, 23/11/2026)
+     O planejamento (a atração, o ingresso e a previsão), a festa no
+     dia — a cena na casa de festas, com o discurso no palco e a briga
+     entre aliadas, ou só o resultado — e o resumo no fim.
+     ======================================================= */
+  const estrelas = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+  function abrirPlanoDaFesta(it, aoFim){
+    const e = E(), FA = TO.festaAniv, d = (it && it.dados) || {};
+    const pl = {genero:'funk', artista:null, preco:FA.PRECO_PADRAO};
+    /* abre na atração mais cara que o caixa paga, do funk */
+    const cabe = a => e.dinheiro >= FA.ALUGUEL + a.cache;
+    { const op = FA.ARTISTAS.filter(a=>a.genero === pl.genero && cabe(a)); pl.artista = (op[0] || FA.ARTISTAS.filter(a=>a.genero === pl.genero).slice(-1)[0]).id; }
+    const aliadas = FA.lugaresDasAliadas(e, FA.aliadasConvidadas(e));
+    let fechar = null, feito = false;
+    const corpo = el('div',{class:'festa-plano'});
+    const prev = el('div',{class:'fp-prev'});
+    const pintarPrevisao = ()=>{
+      const pv = FA.previsao(e, pl.artista, pl.preco);
+      const saldo = pv.lucro;
+      prev.innerHTML =
+        `<div class="fp-linha"><span>${_t('Público previsto')}</span><b>${_t('{n} de {max} possíveis', {n:U.numero(pv.publico), max:U.numero(pv.potencial)})}</b></div>`+
+        `<div class="fp-linha"><span>${_t('Ingressos')}</span><b>${U.dinheiro(pv.ingressos)}</b></div>`+
+        `<div class="fp-linha"><span>${_t('Bar')}</span><b>${U.dinheiro(pv.bar)}</b></div>`+
+        `<div class="fp-linha"><span>${_t('Aluguel + cachê (pago agora)')}</span><b>${U.dinheiro(-pv.custo)}</b></div>`+
+        `<div class="fp-linha fp-saldo ${saldo >= 0 ? 'bom' : 'ruim'}"><span>${_t('Saldo previsto')}</span><b>${U.dinheiro(saldo)}</b></div>`+
+        `<div class="fp-linha"><span>${_t('Moral do show')}</span><b>+${pv.moral}</b></div>`+
+        (e.dinheiro < pv.custo ? `<p class="fp-aviso">${_t('Falta caixa: o aluguel e o cachê saem {valor}, e a gente tem {caixa}.', {valor:U.dinheiro(pv.custo), caixa:U.dinheiro(e.dinheiro)})}</p>` : '');
+    };
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      corpo.appendChild(el('p',{class:'tut-texto', texto:_t('A torcida completa {n} anos no dia {d}. A casa de festas sai {aluguel}; a atração é o que puxa o público e a moral.', {n:d.idade || '', d:d.dia || '', aluguel:U.dinheiro(FA.ALUGUEL)})}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O ritmo')}));
+      corpo.appendChild(opcoes(FA.GENEROS.map(g=>({id:g.id, rot:_t(g.nome)})), pl.genero, id=>{
+        pl.genero = id; const op = FA.ARTISTAS.filter(a=>a.genero === id && cabe(a));
+        pl.artista = (op[0] || FA.ARTISTAS.filter(a=>a.genero === id).slice(-1)[0]).id; pintar(); }));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A atração')}));
+      corpo.appendChild(opcoes(FA.ARTISTAS.filter(a=>a.genero === pl.genero).map(a=>({
+        id:a.id, rot:`${a.nome} <span class="fp-fama">${estrelas(a.fama)}</span>`,
+        nota:_t('cachê de {valor}', {valor:U.dinheiro(a.cache)}) + (cabe(a) ? '' : ' · ' + _t('falta caixa'))
+      })), pl.artista, id=>{ pl.artista = id; pintar(); }));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O ingresso')}));
+      const linha = el('div',{class:'fp-preco'});
+      const rot = el('b',{texto:U.dinheiro(pl.preco)});
+      const r = el('input',{type:'range', min:String(FA.PRECO_MIN), max:String(FA.PRECO_MAX), step:'5', value:String(pl.preco)});
+      r.oninput = ()=>{ pl.preco = +r.value; rot.textContent = U.dinheiro(pl.preco); pintarPrevisao(); };
+      linha.append(r, rot);
+      corpo.appendChild(linha);
+      corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${_t('Caro afasta o público; barato enche a casa, mas cada um paga menos. Atração famosa segura melhor o ingresso caro.')}</span>`}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A previsão')}));
+      corpo.appendChild(prev);
+      pintarPrevisao();
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Os camarotes')}));
+      const rivais = [];
+      for(let i = 0; i < aliadas.length; i++) for(let j = i + 1; j < aliadas.length; j++)
+        if(FA.rivaisEntreSi(e, aliadas[i].id, aliadas[j].id)) rivais.push([aliadas[i].nome, aliadas[j].nome]);
+      corpo.appendChild(el('p',{class:'tut-texto', texto: aliadas.length
+        ? _t('Aliadas convidadas: {lista}.', {lista:aliadas.map(a=>a.nome).join(', ')})
+          + (rivais.length ? ' ' + rivais.map(([a, b])=>_t('A {a} e a {b} são rivais entre si: ficam em lados opostos da casa, mas pode sair briga.', {a, b})).join(' ') : '')
+        : _t('Nenhuma aliada pra convidar: os camarotes ficam com a nossa diretoria.')}));
+    };
+    pintar();
+    const fim = r => { if(feito) return; feito = true; if(fechar) fechar(); if(aoFim) aoFim(r); };
+    fechar = modal(_t('A festa de aniversário'), _t('{n} anos da torcida', {n:d.idade || ''}), corpo, [
+      [_t('Voltar'), ()=>fim(null)],
+      [_t('Marcar a festa'), ()=>{
+        const r = FA.marcar(e, {artista:pl.artista, preco:pl.preco, anoCivil:d.anoCivil, idade:d.idade, data:d.data});
+        if(!r.ok){ aviso(r.msg, 'ruim'); return; }
+        aviso(_t('Festa marcada: {artista} no dia {d}.', {artista:r.pv.artista.nome, d:d.dia || ''}), 'boa');
+        TO.estado.salvar(); pintarTopo();
+        fim(r.pv);
+      }]
+    ], null, true);
+  }
+  /* a pauta solta do modo rápido: a mensagem abre o planejamento */
+  function planejarFestaDaMensagem(m){
+    const e = E(), F = TO.feed;
+    const it = F.caixaReuniao(e).pauta.find(x=>x.id === ((m && m.dados) || {}).item);
+    if(!it || it.decidido){ if(m) m.consequencia = _t('Esse assunto já passou.'); confirmarDecisao(_t('Passou')); atualizarFeed(); return; }
+    abrirPlanoDaFesta(it, pv=>{
+      if(!pv) return;
+      F.fecharPautaFesta(e, it.id, pv);
+      if(m) m.consequencia = it.consequencia;
+      confirmarDecisao(_t('Festa marcada'));
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+    });
+  }
+
+  /* o discurso: quatro botões, cada um com o que mexe */
+  function escolherDiscurso(aoEscolher){
+    const FA = TO.festaAniv;
+    let fechar = null;
+    const corpo = el('div',{class:'festa-discurso'});
+    corpo.appendChild(el('p',{class:'tut-texto', texto:_t('O presidente sobe no palco, a música baixa e a casa inteira olha. O que ele fala?')}));
+    const bts = el('div',{class:'msg-bts'});
+    for(const d of FA.DISCURSOS){
+      const b = el('button',{class:'bt'}); b.innerHTML = `<span>${_t(d.rot)}</span><small>${_t(d.nota)}</small>`;
+      b.onclick = ()=>{ if(fechar) fechar(); aoEscolher(d.id); };
+      bts.appendChild(b);
+    }
+    corpo.appendChild(bts);
+    fechar = modal(_t('O discurso'), _t('no palco da festa'), corpo, [], 'estreita', true);
+  }
+  /* a briga entre aliadas: entrar pra separar ou ficar de fora */
+  function perguntarBriga(b, aoEscolher){
+    let fechar = null;
+    const corpo = el('div',{class:'festa-discurso'});
+    corpo.appendChild(el('p',{class:'tut-texto', texto:_t('A {a} partiu pra cima da {v} no camarote! A casa parou. O nosso bonde entra pra separar ou fica de fora?', {a:b.agressora.nome, v:b.vitima.nome})}));
+    const bts = el('div',{class:'msg-bts'});
+    for(const [id, rot, nota] of [
+      ['entrar', _t('Entrar pra separar'), _t('o bonde vai pra cima da {a} — ganhar põe ela pra fora; perder custa caro', {a:b.agressora.nome})],
+      ['fora', _t('Ficar de fora'), _t('as duas se resolvem, a casa quebra e a festa acaba mais cedo')]]){
+      const x = el('button',{class:'bt'}); x.innerHTML = `<span>${rot}</span><small>${nota}</small>`;
+      x.onclick = ()=>{ if(fechar) fechar(); aoEscolher(id); };
+      bts.appendChild(x);
+    }
+    corpo.appendChild(bts);
+    fechar = modal(_t('Briga na festa'), _t('{a} × {v}', {a:b.agressora.nome, v:b.vitima.nome}), corpo, [], 'estreita', true);
+  }
+  /* o fim: o saldo, a moral, as aliadas e a briga, num resumo; a
+     mensagem do "e agora?" da briga sai no feed */
+  function concluirFesta(m, R){
+    const e = E(), FA = TO.festaAniv;
+    const r = FA.fechar(e, {aliadas:R.aliadas, briga:R.briga, cedo:R.cedo});
+    const linhas = [].concat(R.discurso ? R.linhas : [_t('Sem discurso no palco.')], r.linhas);
+    if(R.briga) TO.feed.mensagemBrigaNaFesta(e, R.briga);
+    const corpo = el('div',{class:'reuniao-clube'});
+    corpo.appendChild(el('h3',{texto:_t('O que a festa deixou')}));
+    const ul = el('ul',{class:'rc-resumo'});
+    for(const l of linhas) ul.appendChild(el('li',{texto:l}));
+    corpo.appendChild(ul);
+    if(R.briga) corpo.appendChild(el('p',{class:'rc-feito', texto:_t('A {a} e a {v} vão cobrar uma posição: a mensagem chega no feed.', {a:R.briga.agressora.nome, v:R.briga.vitima.nome})}));
+    let fechar = null;
+    const bt = el('button',{class:'bt destaque', texto:_t('Encerrar')});
+    bt.onclick = ()=>{ if(m) m.consequencia = linhas.join(' · '); if(fechar) fechar(); confirmarDecisao(_t('Festa feita')); TO.estado.salvar(); pintarTopo(); atualizarFeed(); };
+    const nav = el('div',{class:'tut-nav'}); nav.appendChild(bt); corpo.appendChild(nav);
+    fechar = modal(_t('A festa dos {n} anos', {n:(FA.plano(e) || {}).idade || ''}), (FA.artista((FA.plano(e) || {}).artista) || {}).nome || '', corpo, [], 'estreita', true);
+  }
+  /* só o resultado: o discurso, o dado da briga e o resumo */
+  function festaSemCena(m, aliadas){
+    const e = E(), FA = TO.festaAniv;
+    escolherDiscurso(id=>{
+      const R = {aliadas, discurso:id, linhas:FA.discursar(e, id, aliadas), briga:FA.sortearBriga(e, aliadas, id), cedo:false};
+      if(!R.briga) return concluirFesta(m, R);
+      perguntarBriga(R.briga, op=>{
+        if(op === 'fora'){ R.briga.desfecho = 'fora'; R.cedo = true; }
+        else R.briga.desfecho = U.rng() < 0.6 ? 'ganhou' : 'perdeu';
+        concluirFesta(m, R);
+      });
+    });
+  }
+
+  let festaCena = null;
+  function abrirFesta(m, simular){
+    const e = E(), FA = TO.festaAniv, P = FA.plano(e);
+    if(!P || P.feita){ if(m) m.consequencia = _t('A festa já passou.'); confirmarDecisao(_t('Passou')); atualizarFeed(); return; }
+    const aliadas = FA.lugaresDasAliadas(e, FA.aliadasConvidadas(e));
+    const cena = TO.dados.cenas && TO.dados.cenas.festa;
+    if(simular || !cena || !$('djPrincipal') || festaCena) return festaSemCena(m, aliadas);
+    /* quem vai: o presidente e até quinze de pé */
+    const pres = TO.membros.presidente ? TO.membros.presidente(e) : null;
+    const disp = (e.membros || []).filter(x=>TO.membros.disponivel(x) && !(pres && x.id === pres.id));
+    const escalacao = (pres && !pres.preso ? [pres] : []).concat(disp.slice(0, 15));
+    if(!escalacao.length) return festaSemCena(m, aliadas);
+    const cores = TO.mundo.coresDaTorcida(e.torcida), sigla = TO.mundo.siglaTorcida(e.torcida);
+    const setor = {};
+    const bondes = [{id:e.torcida.id, lado:'mandante', n:escalacao.length, nossa:true, nome:e.torcida.nome,
+                     cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, sigla}];
+    setor[e.torcida.id] = 'entrada';
+    /* o público (a nossa gente de fora da escalação) na pista e no bar */
+    [['pista1', 9], ['pista2', 9], ['pista3', 8], ['pista4', 8], ['pista5', 8], ['pista6', 8], ['bar1', 4], ['bar2', 4]].forEach(([sp, n], i)=>{
+      const id = 'publico-' + i;
+      bondes.push({id, lado:'mandante', n, nossa:false, nome:_t('Convidados'), cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, sigla});
+      setor[id] = sp;
+    });
+    /* as aliadas, cada uma no seu camarote */
+    for(const a of aliadas){
+      const T = TO.mundo.torcida(a.id), c = TO.mundo.coresDaTorcida(T);
+      bondes.push({id:a.id, lado:'mandante', n:U.limitar(Math.round((a.membros || 40) / 8), 6, 10), nossa:false, nome:a.nome,
+                   cor:c.cor, cor2:c.cor2, cor3:c.cor3, sigla:TO.mundo.siglaTorcida(T)});
+      setor[a.id] = 'cam-' + a.camarote;
+    }
+    cena.setorDaTorcida = setor;
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    document.body.classList.add('em-festa');
+    $('djPalco').classList.add('reuniao');
+    TO.estado.bloquear(true);
+    pararTudo('cena');
+    simularProxima = false;
+    const R = festaCena = {e, m, aliadas, discurso:null, linhas:[], briga:null, cedo:false, faixa:null, sub:null, bt:null, timer:0,
+                           zoomAntes: TO.diaJogo.ponte.zoom};
+    abrirPalco({
+      canvas: $('djPrincipal'),
+      config: { escalacao, intencao:'paz', paz:true, festaAniv:true, bondes, bombas:0, semArmas:true, local:'festa' },
+      aoTerminar: res=>fecharFestaEmCena(res)
+    });
+    /* todo mundo dançando, menos o presidente (é o jogador que anda) */
+    const J = TO.diaJogo.J;
+    if(J) for(const d of J.discos) if(!d.lider) d.jeito = 'festa';
+    /* de perto: em tela larga o salão inteiro deixa o boneco miúdo */
+    if(innerWidth > 900) TO.diaJogo.ponte.zoom = 1.5;
+    montarFaixaDaFesta(R);
+    R.timer = setTimeout(()=>pedirDiscursoNaCena(R), 2500);
+  }
+  function montarFaixaDaFesta(R){
+    const FA = TO.festaAniv, P = FA.plano(R.e) || {}, a = FA.artista(P.artista);
+    const fx = el('div',{class:'fx fx-reuniao'});
+    const tit = el('div',{class:'reu-titulo'});
+    tit.appendChild(el('b',{texto:_t('Festa dos {n} anos', {n:P.idade || ''})}));
+    R.sub = el('span',{texto: a ? _t('{artista} no palco', {artista:a.nome}) : ''}); tit.appendChild(R.sub);
+    R.btDisc = el('button',{class:'bt', texto:_t('Discursar')});
+    R.btDisc.onclick = ()=>pedirDiscursoNaCena(R);
+    R.bt = el('button',{class:'bt destaque', texto:_t('Encerrar a festa')});
+    R.bt.onclick = ()=>encerrarFesta(R);
+    fx.append(tit, R.btDisc, R.bt);
+    const faixa = $('djFaixa');
+    if(faixa) faixa.appendChild(fx);
+    R.faixa = fx;
+  }
+  function pedirDiscursoNaCena(R){
+    if(festaCena !== R || R.discurso || R.pedindo) return;
+    clearTimeout(R.timer);
+    R.pedindo = true;
+    const FA = TO.festaAniv;
+    escolherDiscurso(id=>{
+      R.pedindo = false;
+      if(festaCena !== R) return;
+      R.discurso = id;
+      R.linhas = FA.discursar(R.e, id, R.aliadas);
+      const d = FA.DISCURSOS.find(x=>x.id === id);
+      if(R.btDisc) R.btDisc.remove();
+      if(R.sub) R.sub.textContent = _t('discurso: {d}', {d:_t(d.rot).toLowerCase()});
+      aviso(_t('A casa respondeu: {d}.', {d:_t(d.rot).toLowerCase()}), 'boa');
+      R.briga = FA.sortearBriga(R.e, R.aliadas, id);
+      if(R.briga) R.timer = setTimeout(()=>comecarBrigaNaFesta(R), U.inteiro(4000, 7000));
+    });
+  }
+  function comecarBrigaNaFesta(R){
+    if(festaCena !== R || !R.briga) return;
+    const J = TO.diaJogo.J, b = R.briga;
+    perguntarBriga(b, op=>{
+      if(festaCena !== R) return;
+      if(op === 'fora'){
+        b.desfecho = 'fora'; R.cedo = true;
+        if(J) J.reuniao = true;
+        TO.diaJogo.ponte.encerrar(_t('a festa acabou em briga'));
+        return;
+      }
+      const ok = J && TO.diaJogo.combate.brigaNaFesta(J, 'cam-' + b.agressora.camarote, 'cam-' + b.vitima.camarote);
+      if(!ok){ b.desfecho = U.rng() < 0.6 ? 'ganhou' : 'perdeu'; return; }
+      $('djPalco').classList.remove('reuniao');
+      document.body.classList.add('festa-brigando');
+      if(R.bt) R.bt.disabled = true;
+      if(R.sub) R.sub.textContent = _t('briga: {a} × {v}', {a:b.agressora.nome, v:b.vitima.nome});
+    });
+  }
+  function encerrarFesta(R){
+    const J = TO.diaJogo.J;
+    if(J && J.brigaFesta) return;
+    /* a briga já sorteada que não chegou a estourar estoura na saída */
+    if(R.briga && !R.briga.desfecho){ R.briga.desfecho = 'fora'; R.cedo = true; }
+    if(J) J.reuniao = true;
+    TO.diaJogo.ponte.encerrar(_t('a festa acabou'));
+  }
+  function fecharFestaEmCena(res){
+    const R = festaCena; if(!R) return;
+    festaCena = null;
+    clearTimeout(R.timer);
+    const e = E(), J = TO.diaJogo.J;
+    if(R.faixa) R.faixa.remove();
+    $('djPalco').classList.remove('reuniao');
+    document.body.classList.remove('em-festa');
+    document.body.classList.remove('festa-brigando');
+    TO.diaJogo.ponte.zoom = R.zoomAntes;
+    TO.estado.bloquear(false);
+    TO.diaJogo.ponte.parar();
+    $('telaDiaJogo').classList.add('oculto');
+    document.body.classList.remove('em-cena');
+    soltarTudo('cena');
+    if(R.briga && !R.briga.desfecho){
+      if(J && J.brigaFesta && res && !res.reuniao){
+        R.briga.desfecho = res.ganhamos ? 'ganhou' : 'perdeu';
+        TO.membros.aplicarResultadoDaNoite(e, res);
+      } else { R.briga.desfecho = 'fora'; R.cedo = true; }
+    }
+    concluirFesta(R.m, R);
   }
 
   function abrirAssaltoSorteio(aoFim){
@@ -72499,6 +73449,8 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         bt.onclick = ()=>{
           /* os alvos de assalto abrem a tela por cima; o resultado dela fecha a pauta */
           if(b.acao === 'assalto-ver' || b.acao === 'assalto-planejar'){ abrirAssaltoSorteio(r=>{ if(r) F.fecharPautaAssalto(e, it.id, r); else F.decidirPauta(e, it.id, 'nada'); depois(); }); return; }
+          /* a festa de aniversário abre o planejamento; marcada, a pauta fecha */
+          if(b.acao === 'festa-planejar'){ abrirPlanoDaFesta(it, pv=>{ if(pv){ F.fecharPautaFesta(e, it.id, pv); depois(); } }); return; }
           F.decidirPauta(e, it.id, b.id); depois();
         };
         bts.appendChild(bt);

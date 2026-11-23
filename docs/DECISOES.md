@@ -16097,6 +16097,73 @@ No fim, o resumo mostra a relação com cada torcida, a moral e os acordos.
 - Em 4 temporadas com a relação ótima: a reunião veio em 4 de 4 anos na TUF e em 1 de 5 na Cearamor (o sorteio é por ano). Vieram umas 2,5 ofertas por ano.
 - A caravana paga pelo clube: em vez de pagar R$ 1.620, a torcida recebeu R$ 2.430 de rateio dos 135 no ônibus.
 
+## A festa de aniversário da torcida, em cena 3D (dono, 23/11/2026)
+
+É a terceira das quatro fases do pedido de mais momentos interativos. O dono, sobre a festa: "somente uma festa por ano, que é a de aniversário da torcida", "Cena 3d ao vivo", e sobre as peças do Blender: "Essas dez", materiais `cor1`/`cor2`/`cor3`, ".glb" no padrão combinado, na pasta `cenario3d/modelos/festa/`. Depois de ver a cena, pediu duas vezes outro visual: primeiro "palco com grid, iluminação, camarote elevado ao lado direito, bares do lado esquerdo" (com fotos de show), e depois "retire o jogo de luz, retire essas lâmpadas pequenas no meio. O cenário precisa ser similar ao cenário antigo do mapa 3d. Tenha cuidado com o piso, dê mais realismo".
+
+**O planejamento.** A pauta do aniversário da torcida (reunião ou mensagem solta) troca "festa grande / simples" por "Planejar a festa". A janela mostra:
+- **A atração:** 30 inventadas (10 de funk, 5 de pagode, 5 de sertanejo, 5 de forró, 5 de rap), com fama de 1 a 5 estrelas e cachê de R$ 2.500 a R$ 70.000.
+- **O ingresso:** de R$ 10 a R$ 80.
+- **A previsão:** público, ingressos, bar, custo, saldo e moral do show.
+- **Os camarotes:** as aliadas convidadas e quais são rivais entre si.
+
+Marcar paga na hora o aluguel (R$ 8.000) e o cachê. O aniversário do clube segue com a festa grande ou simples de antes.
+
+**A conta do público.**
+- Possível: membros × 4 + 250 + fama × 140 + prestígio × 15.
+- Interesse: 0,35 + moral × 0,45 + fama × 0,04.
+- Preço: de 1,25 (R$ 10) a 0,30 (R$ 80); a atração famosa segura melhor o ingresso caro.
+- No dia, o público sai da previsão com ±10%. O bar deixa R$ 5 por pessoa.
+- A moral do show é fama × 2, mais 2 se a casa encher 70%.
+
+**O dia.** A mensagem "Hoje é a festa dos N anos" tem "Ir pra festa" (a cena) e "Só o resultado". Na cena, todo mundo do mesmo lado, dançando; a diretoria entra pela portaria e o presidente anda livre. Depois de 2,5 s (ou pelo botão "Discursar"), o discurso:
+- **Exaltar a torcida:** +5 de moral.
+- **Provocar o rival:** +4 de moral e −10 com o maior rival. Por 30 dias, a chance de ele atacar dobra.
+- **Pedir união dos aliados:** +6 com cada aliada presente. A chance de briga cai de 10% pra 4%.
+- **Cobrar a diretoria do clube:** +3 de moral e −8 de relação com o clube.
+
+**A briga entre aliadas.** Só existe entre duas presentes que são rivais entre si. Elas ficam em lados opostos: área VIP à esquerda, camarote elevado à direita. Quem parte pra cima é sorteado, e a pergunta vem de 4 a 7 s depois do discurso:
+- **Entrar pra separar:** a agressora vira o outro lado da cena, contra a vítima e o nosso bonde. O público e as outras aliadas param e assistem.
+  - Ganhar: −10 com ela, +5 com a vítima, +3 de moral.
+  - Perder: −15 com ela, −3 de moral.
+  - Os nossos caídos viram feridos.
+- **Ficar de fora:** a casa quebra (R$ 2.000 a 5.000), −3 de moral, e a festa acaba mais cedo (o bar rende 60%).
+
+Encerrar a festa com a briga sorteada e ainda não estourada conta como ficar de fora. No dia seguinte chega a mensagem "de que lado a gente fica":
+- Ficar com uma: +10 com ela, −20 com a outra.
+- Cortar com as duas: −30 com cada.
+- Pagar a trégua: R$ 5.000, +25 entre elas e +3 com cada uma.
+
+**A cena.** É a cena desenhada `festa` (jogo.js). A planta `pecas` serve a três coisas:
+- O chão de quem não tem placa de vídeo (pintura `festa`).
+- As peças 3D (`js/festa3d.js`), que entram na mesma cena e câmera dos bonecos (`bonecos3_cena.js`, `porCenario`).
+- O bloqueio.
+
+A arena é a céu aberto, cercada de muro pré-moldado:
+- O palco no fundo, com o grid de treliça a 10,5 m, o painel de LED com "N ANOS", as caixas penduradas e os telões dos dois lados.
+- A torre de som no meio.
+- As tendas vermelhas dos bares à esquerda, com duas áreas VIP na frente.
+- O camarote elevado à direita (deque a 3 m, duas escadas, guarda-corpo de grade, sofás). O boneco sobe nele: `alturas` da cena, lida pelo `pos` dos bonecos.
+- Os banheiros químicos, o espetinho, as mesas de plástico, os postes, as lixeiras e o pórtico.
+
+As peças usam o kit do mapa 3D antigo (`detalhe3d.js`):
+- O piso: placa de concreto com junta, a mancha grande, as manchas de bebida, as rachaduras e a areia soprada na entrada; a rua de asfalto em volta.
+- O muro pré-moldado, o poste, a mesa com cadeiras, o freezer, o isopor, o sofá, a lixeira e a sombra de contato.
+
+Cada peça sai juntada por material (`juntar`). Não tem jogo de luz nem varal de lâmpada. A luz da cena baixa pra 72% (é noite) e volta quando outra cena monta.
+
+**As peças do Blender.** Cada tipo da planta tem o seu arquivo (`ARQUIVOS` em festa3d.js; a lista está no LEIA-ME da pasta). A pasta tem `pecas.json`, com os arquivos que já chegaram. A peça listada entra no lugar do modelo do jogo, e os materiais `cor1`, `cor2` e `cor3` saem nas cores da torcida. A lista evita 404 no console.
+
+**Outras escolhas:**
+- `J.festa` já era a festa da arquibancada (mosaico, bandeirão), por isso a cena usa `J.festaAniv`.
+- Sem `gatilho` na cena, a guarda (`acordou`) segura cada grupo no lugar até a briga.
+- No celular, os botões de briga somem até a briga começar.
+
+**Medido:**
+- De ponta a ponta (Leões da TUF, Samba de Sobra a R$ 40): previsão de 953 pessoas. No dia vieram 964, R$ 43.380 de ingressos e bar, saldo de R$ 19.380, moral do show +6, e as 4 aliadas com +3 cada.
+- Briga forçada, entrando pra separar: 8 da agressora contra 22 (a vítima e os nossos). Acabou em 69 a 92 s, com 1 ou 2 caídos nossos.
+- "Só o resultado" com "ficar de fora": quebra de R$ 2.516. A trégua paga levou as duas de −45 a −20 entre si.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

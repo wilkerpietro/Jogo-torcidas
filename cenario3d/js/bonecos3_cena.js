@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=d15ba1afaa';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=fde238184f';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -113,7 +113,9 @@ const URL_LONGE = new URL('../img/boneco_longe.glb', import.meta.url).href;
 /* onde, no mundo, fica a posição (x, y) do tabuleiro. A cena
    plana devolve (x, 0, y); o estádio devolve a dobra. */
 const PLANO = { x:0, y:0, z:0 };
-let pos = (x, y) => { PLANO.x = x; PLANO.y = 0; PLANO.z = y; return PLANO; };
+/* (o chão que sobe — o deque do camarote da festa — vem do cenário 3D: `porCenario`) */
+let alturaDoCenario = null;
+let pos = (x, y) => { PLANO.x = x; PLANO.y = alturaDoCenario ? alturaDoCenario(x, y) : 0; PLANO.z = y; return PLANO; };
 /* quem está de fora e tem sol e mapa de sombra na cena */
 let sombraDeLuz = false;
 /* o teste de "cabe na tela" de quem tem a câmera */
@@ -3116,9 +3118,34 @@ let escalaDoTabuleiro = () => 1;
     const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); scene.add(sol);
     const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); scene.add(contra);
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
+    /* o cenário em 3D da cena (a casa de festas) volta pra cena nova */
+    if(cenarioExtra){ scene.add(cenarioExtra); luzDoCenario(); }
     ativo = true;
     carregarGLB();
     return true;
+  }
+
+  /* O CENÁRIO EM 3D JUNTO DOS BONECOS (a festa de aniversário, 23/11/2026):
+     a cena de cima é o chão pintado; o que tem altura — o palco, o bar, o
+     camarote — entra aqui, na mesma cena e na mesma câmera dos bonecos, e
+     a profundidade resolve quem tapa quem. `null` tira. */
+  let cenarioExtra = null;
+  function porCenario(g){
+    if(cenarioExtra && cenarioExtra.parent) cenarioExtra.parent.remove(cenarioExtra);
+    cenarioExtra = g || null;
+    alturaDoCenario = (cenarioExtra && cenarioExtra.userData.alturaEm) || null;
+    if(cenarioExtra && scene) scene.add(cenarioExtra);
+    luzDoCenario();
+  }
+  /* a cena da noite (a festa) baixa a luz; sem cenário, volta a de sempre */
+  function luzDoCenario(){
+    if(!scene) return;
+    const k = cenarioExtra && cenarioExtra.userData.luz != null ? cenarioExtra.userData.luz : 1;
+    for(const l of scene.children){
+      if(!l.isLight) continue;
+      if(l.userData.base == null) l.userData.base = l.intensity;
+      l.intensity = l.userData.base * k;
+    }
   }
 
   /* QUEM ESTÁ FORA DA TELA NÃO É ANIMADO NEM DESENHADO (fps do dono,
@@ -4512,7 +4539,7 @@ void main() {`)
   /* o contexto deste canvas caiu e não voltou: quem monta troca o canvas (main.js, 02/10/2026) */
   function perdeu(canvas){ return !!(renderer && cv === canvas && !ativo); }
 
-export { montar, desenharDeCima, desenharVitrine, limparDeCima, entrarEm, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu,
+export { montar, desenharDeCima, desenharVitrine, limparDeCima, entrarEm, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario,
          paletaDaCena, anelDe, desenhoDaTorcida, DESENHOS, estudo, cfg };
 export const bonecos = {
   get escala(){ return escalaDeCima; }, set escala(v){ escalaDeCima = v; },
