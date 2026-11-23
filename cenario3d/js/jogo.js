@@ -5461,6 +5461,8 @@ TO.i18n.registrar({
   'CHAMAR':   {es:'LLAMAR',    en:'RALLY'},
   'O bonde partiu pra cima.': {es:'La banda fue al frente.', en:'The crew charged.'},
   'Qual o alvo': {es:'Cuál es el blanco', en:'Pick the target'},
+  "A banda": {es:"La banda", en:"The band"},
+  "Quem trabalha": {es:"Los que trabajan", en:"Staff"},
   "Escolhe a atração.": {es:"Elige la atracción.", en:"Pick the act."},
   "Falta caixa: o aluguel e o cachê saem {valor}.": {es:"Falta caja: el alquiler y el caché salen {valor}.", en:"Not enough cash: the rent and the fee come to {valor}."},
   "Festa de aniversário — aluguel e cachê": {es:"Fiesta de aniversario — alquiler y caché", en:"Anniversary party — rent and fee"},
@@ -13306,106 +13308,110 @@ TO.dados.cenas = (function(){
   });
 
   /* =======================================================
-     A FESTA DE ANIVERSÁRIO, O SHOW (23/11/2026; refeita no mesmo dia
-     com as fotos do dono: "precisa ter um visual mais de festa, com
-     palco com grid, iluminação, camarote elevado ao lado direito, bares
-     do lado esquerdo"; e de novo: "retire o jogo de luz, retire essas
+     A FESTA DE ANIVERSÁRIO, O SHOW (23/11/2026). As voltas do dono no
+     mesmo dia, com fotos de show: "precisa ter um visual mais de festa,
+     com palco com grid, iluminação, camarote elevado ao lado direito,
+     bares do lado esquerdo"; "retire o jogo de luz, retire essas
      lâmpadas pequenas no meio. O cenário precisa ser similar ao cenário
-     antigo do mapa 3d" — as peças saem do kit do mapa, festa3d.js).
-     Arena a céu aberto, à noite, cercada de muro pré-moldado:
-     o palco no fundo (norte) com o grid de treliça, os telões dos dois
-     lados e os feixes de luz; a torre de som no meio da pista; as tendas
-     vermelhas dos bares à esquerda, com dois cercadinhos VIP na frente
-     delas; à direita o camarote elevado (3 m), com duas escadas; os
-     banheiros químicos, o espetinho, os balões e o pórtico na entrada.
+     antigo do mapa 3d" (as peças saem do kit do mapa, festa3d.js); e
+     "deixe o tamanho da cena da festa menor [...] tire a área vip, pra
+     poder dar maior densidade. diminua o palco, deixe o tamanho em
+     torno de 2:1".
+     A arena tem 48 × 32 m (a cena é de 1152 × 768 px, não a de sempre),
+     a céu aberto, à noite, cercada de muro pré-moldado: o palco de
+     16 × 8 m no fundo (norte), com o grid de treliça e os telões dos
+     dois lados; a torre de som no meio da pista; as tendas dos bares à
+     esquerda, com as aliadas daquele lado em pé na frente delas; à
+     direita o camarote elevado (3 m), com duas escadas; os banheiros
+     químicos, os espetinhos, as mesas, os postes e o pórtico.
      A lista `pecas` é a planta: o chão (pintura `festa`) e as peças em
      3D (festa3d.js, com os bonecos) saem dela; as que ocupam chão viram
-     bloqueio. `alturas` é o chão que sobe: o deque do camarote e as
-     escadas (o boneco anda em cima, bonecos3_cena.js `porCenario`).
-     24 px por metro.
+     bloqueio. `alturas` é o chão que sobe: o palco (a banda), o tablado
+     da bateria, o deque do camarote e as escadas (bonecos3_cena.js,
+     `porCenario`). 24 px por metro.
      ======================================================= */
   const festa = (()=>{
+    const FW = 1152, FH = 768;
     const pecas = [];
     const pc = (tipo, x, y, w, h, extra) => pecas.push(Object.assign({tipo, x, y, w, h}, extra || {}));
     /* só bloqueio (o desenho é de outra peça) */
     const trava = (x, y, w, h) => pc('trava', x, y, w, h, {sem3d:true});
-    /* o tapume em volta, com o vão da entrada embaixo */
-    pc('tapume', 16, 16, 1504, 14);
-    pc('tapume', 16, 16, 14, 990);
-    pc('tapume', 1506, 16, 14, 990);
-    pc('tapume', 16, 992, 674, 14);
-    pc('tapume', 846, 992, 674, 14);
-    /* o palco com o grid, os dois telões e a grade da frente */
-    pc('palco', 488, 110, 560, 210, {frente:'s'});
-    pc('telao', 356, 200, 120, 100, {frente:'s'});
-    pc('telao', 1060, 200, 120, 100, {frente:'s'});
-    pc('gradil', 470, 355, 596, 8);
+    /* o muro em volta, com o vão da entrada embaixo */
+    pc('tapume', 16, 16, 1120, 14);
+    pc('tapume', 16, 16, 14, 740);
+    pc('tapume', 1122, 16, 14, 740);
+    pc('tapume', 16, 742, 490, 14);
+    pc('tapume', 646, 742, 490, 14);
+    /* o palco (16 × 8 m) com o grid, os dois telões e a grade da frente.
+       Não é bloqueio: a banda fica em cima dele; quem segura o povo é a
+       trava em volta e a grade */
+    pc('palco', 384, 70, 384, 192, {frente:'s', chao:true});
+    trava(384, 64, 384, 8); trava(378, 70, 8, 192); trava(768, 70, 8, 192); trava(384, 260, 384, 8);
+    pc('telao', 242, 150, 96, 90, {frente:'s'});
+    pc('telao', 814, 150, 96, 90, {frente:'s'});
+    pc('gradil', 360, 286, 432, 8);
     /* a torre de som no meio da pista */
-    pc('torre-som', 733, 660, 70, 70, {frente:'n'});
+    pc('torre-som', 546, 490, 60, 60, {frente:'n'});
     /* as tendas dos bares, à esquerda, viradas pra pista */
-    for(const y of [380, 530, 680, 830]) pc('tenda-bar', 40, y, 150, 120, {frente:'e'});
-    /* os dois cercadinhos VIP na frente dos bares (as aliadas do lado esquerdo) */
-    for(const [id, y] of [['no', 400], ['so', 680]]){
-      pc('cercado', 260, y, 180, 200, {id, chao:true});
-      pc('gradil', 260, y, 180, 8);
-      pc('gradil', 260, y + 192, 180, 8);
-      pc('gradil', 432, y, 8, 70);
-      pc('gradil', 432, y + 130, 8, 70);
-      pc('mesa-alta', 300, y + 40, 26, 26);
-      pc('mesa-alta', 360, y + 130, 26, 26);
-    }
+    for(const y of [300, 430, 560]) pc('tenda-bar', 30, y, 130, 110, {frente:'e'});
     /* o camarote elevado, à direita: o deque a 3 m, as escadas do lado
-       da pista, e o guarda-corpo (o bloqueio dele é a `trava`) */
-    pc('camarote-alto', 1200, 380, 290, 520, {frente:'w', chao:true});
-    pc('escada', 1140, 480, 60, 50, {frente:'w', chao:true});
-    pc('escada', 1140, 760, 60, 50, {frente:'w', chao:true});
-    trava(1200, 380, 8, 100); trava(1200, 530, 8, 230); trava(1200, 810, 8, 90);
-    trava(1482, 380, 8, 520); trava(1200, 380, 290, 8); trava(1200, 892, 290, 8);
-    trava(1208, 636, 274, 8);
-    trava(1140, 472, 60, 8); trava(1140, 530, 60, 8);
-    trava(1140, 752, 60, 8); trava(1140, 810, 60, 8);
-    /* os banheiros químicos, o espetinho, a portaria */
-    pc('banheiro-quimico', 1228, 930, 262, 50, {frente:'n'});
-    pc('espetinho', 236, 930, 96, 44, {frente:'n'});
-    pc('espetinho', 420, 930, 96, 44, {frente:'n'});
-    pc('catraca', 700, 950, 28, 36, {frente:'n'});
-    pc('catraca', 808, 950, 28, 36, {frente:'n'});
-    pc('portico', 690, 986, 156, 10, {frente:'s', chao:true});
-    /* os postes de iluminação da arena, as mesas de plástico na frente
-       dos bares e as lixeiras */
-    for(const [x, y, giro] of [[60, 60, -0.8], [1470, 60, -2.4], [60, 960, 0.8], [1120, 960, 2.4], [470, 960, 1.57]])
+       da pista e o guarda-corpo (o bloqueio dele é a `trava`) */
+    pc('camarote-alto', 900, 300, 230, 380, {frente:'w', chao:true, vaos:[[-4.58, -2.92], [2.92, 4.58]]});
+    pc('escada', 852, 380, 48, 40, {frente:'w', chao:true});
+    pc('escada', 852, 560, 48, 40, {frente:'w', chao:true});
+    trava(900, 300, 8, 80); trava(900, 420, 8, 140); trava(900, 600, 8, 80);
+    trava(1122, 300, 8, 380); trava(900, 300, 230, 8); trava(900, 672, 230, 8);
+    trava(908, 486, 214, 8);
+    trava(852, 372, 48, 8); trava(852, 420, 48, 8);
+    trava(852, 552, 48, 8); trava(852, 600, 48, 8);
+    /* os banheiros químicos, os espetinhos, a portaria */
+    pc('banheiro-quimico', 930, 704, 200, 40, {frente:'n'});
+    pc('espetinho', 200, 660, 96, 44, {frente:'n'});
+    pc('espetinho', 700, 660, 96, 44, {frente:'n'});
+    pc('catraca', 530, 700, 28, 36, {frente:'n'});
+    pc('catraca', 594, 700, 28, 36, {frente:'n'});
+    pc('portico', 506, 736, 140, 10, {frente:'s', chao:true});
+    /* os postes, as mesas de plástico e as lixeiras */
+    for(const [x, y, giro] of [[40, 40, -0.8], [1100, 40, -2.4], [40, 716, 0.8], [860, 716, 2.4]])
       pc('poste', x, y, 12, 12, {giro});
-    for(const [x, y] of [[480, 650], [560, 700], [500, 860], [600, 900], [1000, 880], [1090, 830]]) pc('mesa', x, y, 30, 30);
-    for(const [x, y] of [[214, 640], [690, 920], [846, 920], [1110, 620]]) pc('lixeira', x, y, 16, 16);
+    for(const [x, y] of [[330, 680], [430, 690], [812, 600]]) pc('mesa', x, y, 30, 30);
+    for(const [x, y] of [[176, 690], [500, 712], [652, 712], [840, 470]]) pc('lixeira', x, y, 16, 16);
     const blocos = pecas.filter(p => !p.chao).map(p => ({x:p.x, y:p.y, w:p.w, h:p.h, tipo:p.tipo}));
     const alturas = [
-      {x:1200, y:380, w:290, h:520, alt:3},
-      {x:1140, y:480, w:60, h:50, alt:3, rampa:'x'},
-      {x:1140, y:760, w:60, h:50, alt:3, rampa:'x'}
+      {x:528, y:101, w:96, h:72, alt:2.2},          // o tablado da bateria
+      {x:384, y:70, w:384, h:192, alt:1.8},         // o palco
+      {x:900, y:300, w:230, h:380, alt:3},          // o camarote
+      {x:852, y:380, w:48, h:40, alt:3, rampa:'x'},
+      {x:852, y:560, w:48, h:40, alt:3, rampa:'x'}
     ];
+    const retangulo = b => ({rot:b.tipo, pontos:[[b.x, b.y], [b.x+b.w, b.y], [b.x+b.w, b.y+b.h], [b.x, b.y+b.h]]});
     return montar({
       id:'festa', nome:'Festa de aniversário', pintura:'festa', local:'Na festa de aniversário',
+      largura:FW, altura:FH,
+      poligonos:{caminhavel:[{rot:'chão', pontos:[[0,0],[FW,0],[FW,FH],[0,FH]]}], bloqueio:blocos.map(retangulo)},
       blocos, pecas, alturas, enfeites:[], varais:[], grades:[],
       saida:{perto:'Sair da festa', longe:'Portaria (leve o líder)', feito:'a festa acabou',
              dica:'Curta a festa. O discurso e o fim da festa ficam na faixa de cima.'},
       pmPostos:[],
       spawns:[
-        {id:'entrada', rot:'A DIRETORIA', lado:'mandante', x:768, y:920, jogador:true, entrada:'portaria'},
-        {id:'pista1', rot:'NA PISTA', lado:'mandante', x:620, y:430, guarda:true, entrada:'portaria'},
-        {id:'pista2', rot:'NA PISTA', lado:'mandante', x:920, y:430, guarda:true, entrada:'portaria'},
-        {id:'pista3', rot:'NA PISTA', lado:'mandante', x:560, y:600, guarda:true, entrada:'portaria'},
-        {id:'pista4', rot:'NA PISTA', lado:'mandante', x:980, y:600, guarda:true, entrada:'portaria'},
-        {id:'pista5', rot:'NA PISTA', lado:'mandante', x:640, y:800, guarda:true, entrada:'portaria'},
-        {id:'pista6', rot:'NA PISTA', lado:'mandante', x:900, y:800, guarda:true, entrada:'portaria'},
-        {id:'bar1', rot:'NO BAR', lado:'mandante', x:222, y:450, guarda:true, entrada:'portaria'},
-        {id:'bar2', rot:'NO BAR', lado:'mandante', x:222, y:880, guarda:true, entrada:'portaria'},
-        {id:'cam-no', rot:'ÁREA VIP', lado:'mandante', x:350, y:500, guarda:true, entrada:'portaria'},
-        {id:'cam-so', rot:'ÁREA VIP', lado:'mandante', x:350, y:780, guarda:true, entrada:'portaria'},
-        {id:'cam-ne', rot:'CAMAROTE', lado:'mandante', x:1345, y:510, guarda:true, entrada:'portaria'},
-        {id:'cam-se', rot:'CAMAROTE', lado:'mandante', x:1345, y:770, guarda:true, entrada:'portaria'}
+        {id:'entrada', rot:'A DIRETORIA', lado:'mandante', x:576, y:690, jogador:true, entrada:'portaria'},
+        {id:'palco', rot:'A BANDA', lado:'mandante', x:576, y:220, guarda:true, entrada:'portaria'},
+        {id:'staff', rot:'QUEM TRABALHA', lado:'mandante', x:576, y:720, guarda:true, entrada:'portaria'},
+        {id:'pista1', rot:'NA PISTA', lado:'mandante', x:480, y:330, guarda:true, entrada:'portaria'},
+        {id:'pista2', rot:'NA PISTA', lado:'mandante', x:672, y:330, guarda:true, entrada:'portaria'},
+        {id:'pista3', rot:'NA PISTA', lado:'mandante', x:440, y:440, guarda:true, entrada:'portaria'},
+        {id:'pista4', rot:'NA PISTA', lado:'mandante', x:712, y:440, guarda:true, entrada:'portaria'},
+        {id:'pista5', rot:'NA PISTA', lado:'mandante', x:470, y:590, guarda:true, entrada:'portaria'},
+        {id:'pista6', rot:'NA PISTA', lado:'mandante', x:690, y:590, guarda:true, entrada:'portaria'},
+        {id:'bar1', rot:'NO BAR', lado:'mandante', x:180, y:350, guarda:true, entrada:'portaria'},
+        {id:'bar2', rot:'NO BAR', lado:'mandante', x:180, y:610, guarda:true, entrada:'portaria'},
+        {id:'cam-no', rot:'ALIADAS', lado:'mandante', x:265, y:380, guarda:true, entrada:'portaria'},
+        {id:'cam-so', rot:'ALIADAS', lado:'mandante', x:265, y:580, guarda:true, entrada:'portaria'},
+        {id:'cam-ne', rot:'CAMAROTE', lado:'mandante', x:1015, y:390, guarda:true, entrada:'portaria'},
+        {id:'cam-se', rot:'CAMAROTE', lado:'mandante', x:1015, y:590, guarda:true, entrada:'portaria'}
       ],
       entradas:[
-        {id:'portaria', rot:'PORTARIA', lado:'mandante', x:768, y:1010, raio:50, dir:[0,1]}
+        {id:'portaria', rot:'PORTARIA', lado:'mandante', x:576, y:762, raio:44, dir:[0,1]}
       ]
     });
   })();
@@ -45793,36 +45799,17 @@ TO.diaJogo.cenario = (function(){
      quando não há placa de vídeo. */
   let festaCache = null, festaChave = '';
   function festaFundo(D, W, H){
-    const E = TO.estado && TO.estado.E;
-    const cores = E && E.torcida ? TO.mundo.coresDaTorcida(E.torcida) : {cor:'#c0392b', cor2:'#f1f1f1'};
-    const chave = `${W}x${H}|${cores.cor}|${cores.cor2}`;
+    const chave = `${W}x${H}`;
     if(festaCache && festaChave === chave) return festaCache;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
-    /* fora do tapume: a rua escura */
+    /* fora do muro: a rua escura */
     c.fillStyle = '#0b0b0e'; c.fillRect(0, 0, W, H);
-    /* a arena: a placa de concreto, com marca de pisada */
+    /* a arena: a placa de concreto, com a junta */
     c.fillStyle = '#6f6a62'; c.fillRect(30, 30, W - 60, H - 52);
     c.strokeStyle = 'rgba(40,38,34,.5)'; c.lineWidth = 2;
     for(let x = 30; x < W - 30; x += 72){ c.beginPath(); c.moveTo(x, 30); c.lineTo(x, H - 22); c.stroke(); }
     for(let y = 30; y < H - 22; y += 72){ c.beginPath(); c.moveTo(30, y); c.lineTo(W - 30, y); c.stroke(); }
-    for(let i = 0; i < 900; i++){
-      const s = hash(`festa-chao|${i}`);
-      c.fillStyle = (s % 3) ? 'rgba(0,0,0,.18)' : 'rgba(120,100,80,.10)';
-      c.fillRect(30 + (s % (W - 60)), 30 + ((s >>> 9) % (H - 60)), 2 + (s % 5), 2 + ((s >>> 4) % 4));
-    }
-    /* o fosso entre o palco e a grade */
-    c.fillStyle = '#16151a'; c.fillRect(470, 320, 596, 36);
-    /* o carpete das áreas VIP, na cor da torcida, escurecido */
-    for(const p of (D.pecas || []).filter(p => p.tipo === 'cercado')){
-      c.fillStyle = '#2a1c22'; c.fillRect(p.x, p.y, p.w, p.h);
-      c.strokeStyle = cores.cor || '#7a2a2a'; c.lineWidth = 6; c.globalAlpha = 0.7;
-      c.strokeRect(p.x + 10, p.y + 12, p.w - 20, p.h - 24); c.globalAlpha = 1;
-      c.strokeStyle = 'rgba(255,255,255,.05)'; c.lineWidth = 1;
-      for(let k = 0; k < p.w; k += 14){ c.beginPath(); c.moveTo(p.x + k, p.y); c.lineTo(p.x + k, p.y + p.h); c.stroke(); }
-    }
-    /* a calçada da entrada, do lado de fora */
-    c.fillStyle = '#34343a'; c.fillRect(690, 1000, 156, H - 1000);
     /* a pegada das peças (sem placa de vídeo é o que fica) */
     const COR = {tapume:'#2a2a30', palco:'#141418', telao:'#0e0e12', gradil:'#9aa0a6', 'torre-som':'#3a3a40',
                  'tenda-bar':'#b52c2c', 'camarote-alto':'#2e2a2c', escada:'#55555c',
@@ -48727,7 +48714,7 @@ TO.diaJogo.combate = (function(){
     }
     J.total = {mandante:J.discos.filter(d=>d.lado === 'mandante' && !d.guarda).length, visitante:deles.length};
     J.brigaFesta = {agressora:spawnA, vitima:spawnV, t:J.t};
-    J.paz = false;
+    J.paz = false; J.semAnel = false;
     logar(J, _t('Briga na festa: o camarote partiu pra cima do outro.'), 'r');
     return true;
   }
@@ -69681,6 +69668,164 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     });
   }
 
+  /* =======================================================
+     A FESTA COM VIDA (dono, 23/11/2026: "coloque banda no palco e traga
+     os movimentos de bonecos pulando igual na arquibancada [...] os
+     bonecos andam ao longo do espaço e ficam conversando, vão no bar,
+     etc. dê mais vida ao ambiente")
+     - A BANDA no palco, pelo ritmo da atração: o cantor na frente, e
+       atrás dele cavaquinho, pandeiro, tantã, surdo, o DJ — os gestos de
+       tocar que a bateria da arquibancada já tinha.
+     - A PISTA pula no tempo da música, todo mundo junto (o jeito da
+       arquibancada, com o mesmo ritmo pra todos).
+     - O COTIDIANO de cada convidado: dança um tempo, vai pro bar, pára
+       numa rodinha de conversa, compra espetinho, vai ao banheiro, e
+       volta. Quem anda vai pelo corredor entre as áreas VIP; quem chega
+       vira pro que veio ver (o palco, o balcão, a roda).
+     - Quem trabalha: o do espetinho virando a carne e os seguranças na
+       portaria.
+     O convidado é guarda (fica onde é posto) e anda pela velocidade que
+     a vida dá: o combate move e esbarra (`A.mover`). A briga desliga tudo.
+     ======================================================= */
+  const BANDAS = {
+    /* [gesto, x, y] — o palco vai de x 384 a 768 e de y 70 a 262; os
+       microfones ficam em y 243 e o tablado da bateria em x 528–624, y 101–173 */
+    pagode:    [['canta', 576, 236], ['cavaco', 516, 222], ['pandeiro', 636, 222], ['tanta', 470, 196], ['surdo', 576, 118], ['repique', 682, 196]],
+    funk:      [['canta', 556, 236], ['braco', 600, 236], ['reger', 576, 184], ['festa', 466, 226], ['pula', 686, 226]],
+    sertanejo: [['canta', 548, 236], ['canta', 604, 236], ['cavaco', 476, 214], ['cavaco', 676, 214], ['caixa', 576, 118]],
+    forro:     [['canta', 576, 236], ['cavaco', 506, 216], ['surdo', 646, 216], ['pandeiro', 690, 236], ['caixa', 576, 118]],
+    rap:       [['canta', 556, 238], ['aponta', 600, 238], ['reger', 576, 184], ['braco', 660, 228]]
+  };
+  const PALCO = {x:576, y:166};
+  /* as rodinhas das aliadas: as do lado esquerdo em pé na frente dos
+     bares, as do direito no deque do camarote */
+  const AREAS_VIP = {
+    'cam-no': {rodas:[[240, 330], [300, 380], [250, 430]]},
+    'cam-so': {rodas:[[240, 540], [300, 590], [250, 640]]},
+    'cam-ne': {rodas:[[950, 340], [1050, 370], [985, 440]]},
+    'cam-se': {rodas:[[950, 540], [1050, 580], [985, 640]]}
+  };
+  const rumoPara = (d, x, y) => Math.atan2(x - d.x, y - d.y);
+  /* os lugares da arena */
+  const LUGARES = {
+    bar: [[172, 325], [172, 380], [172, 455], [172, 510], [172, 585], [172, 640]],
+    espetinho: [[248, 648], [748, 648]],
+    banheiro: [[950, 694], [990, 694], [1030, 694], [1070, 694], [1110, 694]],
+    roda: [[420, 640], [740, 600], [810, 520], [380, 560], [800, 400], [360, 420], [470, 700], [690, 700]]
+  };
+  /* o lugar na pista: a maioria aperta na frente do palco, o resto espalha */
+  const sorteiaPista = () => {
+    for(let k = 0; k < 20; k++){
+      const perto = Math.random() < 0.75;
+      const x = perto ? 576 + (Math.random() + Math.random() - 1) * 190 : 380 + Math.random() * 400;
+      const y = perto ? 305 + Math.random() * Math.random() * 170 : 305 + Math.random() * 330;
+      if(Math.abs(x - 576) < 45 && Math.abs(y - 520) < 45) continue;      // a torre de som
+      return [x, y];
+    }
+    return [576, 330];
+  };
+  /* o caminho: reto (a arena não tem cercado no meio; o que esbarra, desliza) */
+  const rotaAte = (d, x, y) => [[x, y]];
+  /* o que fazer agora: dança, bar, roda, espetinho ou banheiro */
+  function proximoDestino(v){
+    const r = Math.random();
+    if(r < 0.55){ const [x, y] = sorteiaPista(); return {tipo:'danca', x, y, dur:[35, 90]}; }
+    if(r < 0.72){ const [x, y] = U.escolher(LUGARES.bar); return {tipo:'bar', x:x + (Math.random() - 0.5) * 10, y:y + (Math.random() - 0.5) * 30, dur:[10, 22]}; }
+    if(r < 0.88){ const [x, y] = U.escolher(LUGARES.roda), a = Math.random() * 6.28;
+      return {tipo:'roda', cx:x, cy:y, x:x + Math.cos(a) * 24, y:y + Math.sin(a) * 18, dur:[20, 45]}; }
+    if(r < 0.95){ const [x, y] = U.escolher(LUGARES.espetinho); return {tipo:'espetinho', x:x + (Math.random() - 0.5) * 40, y, dur:[8, 16]}; }
+    const [x, y] = U.escolher(LUGARES.banheiro); return {tipo:'banheiro', x, y, dur:[6, 12]};
+  }
+  function chegar(R, d, v, J){
+    const t = v.destino;
+    v.estado = 'la'; v.ate = J.t + U.entre(t.dur[0], t.dur[1]);
+    d.vx = d.vy = 0; d.gestoForcado = null; d.gestoParam = null;
+    if(t.tipo === 'danca'){ d.jeito = 'arquibancada'; d.gestoParam = R.ritmo; d.rumo = rumoPara(d, PALCO.x, PALCO.y) + (Math.random() - 0.5) * 0.4; }
+    else if(t.tipo === 'bar'){ d.jeito = 'bar'; d.rumo = -Math.PI / 2; }
+    else if(t.tipo === 'roda'){ d.jeito = 'festa'; d.rumo = rumoPara(d, t.cx, t.cy); }
+    else if(t.tipo === 'espetinho' || t.tipo === 'banheiro'){ d.jeito = 'fila'; d.rumo = 0; }
+  }
+  function partir(d, v, J){
+    v.destino = proximoDestino(v);
+    v.rota = rotaAte(d, v.destino.x, v.destino.y);
+    v.estado = 'indo'; v.velo = 34 + Math.random() * 14;
+    v.melhor = Infinity; v.semGanho = 0;
+    d.jeito = 'rua'; d.rumo = undefined; d.gestoForcado = null; d.gestoParam = null;
+  }
+  function vidaDaFesta(R, dt, J){
+    if(!J || festaCena !== R) return;
+    if(J.brigaFesta){
+      if(!R.vidaParada){ R.vidaParada = true; for(const d of J.discos) if(d._vida){ d.vx = d.vy = 0; d.gestoForcado = null; } }
+      return;
+    }
+    for(const d of J.discos){
+      const v = d._vida;
+      if(!v || !d.vivo) continue;
+      if(v.fixo){
+        /* quem fica no lugar (as aliadas no camarote, a banda, o staff) só troca de jeito */
+        if(v.alterna && J.t > v.ate){ v.ate = J.t + U.entre(15, 35);
+          d.jeito = d.jeito === 'arquibancada' ? 'festa' : 'arquibancada';
+          d.gestoParam = d.jeito === 'arquibancada' ? R.ritmo : null;
+          d.rumo = d.jeito === 'arquibancada' ? rumoPara(d, PALCO.x, PALCO.y) : v.rumoRoda; }
+        continue;
+      }
+      if(v.estado === 'la'){ d.vx *= 0.5; d.vy *= 0.5; if(J.t > v.ate) partir(d, v, J); continue; }
+      if(v.estado === 'espera'){ if(J.t > v.ate) partir(d, v, J); continue; }
+      /* andando: vai pro próximo ponto da rota */
+      const [tx, ty] = v.rota[0], dx = tx - d.x, dy = ty - d.y, dist = Math.hypot(dx, dy);
+      if(dist < 12){ v.rota.shift(); v.melhor = Infinity; v.semGanho = 0; if(!v.rota.length) chegar(R, d, v, J); continue; }
+      /* travou (alguém na frente, uma quina): depois de 3 s fica por ali mesmo */
+      if(dist < v.melhor - 2){ v.melhor = dist; v.semGanho = 0; } else if((v.semGanho += dt) > 3){ v.rota = [[d.x, d.y]]; continue; }
+      d.vx = dx / dist * v.velo; d.vy = dy / dist * v.velo;
+    }
+  }
+  /* quem é quem na festa: a banda no lugar dela, o staff no posto, as
+     aliadas no camarote, e o convidado com o cotidiano dele */
+  function darVidaAFesta(R, J, genero){
+    R.ritmo = {ritmo:5.4, fase:0};
+    /* na festa ninguém leva o anel de lado no chão (é tudo um lado só);
+       ele volta quando a briga começa */
+    J.semAnel = true;
+    const banda = (BANDAS[genero] || BANDAS.pagode).slice();
+    const STAFF = [['churrasco', 248, 716, Math.PI], ['churrasco', 748, 716, Math.PI], ['escuta', 510, 724, Math.PI], ['escuta', 642, 724, Math.PI]];
+    const grupos = {};
+    for(const d of J.discos) (grupos[d.spawn] = grupos[d.spawn] || []).push(d);
+    for(const d of J.discos){
+      if(d.doJogador) continue;
+      if(d.spawn === 'palco'){
+        const b = banda.shift();
+        if(!b){ d.vivo = false; d.sumiu = true; continue; }
+        d.x = b[1]; d.y = b[2]; d.rumo = 0; d.jeito = 'festa'; d.gestoForcado = b[0]; d.gestoParam = R.ritmo;
+        d._vida = {fixo:true};
+      } else if(d.spawn === 'staff'){
+        const s = STAFF.shift();
+        if(!s){ d.vivo = false; d.sumiu = true; continue; }
+        d.x = s[1]; d.y = s[2]; d.rumo = s[3]; d.jeito = 'festa'; d.gestoForcado = s[0];
+        d._vida = {fixo:true};
+      } else if(/^cam-/.test(d.spawn)){
+        /* a aliada se espalha na área dela em duas ou três rodinhas (nasceu em coluna, como bonde) */
+        const g = grupos[d.spawn], A = AREAS_VIP[d.spawn], i = g.indexOf(d);
+        let rumoRoda = 0;
+        if(A){
+          const rodas = A.rodas, [cx, cy] = rodas[i % rodas.length], k = Math.floor(i / rodas.length), n = Math.ceil(g.length / rodas.length);
+          const a = k / n * 6.28 + (i % rodas.length);
+          d.x = cx + Math.cos(a) * 22; d.y = cy + Math.sin(a) * 18;
+          rumoRoda = rumoPara(d, cx, cy);
+        }
+        const v = d._vida = {fixo:true, alterna:true, ate:J.t + U.entre(3, 25), rumoRoda};
+        d.jeito = Math.random() < 0.5 ? 'arquibancada' : 'festa';
+        d.gestoParam = d.jeito === 'arquibancada' ? R.ritmo : null;
+        d.rumo = d.jeito === 'arquibancada' ? rumoPara(d, PALCO.x, PALCO.y) : v.rumoRoda;
+      } else {
+        /* o convidado: começa onde nasceu (dançando na pista, bebendo no
+           bar) e sai pro cotidiano numa hora sorteada */
+        const v = d._vida = {estado:'la', destino:{tipo:/^bar/.test(d.spawn) ? 'bar' : 'danca', x:d.x, y:d.y, dur:[6, 80]}};
+        chegar(R, d, v, J);
+      }
+    }
+    J.discos = J.discos.filter(d=>!d.sumiu);
+  }
+
   let festaCena = null;
   function abrirFesta(m, simular){
     const e = E(), FA = TO.festaAniv, P = FA.plano(e);
@@ -69699,11 +69844,18 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
                      cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, sigla}];
     setor[e.torcida.id] = 'entrada';
     /* o público (a nossa gente de fora da escalação) na pista e no bar */
-    [['pista1', 9], ['pista2', 9], ['pista3', 8], ['pista4', 8], ['pista5', 8], ['pista6', 8], ['bar1', 4], ['bar2', 4]].forEach(([sp, n], i)=>{
+    [['pista1', 11], ['pista2', 11], ['pista3', 9], ['pista4', 9], ['pista5', 7], ['pista6', 7], ['bar1', 5], ['bar2', 5]].forEach(([sp, n], i)=>{
       const id = 'publico-' + i;
       bondes.push({id, lado:'mandante', n, nossa:false, nome:_t('Convidados'), cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, sigla});
       setor[id] = sp;
     });
+    /* a banda da atração, no palco, e quem trabalha (espetinho e portaria) */
+    const art = FA.artista(P.artista) || {};
+    const nBanda = (BANDAS[art.genero] || BANDAS.pagode).length;
+    bondes.push({id:'banda', lado:'mandante', n:nBanda, nossa:false, nome:art.nome || _t('A banda'), cor:'#1a1a1c', cor2:'#e8e8e8', cor3:null, sigla:''});
+    setor.banda = 'palco';
+    bondes.push({id:'staff', lado:'mandante', n:4, nossa:false, nome:_t('Quem trabalha'), cor:'#202022', cor2:'#f2f2f2', cor3:null, sigla:''});
+    setor.staff = 'staff';
     /* as aliadas, cada uma no seu camarote */
     for(const a of aliadas){
       const T = TO.mundo.torcida(a.id), c = TO.mundo.coresDaTorcida(T);
@@ -69724,13 +69876,17 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     abrirPalco({
       canvas: $('djPrincipal'),
       config: { escalacao, intencao:'paz', paz:true, festaAniv:true, bondes, bombas:0, semArmas:true, local:'festa' },
-      aoTerminar: res=>fecharFestaEmCena(res)
+      aoTerminar: res=>fecharFestaEmCena(res),
+      aCadaQuadro: (dt, J)=>{ vidaDaFesta(R, dt, J); return null; }
     });
-    /* todo mundo dançando, menos o presidente (é o jogador que anda) */
+    /* a diretoria conversa em volta do presidente; o resto ganha a vida da festa */
     const J = TO.diaJogo.J;
-    if(J) for(const d of J.discos) if(!d.lider) d.jeito = 'festa';
+    if(J){
+      for(const d of J.discos) if(d.doJogador && !d.lider) d.jeito = 'festa';
+      darVidaAFesta(R, J, art.genero);
+    }
     /* de perto: em tela larga o salão inteiro deixa o boneco miúdo */
-    if(innerWidth > 900) TO.diaJogo.ponte.zoom = 1.5;
+    if(innerWidth > 900) TO.diaJogo.ponte.zoom = 1.25;
     montarFaixaDaFesta(R);
     R.timer = setTimeout(()=>pedirDiscursoNaCena(R), 2500);
   }

@@ -27,8 +27,8 @@
    do Blender (cenario3d/modelos/festa/, a lista em `pecas.json`).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader } from './GLTFLoader.js?v=fde238184f';
-import * as K from './detalhe3d.js?v=fde238184f';
+import { GLTFLoader } from './GLTFLoader.js?v=bac7d3cb9e';
+import * as K from './detalhe3d.js?v=bac7d3cb9e';
 
 const M = 24;                                   // px do tabuleiro por metro
 const ROT = { s: 0, n: Math.PI, e: Math.PI / 2, w: -Math.PI / 2 };
@@ -154,6 +154,12 @@ const PECAS = {
     /* a bateria no praticável e a mesa do DJ */
     caixa(g, 4, 0.4, 3, 0, H, -1.2, fosco('#2a2a30'));
     for (const [x, z, r] of [[-0.8, -1.5, 0.3], [0.8, -1.5, 0.3], [0, -0.7, 0.35], [-1.3, -0.6, 0.22], [1.3, -0.6, 0.22]]) cil(g, r, 0.4, x, H + 0.4, z, brilho('#c8ccd0', 60));
+    /* os pedestais de microfone na frente do palco */
+    for (const x of [-1.2, 0, 1.6]) {
+      cil(g, 0.18, 0.02, x, H, 3.2, preto(), 8);
+      cil(g, 0.015, 1.45, x, H, 3.2, metal(), 6);
+      add(g, K.em(K.cilindro(0.03, 0.035, 0.1, preto(), 8, 0, 0, 0), x, H + 1.45, 3.12, 0, -0.5));
+    }
     caixa(g, 2.4, 1.0, 0.8, 0, H, 1.5, fosco('#141416'));
     caixa(g, 2.2, 0.06, 0.6, 0, H + 1.0, 1.5, brilho('#2a2d33', 50));
     add(g, K.sombra(L, P, 0, 0, 0, 0.5));
@@ -326,12 +332,6 @@ const PECAS = {
     }
     add(g, K.sombra(L * 0.5, P * 0.8, 0, 0, 0, 0.35));
   },
-  /* o carpete das áreas VIP: escuro, com a borda na cor da torcida */
-  cercado(g, L, P, o) {
-    add(g, K.chao(L, P, pintado('carpeteVip', TEX.laje(), { cor: '#4a2a30' }), 3, 0, 0.004, 0));
-    for (const z of [-P / 2 + 0.5, P / 2 - 0.5]) add(g, K.chao(L - 1, 0.25, fosco(o.cor1), 1, 0, 0.006, z));
-    for (const x of [-L / 2 + 0.5, L / 2 - 0.5]) add(g, K.chao(0.25, P - 1, fosco(o.cor1), 1, x, 0.006, 0));
-  },
   /* o muro da arena: o pré-moldado do mapa, com a faixa da torcida pendurada aqui e ali */
   tapume(g, L, P, o) {
     g.add(K.muroPremoldado(L, 2.5, 0.12));
@@ -403,7 +403,7 @@ const ARQUIVOS = {
 const PASTA = 'modelos/festa/';
 const glbs = new Map();          // arquivo → Promise<THREE.Object3D|null>
 let lista = null;
-const prontos = () => lista || (lista = fetch(PASTA + 'pecas.json?v=fde238184f')
+const prontos = () => lista || (lista = fetch(PASTA + 'pecas.json?v=bac7d3cb9e')
   .then(r => r.ok ? r.json() : { arquivos: [] }).then(j => new Set(j.arquivos || [])).catch(() => new Set()));
 function carregarPeca(arquivo) {
   if (glbs.has(arquivo)) return glbs.get(arquivo);

@@ -16164,6 +16164,42 @@ Cada peça sai juntada por material (`juntar`). Não tem jogo de luz nem varal d
 - Briga forçada, entrando pra separar: 8 da agressora contra 22 (a vítima e os nossos). Acabou em 69 a 92 s, com 1 ou 2 caídos nossos.
 - "Só o resultado" com "ficar de fora": quebra de R$ 2.516. A trégua paga levou as duas de −45 a −20 entre si.
 
+## A festa com banda, pista pulando e convidados circulando; a arena menor (dono, 23/11/2026)
+
+O dono, vendo a arena: "coloque banda no palco e traga os movimentos de bonecos pulando igual na arquibancada pra dar uma cara maior de festa, os bonecos andam ao longo do espaço e ficam conversando, vão no bar, etc. dê mais vida ao ambiente". E logo depois: "deixe o tamanho da cena da festa menor, pra ajudar isso, tire a área vip, pra poder dar maior densidade. diminua o palco, deixe o tamanho em torno de 2:1".
+
+**A arena menor.** A cena da festa tem 1152 × 768 px (48 × 32 m), e não o tabuleiro de sempre: a cena declara `largura`, `altura` e o próprio polígono de chão. O que mudou:
+- O palco tem 16 × 8 m (antes 23,3 × 8,75 m).
+- As áreas VIP saíram. As aliadas do lado esquerdo ficam em pé na frente dos bares; as do direito, no camarote.
+- Três tendas de bar, um camarote de 9,6 × 15,8 m e os espetinhos dos dois lados da entrada.
+
+**A banda no palco.** O palco deixou de ser bloqueio: uma trava em volta e a grade da frente seguram o povo, e a banda fica em cima (`alturas`: palco a 1,8 m, tablado da bateria a 2,2 m). A formação sai do ritmo da atração, com os gestos de tocar que a bateria da arquibancada já tinha:
+- **Pagode:** cantor, cavaquinho, pandeiro, tantã, surdo e repique.
+- **Funk:** dois MCs, o DJ regendo e dois dançarinos.
+- **Sertanejo:** a dupla, dois violões e a bateria.
+- **Forró:** cantor, sanfoneiro, zabumba, triângulo e bateria.
+- **Rap:** dois MCs, o DJ e o apoio.
+
+O palco ganhou os pedestais de microfone.
+
+**A pista pulando.** Quem dança usa o jeito da arquibancada (palma, braço, pulo, os dois braços balançando), todos no mesmo tempo (`gestoParam` único, a música). Três em cada quatro apertam na frente do palco.
+
+**O cotidiano.** Cada convidado é guarda (fica onde é posto) e anda pela velocidade que a vida da festa dá (`vidaDaFesta`, a cada quadro, pelo `aCadaQuadro` da ponte); o combate move e esbarra. O que cada um faz, e por quanto tempo:
+
+| Para onde vai | Chance | Tempo lá | Jeito ao chegar |
+|---|---|---|---|
+| Dançar | 55% | 35–90 s | `arquibancada`, virado pro palco |
+| Bar | 17% | 10–22 s | `bar`, virado pro balcão |
+| Rodinha de conversa | 16% | 20–45 s | `festa`, virado pro meio da roda |
+| Espetinho | 7% | 8–16 s | `fila` |
+| Banheiro | 5% | 6–12 s | `fila` |
+
+Andando, o jeito é o de `rua`. Quem trava 3 s fica por ali. As aliadas ficam em rodinhas na área delas e alternam entre conversar e pular (de 15 a 35 s). Quem trabalha fica no posto: o do espetinho virando a carne e os dois seguranças na portaria.
+
+**Sem anel no chão.** Na festa é tudo um lado só, então o anel de lado não aparece (`J.semAnel`). Ele volta quando a briga começa. A briga também para a vida da festa.
+
+**Medido:** 120 bonecos na cena. Aos 32 s, 45 dançando, 6 no bar, 1 na roda e 12 andando. A briga forçada acabou em 46 s (8 contra 22).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

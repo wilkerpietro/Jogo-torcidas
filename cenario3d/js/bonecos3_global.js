@@ -14,8 +14,8 @@
    DOMContentLoaded: quem usa (a ponte, numa cena aberta pelo jogador)
    chega muito depois.
    ========================================================= */
-import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=fde238184f';
-import { cenarioDaFesta } from './festa3d.js?v=fde238184f';
+import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, porCenario, bonecos } from './bonecos3_cena.js?v=bac7d3cb9e';
+import { cenarioDaFesta } from './festa3d.js?v=bac7d3cb9e';
 
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
