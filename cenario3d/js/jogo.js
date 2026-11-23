@@ -5793,6 +5793,7 @@ TO.i18n.registrar({
   "A polícia separou a briga": {es:"La policía separó la pelea", en:"The police split the fight up"},
   "Bomba nossa.": {es:"Bomba nuestra.", en:"Our bomb."},
   "<kbd>1</kbd> pra cima · <kbd>2</kbd> segura · <kbd>3</kbd> corre (duas vezes) · <kbd>espaço</kbd> pausa · velocidade no relógio": {es:"<kbd>1</kbd> a por ellos · <kbd>2</kbd> aguanten · <kbd>3</kbd> corran (dos veces) · <kbd>espacio</kbd> pausa · velocidad en el reloj", en:"<kbd>1</kbd> charge · <kbd>2</kbd> hold · <kbd>3</kbd> run (twice) · <kbd>space</kbd> pause · speed on the clock"},
+  "Com a PM no meio, os visitantes ficaram do lado deles.": {es:"Con la policía en el medio, los visitantes se quedaron de su lado.", en:"With the police in the middle, the away crew stayed on their side."},
   'BARULHO':{es:'RUIDO', en:'NOISE'},
   'ACORDOU':{es:'DESPERTÓ', en:'AWAKE'},
   'Bomba deles na porta.':{es:'Bomba de ellos en la puerta.', en:'Their bomb at the door.'},
@@ -50657,14 +50658,20 @@ TO.diaJogo.combate = (function(){
         const fica = !J.comandos ? APARTA.dist
                    : d.arremessador ? APARTA.pontaBraco
                    : (pr && pr[d.lado] && d.linha === 'frente') ? APARTA.pontaFrente : APARTA.dist;
-        if(jaFoi >= fica + ((d._ord||0) % 5) * 12){
+        /* (o braço quase sem folga: a 60–76 px da linha, a pedra de 170 px chega no braço de lá) */
+        const posto = fica + (d.arremessador && J.comandos ? ((d._ord||0) % 3) * 8 : ((d._ord||0) % 5) * 12);
+        /* (nos três comandos quem ficou longe demais volta pro posto: os dois
+           lados se encaram, e a pedra do braço chega do outro lado) */
+        const longe = J.comandos && jaFoi > posto + (d.arremessador ? 20 : 80);
+        if(jaFoi >= posto && !longe){
           d.vx*=0.8; d.vy*=0.8; A.mover(d, d.vx*dt, d.vy*dt); A.barrarGrades(d,J.grades);
           d._ramo='apartado'; d._alvo=null;
           d.rumo = Math.atan2(mp.x - d.x, mp.y - d.y);
           if(J.comandos && !d.arremesso) d.comemorando = true;
           continue;
         }
-        ax = d.x + sg*mp.nx*140; ay = d.y + sg*mp.ny*140; ramo='apartado';
+        const pra = longe ? -sg : sg;
+        ax = d.x + pra*mp.nx*140; ay = d.y + pra*mp.ny*140; ramo='apartado';
         /* (o alvo anda junto com ele: sem isto o passo desistia em 0,8 s, como de um alvo inalcançável) */
         d.acomodado=false; d.melhorDist=undefined; d.semGanho=0;
       } else if(recua && D.assentos && !d.doJogador && (gp = vadiagem(J, d))){
@@ -52411,7 +52418,7 @@ TO.diaJogo.combate = (function(){
   const APARTA = {dist:150, calma:5, vao:26, pmsMin:3, pmsMax:8, porPm:50,
                   /* (os três comandos) quanto tempo a linha segura os dois lados sem ninguém se pegar na mão até a cena
                      fechar; e a distância de quem fica na ponta (o braço, mais perto pra pedra chegar do outro lado) */
-                  separada:35, pontaBraco:70, pontaFrente:95};
+                  separada:35, pontaBraco:60, pontaFrente:95};
   const apartaVale = () => !fugaPelaEntrada() && !D.semApartar;
   /* COM A PM NO MEIO, A MÃO FICA NO BOLSO: só bate quem acabou de apanhar
      (legítima defesa) — e o bonde do jogador, se o presidente seguir
@@ -52981,6 +52988,16 @@ TO.diaJogo.combate = (function(){
        0×0 (medido: 0 caídos em 17 s, 8 corridas). Lá a PM continua
        carregando e prendendo; o que ela não faz é cancelar a briga. */
     if(D.semRecuoPM) return;
+    /* COM A PM SEPARANDO, O RIVAL NÃO RECUA SOZINHO (dono, 23/11/2026: "faz
+       o rival não recuar sozinho quando a PM separa"). Nos três comandos,
+       com a linha no meio, quem afasta cada lado é a PM: o rival fica no
+       lado dele da linha, provocando e tacando pedra, em vez de voltar pro
+       ponto de onde veio — e o recuo que já estava correndo quando ela
+       chegou é cancelado. Correr por baixas (a debandada) continua valendo */
+    if(J.comandos && J.aparta){
+      if(J.recuoVisitante){ J.recuoVisitante = false; logar(J, _t('Com a PM no meio, os visitantes ficaram do lado deles.'), 'pm'); }
+      return;
+    }
     if(!J.recuoVisitante && J.alerta>78 && sob>0.22){
       J.recuoVisitante=true; J.recuoVisitanteAte=J.t+9;
       logar(J,_t('Os visitantes recuaram.'),'pm');

@@ -16476,6 +16476,15 @@ O dono: "e se a dinamica da briga virar algo que só tem tres botoes: pra cima, 
 - **A tela**: `#djCmd` (Pra cima, Segura, Corre, pausa, e Entrar nos arredores) no lugar do painel e do pad; `#djBalanca` na faixa (nossa cor contra a deles, `coresDaBalanca` evita as duas brancas) com "PM separa em Ns" ou "VÃO NO CORDÃO". Teclas 1, 2, 3 (duas vezes), espaço; velocidade 1×, 2× e 4×; pausa. A câmera com zoom segue `frenteDaBriga`.
 - **Medido (rua, 30 × 30)**: o presidente chega no rival em ~12 s; com a PM, os dois lados ficam separados e, em PRA CIMA, ele acha o vão na ponta da linha e a briga volta do outro lado; em SEGURA a cena fecha em 35 s ("a polícia separou"); no CORRE, todo mundo pela mesma saída, o presidente indo de 28/29 à frente dele pra 14/28. No estádio, o presidente atravessa e o bonde quebra 10 módulos da grade.
 
+## Com a PM separando, o rival não recua sozinho (dono, 23/11/2026)
+
+O dono: "faz o rival não recuar sozinho quando a PM separa". Nos testes dos três comandos, o rival decidia recuar (`iaRecuo`: alerta acima de 78 e mais de 22% dele sob ameaça da PM) e voltava pro ponto de onde veio; a linha da PM ia atrás e a pedra não chegava mais.
+
+- **`iaRecuo`**: nos três comandos, com a linha da PM no meio (`J.aparta`), a IA não decide recuar, e o recuo que estava correndo quando ela chegou é cancelado ("Com a PM no meio, os visitantes ficaram do lado deles."). Quem afasta cada lado é a PM. A debandada por baixas continua valendo.
+- **Cada um no seu posto**: o ramo `apartado` só afastava da linha; quem ficava longe ficava longe, e os dois lados paravam a uns 500 px um do outro. Agora quem passou do posto (o braço, a mais de 20 px; o resto, a mais de 80) volta pra ele.
+- **O braço mais perto da linha**: `pontaBraco` 60 px, com folga de 0 a 16 px (era 70, com até 48). A 110 px da linha, o inimigo mais perto ficava a ~220 px, longe dos 170 px da pedra.
+- **Medido (rua, 30 × 30, em Segura)**: o rival ficou do lado dele os 35 s; as pedras foram 12 nossas e 15 deles, com um caído de cada lado; a cena fechou com "a polícia separou".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
