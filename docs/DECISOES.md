@@ -16442,6 +16442,11 @@ O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. 
 
 Todos olham pro campo, menos o puxador. Na briga, na correria e no chão, o gesto para e o instrumento e o bandeirão somem. O líder fica sem papel.
 
+**O bandeirão visto de cima estava bugado** (o dono, com print do "O JOGO": "as bandeiras vistas de cima estao bugadas, gere uma sequencia vista de cima de 20 frames seguidos pra entender"). Os 20 quadros mostraram três coisas:
+1. **O pano recomeçava**: quando a ponta do bambu andava mais de 2,5 m num quadro (jogo lento), o pano voltava a nascer esticado do lado e pulava de lugar. Agora o passo da física é o do relógio (até 0,12 s), partido em subpassos (mais quando a ponta anda muito). Em cada subpasso, a coluna presa vai do lugar de antes ao de agora. O pano só recomeça quando nasce ou reaparece.
+2. **O pano piscava**: ele era escondido no começo de todo quadro e só reaparecia se o boneco fosse animado naquele quadro, e o boneco de longe não é animado em todo quadro. Agora só some o pano de quem está há mais de 4 quadros sem ser desenhado. O pano também passou a ser do torcedor (`d._pano3`), não do boneco, que pode ser reaproveitado por outro disco.
+3. **O balanço virava borrão**: o do jogo 3D (0,75 a 0,95 rad em 2,6 a 3,3 s) ficou mais curto e mais lento, 0,58 a 0,72 rad em 3,3 a 4 s.
+
 Não voltou a faixa estendida por dois na chegada: na cena do estádio a torcida já nasce no lugar, com a faixa na mureta.
 
 **A investida contra qualquer rival hostil.** O dono, com o print do Ceará × Sport no planejamento: "deve dar a opção de atacar a jovem sport e a gang da ilha".

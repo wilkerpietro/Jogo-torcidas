@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=d0e8be7621';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=203b323bd6';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -3184,13 +3184,16 @@ let escalaDoTabuleiro = () => 1;
       haste.position.set(0, 1.4*m, 0.15*m);
       c.raiz.add(haste); c.haste = haste;
     }
-    if(!c.band || !bandeiroesTodos.has(c.band)) c.band = criarBandeirao(bd);
+    /* (o pano é do torcedor, não do boneco: o boneco pode ser reaproveitado por outro disco) */
+    if(!d._pano3 || !bandeiroesTodos.has(d._pano3)) d._pano3 = criarBandeirao(bd);
+    c.band = d._pano3;
     const tt = tAnim, w = 2*Math.PI / bd.periodo;
     const th = bd.amp*Math.sin(tt*w + bd.fase), be = 0.3*Math.sin(2*tt*w + bd.fase*1.3);
     if(d.gestoParam) d.gestoParam.a = th;
     c.haste.rotation.set(be, 0, -th);
     c.haste.visible = ok;
     c.band.malha.visible = ok;
+    c.band.vistoEm = quadroN;
     if(!ok){ c.band.ult = null; return; }
     /* o topo e o eixo do bambu no mundo; o lado (pra onde o pano cai) */
     c.raiz.updateMatrixWorld(true);
@@ -3200,7 +3203,7 @@ let escalaDoTabuleiro = () => 1;
     const eixo = topo.clone().sub(base).normalize();
     const lx = c.haste.localToWorld(_bL.set(1, 0, 0)).sub(c.haste.localToWorld(_bO.set(0, 0, 0))).normalize();
     const metroW = m * c.raiz.scale.x;
-    simularBandeirao(c.band, [topo.x, topo.y, topo.z], [eixo.x, eixo.y, eixo.z], [-lx.x, -lx.z], tt, Math.min(1/30, Math.max(0, dt)), metroW);
+    simularBandeirao(c.band, [topo.x, topo.y, topo.z], [eixo.x, eixo.y, eixo.z], [-lx.x, -lx.z], tt, Math.min(0.12, Math.max(0, dt)), metroW);
   }
   function telaDoBandeirao(bd){
     const k = [bd.cor, bd.cor2, bd.cor3, bd.sigla, bd.j % 4].join('|');
@@ -3244,18 +3247,30 @@ let escalaDoTabuleiro = () => 1;
     bandeiroesTodos.add(B);
     return B;
   }
+  /* UM PASSO DO PANO (corrigido em 23/11/2026, com os 20 quadros vistos de cima: o pano sumia e reaparecia noutro lugar).
+     A ponta do bambu anda até 4 m num quadro quando o jogo roda devagar; antes, andar mais de 2,5 m RECOMEÇAVA o pano
+     esticado do lado, e o passo da física era cortado em 1/30 s enquanto o bambu andava no relógio de verdade. Agora o
+     passo é o do relógio (até 0,12 s), partido em subpassos — mais quando a ponta anda muito —, e a coluna presa no
+     bambu vai do lugar de antes ao de agora em cada subpasso: o pano acompanha sem pular. Só recomeça quando o pano
+     nasce ou volta a aparecer. */
   function simularBandeirao(B, topo, eixo, lado, tr, dt, metroW){
     const {nx, ny, N, X, Y} = B, rx = 4*metroW/(nx - 1), ry = 4*metroW/(ny - 1), rd = Math.hypot(rx, ry);
     const rest = [rx, ry, rd, 2*rx];
-    const presa = r => [topo[0] - eixo[0]*r*ry, topo[1] - eixo[1]*r*ry, topo[2] - eixo[2]*r*ry];
-    if(!B.pronto || !B.ult || Math.hypot(topo[0] - B.ult[0], topo[2] - B.ult[2]) > 2.5*metroW){
-      for(let r = 0; r < ny; r++) for(let cc = 0; cc < nx; cc++){ const q = presa(r), i = (r*nx + cc)*3; X[i] = q[0] + lado[0]*cc*rx; X[i + 1] = q[1] - cc*rx*0.3; X[i + 2] = q[2] + lado[1]*cc*rx; }
-      Y.set(X); B.pronto = true;
+    const presaEm = (T, Ex, r) => [T[0] - Ex[0]*r*ry, T[1] - Ex[1]*r*ry, T[2] - Ex[2]*r*ry];
+    if(!B.pronto || !B.ult){
+      for(let r = 0; r < ny; r++) for(let cc = 0; cc < nx; cc++){ const q = presaEm(topo, eixo, r), i = (r*nx + cc)*3; X[i] = q[0] + lado[0]*cc*rx; X[i + 1] = q[1] - cc*rx*0.6; X[i + 2] = q[2] + lado[1]*cc*rx; }
+      Y.set(X); B.pronto = true; B.ult = topo.slice(); B.eixoAnt = eixo.slice();
     }
-    B.ult = topo;
+    const T0 = B.ult, E0 = B.eixoAnt || eixo;
     if(dt > 0){
-      const sub = 2, h = dt/sub, g = -9.8*metroW, vento = 1.6*metroW*(1 + 0.6*Math.sin(tr*0.7 + B.bd.fase)), wx = 0.6*vento, wz = 0.8*vento;
+      const anda = Math.hypot(topo[0] - T0[0], topo[1] - T0[1], topo[2] - T0[2]);
+      const sub = Math.max(2, Math.min(16, Math.ceil(Math.max(anda/(0.25*metroW), dt/(1/90)))));
+      const h = dt/sub, g = -9.8*metroW, vento = 1.6*metroW*(1 + 0.6*Math.sin(tr*0.7 + B.bd.fase)), wx = 0.6*vento, wz = 0.8*vento;
+      const T = [0, 0, 0], Ex = [0, 0, 0];
       for(let s0 = 0; s0 < sub; s0++){
+        const al = (s0 + 1)/sub;
+        for(let k = 0; k < 3; k++){ T[k] = T0[k] + (topo[k] - T0[k])*al; Ex[k] = E0[k] + (eixo[k] - E0[k])*al; }
+        const ne = Math.hypot(Ex[0], Ex[1], Ex[2]) || 1; Ex[0] /= ne; Ex[1] /= ne; Ex[2] /= ne;
         for(let i = 0; i < N; i++){
           if(i % nx === 0) continue;
           const k = i*3;
@@ -3264,9 +3279,9 @@ let escalaDoTabuleiro = () => 1;
           Y[k] = X[k]; Y[k + 1] = X[k + 1]; Y[k + 2] = X[k + 2];
           X[k] += vx + (wx + tur*0.5)*h*h; X[k + 1] += vy + (g + tur*0.3)*h*h; X[k + 2] += vz + (wz - tur*0.5)*h*h;
         }
-        for(let r = 0; r < ny; r++){ const q = presa(r), k = r*nx*3; X[k] = q[0]; X[k + 1] = q[1]; X[k + 2] = q[2]; }
+        for(let r = 0; r < ny; r++){ const q = presaEm(T, Ex, r), k = r*nx*3; X[k] = q[0]; X[k + 1] = q[1]; X[k + 2] = q[2]; Y[k] = q[0]; Y[k + 1] = q[1]; Y[k + 2] = q[2]; }
         const L = B.liga;
-        for(let it = 0; it < 4; it++) for(let j = 0; j < L.length; j += 3){
+        for(let it = 0; it < 3; it++) for(let j = 0; j < L.length; j += 3){
           const ia = L[j], ib = L[j + 1], a = ia*3, b = ib*3, rr = rest[L[j + 2]];
           const pa = (ia % nx) === 0, pb = (ib % nx) === 0;
           if(pa && pb) continue;
@@ -3277,6 +3292,7 @@ let escalaDoTabuleiro = () => 1;
         }
       }
     }
+    B.ult = topo.slice(); B.eixoAnt = eixo.slice();
     const pos = B.malha.geometry.attributes.position;
     pos.array.set(X); pos.needsUpdate = true;
     B.malha.geometry.computeVertexNormals();
@@ -3837,8 +3853,9 @@ void main() {`)
   }
   function atualizarCena(J, dt){
     quadroN++; tAnim += dt;
-    /* (o pano de bandeirão de quem não for desenhado neste quadro fica escondido) */
-    for(const B of bandeiroesTodos) B.malha.visible = false;
+    /* (o pano de bandeirão de quem não é desenhado há alguns quadros fica escondido; o boneco nem sempre é animado em
+       todo quadro, e esconder a cada quadro fazia o pano piscar) */
+    for(const B of bandeiroesTodos) if(!(B.vistoEm >= quadroN - 4)) B.malha.visible = false;
     /* o cenário que tem peça viva (as portas da sede) acompanha a briga */
     if(cenarioExtra && cenarioExtra.userData.aCadaQuadro) cenarioExtra.userData.aCadaQuadro(J, dt);
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }

@@ -49951,7 +49951,9 @@ TO.diaJogo.combate = (function(){
           d.papel = 'bandeirao'; d.jeito = 'arquibancada'; d.gestoForcado = 'mastro';
           d.gestoParam = {ritmo:canto.ritmo, fase:canto.fase, a:0};
           d.bandeirao = {cor:b.cor || '#c0392b', cor2:b.cor2 || '#f2f2f2', cor3:b.cor3 || null, sigla:b.sigla || '', id:b.id || sid, j:k,
-                         periodo: 2.6 + (h % 7) / 10 + k * 0.17, amp: 0.75 + ((h >> 3) % 20) / 100, fase:(k * 1.9 + canto.fase) % 6.28};
+                         /* (o balanço um pouco mais lento e mais curto que o do jogo 3D: visto de cima, o de 0,9 rad em 2,6 s
+                            virava um borrão — os 20 quadros de 23/11/2026) */
+                         periodo: 3.3 + (h % 7) / 10 + k * 0.17, amp: 0.58 + ((h >> 3) % 15) / 100, fase:(k * 1.9 + canto.fase) % 6.28};
           d.rumoPapel = campo; livre.delete(d);
         }
       }
