@@ -16376,6 +16376,22 @@ No mesmo teste, o raio foi pra 70 px, com 24 px entre vizinhos.
 
 **O que não muda.** No estádio, o recuo continua vadiando em volta do estádio (a regra de 17/11). O recuo do nosso bonde, mandado pela tecla R, usa a mesma roda.
 
+## O setor visitante do Castelão encosta no vão sudoeste (dono, 23/11/2026)
+
+**O pedido.** O dono escolheu a opção B: "encoste o setor no vão".
+
+**Como era.** O setor visitante (`jogo.visitante` da ficha `estadio-castelao`) ia de 176° a 240°. Ele atravessava os dois vãos do canto sudoeste: o do lance de baixo, em 223,2–225,3°, e o do lance de cima, em 236,6–238,3°. A torcida sentava dos dois lados do vão.
+
+**Como ficou.** O setor vai de 176° a 223°. Ele termina no vão de baixo, do lado do gol, como no mapa de setores do estádio, onde a organizada de fora fica antes desses vãos. A lateral dos camarotes fica sem visitante.
+
+**O que mudou junto.**
+- A assadura nova (`SO=estadio-castelao node ferramentas/estadios/assar.js`) mudou só os dados: os três pontos dos bondes visitantes, a linha da faixa e uma grade de escanteio nova (`canto_3`) fechando o setor no vão.
+- A imagem do estádio não mudou.
+
+**A conferência.**
+- **Vazamento**: nas quatro variantes do Castelão (base, `@ceara`, `@fortaleza@ceara`, `@ceara@fortaleza`), ninguém senta fora do degrau.
+- **Com as grades de verdade**: a visitante, com 150 por bonde, fica toda antes do vão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

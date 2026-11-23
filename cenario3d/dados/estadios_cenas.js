@@ -74,25 +74,25 @@ window.__ESTADIOS = {
      ]
     },
     "visitante1": {
-     "x": 964,
-     "y": 1328,
+     "x": 926,
+     "y": 1240,
      "len": 130,
      "dir": [
-      0.835,
-      -0.551
+      0.969,
+      -0.248
      ],
      "de": [
       1094,
       1001
      ],
      "ate": [
-      1350,
-      1334
+      1214,
+      1314
      ]
     },
     "visitante2": {
      "x": 914,
-     "y": 1135,
+     "y": 1093,
      "len": 130,
      "dir": [
       1,
@@ -103,25 +103,25 @@ window.__ESTADIOS = {
       1001
      ],
      "ate": [
-      1350,
-      1334
+      1214,
+      1314
      ]
     },
     "visitante3": {
-     "x": 1106,
-     "y": 1468,
+     "x": 993,
+     "y": 1372,
      "len": 130,
      "dir": [
-      -0.653,
-      -0.758
+      0.721,
+      -0.693
      ],
      "de": [
       1094,
       1001
      ],
      "ate": [
-      1350,
-      1334
+      1214,
+      1314
      ]
     }
    },
@@ -158,24 +158,24 @@ window.__ESTADIOS = {
      "rot": "VISITANTE 1º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 907,
-     "y": 1358
+     "x": 866,
+     "y": 1261
     },
     {
      "id": "visitante2",
      "rot": "VISITANTE 2º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 849,
-     "y": 1146
+     "x": 848,
+     "y": 1100
     },
     {
      "id": "visitante3",
      "rot": "VISITANTE 3º ESCALÃO",
      "lado": "visitante",
      "entrada": "portao_visitante",
-     "x": 1065,
-     "y": 1510
+     "x": 940,
+     "y": 1406
     }
    ],
    "entradas": [
@@ -214,12 +214,12 @@ window.__ESTADIOS = {
      "y": 871
     },
     {
-     "x": 1326,
-     "y": 1520
+     "x": 1126,
+     "y": 1513
     },
     {
-     "x": 1263,
-     "y": 1667
+     "x": 1043,
+     "y": 1612
     }
    ],
    "grades": [
@@ -241,12 +241,12 @@ window.__ESTADIOS = {
      "id": "div_v2",
      "rot": "DIVISÓRIA",
      "de": {
-      "x": 1348,
-      "y": 1350
+      "x": 1208,
+      "y": 1330
      },
      "ate": {
-      "x": 1103,
-      "y": 1774
+      "x": 860,
+      "y": 1654
      },
      "modulos": 17,
      "espessura": 10
@@ -277,6 +277,20 @@ window.__ESTADIOS = {
       "y": 499
      },
      "modulos": 18,
+     "espessura": 10
+    },
+    {
+     "id": "canto_3",
+     "rot": "GRADE DO ESCANTEIO",
+     "de": {
+      "x": 1295,
+      "y": 1333
+     },
+     "ate": {
+      "x": 973,
+      "y": 1748
+     },
+     "modulos": 19,
      "espessura": 10
     },
     {

@@ -113,8 +113,11 @@ export const FICHAS = {
     /* a conferência do canto sudoeste, do alto do campo (como a foto do dono de 18/11/2026: o vão entre a lateral sul e o
        lance de trás do gol) */
     vista: [5, 75, 15, -66, 10, -45],
-    /* a torcida do mandante atrás do gol norte; a visitante atrás do gol sul */
-    jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 240], tunelMandante: 180, tunelVisitante: 0,
+    /* a torcida do mandante atrás do gol norte; a visitante atrás do gol sul.
+       O SETOR VISITANTE ENCOSTA NO VÃO SUDOESTE (dono, 23/11/2026: "B, encoste o setor no vão"): ele ia até 240° e
+       atravessava os dois vãos do canto sudoeste (o de baixo em 223,2–225,3°, o de cima em 236,6–238,3°), com torcida
+       sentada dos dois lados do vão; agora termina no vão de baixo, do lado do gol, como no mapa de setores do estádio */
+    jogo: { mandante1: [-19, 37], mandante2: [102, 142], mandante3: [60, 100], visitante: [176, 223], tunelMandante: 180, tunelVisitante: 0,
             /* (a cena de base é a do Fortaleza em casa; a do Ceará é a variante `@ceara`, arredores_marcas.mjs) */
             torcidas: { leoes_da_tuf: 'mandante1', jovem_garra_tricolor: 'mandante2' } }
   },
