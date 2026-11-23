@@ -16410,7 +16410,7 @@ O dono: "pode resolver todos esses pontos. os vomitórios precisam ter fisica e 
 - a academia e a hospedagem, em cima da garagem;
 - o marketing e o criativo, em cima do bar, do patrimônio e da presidência.
 
-O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. O armário e o cofre são do térreo, então a invasão não perde nada. O jeito de ter o andar de cima seria uma cena à parte, em que subir a escada troca de cena; fica pra decisão do dono.
+O tabuleiro da briga é um chão só, e não cabem dois andares no mesmo lugar. O armário e o cofre são do térreo, então a invasão não perde nada. O jeito de ter o andar de cima seria uma cena à parte, em que subir a escada troca de cena. O dono decidiu (23/11/2026): "não precisa, deixa o andar de cima de fora".
 
 **O vomitório é sólido** (`naBoca` em `estadio_lowpoly.mjs`).
 - **A caixa**: a pegada da caixa de concreto da boca, no meio do lance, era chão andável, e o boneco passava por dentro e por cima dela. Agora ela fica fora da máscara de andar e da de sentar.
