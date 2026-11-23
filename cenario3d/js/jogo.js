@@ -5460,6 +5460,15 @@ TO.i18n.registrar({
   'AGARRAR':  {es:'AGARRAR',   en:'GRAB'},
   'CHAMAR':   {es:'LLAMAR',    en:'RALLY'},
   'O bonde partiu pra cima.': {es:'La banda fue al frente.', en:'The crew charged.'},
+  'Qual o alvo': {es:'Cuál es el blanco', en:'Pick the target'},
+  'Quantos vão': {es:'Cuántos van', en:'How many go'},
+  '{min} a {max} · {pct}% de cadeia · pena de {pena} dias': {es:'{min} a {max} · {pct}% de cárcel · pena de {pena} días', en:'{min} to {max} · {pct}% jail chance · {pena}-day sentence'},
+  'Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.': {es:'Los {n} se sortean entre los disponibles. Si caen, caen todos — y la plata se queda allá.', en:'The {n} are drawn from those available. If it goes wrong, everyone is caught — and the money stays there.'},
+  'a diretoria mapeou os alvos': {es:'la directiva mapeó los blancos', en:'the board scouted the targets'},
+  'Assaltar': {es:'Asaltar', en:'Rob it'},
+  'Escolhe quantos vão.': {es:'Elige cuántos van.', en:'Pick how many go.'},
+  'Deu ruim: {n} presos por {pena} dias.': {es:'Salió mal: {n} presos por {pena} días.', en:'It went wrong: {n} jailed for {pena} days.'},
+  'Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o que rende e o risco de cadeia. Escolhe o alvo e quantos vão.': {es:'Jefe, mapeé unos blancos en la plaza — del almacén al banco, cada uno con lo que rinde y el riesgo de cárcel. Elige el blanco y cuántos van.', en:'Boss, I scouted some targets in town — from the corner shop to the bank, each with what it pays and the risk of jail. Pick the target and how many go.'},
   'FUGIR':    {es:'HUIR',      en:'FLEE'},
   'SAIR':     {es:'SALIR',     en:'EXIT'},
   'PEDRA':    {es:'PIEDRA',    en:'STONE'},
@@ -41075,7 +41084,7 @@ TO.feed = (function(){
       /* "Ver os alvos" do assalto abre a tela de sempre, pela porta do
          cartão antigo */
       botoes:(it.botoes||[]).map(b=>({id:b.id, rot:b.rot, nota:b.nota,
-        acao: b.acao === 'assalto-ver' ? 'tela-assalto' : 'pauta'}))});
+        acao: b.acao === 'assalto-ver' || b.acao === 'assalto-planejar' ? 'tela-assalto' : 'pauta'}))});
   }
 
   /* =======================================================
@@ -41571,13 +41580,20 @@ TO.feed = (function(){
   /* ATÉ TRÊS POR ANO, E SÓ DEPOIS DO PRIMEIRO JOGO (dono, 13/11/2026):
      cada mês tem a sua chance pelo hash (4 em 12), e o ano para na
      terceira sugestão. `E.assaltosNoAno[ano]` conta as que saíram. */
-  const ASSALTOS_MESES = 4, ASSALTOS_POR_ANO = 3;
+  const ASSALTOS_POR_ANO = 3;
   function pautaAssalto(E){
     const H = TO.mapa.hash;
     if(E.estreou === false) return null;
     const conta = (E.assaltosNoAno = E.assaltosNoAno || {});
     if((conta[E.data.ano] || 0) >= ASSALTOS_POR_ANO) return null;
-    if(H(`assalto|${E.data.ano}|${mesDe(E)}|${E.torcida.id}`) % 12 >= ASSALTOS_MESES) return null;
+    /* OS TRÊS MESES DO ANO (23/11/2026): era um dado por mês (`hash % 12 < 4`) e havia ano em que nenhum mês passava — o
+       de 2027 da TUF ficou sem assalto. Agora, na primeira vez que a pauta é olhada no ano, saem três meses entre os que
+       ainda faltam (do de hoje ao fim do ano), pelo hash, e ficam guardados */
+    const MA = (E.assaltoMeses = E.assaltoMeses || {});
+    if(!MA[E.data.ano]){ const hoje = mesDe(E), resto = [];
+      for(let m = hoje; m <= 12; m++) resto.push(m);
+      MA[E.data.ano] = resto.sort((a, b)=>H(`assalto|${E.data.ano}|${a}|${E.torcida.id}`) - H(`assalto|${E.data.ano}|${b}|${E.torcida.id}`)).slice(0, ASSALTOS_POR_ANO); }
+    if(!MA[E.data.ano].includes(mesDe(E))) return null;
     const dir = E.membros.find(m=>m.cargo === 'diretoria' && !m.presidente && TO.membros.disponivel(m));
     if(!dir) return null;
     if(E.membros.filter(TO.membros.disponivel).length < 2) return null;
@@ -41585,12 +41601,11 @@ TO.feed = (function(){
     return {
       chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:_t('Diretoria'), quem:dir.id,
       rot:_t('Alvos de assalto'),
-      /* O PLANEJAMENTO (30/09/2026 no 3D): o botão abre a tela do plano —
-         o alvo, a equipe, o jeito, a hora e o dia —, e a operação vai
-         pro calendário; no dia, o jogador comanda a equipe na loja. */
-      texto:_t('Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o seu risco. Escolhe o alvo, a equipe, o jeito e o dia, que a gente põe no calendário.'),
+      /* O SORTEIO DE NOVO (dono, 23/11/2026): o botão abre a tela do alvo
+         e de quantos vão, e o dado resolve na hora (`abrirAssaltoSorteio`) */
+      texto:_t('Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o que rende e o risco de cadeia. Escolhe o alvo e quantos vão.'),
       botoes:[
-        {id:'ver',  rot:_t('Planejar o assalto'), acao:'assalto-planejar'},
+        {id:'ver',  rot:_t('Ver os alvos'), acao:'assalto-planejar'},
         {id:'nada', rot:_t('Deixar quieto'), acao:'assalto-nao', nota:_t('sem efeito')}
       ]
     };
@@ -66889,7 +66904,16 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
                                           abrirPainel('calendario'); }
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'tela-reuniao') abrirReuniaoEmCena(m);
-      else if(t === 'tela-assalto') abrirAssalto();
+      else if(t === 'tela-assalto') abrirAssaltoSorteio(res=>{
+        /* o resultado fecha a pauta (o texto do fim) e a mensagem que abriu a tela */
+        const item = m && m.dados && m.dados.item;
+        if(res){ if(item) TO.feed.fecharPautaAssalto(e, item, res);
+          if(m) m.consequencia = res.caiu ? _tn(res.n, '{n} preso por {pena} dias — e o dinheiro ficou lá.', '{n} presos por {pena} dias — e o dinheiro ficou lá.', {pena:res.pena})
+                                          : _t('{valor} na conta.', {valor:U.dinheiro(res.valor)});
+          confirmarDecisao(res.caiu ? _t('Deu ruim') : _t('Assalto feito')); }
+        else { if(item) TO.feed.decidirPauta(e, item, 'nada'); if(m) m.consequencia = _t('Ficou quieto.'); confirmarDecisao(_t('Deixar quieto')); }
+        pintarTopo(); atualizarFeed();
+      });
       else if(t === 'assalto-3d') abrirAssaltoCena(m, a.op);   // (o cartão de um save de antes)
       else if(t === 'assalto-cena') abrirAssaltoCena(m, a.op);
       else if(t === 'cena-guerra') abrirGuerra(a);
@@ -68540,6 +68564,65 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
     if(f.children.length) m.appendChild(f);
     fundo.appendChild(m); document.body.appendChild(fundo);
     return ()=>fundo.remove();
+  }
+
+  /* =======================================================
+     O ASSALTO VOLTA A SER SORTEADO (dono, 23/11/2026: "Volte no jogo a
+     permitir planejar assaltos, mas não iremos executar, quem executa é
+     o sorteio, igual era antigamente definindo somente os alvos e a
+     quantidade de pessoas, com cada uma tendo um potencial de dinheiro
+     e risco de cadeia [...] os assaltos ocorrem 3x no ano somente,
+     aparecendo mensagem no feed e pop-up de escolhas, igual como era
+     antigamente"). É a tela de 17/08/2026: qual o alvo (o ganho, a
+     chance de cadeia e a pena de cada um), quantos vão (os dois
+     tamanhos da tabela do dono, com o ganho de cada um) e um dado só
+     pro bonde inteiro — partilha pra todos ou cadeia pra todos
+     (`TO.acoes.executarAssalto`). `aoFim(r)`: o resultado (ou null,
+     se deixou quieto) fecha a pauta e a mensagem que abriram a tela.
+     ======================================================= */
+  function abrirAssaltoSorteio(aoFim){
+    const e = E(), A = TO.acoes.ASSALTOS;
+    const disp = e.membros.filter(TO.membros.disponivel).length;
+    const pode = A.filter(a=>disp >= a.efetivos[0]);
+    let alvo = (pode[pode.length-1] || A[A.length-1]).id;     // abre no mais leve que dá
+    let efetivo = null, fechar = null, feito = false;
+    const corpo = el('div',{class:'assalto-sorteio'});
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Qual o alvo')}));
+      corpo.appendChild(opcoes(A.map(a=>({
+        id:a.id, rot:_t(a.nome),
+        nota:_t('{min} a {max} · {pct}% de cadeia · pena de {pena} dias',
+                {min:U.dinheiro(a.ganho[a.efetivos[0]][0]), max:U.dinheiro(a.ganho[a.efetivos[1]][1]),
+                 pct:Math.round(a.chance*100), pena:a.pena}),
+        desabilitada: disp < a.efetivos[0]
+      })), alvo, id=>{ alvo = id; efetivo = null; pintar(); }));
+      const a = A.find(x=>x.id === alvo);
+      if(efetivo === null && disp >= a.efetivos[0]) efetivo = disp >= a.efetivos[1] ? a.efetivos[1] : a.efetivos[0];
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
+      corpo.appendChild(opcoes(a.efetivos.map(n=>({
+        id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
+        nota: disp < n ? _t('só {n} disponíveis', {n:disp})
+            : _t('{min} a {max}', {min:U.dinheiro(a.ganho[n][0]), max:U.dinheiro(a.ganho[n][1])}),
+        desabilitada: disp < n
+      })), efetivo !== null ? String(efetivo) : null, id=>{ efetivo = parseInt(id, 10); pintar(); }));
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">${_t('Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.', {n:efetivo || '—'})}</span>`}));
+    };
+    pintar();
+    const fim = r => { if(feito) return; feito = true; if(fechar) fechar(); if(aoFim) aoFim(r); };
+    fechar = modal(_t('Assalto'), _t('a diretoria mapeou os alvos'), corpo, [
+      [_t('Deixar quieto'), ()=>fim(null)],
+      [_t('Assaltar'), ()=>{
+        if(efetivo === null){ aviso(_t('Escolhe quantos vão.'), 'ruim'); return; }
+        const r = TO.acoes.executarAssalto(e, alvo, efetivo);
+        if(!r.ok){ aviso(r.msg, 'ruim'); return; }
+        aviso(r.caiu ? _t('Deu ruim: {n} presos por {pena} dias.', {n:r.n, pena:r.pena})
+                     : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)}), r.caiu ? 'ruim' : 'boa');
+        TO.estado.salvar();
+        fim(r);
+      }]
+    ], null, true);
   }
 
   /* =======================================================
@@ -72127,7 +72210,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         bt.innerHTML = `<span>${b.rot}</span>`+(b.nota?`<small>${b.nota}</small>`:'');
         bt.onclick = ()=>{
           /* os alvos de assalto abrem a tela por cima; o resultado dela fecha a pauta */
-          if(b.acao === 'assalto-ver' || b.acao === 'assalto-planejar'){ abrirAssalto(op=>{ F.fecharPautaAssalto(e, it.id, {op}); depois(); }); return; }
+          if(b.acao === 'assalto-ver' || b.acao === 'assalto-planejar'){ abrirAssaltoSorteio(r=>{ if(r) F.fecharPautaAssalto(e, it.id, r); else F.decidirPauta(e, it.id, 'nada'); depois(); }); return; }
           F.decidirPauta(e, it.id, b.id); depois();
         };
         bts.appendChild(bt);

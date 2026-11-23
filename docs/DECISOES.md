@@ -16050,6 +16050,26 @@ O ponto onde o bonde nasce escorrega pra fora da barreira, como já escorregava 
 - No jogo, no Castelão, o presidente empurrado do anel de circulação contra o lance de cima para na parede entre as bocas. Perto de uma boca, escorrega até ela e sobe por ali.
 - Ninguém senta fora do degrau.
 
+## O assalto volta a ser sorteado, 3 por ano (dono, 23/11/2026)
+
+Pedido do dono: "Volte no jogo a permitir planejar assaltos, mas não iremos executar, quem executa é o sorteio, igual era antigamente definindo somente os alvos e a quantidade de pessoas, com cada uma tendo um potencial de dinheiro e risco de cadeia." E, na rodada de perguntas: "os assaltos ocorrem 3x no ano somente, aparecendo mensagem no feed e pop-up de escolhas, igual como era antigamente."
+
+Foi a primeira de quatro fases. As outras, em ordem: reunião com o clube, festa de aniversário da torcida e invasão de sede.
+
+**Como ficou:**
+- A mensagem da diretoria "Alvos de assalto" (3 por ano, só depois da estreia) tem o botão **Ver os alvos**.
+- Ele abre o popup de 17/08/2026 (`abrirAssaltoSorteio`):
+  - **Qual o alvo:** cada um com o ganho, a chance de cadeia e a pena.
+  - **Quantos vão:** os dois tamanhos da tabela, com o ganho de cada um.
+- **Assaltar** chama `executarAssalto`: os membros saem sorteados entre os disponíveis, e um dado só vale pro bonde inteiro. Ou a partilha vai pra todos, ou a cadeia.
+- O resultado fecha a pauta e a mensagem ("R$ 4.084 na conta." / "10 presos por 90 dias — e o dinheiro ficou lá.").
+- **Deixar quieto** fecha sem nada.
+- A tela de planejamento com dia marcado e a cena jogável saem de uso. Ficam no código pros saves que já tinham uma operação marcada.
+
+**Os três meses do ano.** Antes saía um dado por mês (`hash % 12 < 4`), e havia ano sem nenhum mês aprovado: a TUF passou 2027 sem assalto. Agora, na primeira vez que a pauta é olhada no ano, saem três meses entre os que faltam até o fim do ano, pelo hash, e ficam guardados (`E.assaltoMeses[ano]`).
+
+**Medido:** em dois anos simulados, 3 e 3. De ponta a ponta no navegador, posto de gasolina com 10: R$ 4.084 na conta e a mensagem fechada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

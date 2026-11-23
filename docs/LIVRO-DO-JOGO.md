@@ -275,7 +275,7 @@ Criados depois, pelo uso (agrupados):
 - **Nada no feed antes do primeiro dia de jogo.** `E.estreou` nasce falso; até o primeiro dia de jogo do clube (ou um dia de caravana dele) o feed fica calado: os passos que criam acontecimento não rodam e `feed.propor` descarta qualquer mensagem. Rodam por baixo o mundo, as recepções, o pedido de apoio do jogo fora, o placar e o expediente. Passado o dia do jogo, `E.estreou` vira verdadeiro. Dependendo do calendário do clube a estreia podia demorar (a TUF estreava no dia 41); **desde 18/11/2026 a partida abre perto dela** (`adiantarAteOPrimeiroJogo`, estado.js no pacote): na segunda-feira da semana do primeiro compromisso do clube (o jogo, ou a saída da caravana), ou na anterior se ele cair antes da quinta. As semanas puladas correm de verdade e caladas — os jogos dos outros, as tabelas, o mundo —, com o expediente parado; depois o caixa, o extrato, os fechamentos, a moral e o prestígio voltam ao que eram e do feed só fica o que nasceu no dia em que a partida abre (`E.inicioAbs`). A TUF abre em 09/02 e estreia em 15/02, com cinco mensagens no meio. Save antigo já conta como estreado.
 - **Sem mensagem de abertura.** O Expediente nasce configurado: **manhã Recrutar, tarde Festa na sede, noite Festa na sede**; o jogador muda no painel quando quiser.
 - **A festa no prejuízo** (`feed.js: festaNoPrejuizoHoje`): cada festa guarda custo, receita e público (`E.acoes.festas`, as últimas 14). Com a festa no expediente e pelo menos 6 festas registradas, se as últimas somam prejuízo de R$ 200 ou mais (ou qualquer prejuízo com o caixa no vermelho), a diretoria explica: quanto saiu, quanto entrou, quantos vêm por noite e quantos precisam vir para a festa se pagar (`financeiro.pisoDaFesta`). Botões "Mudar o Expediente" e "Manter as festas". Repete no máximo a cada 21 dias.
-- **Assalto até 3 por ano, só depois do primeiro jogo.** A sugestão (pauta "Alvos de assalto") sai em 4 de cada 12 meses pelo hash, para na terceira do ano (`E.assaltosNoAno[ano]`) e não sai antes de `E.estreou`.
+- **Assalto 3 por ano, só depois do primeiro jogo.** A sugestão (pauta "Alvos de assalto") sai em três meses do ano, escolhidos pelo hash entre os que faltam na primeira vez que a pauta é olhada no ano (`E.assaltoMeses[ano]`). Ela para na terceira do ano (`E.assaltosNoAno[ano]`) e não sai antes de `E.estreou`. Desde 23/11/2026 o botão "Ver os alvos" abre o popup do sorteio (6.5, caminho b).
 - **As entrevistas saíram** (13/11/2026): o assunto do clube dos meses pares (a entrevista ao jornal) não acontece mais; o protesto no CT dos meses ímpares continua. Onde o livro ainda descreve a entrevista, ela está desligada.
 - **Os convites de festa das aliadas deixaram de existir**: nem pauta, nem mensagem, nem efeito na relação (`pautaFestas` e, entre as IAs, `relacoes.convitesDeAniversario` não fazem nada). A nossa festa de aniversário e a do clube continuam.
 
@@ -1041,7 +1041,9 @@ Todos os fechamentos registram o confronto no feed (`feed.registrarConfronto`).
 
 Dois caminhos convivem:
 
-**a) Assalto planejado** (o atual: `planejarAssalto` → no dia, `simularAssalto` ou a cena jogável → `fecharAssalto`).
+**Desde 23/11/2026 o caminho em uso é o (b), o sorteio.** A mensagem "Alvos de assalto" (3 por ano) abre `abrirAssaltoSorteio`. Nele se escolhe o alvo (com o ganho, a chance de cadeia e a pena de cada um) e quantos vão (os dois tamanhos da tabela, com o ganho de cada um). "Assaltar" chama `executarAssalto`: os membros saem sorteados entre os disponíveis e um dado só vale pro bonde inteiro. O resultado fecha a pauta e a mensagem. O (a) segue no código pros saves com operação marcada.
+
+**a) Assalto planejado** (de 30/09 a 22/11/2026: `planejarAssalto` → no dia, `simularAssalto` ou a cena jogável → `fecharAssalto`).
 
 Alvos (`ASSALTOS`):
 
