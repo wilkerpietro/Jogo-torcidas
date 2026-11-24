@@ -16493,6 +16493,22 @@ O dono: "os bonecos quando correm devem voltar a sumir do mapa, essa ideia de se
 - `correrLonge` e `correndoAinda` ficam (ninguém novo ganha `d.longe`, e a comemoração volta aos 5 s fixos).
 - **Medido (rua, CORRE)**: 19 dos 30 somem na saída em 1,5 s, o resto logo depois, e a cena fecha ("sua torcida foi corrida do lugar").
 
+## A cidade 3D antiga de volta como teste, com a briga à noite (dono, 24/11/2026)
+
+O dono mandou um vídeo de um jogo de rua à noite ("veja esse jogo pra ver se consegue entender o visual ideal de profundidade do 3d, iluminação, jogabilidade e ângulo das cenas que eu gostaria de aplicar no jogo") e, das três frentes propostas, escolheu: "2 e 3: aproveite as ruas do mapa antigo 3d pra fazer os cenários, por enquanto fora a parte do jogo oficial pra testarmos".
+
+- **A página de teste (`cenario3d/cidade3d.html`)**: o `jogo.html` antigo (o de antes do commit 796f635, a volta pro 2D), com os 25 módulos apagados naquele commit restaurados em `cenario3d/js/` (cenario, vida3d, palco_briga, briga_lugar, rua3d, dia3d, jogo3d e o resto). Ela carrega o `jogo.js` de hoje por cima da cidade, então a briga é a atual (os três comandos, a PM que separa). O jogo oficial (`jogo.html`, `jogo2d.js`) não carrega nada disso.
+- **Save à parte**: `TO.chaveDoSave` (jogo.js, `TO.estado`); a página de teste usa `torcida-organizada:save-teste3d`.
+- **O painel TESTE (`js/briga_teste3d.js`)**: abre a briga de rua (`abrirBrigaLivre` com `ruaLivre`, o palco `rua-livre` da cidade) numa rua sorteada: um poste da praça, o asfalto mais perto e a direção em que dá pra andar 26 m na rua. Escolhe o tamanho dos bondes (10 a 120) e dia ou noite.
+- **O rival pego de surpresa fica no lugar**: `brigaNaRua` marcava o gatilho ("eles ainda não se mexeram") sem marcar os spawns deles como de guarda; no combate de hoje, quem não vê ninguém anda pra própria boca, e ali a boca deles é a saída — iam embora antes da briga. Agora os spawns deles nascem de guarda até o gatilho.
+- **A briga à noite (`palco_briga.js`)**, o que o vídeo tem:
+  - *Ângulo*: câmera a 0,95 rad (54°) do chão, 38 m de distância, girada 0,55 rad da rua (a diagonal: a fachada do outro lado aparece), lente de 26°; segue a linha de frente (`frenteDaBriga`) devagar. A câmera zenital do jogo 3D antigo (`zenital`) não vale com a noite ligada.
+  - *Escuro* (`cenario.js`, `cenaNoturna`): 22h30, o céu a 6% e o luar a 5% do normal, fundo e névoa `#020305`, névoa de 0,75 a 1,6 vez a distância da câmera.
+  - *Luzes* (`luzesDaCena`, até 8 por quadro, no shader da noite — nenhuma luz do three.js, nada recompila): os três postes de verdade mais perto do meio da câmera (raio 12 m, a luz 2 m abaixo da lente), os sinalizadores (dois de cada lado, da retaguarda, vermelhos e tremendo, com o brilho e a fumaça; quem cai larga o dele aceso no chão por 8 s), o clarão da bomba (18 m) e o fogo que fica (10 m, uns 5 s, com o brilho), o giroflex da viatura (vermelho e azul) e um preenchimento âmbar pequeno quando não há poste perto da frente. As luzes da briga valem mesmo com as luzes da noite apagadas nos gráficos (o perfil mínimo, sem placa de vídeo).
+  - *Vinheta* nas bordas e *chuva* fina (700 riscos em volta da câmera).
+  - `localStorage['briga3d-dia'] = '1'` (a caixa "noite" do painel) volta a briga de dia, como era.
+- **Medido (sem placa de vídeo, 35% da resolução)**: 11 a 17 quadros por segundo, como a cidade de dia; a briga de rua 30 × 30 abre, anda e acaba sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

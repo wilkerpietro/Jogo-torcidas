@@ -3540,6 +3540,8 @@ O planejamento do assalto (alvo, equipe, jeito) é uma tela do `main.js`; a esco
 
 > **Desde 13/11/2026 o jogo é 2D de novo (ver 4.9).** A cidade em 3D saiu do repositório; as seções 4.1 a 4.8 ficam como registro do que existiu até o commit 17badf1. A pasta `cenario3d/` segue sendo onde o jogo mora.
 
+> **A página de teste da cidade 3D (24/11/2026).** A cidade 3D antiga voltou só como teste, fora do jogo oficial: `cenario3d/cidade3d.html` (o `jogo.html` antigo) com os módulos apagados em 13/11 restaurados em `cenario3d/js/`, rodando o jogo de hoje por cima, com save próprio (`torcida-organizada:save-teste3d`). O painel **TESTE** no canto (`js/briga_teste3d.js`) abre uma briga de rua numa rua sorteada da praça, com o tamanho do bonde e dia ou noite. **A briga à noite** (`palco_briga.js`, `cenario.js` `cenaNoturna`/`luzesDaCena`), no visual do vídeo de referência do dono: câmera a 54° do chão, na diagonal da rua, lente de 26° (teleobjetiva), seguindo a linha de frente; o escuro quase preto com a névoa fechando atrás da briga; até 8 luzes pontuais no shader da noite (valem mesmo no perfil de gráficos mínimo): os três postes mais perto, os sinalizadores (dois de cada lado, vermelhos; quem cai larga o dele aceso), o clarão e o fogo da bomba (uns 5 s), o giroflex da viatura e um preenchimento sem poste perto; vinheta e chuva. `localStorage['briga3d-dia'] = '1'` volta a briga de dia.
+
 Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carregado de CDN). Cerca de 168 mil linhas, 43 MB.
 
 ### 4.1 Como é montado

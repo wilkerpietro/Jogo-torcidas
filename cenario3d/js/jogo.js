@@ -33803,7 +33803,8 @@ window.TO = window.TO || {};
 
 TO.estado = (function(){
   const U = TO.util;
-  const CHAVE = 'torcida-organizada:save';
+  /* (a página de teste da cidade 3D, cidade3d.html, guarda o save dela à parte: `TO.chaveDoSave`) */
+  const CHAVE = TO.chaveDoSave || 'torcida-organizada:save';
   /* versão 2: o jogo novo — sem tensão, feed só com o esqueleto.
      Save da versão 1 não abre aqui de propósito. */
   const VERSAO = 2;
