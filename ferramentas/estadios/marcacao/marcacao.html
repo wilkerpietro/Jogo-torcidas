@@ -1,0 +1,644 @@
+<title>Marcação dos Arredores</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Prancheta de campo: uma coluna só; o mapa é a peça grande, as ferramentas ficam em cima dele e a lista do que foi marcado embaixo. */
+:root {
+  --fundo: #edf0ec;
+  --chapa: #ffffff;
+  --tinta: #18211d;
+  --apagado: #5a6861;
+  --linha: #cdd5cf;
+  --realce: #0d6a49;
+  --realce-tinta: #ffffff;
+  --aviso: #8a4b00;
+  --aviso-fundo: #fbefd9;
+  --papel: #efe9dc;
+  --t0: #1c5bd6;
+  --t1: #0a8a78;
+  --t2: #c8263a;
+  --recado: #b97a00;
+  --corte: #b0147e;
+  --titulo: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --texto: "Inter", "Segoe UI", system-ui, sans-serif;
+  --conta: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #111714; --chapa: #1a221e; --tinta: #e5ece7; --apagado: #9baba3; --linha: #2f3b35;
+    --realce: #49c492; --realce-tinta: #08130e; --aviso: #f3c27a; --aviso-fundo: #3a2c14; --papel: #efe9dc;
+    --t0: #5b8ff0; --t1: #2fb8a4; --t2: #ec5a6c; --recado: #e0a52e; --corte: #e052b4;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fundo: #111714; --chapa: #1a221e; --tinta: #e5ece7; --apagado: #9baba3; --linha: #2f3b35;
+  --realce: #49c492; --realce-tinta: #08130e; --aviso: #f3c27a; --aviso-fundo: #3a2c14; --papel: #efe9dc;
+  --t0: #5b8ff0; --t1: #2fb8a4; --t2: #ec5a6c; --recado: #e0a52e; --corte: #e052b4;
+  color-scheme: dark;
+}
+body { background: var(--fundo); color: var(--tinta); font-family: var(--texto); font-size: 15px; line-height: 1.45; }
+.pagina {
+  max-width: 1120px; margin-inline: auto; padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+}
+h1, h2 { font-family: var(--titulo); margin: 0; text-wrap: balance; }
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 17px; font-weight: 700; }
+p { margin: 0; }
+.topo { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: flex-end; justify-content: space-between; }
+.sobre { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--apagado); }
+.estado { font-size: 13px; color: var(--apagado); max-width: 46ch; }
+.estado.aviso { color: var(--aviso); background: var(--aviso-fundo); padding: 6px 10px; border-radius: 6px; }
+.estado::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--realce); margin-right: 7px; }
+.estado.aviso::before { background: var(--aviso); }
+.estado.girando::before { background: var(--apagado); }
+
+button, select, textarea, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--realce); outline-offset: 2px; }
+
+.escolha { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.escolha select { flex: 1 1 220px; min-width: 0; padding: 9px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); font-weight: 600; }
+.passo { width: 40px; height: 40px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); font-size: 20px; line-height: 1; }
+.conta { font-size: 13px; color: var(--apagado); font-variant-numeric: tabular-nums; }
+.ficha { font-size: 13px; color: var(--apagado); }
+.ficha b { color: var(--tinta); font-weight: 600; }
+
+.ferramentas { display: flex; flex-direction: column; gap: 8px; }
+.grupo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.grupo .rotulo { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--apagado); width: 100%; }
+.tecla {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; min-height: 40px;
+  border: 1px solid var(--linha); border-radius: 999px; background: var(--chapa); font-weight: 500;
+}
+.tecla[aria-pressed="true"] { background: var(--tinta); color: var(--fundo); border-color: var(--tinta); }
+.tecla:disabled { opacity: 0.5; cursor: not-allowed; }
+.sinal { width: 13px; height: 13px; flex: none; border: 2px solid var(--chapa); box-shadow: 0 0 0 1px var(--linha); }
+.sinal.bola { border-radius: 50%; }
+.sinal.c0 { background: var(--t0); } .sinal.c1 { background: var(--t1); } .sinal.c2 { background: var(--t2); }
+.sinal.recado { background: var(--recado); transform: rotate(45deg); }
+.sinal.corte { background: transparent; border: 2px dashed var(--corte); box-shadow: none; }
+.dica { font-size: 14px; color: var(--tinta); border-left: 3px solid var(--realce); padding: 2px 0 2px 10px; }
+
+.zoom { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.zoom button { min-width: 40px; height: 36px; padding: 0 12px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); font-weight: 600; }
+.zoom span { font-size: 13px; color: var(--apagado); font-variant-numeric: tabular-nums; }
+.janela { overflow: auto; max-height: 74vh; border: 1px solid var(--linha); border-radius: 6px; background: var(--papel); overscroll-behavior: contain; }
+.palco { position: relative; }
+.palco img { display: block; width: 100%; height: 100%; max-width: none; user-select: none; -webkit-user-drag: none; }
+.palco svg { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: pan-x pan-y; }
+.palco svg.mexer { cursor: default; }
+.marca { cursor: pointer; }
+.m0 { fill: var(--t0); } .m1 { fill: var(--t1); } .m2 { fill: var(--t2); } .mr { fill: var(--recado); }
+.borda { stroke: #ffffff; }
+.num { fill: #ffffff; font-family: var(--titulo); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.escolhida { fill: none; stroke: #111111; }
+.fora { fill: rgba(18, 20, 28, 0.42); pointer-events: none; }
+.cerca { fill: none; stroke: var(--corte); stroke-linejoin: round; pointer-events: none; }
+.canto { fill: #ffffff; stroke: var(--corte); cursor: pointer; }
+.toque { fill: transparent; }
+
+.sel { background: var(--chapa); border: 1px solid var(--linha); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.sel .linha1 { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.sel .nome { font-family: var(--titulo); font-weight: 700; font-size: 16px; }
+.onde { font-family: var(--conta); font-size: 12px; color: var(--apagado); }
+.sel input[type="text"] { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--fundo); }
+.acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.acao { padding: 8px 12px; min-height: 38px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); font-weight: 500; }
+.acao.forte { background: var(--realce); color: var(--realce-tinta); border-color: var(--realce); font-weight: 600; }
+.acao.perigo { color: var(--t2); }
+.acao.perigo.certeza { background: var(--t2); color: #ffffff; border-color: var(--t2); }
+
+.lista ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.lista li button { width: 100%; text-align: left; display: grid; grid-template-columns: auto 1fr; gap: 2px 9px; align-items: center; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); min-width: 0; }
+.lista li button[aria-current="true"] { border-color: var(--tinta); box-shadow: inset 0 0 0 1px var(--tinta); }
+.lista .tit { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.lista .sub { grid-column: 2; font-size: 12.5px; color: var(--apagado); min-width: 0; overflow-wrap: anywhere; }
+.vazio { color: var(--apagado); font-size: 14px; margin-top: 6px; }
+
+.obs { display: flex; flex-direction: column; gap: 8px; }
+.obs label.campo { font-family: var(--titulo); font-weight: 700; font-size: 17px; }
+.obs textarea { width: 100%; box-sizing: border-box; min-height: 84px; padding: 10px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); resize: vertical; }
+.pronto { display: inline-flex; gap: 8px; align-items: center; font-weight: 500; }
+.pronto input { width: 18px; height: 18px; accent-color: var(--realce); }
+
+.geral { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--linha); padding-top: 16px; }
+.rolagem { overflow-x: auto; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linha); }
+th { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--apagado); font-weight: 600; }
+td.n { font-variant-numeric: tabular-nums; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr { cursor: pointer; }
+tbody tr[aria-current="true"] td { background: var(--fundo); font-weight: 600; }
+.pilula { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; border: 1px solid var(--linha); color: var(--apagado); white-space: nowrap; }
+.pilula.andando { color: var(--aviso); border-color: var(--aviso); }
+.pilula.feito { background: var(--realce); color: var(--realce-tinta); border-color: var(--realce); font-weight: 600; }
+#saida { width: 100%; box-sizing: border-box; min-height: 120px; font-family: var(--conta); font-size: 12px; padding: 8px; border: 1px solid var(--linha); border-radius: 6px; background: var(--chapa); }
+.miudo { font-size: 12.5px; color: var(--apagado); }
+</style>
+
+<div class="pagina">
+  <header class="topo">
+    <div>
+      <p class="sobre">Torcida Organizada · arredores de verdade</p>
+      <h1>Marcação dos Arredores</h1>
+    </div>
+    <p id="estado" class="estado girando" role="status">Ligando o salvamento…</p>
+  </header>
+
+  <section class="escolha" aria-label="Estádio">
+    <button class="passo" id="ant" type="button" aria-label="Estádio anterior">‹</button>
+    <select id="estadio" aria-label="Escolher o estádio"></select>
+    <button class="passo" id="prox" type="button" aria-label="Próximo estádio">›</button>
+    <span class="conta" id="conta"></span>
+  </section>
+  <p class="ficha" id="ficha"></p>
+
+  <section class="ferramentas" aria-label="Ferramentas">
+    <div class="grupo" role="group" aria-label="O que marcar">
+      <span class="rotulo">O que marcar</span>
+      <button class="tecla" type="button" data-f="chegada" id="f-chegada"><span class="sinal bola c0" id="s-chegada"></span>Chegada da torcida</button>
+      <button class="tecla" type="button" data-f="entrada" id="f-entrada"><span class="sinal c0" id="s-entrada"></span>Entrada no estádio</button>
+      <button class="tecla" type="button" data-f="corte" id="f-corte"><span class="sinal corte"></span>Corte do mapa</button>
+      <button class="tecla" type="button" data-f="nota" id="f-nota"><span class="sinal recado"></span>Recado</button>
+      <button class="tecla" type="button" data-f="mexer" id="f-mexer">Só mexer</button>
+    </div>
+    <div class="grupo" role="group" aria-label="De qual torcida" id="dequem"></div>
+    <p class="dica" id="dica"></p>
+    <div class="acoes" id="corte-acoes" hidden>
+      <button class="acao" type="button" id="corte-desfaz">Desfazer o último canto</button>
+      <button class="acao perigo" type="button" id="corte-apaga" data-certeza="Apagar mesmo o corte">Apagar o corte</button>
+    </div>
+  </section>
+
+  <section aria-label="Mapa" style="display:flex;flex-direction:column;gap:8px">
+    <div class="zoom">
+      <button type="button" id="z-menos" aria-label="Afastar">−</button>
+      <button type="button" id="z-mais" aria-label="Aproximar">+</button>
+      <button type="button" id="z-tudo">Mapa inteiro</button>
+      <span id="z-txt"></span>
+    </div>
+    <div class="janela" id="janela">
+      <div class="palco" id="palco">
+        <img id="img" alt="" draggable="false">
+        <svg id="svg" viewBox="0 0 2600 2400" role="img" aria-label="Marcas sobre o mapa"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="sel" id="sel" hidden aria-label="Marca escolhida">
+    <div class="linha1"><span class="nome" id="sel-nome"></span><span class="onde" id="sel-onde"></span></div>
+    <input type="text" id="sel-nota" maxlength="240" placeholder="Recado sobre esta marca (opcional)" aria-label="Recado sobre esta marca">
+    <div class="acoes">
+      <button class="acao forte" type="button" id="sel-move">Mudar de lugar</button>
+      <button class="acao perigo" type="button" id="sel-apaga">Apagar</button>
+      <button class="acao" type="button" id="sel-solta">Fechar</button>
+    </div>
+  </section>
+
+  <section class="lista" aria-label="Marcas deste estádio">
+    <h2>Marcas deste estádio</h2>
+    <ul id="lista"></ul>
+    <p class="vazio" id="lista-vazia">Nada marcado ainda. Escolha o que marcar e toque no mapa: chegadas, entradas e os cantos do corte aparecem aqui.</p>
+  </section>
+
+  <section class="obs">
+    <label class="campo" for="obs">Observações do estádio</label>
+    <textarea id="obs" maxlength="2000" placeholder="O que eu preciso saber e não cabe numa marca: rua fechada em dia de jogo, lado de cada torcida, prédio que não pode faltar…"></textarea>
+    <label class="pronto"><input type="checkbox" id="pronto"> Conferi este estádio na cena desenhada (2ª rodada)</label>
+  </section>
+
+  <section class="geral" aria-label="Todos os estádios">
+    <h2>Todos os estádios</h2>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Estádio</th><th>Chegadas</th><th>Entradas</th><th>Corte</th><th>Situação</th></tr></thead>
+        <tbody id="tabela"></tbody>
+      </table>
+    </div>
+    <div class="acoes">
+      <button class="acao" type="button" id="copiar">Copiar todas as marcas</button>
+    </div>
+    <textarea id="saida" readonly hidden aria-label="Marcas em texto"></textarea>
+    <p class="miudo">Ruas: © colaboradores do OpenStreetMap. A imagem é a cena inteira: o corte não passa da beira dela.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* AS CENAS DESENHADAS (2ª rodada): cada uma no quadro da ficha do estádio — w × h pixels, esc pixels por metro, o meio da
+     imagem em (cu, cv) metros do meio do campo, e o quadro girado `giro` graus em relação ao do levantamento. As marcas
+     continuam guardadas no quadro do levantamento, como na 1ª rodada. */
+  var CENAS = {"estadio-aflitos":{"w":2576,"h":2440,"esc":4.116,"cu":-21.8,"cv":-4.6,"giro":0},"estadio-allianz-parque":{"w":2440,"h":2584,"esc":4.415,"cu":-32,"cv":-33.7,"giro":0},"estadio-arena-da-baixada":{"w":2552,"h":2464,"esc":5.872,"cu":11.7,"cv":-46.2,"giro":0},"estadio-arena-do-gremio":{"w":2600,"h":2416,"esc":4.865,"cu":-11.7,"cv":15.1,"giro":0},"estadio-arena-fonte-nova":{"w":2680,"h":2352,"esc":5.017,"cu":-32,"cv":-13.2,"giro":0},"estadio-arena-mrv":{"w":2392,"h":2632,"esc":4.866,"cu":37.1,"cv":-52.6,"giro":0},"estadio-arruda":{"w":2208,"h":2848,"esc":6.525,"cu":-2.7,"cv":-41.3,"giro":0},"estadio-barradao":{"w":2680,"h":2344,"esc":4.745,"cu":-29.9,"cv":-23,"giro":0},"estadio-beira-rio":{"w":2792,"h":2256,"esc":4.883,"cu":51.8,"cv":22,"giro":0},"estadio-castelao":{"w":2680,"h":2344,"esc":3.49,"cu":-33.1,"cv":-6.4,"giro":0},"estadio-couto-pereira":{"w":2536,"h":2472,"esc":6.123,"cu":-11.5,"cv":61,"giro":0},"estadio-ilha-do-retiro":{"w":2960,"h":2128,"esc":5.636,"cu":37.6,"cv":-27.3,"giro":180},"estadio-mangueirao":{"w":2312,"h":2728,"esc":4.007,"cu":8.7,"cv":5.9,"giro":0},"estadio-maracana":{"w":2416,"h":2600,"esc":4.263,"cu":-86.8,"cv":-38.2,"giro":0},"estadio-mineirao":{"w":2520,"h":2496,"esc":4.001,"cu":21.8,"cv":-28.2,"giro":0},"estadio-morumbi":{"w":2424,"h":2600,"esc":4.725,"cu":19.3,"cv":-25.5,"giro":0},"estadio-neo-quimica-arena":{"w":2256,"h":2784,"esc":4.355,"cu":-4.6,"cv":-25.5,"giro":0},"estadio-nilton-santos":{"w":2320,"h":2712,"esc":4.063,"cu":-9.7,"cv":24.6,"giro":0},"estadio-sao-januario":{"w":2528,"h":2488,"esc":4.336,"cu":-21.8,"cv":42.2,"giro":0},"estadio-vila-belmiro":{"w":2872,"h":2192,"esc":4.995,"cu":93.9,"cv":88.9,"giro":0}};
+  var W = 1680, H = 1520, CENA = null;
+  var NS = 'http://www.w3.org/2000/svg';
+  var E = [
+    ['estadio-maracana', 'Maracanã', 'Rio de Janeiro', [['flamengo', 'Flamengo'], ['fluminense', 'Fluminense']], -22.912146, -43.230187, 30.9],
+    ['estadio-nilton-santos', 'Nilton Santos', 'Rio de Janeiro', [['botafogo', 'Botafogo']], -22.893233, -43.292456, 25.6],
+    ['estadio-sao-januario', 'São Januário', 'Rio de Janeiro', [['vasco', 'Vasco']], -22.890874, -43.228264, 168.2],
+    ['estadio-mineirao', 'Mineirão', 'Belo Horizonte', [['cruzeiro', 'Cruzeiro']], -19.865932, -43.971131, 8.6],
+    ['estadio-arena-mrv', 'Arena MRV', 'Belo Horizonte', [['atletico-mineiro', 'Atlético Mineiro']], -19.930023, -44.013883, 33.2],
+    ['estadio-morumbi', 'Morumbi', 'São Paulo', [['sao-paulo', 'São Paulo']], -23.600118, -46.720103, 172.8],
+    ['estadio-allianz-parque', 'Allianz Parque', 'São Paulo', [['palmeiras', 'Palmeiras']], -23.527502, -46.678525, 336.6],
+    ['estadio-neo-quimica-arena', 'Neo Química Arena', 'São Paulo', [['corinthians', 'Corinthians']], -23.545319, -46.474226, 180.5],
+    ['estadio-vila-belmiro', 'Vila Belmiro', 'Santos', [['santos', 'Santos']], -23.951131, -46.338916, 27.8],
+    ['estadio-arena-da-baixada', 'Arena da Baixada', 'Curitiba', [['athletico', 'Athletico']], -25.448178, -49.276944, 66.8],
+    ['estadio-couto-pereira', 'Couto Pereira', 'Curitiba', [['coritiba', 'Coritiba']], -25.421098, -49.259550, 309.4],
+    ['estadio-beira-rio', 'Beira-Rio', 'Porto Alegre', [['internacional', 'Internacional']], -30.065500, -51.235921, 37.7],
+    ['estadio-arena-do-gremio', 'Arena do Grêmio', 'Porto Alegre', [['gremio', 'Grêmio']], -29.973993, -51.194880, 195.8],
+    ['estadio-ilha-do-retiro', 'Ilha do Retiro', 'Recife', [['sport-recife', 'Sport']], -8.062912, -34.902896, 154.9],
+    ['estadio-arruda', 'Arruda', 'Recife', [['santa-cruz', 'Santa Cruz']], -8.026699, -34.891126, 180.0],
+    ['estadio-aflitos', 'Aflitos', 'Recife', [['nautico', 'Náutico']], -8.040540, -34.896784, 180.3],
+    ['estadio-barradao', 'Barradão', 'Salvador', [['vitoria', 'Vitória']], -12.919156, -38.427082, 158.1],
+    ['estadio-arena-fonte-nova', 'Fonte Nova', 'Salvador', [['bahia', 'Bahia']], -12.978829, -38.504264, 178.8],
+    ['estadio-castelao', 'Castelão', 'Fortaleza', [['fortaleza', 'Fortaleza'], ['ceara', 'Ceará']], -3.807257, -38.522458, 185.0],
+    ['estadio-mangueirao', 'Mangueirão', 'Belém', [['remo', 'Remo'], ['paysandu', 'Paysandu']], -1.381146, -48.443965, 178.2]
+  ].map(function (a) {
+    var t = a[3].map(function (c, i) { return { ch: c[0], nome: c[1], cor: i }; });
+    t.push({ ch: 'visitante', nome: 'Visitante', cor: 2 });
+    return { id: a[0], nome: a[1], cidade: a[2], torcidas: t, lat: a[4], lon: a[5], rumo: a[6] };
+  });
+  var INDICE = {}; E.forEach(function (e) { INDICE[e.id] = e; });
+
+  var $ = function (id) { return document.getElementById(id); };
+  var marcas = {};            // id do estádio -> { pontos, corte, obs, pronto, atualizado }
+  var atual = E[0], ferramenta = 'chegada', deQuem = 0, escolhida = null, movendo = false;
+  var zoom = 0, inteiro = true; // zoom: pixels de tela por pixel da imagem
+  var db = null, ligacao = 'ligando', demorou = false, erro = false, soOlha = false, conciliado = false;
+  var sujo = {}, gravando = {}, relogio = {}, tentou = {};
+
+  /* ---------- o que fica guardado ---------- */
+  function vazia() { return { pontos: [], corte: [], obs: '', pronto: false, atualizado: 0 }; }
+  function num(x) { return typeof x === 'number' && isFinite(x) ? Math.round(x * 10) / 10 : null; }
+  function limpa(r) { // o que vem de fora (do salvamento ou do aparelho) passa por aqui antes de valer
+    var m = vazia(); if (!r || typeof r !== 'object') return m;
+    (Array.isArray(r.pontos) ? r.pontos : []).slice(0, 200).forEach(function (p, i) {
+      if (!p || typeof p !== 'object') return;
+      var u = num(p.u), v = num(p.v); if (u === null || v === null) return;
+      var k = p.k === 'entrada' || p.k === 'nota' ? p.k : 'chegada';
+      m.pontos.push({ id: typeof p.id === 'string' && p.id ? p.id.slice(0, 40) : 'p' + i, k: k, de: k === 'nota' ? '' : String(p.de || 'visitante').slice(0, 40), u: u, v: v, nota: String(p.nota || '').slice(0, 240) });
+    });
+    (Array.isArray(r.corte) ? r.corte : []).slice(0, 60).forEach(function (c) {
+      if (!c || typeof c !== 'object') return; var u = num(c.u), v = num(c.v); if (u !== null && v !== null) m.corte.push({ u: u, v: v });
+    });
+    /* (o "terminei" da 1ª rodada, nos mapas do levantamento, não vale pra 2ª: na cena desenhada o dono confere de novo) */
+    m.obs = String(r.obs || '').slice(0, 2000); m.pronto = !!r.pronto && r.rodada === 2;
+    m.atualizado = typeof r.atualizado === 'number' && isFinite(r.atualizado) ? r.atualizado : 0;
+    return m;
+  }
+  function temAlgo(m) { return m.pontos.length > 0 || m.corte.length > 0 || m.obs.trim() !== '' || m.pronto; }
+  function corpo(id) {
+    var e = INDICE[id], m = marcas[id];
+    return {
+      estadio: id, nome: e.nome, lat: e.lat, lon: e.lon, rumo: e.rumo,
+      quadro: 'metros a partir do meio do campo; u ao longo do campo (o rumo), v para cima do mapa',
+      pontos: m.pontos.map(function (p) { return { id: p.id, k: p.k, de: p.de, u: p.u, v: p.v, nota: p.nota }; }),
+      corte: m.corte.map(function (c) { return { u: c.u, v: c.v }; }),
+      obs: m.obs, pronto: m.pronto, atualizado: m.atualizado, rodada: 2
+    };
+  }
+  function guardaNoAparelho(id) { try { localStorage.setItem('marcas:' + id, JSON.stringify(corpo(id))); } catch (e) {} }
+  function leDoAparelho() {
+    E.forEach(function (e) {
+      var m = null; try { m = JSON.parse(localStorage.getItem('marcas:' + e.id) || 'null'); } catch (x) {}
+      marcas[e.id] = limpa(m);
+    });
+    try { var a = localStorage.getItem('marcas:atual'); if (a && INDICE[a]) atual = INDICE[a]; } catch (x) {}
+  }
+
+  /* ---------- salvar ---------- */
+  function mudou() {
+    var id = atual.id; marcas[id].atualizado = Date.now(); guardaNoAparelho(id);
+    sujo[id] = true; agenda(id); pintaEstado(); pintaLista(); pintaTabela();
+  }
+  function agenda(id) { clearTimeout(relogio[id]); relogio[id] = setTimeout(function () { grava(id); }, 700); }
+  function grava(id) {
+    if (!db || soOlha || gravando[id] || !sujo[id]) return;
+    gravando[id] = true; delete sujo[id]; pintaEstado();
+    db.doc('marcas/' + id).set(corpo(id)).then(function () {
+      erro = false; delete tentou[id];
+    }, function (x) {
+      sujo[id] = true;
+      var c = x && x.code;
+      if (c === 'unavailable' && !tentou[id]) { tentou[id] = true; clearTimeout(relogio[id]); relogio[id] = setTimeout(function () { grava(id); }, 1500 + Math.random() * 1500); }
+      else { erro = true; if (c === 'invalid_argument' || c === 'revoked' || c === 'not_granted') { soOlha = c !== 'invalid_argument' ? true : soOlha; } }
+    }).then(function () {
+      delete gravando[id];
+      if (sujo[id] && !erro && !tentou[id]) grava(id);
+      pintaEstado();
+    });
+  }
+  function algumaPendencia() { for (var k in sujo) return true; for (var j in gravando) return true; return false; }
+  function pintaEstado() {
+    var t, c = '';
+    if (ligacao === 'ligando') { t = 'Ligando o salvamento…'; c = 'girando'; }
+    else if (ligacao === 'sem') { t = 'Sem salvamento ligado. As marcas ficam só neste aparelho: no fim, use “Copiar todas as marcas” e cole na conversa.'; c = 'aviso'; }
+    else if (soOlha) { t = 'Você está só olhando: esta página não deixa você gravar marcas.'; c = 'aviso'; }
+    else if (erro) { t = 'Não deu para salvar agora. As marcas estão guardadas neste aparelho e eu tento de novo na próxima mudança.'; c = 'aviso'; }
+    else if (algumaPendencia()) { t = 'Salvando…'; c = 'girando'; }
+    else if (demorou) { t = 'O salvamento ainda não respondeu; o que aparece pode estar desatualizado.'; c = 'aviso'; }
+    else t = 'Tudo salvo';
+    var e = $('estado'); e.textContent = t; e.className = 'estado' + (c ? ' ' + c : '');
+  }
+  function liga() {
+    var uso = window.claude && typeof window.claude.use === 'function' ? window.claude.use : null;
+    if (!uso) { ligacao = 'sem'; pintaEstado(); return; }
+    Promise.resolve().then(function () { return window.claude.use('db'); }).then(function (d) {
+      if (!d) { ligacao = 'sem'; pintaEstado(); return; }
+      db = d; ligacao = 'ligado';
+      var espera = setTimeout(function () { demorou = true; pintaEstado(); }, 10000);
+      db.collection('marcas').onSnapshot(function (snap) {
+        var certo = !snap.metadata.fromCache;
+        if (certo) { clearTimeout(espera); demorou = false; }
+        var vistos = {}, redesenha = false;
+        snap.docs.forEach(function (d) {
+          var id = d.id; if (!INDICE[id]) return; vistos[id] = true;
+          if (sujo[id] || gravando[id] || d.metadata.hasPendingWrites) return;
+          var r = d.data(); if (!r) return;
+          var remoto = limpa(r), meu = marcas[id];
+          if (remoto.atualizado > meu.atualizado) { marcas[id] = remoto; guardaNoAparelho(id); if (id === atual.id) redesenha = true; }
+          else if (certo && !conciliado && meu.atualizado > remoto.atualizado && temAlgo(meu)) { sujo[id] = true; agenda(id); }
+        });
+        if (certo && !conciliado) { // o que ficou só neste aparelho numa visita anterior sobe uma vez
+          conciliado = true;
+          E.forEach(function (e) { if (!vistos[e.id] && temAlgo(marcas[e.id]) && !sujo[e.id]) { sujo[e.id] = true; agenda(e.id); } });
+        }
+        if (redesenha) { escolhida = null; movendo = false; pintaTudo(); } else { pintaTabela(); }
+        pintaEstado();
+      }, function () { clearTimeout(espera); ligacao = 'sem'; db = null; pintaEstado(); });
+      pintaEstado();
+    }, function () { ligacao = 'sem'; pintaEstado(); });
+    Promise.resolve().then(function () { return window.claude.use('user'); }).then(function (u) {
+      if (!u || typeof u.can !== 'function') return null; return u.can('data.write');
+    }).then(function (pode) { if (pode === false) { soOlha = true; pintaEstado(); pintaFerramentas(); } }, function () {});
+  }
+
+  /* ---------- contas do mapa ---------- */
+  function px(p) { var g = CENA.giro * Math.PI / 180, c = Math.cos(g), s = Math.sin(g), u = p.u * c - p.v * s, v = p.u * s + p.v * c;
+    return [W / 2 + (u - CENA.cu) * CENA.esc, H / 2 - (v - CENA.cv) * CENA.esc]; }
+  function metros(x, y) {
+    x = Math.max(0, Math.min(W, x)); y = Math.max(0, Math.min(H, y));
+    var u = (x - W / 2) / CENA.esc + CENA.cu, v = (H / 2 - y) / CENA.esc + CENA.cv, g = -CENA.giro * Math.PI / 180, c = Math.cos(g), s = Math.sin(g);
+    return { u: Math.round((u * c - v * s) * 10) / 10, v: Math.round((u * s + v * c) * 10) / 10 };
+  }
+  var VENTOS = ['norte', 'nordeste', 'leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste'];
+  function onde(p) { // distância e lado, contados do meio do campo
+    var d = Math.round(Math.sqrt(p.u * p.u + p.v * p.v));
+    if (d < 5) return 'no meio do campo';
+    var n = atual.rumo * Math.PI / 180, norte = p.u * Math.cos(n) + p.v * Math.sin(n), leste = p.u * Math.sin(n) - p.v * Math.cos(n);
+    var g = (Math.atan2(leste, norte) * 180 / Math.PI + 360) % 360;
+    return d + ' m a ' + VENTOS[Math.round(g / 45) % 8] + ' do meio do campo';
+  }
+  function torcida(ch) {
+    for (var i = 0; i < atual.torcidas.length; i++) if (atual.torcidas[i].ch === ch) return atual.torcidas[i];
+    return { ch: ch, nome: ch, cor: 2 };
+  }
+  function ordem(p) { // o número da marca dentro do seu grupo
+    var n = 0, ps = marcas[atual.id].pontos;
+    for (var i = 0; i < ps.length; i++) { if (ps[i].k === p.k && ps[i].de === p.de) n++; if (ps[i] === p) break; }
+    return n;
+  }
+  function nomeDe(p) {
+    if (p.k === 'nota') return 'Recado ' + ordem(p);
+    return (p.k === 'chegada' ? 'Chegada' : 'Entrada') + ' · ' + torcida(p.de).nome + ' ' + ordem(p);
+  }
+  function achaPonto(id) { var ps = marcas[atual.id].pontos; for (var i = 0; i < ps.length; i++) if (ps[i].id === id) return ps[i]; return null; }
+
+  /* ---------- desenho ---------- */
+  function no(nome, at, txt) { var e = document.createElementNS(NS, nome); for (var k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; return e; }
+  function pintaMapa() {
+    var svg = $('svg'), m = marcas[atual.id];
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var s = W / ($('palco').clientWidth || W); // unidades do desenho por pixel de tela: as marcas têm o mesmo tamanho em qualquer zoom
+    svg.setAttribute('class', ferramenta === 'mexer' && !movendo ? 'mexer' : '');
+    var c = m.corte.map(px);
+    if (c.length >= 3) {
+      var d = 'M0 0H' + W + 'V' + H + 'H0Z M' + c.map(function (q) { return q[0] + ' ' + q[1]; }).join(' L') + 'Z';
+      svg.appendChild(no('path', { 'class': 'fora', d: d, 'fill-rule': 'evenodd' }));
+    }
+    if (c.length >= 2) {
+      svg.appendChild(no(c.length >= 3 ? 'polygon' : 'polyline', { 'class': 'cerca', points: c.map(function (q) { return q[0] + ',' + q[1]; }).join(' '), 'stroke-width': 3 * s, 'stroke-dasharray': (10 * s) + ' ' + (6 * s) }));
+    }
+    c.forEach(function (q, i) {
+      var g = no('g', { 'class': 'marca', 'data-id': 'c' + i, transform: 'translate(' + q[0] + ' ' + q[1] + ')' });
+      g.appendChild(no('circle', { 'class': 'toque', r: 18 * s }));
+      if (escolhida === 'c' + i) g.appendChild(no('circle', { 'class': 'escolhida', r: 14 * s, 'stroke-width': 2 * s, 'stroke-dasharray': (4 * s) + ' ' + (3 * s) }));
+      g.appendChild(no('circle', { 'class': 'canto', r: 7 * s, 'stroke-width': 3 * s }));
+      svg.appendChild(g);
+    });
+    m.pontos.forEach(function (p) {
+      var q = px(p), g = no('g', { 'class': 'marca', 'data-id': p.id, transform: 'translate(' + q[0] + ' ' + q[1] + ')' });
+      g.appendChild(no('circle', { 'class': 'toque', r: 20 * s }));
+      if (escolhida === p.id) g.appendChild(no('circle', { 'class': 'escolhida', r: 19 * s, 'stroke-width': 2.5 * s, 'stroke-dasharray': (5 * s) + ' ' + (3 * s) }));
+      var cor = p.k === 'nota' ? 'mr' : 'm' + torcida(p.de).cor;
+      if (p.k === 'chegada') g.appendChild(no('circle', { 'class': cor + ' borda', r: 12 * s, 'stroke-width': 2.5 * s }));
+      else if (p.k === 'entrada') g.appendChild(no('rect', { 'class': cor + ' borda', x: -11 * s, y: -11 * s, width: 22 * s, height: 22 * s, rx: 3 * s, 'stroke-width': 2.5 * s }));
+      else g.appendChild(no('rect', { 'class': cor + ' borda', x: -9.5 * s, y: -9.5 * s, width: 19 * s, height: 19 * s, transform: 'rotate(45)', 'stroke-width': 2.5 * s }));
+      g.appendChild(no('text', { 'class': 'num', 'font-size': 12.5 * s }, String(ordem(p))));
+      g.appendChild(no('title', {}, nomeDe(p) + (p.nota ? ' — ' + p.nota : '')));
+      svg.appendChild(g);
+    });
+  }
+  function sinal(p) { var s = document.createElement('span'); s.className = 'sinal ' + (p.k === 'nota' ? 'recado' : (p.k === 'chegada' ? 'bola ' : '') + 'c' + torcida(p.de).cor); return s; }
+  function pintaLista() {
+    var ul = $('lista'), m = marcas[atual.id]; ul.textContent = '';
+    m.pontos.forEach(function (p) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+      if (escolhida === p.id) b.setAttribute('aria-current', 'true');
+      var t = document.createElement('span'); t.className = 'tit'; t.textContent = nomeDe(p);
+      var u = document.createElement('span'); u.className = 'sub'; u.textContent = onde(p) + (p.nota ? ' · ' + p.nota : '');
+      b.appendChild(sinal(p)); b.appendChild(t); b.appendChild(u);
+      b.addEventListener('click', function () { escolhe(p.id, true); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    if (m.corte.length) {
+      var li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+      var s = document.createElement('span'); s.className = 'sinal corte';
+      var t = document.createElement('span'); t.className = 'tit'; t.textContent = 'Corte do mapa';
+      var u = document.createElement('span'); u.className = 'sub';
+      u.textContent = m.corte.length < 3 ? m.corte.length + (m.corte.length === 1 ? ' canto' : ' cantos') + ': faltam cantos para fechar' : m.corte.length + ' cantos · ' + area(m.corte);
+      b.appendChild(s); b.appendChild(t); b.appendChild(u);
+      b.addEventListener('click', function () { poeFerramenta('corte'); });
+      li.appendChild(b); ul.appendChild(li);
+    }
+    $('lista-vazia').hidden = m.pontos.length > 0 || m.corte.length > 0;
+  }
+  function area(c) {
+    var a = 0, us = [], vs = [];
+    for (var i = 0; i < c.length; i++) { var j = (i + 1) % c.length; a += c[i].u * c[j].v - c[j].u * c[i].v; us.push(c[i].u); vs.push(c[i].v); }
+    var lu = Math.round(Math.max.apply(null, us) - Math.min.apply(null, us)), lv = Math.round(Math.max.apply(null, vs) - Math.min.apply(null, vs));
+    return 'cabe em ' + lu + ' × ' + lv + ' m (' + (Math.abs(a) / 2 / 10000).toFixed(1).replace('.', ',') + ' ha)';
+  }
+  function situacao(m) { return m.pronto ? ['feito', 'pronto'] : temAlgo(m) ? ['andando', 'em marcação'] : ['', 'sem marcas']; }
+  function pintaTabela() {
+    var tb = $('tabela'), prontos = 0; tb.textContent = '';
+    E.forEach(function (e) {
+      var m = marcas[e.id], tr = document.createElement('tr'), st = situacao(m); if (m.pronto) prontos++;
+      if (e === atual) tr.setAttribute('aria-current', 'true');
+      var ch = 0, en = 0; m.pontos.forEach(function (p) { if (p.k === 'chegada') ch++; else if (p.k === 'entrada') en++; });
+      [[e.nome + ' · ' + e.cidade, ''], [ch, 'n'], [en, 'n'], [m.corte.length >= 3 ? 'marcado' : '—', '']].forEach(function (c) { var td = document.createElement('td'); td.textContent = c[0]; if (c[1]) td.className = c[1]; tr.appendChild(td); });
+      var td = document.createElement('td'), p = document.createElement('span'); p.className = 'pilula' + (st[0] ? ' ' + st[0] : ''); p.textContent = st[1]; td.appendChild(p); tr.appendChild(td);
+      tr.addEventListener('click', function () { vai(e.id); $('estadio').scrollIntoView({ block: 'start', behavior: 'auto' }); });
+      tb.appendChild(tr);
+    });
+    $('conta').textContent = prontos + ' de ' + E.length + ' prontos';
+    var s = $('estadio');
+    for (var i = 0; i < s.options.length; i++) { var e = E[i], st = situacao(marcas[e.id]); s.options[i].textContent = e.nome + ' · ' + e.cidade + (st[0] ? ' — ' + st[1] : ''); }
+  }
+  function pintaFerramentas() {
+    var bs = document.querySelectorAll('[data-f]');
+    for (var i = 0; i < bs.length; i++) { bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-f') === ferramenta ? 'true' : 'false'); bs[i].disabled = soOlha && bs[i].getAttribute('data-f') !== 'mexer'; }
+    var dq = $('dequem'); dq.textContent = '';
+    var comTorcida = ferramenta === 'chegada' || ferramenta === 'entrada';
+    dq.hidden = !comTorcida;
+    if (deQuem >= atual.torcidas.length) deQuem = 0;
+    var t = atual.torcidas[deQuem];
+    $('s-chegada').className = 'sinal bola c' + t.cor; $('s-entrada').className = 'sinal c' + t.cor;
+    if (comTorcida) {
+      var r = document.createElement('span'); r.className = 'rotulo'; r.textContent = 'De qual torcida'; dq.appendChild(r);
+      atual.torcidas.forEach(function (x, i) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'tecla'; b.id = 'q-' + i; b.setAttribute('aria-pressed', i === deQuem ? 'true' : 'false');
+        var s = document.createElement('span'); s.className = 'sinal ' + (ferramenta === 'chegada' ? 'bola ' : '') + 'c' + x.cor; b.appendChild(s); b.appendChild(document.createTextNode(x.nome));
+        b.addEventListener('click', function () { deQuem = i; pintaFerramentas(); });
+        dq.appendChild(b);
+      });
+    }
+    var d;
+    if (soOlha) d = 'Você pode olhar as marcas, mas não mudar.';
+    else if (movendo) d = 'Toque no mapa no novo lugar da marca escolhida.';
+    else if (ferramenta === 'chegada') d = 'Toque no mapa onde a torcida ' + (t.ch === 'visitante' ? 'visitante' : 'do ' + t.nome) + ' aparece (o bonde nasce ali e anda até a entrada). Pode marcar mais de um lugar.';
+    else if (ferramenta === 'entrada') d = 'Toque no portão por onde a torcida ' + (t.ch === 'visitante' ? 'visitante' : 'do ' + t.nome) + ' entra no estádio. Pode marcar mais de um.';
+    else if (ferramenta === 'corte') d = 'Toque nos cantos do corte, em ordem, dando a volta no estádio. O que ficar de fora escurece e não entra na cena.';
+    else if (ferramenta === 'nota') d = 'Toque num lugar do mapa para deixar um recado sobre ele: um prédio que não pode faltar, uma rua fechada, um ponto de confusão.';
+    else d = 'Toque numa marca para escolher, mudar de lugar ou apagar. Nada novo é criado.';
+    $('dica').textContent = d;
+    $('corte-acoes').hidden = ferramenta !== 'corte' || soOlha || marcas[atual.id].corte.length === 0;
+  }
+  function pintaEscolhida() {
+    var cx = $('sel'), m = marcas[atual.id];
+    if (!escolhida) { cx.hidden = true; return; }
+    var nota = $('sel-nota');
+    if (escolhida.charAt(0) === 'c') {
+      var i = +escolhida.slice(1), c = m.corte[i]; if (!c) { escolhida = null; cx.hidden = true; return; }
+      $('sel-nome').textContent = 'Canto ' + (i + 1) + ' do corte'; $('sel-onde').textContent = onde(c); nota.hidden = true;
+    } else {
+      var p = achaPonto(escolhida); if (!p) { escolhida = null; cx.hidden = true; return; }
+      $('sel-nome').textContent = nomeDe(p); $('sel-onde').textContent = onde(p); nota.hidden = false;
+      if (document.activeElement !== nota) nota.value = p.nota;
+    }
+    $('sel-move').textContent = movendo ? 'Cancelar a mudança' : 'Mudar de lugar';
+    $('sel-move').disabled = soOlha; $('sel-apaga').disabled = soOlha; nota.disabled = soOlha;
+    cx.hidden = false;
+  }
+  function pintaFicha() {
+    var casa = atual.torcidas.slice(0, -1).map(function (t) { return t.nome; }).join(' e ');
+    var f = $('ficha'); f.textContent = '';
+    var b = document.createElement('b'); b.textContent = casa; f.appendChild(document.createTextNode('Casa de ')); f.appendChild(b);
+    f.appendChild(document.createTextNode(' · a cena desenhada do jogo, com as suas marcas da 1ª rodada já postas · os pórticos verdes e o vermelho são onde eu pus as entradas, encostadas na parede · corrija o que estiver fora do lugar'));
+  }
+  function pintaTudo() { pintaFicha(); pintaFerramentas(); pintaMapa(); pintaEscolhida(); pintaLista(); pintaTabela(); $('obs').value = marcas[atual.id].obs; $('pronto').checked = marcas[atual.id].pronto; $('obs').disabled = soOlha; $('pronto').disabled = soOlha; }
+
+  /* ---------- zoom ---------- */
+  function ajuste() { return Math.max(0.1, ($('janela').clientWidth || 320) / W); }
+  function poeZoom(z, guardaMeio) {
+    var j = $('janela'), p = $('palco'), mn = ajuste();
+    var fx = 0.5, fy = 0.5;
+    if (guardaMeio && zoom) { fx = (j.scrollLeft + j.clientWidth / 2) / (W * zoom); fy = (j.scrollTop + Math.min(j.clientHeight, H * zoom) / 2) / (H * zoom); }
+    zoom = Math.max(mn, Math.min(3, z)); inteiro = zoom <= mn + 0.0005;
+    p.style.width = Math.round(W * zoom) + 'px'; p.style.height = Math.round(H * zoom) + 'px';
+    j.scrollLeft = fx * W * zoom - j.clientWidth / 2; j.scrollTop = fy * H * zoom - j.clientHeight / 2;
+    $('z-txt').textContent = inteiro ? 'mapa inteiro · 1 cm de tela ≈ ' + Math.round(37.8 / (CENA.esc * zoom)) + ' m' : Math.round(zoom * 100) + '% · 1 cm de tela ≈ ' + Math.round(37.8 / (CENA.esc * zoom)) + ' m';
+    $('z-menos').disabled = inteiro; $('z-mais').disabled = zoom >= 3;
+    pintaMapa();
+  }
+  function centra(p) {
+    var j = $('janela'), q = px(p);
+    j.scrollLeft = q[0] * zoom - j.clientWidth / 2; j.scrollTop = q[1] * zoom - j.clientHeight / 2;
+  }
+
+  /* ---------- ações ---------- */
+  function vai(id) {
+    atual = INDICE[id] || E[0]; escolhida = null; movendo = false;
+    try { localStorage.setItem('marcas:atual', atual.id); } catch (e) {}
+    $('estadio').value = atual.id;
+    CENA = CENAS[atual.id]; W = CENA.w; H = CENA.h; $('svg').setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var img = $('img'); img.alt = 'A cena de fora do ' + atual.nome + ', desenhada pro jogo: o estádio, as ruas, as casas e os portões'; img.src = 'cenas/' + atual.id + '.webp';
+    pintaTudo(); poeZoom(ajuste(), false);
+  }
+  function poeFerramenta(f) { ferramenta = f; movendo = false; if (f === 'corte' || f === 'nota') { /* a escolha continua valendo */ } pintaFerramentas(); pintaMapa(); pintaEscolhida(); }
+  function escolhe(id, mostra) {
+    escolhida = id; movendo = false; pintaFerramentas(); pintaMapa(); pintaEscolhida(); pintaLista();
+    if (id && mostra) { var p = achaPonto(id); if (p && !inteiro) centra(p); $('janela').scrollIntoView({ block: 'nearest' }); }
+  }
+  function novoId() { return 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36); }
+  $('svg').addEventListener('click', function (ev) {
+    var svg = $('svg'), r = svg.getBoundingClientRect(); if (!r.width) return;
+    var lugar = metros((ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H), m = marcas[atual.id];
+    var alvo = ev.target.closest ? ev.target.closest('[data-id]') : null;
+    if (movendo && escolhida && !soOlha) {
+      if (escolhida.charAt(0) === 'c') { var c = m.corte[+escolhida.slice(1)]; if (c) { c.u = lugar.u; c.v = lugar.v; } }
+      else { var p = achaPonto(escolhida); if (p) { p.u = lugar.u; p.v = lugar.v; } }
+      movendo = false; mudou(); pintaFerramentas(); pintaMapa(); pintaEscolhida(); return;
+    }
+    if (alvo) { escolhe(alvo.getAttribute('data-id'), false); return; }
+    if (ferramenta === 'mexer' || soOlha) { if (escolhida) escolhe(null, false); return; }
+    if (ferramenta === 'corte') {
+      if (m.corte.length >= 60) return;
+      m.corte.push(lugar); escolhida = null; mudou(); pintaFerramentas(); pintaMapa(); pintaEscolhida(); return;
+    }
+    if (m.pontos.length >= 200) return;
+    var novo = { id: novoId(), k: ferramenta, de: ferramenta === 'nota' ? '' : atual.torcidas[deQuem].ch, u: lugar.u, v: lugar.v, nota: '' };
+    m.pontos.push(novo); escolhida = novo.id; mudou(); pintaFerramentas(); pintaMapa(); pintaEscolhida();
+  });
+  var teclas = document.querySelectorAll('[data-f]');
+  for (var i = 0; i < teclas.length; i++) (function (b) { b.addEventListener('click', function () { poeFerramenta(b.getAttribute('data-f')); }); })(teclas[i]);
+  $('estadio').addEventListener('change', function () { vai(this.value); });
+  $('ant').addEventListener('click', function () { vai(E[(E.indexOf(atual) + E.length - 1) % E.length].id); });
+  $('prox').addEventListener('click', function () { vai(E[(E.indexOf(atual) + 1) % E.length].id); });
+  $('z-mais').addEventListener('click', function () { poeZoom(zoom * 1.5, true); });
+  $('z-menos').addEventListener('click', function () { poeZoom(zoom / 1.5, true); });
+  $('z-tudo').addEventListener('click', function () { poeZoom(ajuste(), false); });
+  window.addEventListener('resize', function () { if (inteiro) poeZoom(ajuste(), false); else pintaMapa(); });
+
+  $('sel-nota').addEventListener('input', function () { var p = escolhida && achaPonto(escolhida); if (!p || soOlha) return; p.nota = this.value.slice(0, 240); mudou(); pintaMapa(); });
+  $('sel-move').addEventListener('click', function () { movendo = !movendo; pintaFerramentas(); pintaMapa(); pintaEscolhida(); if (movendo) $('janela').scrollIntoView({ block: 'nearest' }); });
+  $('sel-solta').addEventListener('click', function () { escolhe(null, false); });
+  $('sel-apaga').addEventListener('click', function () {
+    if (!escolhida || soOlha) return; var m = marcas[atual.id];
+    if (escolhida.charAt(0) === 'c') m.corte.splice(+escolhida.slice(1), 1);
+    else m.pontos = m.pontos.filter(function (p) { return p.id !== escolhida; });
+    escolhida = null; movendo = false; mudou(); pintaFerramentas(); pintaMapa(); pintaEscolhida();
+  });
+  $('corte-desfaz').addEventListener('click', function () { var m = marcas[atual.id]; if (!m.corte.length || soOlha) return; m.corte.pop(); escolhida = null; mudou(); pintaFerramentas(); pintaMapa(); pintaEscolhida(); });
+  (function () { // apagar o corte pede um segundo toque
+    var b = $('corte-apaga'), txt = b.textContent, t = null;
+    b.addEventListener('click', function () {
+      if (soOlha) return;
+      if (!b.classList.contains('certeza')) { b.classList.add('certeza'); b.textContent = b.getAttribute('data-certeza'); t = setTimeout(function () { b.classList.remove('certeza'); b.textContent = txt; }, 4000); return; }
+      clearTimeout(t); b.classList.remove('certeza'); b.textContent = txt;
+      marcas[atual.id].corte = []; escolhida = null; mudou(); pintaFerramentas(); pintaMapa(); pintaEscolhida();
+    });
+  })();
+  var relObs = null;
+  $('obs').addEventListener('input', function () { if (soOlha) return; marcas[atual.id].obs = this.value.slice(0, 2000); clearTimeout(relObs); relObs = setTimeout(mudou, 400); });
+  $('pronto').addEventListener('change', function () { if (soOlha) return; marcas[atual.id].pronto = this.checked; mudou(); });
+  $('copiar').addEventListener('click', function () {
+    var tudo = {}; E.forEach(function (e) { if (temAlgo(marcas[e.id])) tudo[e.id] = corpo(e.id); });
+    var txt = JSON.stringify(tudo), b = this, s = $('saida');
+    function mostra() { s.hidden = false; s.value = txt; s.focus(); s.select(); b.textContent = 'Selecione o texto abaixo e copie'; }
+    try { navigator.clipboard.writeText(txt).then(function () { b.textContent = 'Copiado'; setTimeout(function () { b.textContent = 'Copiar todas as marcas'; }, 2500); }, mostra); } catch (e) { mostra(); }
+  });
+
+  /* ---------- começo ---------- */
+  leDoAparelho();
+  var sel = $('estadio');
+  E.forEach(function (e) { var o = document.createElement('option'); o.value = e.id; o.textContent = e.nome + ' · ' + e.cidade; sel.appendChild(o); });
+  vai(atual.id);
+  pintaEstado();
+  liga();
+})();
+</script>

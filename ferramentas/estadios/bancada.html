@@ -1,0 +1,204 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Bancada dos estádios low-poly</title>
+<style>html,body{margin:0;background:#111;color:#ddd;font:14px system-ui}</style>
+<canvas id="cv" width="3072" height="2048"></canvas>
+<script type="module">
+/* A BANCADA: monta o estádio da ficha e o fotografa — de cima, no tamanho da
+   cena do jogo (1536 × 1024), com as coberturas vazadas por cima, e de dois
+   ângulos de conferência (aérea e TV). ferramentas/estadios/assar.js chama. */
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+import { construir, marcadores, mascara, mascaraDaArquibancada, limites, raioDe } from './estadio_lowpoly.mjs';
+import { FICHAS } from './fichas.mjs';
+import { preparar, construirArredores, marcadoresArredores, mascaraArredores } from './arredores.mjs';
+import { arredoresPadrao, COM_PADRAO } from './arredores_padrao.mjs';
+/* UMA FICHA AVULSA, pra conferir sem mexer nas outras: bancada.html?ficha=/ferramentas/estadios/fichas/<id>.mjs
+   (o arquivo exporta a ficha como `default`). É como quem modela um estádio novo testa o dele (assar.js, FICHA=...). */
+{ const extra = new URLSearchParams(location.search).get('ficha');
+  if (extra) { const m = await import(extra + (extra.includes('?') ? '&' : '?') + 't=' + Date.now()); const f = m.default || m.FICHA; FICHAS[f.id] = f; window.SO_FICHA = f.id; } }
+/* OS ARREDORES DE VERDADE PELAS MARCAS DO DONO (17/11/2026): a ficha diferenciada que não tem `arredores` escrito à mão e
+   tem marcas na prancheta ganha o dela, montado por arredores_marcas.mjs com as ruas do mapa (arredores/<id>.osm.mjs) */
+{ const { MARCAS } = await import('./marcas_do_dono.mjs'), { arredoresDasMarcas, AJUSTES } = await import('./arredores_marcas.mjs');
+  for (const [id, M] of Object.entries(MARCAS)) { const f = FICHAS[id]; if (!f || f.arredores) continue;
+    const osm = (await import('./arredores/' + id + '.osm.mjs')).default; f.arredores = arredoresDasMarcas(f, osm, M, AJUSTES[id] || {});
+    /* AS VARIANTES DOS ESTÁDIOS DE DOIS CLUBES (`<id>@<mandante>` e, no clássico, `<id>@<mandante>@<visitante>`): o mesmo
+       estádio e os mesmos portões, com outros bondes e outros setores; o jogo escolhe pela partida */
+    for (const [k, v] of Object.entries(f.arredores.variantes || {})) {
+      const vid = id + '@' + k, ar = Object.assign({}, f.arredores, { bondes: v.bondes }); delete ar.variantes;
+      FICHAS[vid] = Object.assign({}, f, { id: vid, variante: true, jogo: Object.assign({}, f.jogo, v.jogo), arredores: ar }); } } }
+/* OS ARREDORES PADRÃO (os 9 quarteirões, as grades e a PM): a ficha que pede `arredoresPadrao` e não tem `arredores` próprio
+   ganha o dela, montado por arredores_padrao.mjs */
+for (const f of Object.values(FICHAS)) if ((f.arredoresPadrao || COM_PADRAO.has(f.id)) && !f.arredores) f.arredores = arredoresPadrao(f);
+/* A CENA DO ESTÁDIO TEM O DOBRO DA CENA COMUM (dono, 14/11/2026: "deixe os
+   estádios maiores em proporção aos bonecos"): 3072 × 2048, a mesma célula
+   de 8 px. O jogo abre com a câmera no líder; afastando, vê o estádio todo. */
+const W = 3072, H = 2048, CEL = 8;
+const cv = document.getElementById('cv');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+function montar(ficha) {
+  const scene = new THREE.Scene();
+  const { cena, coberturas } = construir(THREE, ficha);
+  scene.add(cena, coberturas);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8478, 1.15));
+  const sol = new THREE.DirectionalLight(0xfff4e2, 2.1);
+  /* o sol do meio da tarde, vindo do noroeste da ficha */
+  const an = ((ficha.norte == null ? 90 : ficha.norte) + 50) * Math.PI / 180;
+  sol.position.set(Math.cos(an) * 260, 330, -Math.sin(an) * 260);
+  sol.castShadow = true; sol.shadow.mapSize.set(4096, 4096);
+  const c = sol.shadow.camera; c.left = -330; c.right = 330; c.top = 330; c.bottom = -330; c.near = 10; c.far = 1200; sol.shadow.bias = -0.0006; sol.shadow.normalBias = 0.6;
+  scene.add(sol);
+  return { scene, cena, coberturas };
+}
+/* quanto do estádio cabe: a escala em px por metro */
+function escalaDe(ficha) {
+  const f = limites(ficha).fora, folga = ficha.folga == null ? 14 : ficha.folga;
+  let mu = 0, mv = 0;
+  for (let a = 0; a < 360; a += 2) { const r = raioDe(a, f); mu = Math.max(mu, Math.abs(Math.cos(a * Math.PI / 180) * r)); mv = Math.max(mv, Math.abs(Math.sin(a * Math.PI / 180) * r)); }
+  const extra = ficha.fachada && ficha.fachada.pilares ? (ficha.fachada.pilares.pe || 9) + 3 : 0;
+  return Math.min(W / (2 * (mu + extra + folga)), H / (2 * (mv + extra + folga)));
+}
+const tela = (w, h) => { renderer.setSize(w, h, false); };
+function pegar(tipo, q) { return cv.toDataURL(tipo || 'image/png', q); }
+
+window.assar = async function (id, opc) {
+  opc = opc || {};
+  const ficha = FICHAS[id]; if (!ficha) throw new Error('sem ficha: ' + id);
+  /* (o estádio com os arredores padrão mostra em volta, na cena de dentro, o quarteirão dele: a calçada, os canteiros, as
+     árvores e os ambulantes — o mesmo desenho da cena de fora, sem as ruas, que ficam fora do quadro) */
+  const pad = ficha.arredores && ficha.arredores.padrao ? ficha.arredores : null;
+  const { scene, cena, coberturas } = montar(pad ? Object.assign({}, ficha, { entorno: pad.entorno, chao: Object.assign({}, ficha.chao, { cor: pad.corCalcadao }) }) : ficha);
+  const s = escalaDe(ficha);
+  const paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s], paraMetros = (x, y) => [(x - W / 2) / s, (H / 2 - y) / s];
+  /* ---- de cima ---- */
+  tela(W, H);
+  const cam = new THREE.OrthographicCamera(-W / 2 / s, W / 2 / s, H / 2 / s, -H / 2 / s, 1, 1000);
+  cam.position.set(0, 500, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0);
+  /* 1. tudo menos a cobertura (que ainda faz sombra) */
+  const telhas = []; coberturas.traverse(o => { if (o.isMesh) telhas.push(o); });
+  /* (a cobertura é vazada: de cima ela não aparece nem faz sombra nesta passada) */
+  coberturas.visible = false;
+  renderer.setClearColor(0x000000, 1); renderer.render(scene, cam);
+  coberturas.visible = true;
+  const base = document.createElement('canvas'); base.width = W; base.height = H;
+  const bx = base.getContext('2d'); bx.drawImage(cv, 0, 0);
+  /* 2. só a cobertura, vazada por cima */
+  cena.visible = false; renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, cam); cena.visible = true;
+  bx.globalAlpha = opc.vazado != null ? opc.vazado : ficha.vazado != null ? ficha.vazado : 0.34; bx.drawImage(cv, 0, 0); bx.globalAlpha = 1;
+  const imagem = base.toDataURL('image/webp', 0.84);
+  /* (e a mesma vista com a cobertura fechada, pra conferir com o satélite) */
+  renderer.setClearColor(0x000000, 1); renderer.render(scene, cam); const satelite = pegar('image/jpeg', 0.85);
+  /* ---- as fotos de conferência ---- */
+  tela(960, 540);
+  const persp = new THREE.PerspectiveCamera(38, 960 / 540, 1, 3000);
+  const olhar = (px, py, pz, ax, ay, az) => { persp.position.set(px, py, pz); persp.up.set(0, 1, 0); persp.lookAt(ax, ay, az); renderer.setClearColor(0xbcd7f0, 1); renderer.render(scene, persp); return pegar('image/jpeg', 0.85); };
+  const fora = limites(ficha).fora;
+  const aerea = olhar(-fora.a * 1.9, fora.a * 1.55, fora.b * 2.6, 0, 0, 0);
+  /* (e a aérea do lado oposto, pra conferir a volta inteira) */
+  const aerea2 = olhar(fora.a * 1.9, fora.a * 1.55, -fora.b * 2.6, 0, 0, 0);
+  persp.fov = 62; persp.updateProjectionMatrix();
+  const tv = olhar(0, 16, raioDe(270, fora) - 6, 0, 6, -20);
+  /* (a vista de perto que a ficha pedir — `vista: [u, altura, v, alvoU, alvoAltura, alvoV]` —, pra conferir uma fachada) */
+  persp.fov = 38; persp.updateProjectionMatrix();
+  const perto = ficha.vista ? olhar(ficha.vista[0], ficha.vista[1], -ficha.vista[2], ficha.vista[3], ficha.vista[4], -ficha.vista[5]) : null;
+  /* ---- a máscara e os marcadores ---- */
+  const m = marcadores(ficha, paraPx, s);
+  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, soFora: !!ficha.soFora, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, perto, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m, { arquibancada: { cel: 16, mascara: mascaraDaArquibancada(ficha, paraMetros, W, H, 16) } }) };
+};
+/* SÓ OS MARCADORES da cena de dentro, sem fotografar (MARCAS=1 no assar.js): a mesma escala e o mesmo quadro de `assar` */
+window.marcasDe = function (id) {
+  const ficha = FICHAS[id]; if (!ficha) throw new Error('sem ficha: ' + id);
+  const s = escalaDe(ficha), paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s], paraMetros = (x, y) => [(x - W / 2) / s, (H / 2 - y) / s];
+  return Object.assign({ nome: ficha.nome }, marcadores(ficha, paraPx, s), { arquibancada: { cel: 16, mascara: mascaraDaArquibancada(ficha, paraMetros, W, H, 16) } });
+};
+/* O LUGAR DE CADA ESCALÃO NA ARQUIBANCADA, na cena de arredores (dono, 16/11/2026: "quando a torcida chega no seu ponto de
+   entrada no estádio ela spawna automaticamente pro seu local na arquibancada"). É o mesmo ponto em que o bonde nasce na cena
+   de dentro (o meio do setor da ficha), passado pro quadro dos arredores: `raio` aponta do fundo pra frente do lance (as
+   fileiras empilham nele), `dir` corre ao longo do lance (as colunas abrem pros dois lados) e `prof` é a fundura do lance em
+   pixels, que diz quantas fileiras cabem. O jogo (combate.js, `entrarNoEstadio`) põe ali quem cruza o portão. */
+function assentosDe(ficha, paraPx, s) {
+  const m = marcadores(ficha, paraPx, s), j = ficha.jogo || {}, out = {};
+  for (const sp of m.spawns) { const fx = m.faixas[sp.id]; if (!fx) continue;
+    const dx = fx.x - sp.x, dy = fx.y - sp.y, q = Math.hypot(dx, dy) || 1, f = (j.fracao && j.fracao[sp.id] != null) ? j.fracao[sp.id] : 0.5;
+    const raio = [+(dx / q).toFixed(2), +(dy / q).toFixed(2)];
+    out[sp.id] = { x: sp.x, y: sp.y, raio, dir: [-raio[1], raio[0]], prof: Math.round(Math.min(40 * s, q / Math.max(0.2, f))) }; }
+  return out;
+}
+/* OS ARREDORES DE VERDADE (dono, 16/11/2026): o estádio com os quarteirões em volta — as ruas do mapa, as casas do jogo 3D
+   antigo, os portões —, fotografado de cima na cena de arredores do jogo. A cobertura do estádio sai quase fechada: a briga
+   aqui é do lado de fora. */
+window.assarArredores = async function (id) {
+  const ficha = FICHAS[id]; if (!ficha || !ficha.arredores) throw new Error('sem arredores: ' + id);
+  /* (a cena tem a área da cena do estádio, 3072 × 2048, na proporção do quadro dos arredores) */
+  const ar = ficha.arredores, cu = ar.quadro.cu || 0, cq = ar.quadro.cv || 0;
+  const WA = ar.quadro.px || Math.round(Math.sqrt(W * H * ar.quadro.u / ar.quadro.v) / CEL) * CEL, s = WA / (2 * ar.quadro.u), HA = Math.round(2 * ar.quadro.v * s / CEL) * CEL;
+  const prep = preparar(ficha);
+  const casas = await import('/cenario3d/js/casas3d.js');
+  const { scene, cena, coberturas } = montar(Object.assign({}, ficha, { entorno: ar.entorno || [] }));
+  const fora = construirArredores(THREE, ficha, prep, casas); scene.add(fora.grupo);
+  const paraPx = (u, v) => [WA / 2 + (u - cu) * s, HA / 2 - (v - cq) * s], paraMetros = (x, y) => [(x - WA / 2) / s + cu, (HA / 2 - y) / s + cq];
+  tela(WA, HA);
+  const cam = new THREE.OrthographicCamera(-WA / 2 / s, WA / 2 / s, HA / 2 / s, -HA / 2 / s, 1, 1000);
+  cam.position.set(cu, 500, -cq); cam.up.set(0, 0, -1); cam.lookAt(cu, 0, -cq);
+  coberturas.visible = false; renderer.setClearColor(0x000000, 1); renderer.render(scene, cam); coberturas.visible = true;
+  const base = document.createElement('canvas'); base.width = WA; base.height = HA; const bx = base.getContext('2d'); bx.drawImage(cv, 0, 0);
+  cena.visible = false; fora.grupo.visible = false; renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, cam); cena.visible = true; fora.grupo.visible = true;
+  bx.globalAlpha = ar.vazado == null ? 0.6 : ar.vazado; bx.drawImage(cv, 0, 0); bx.globalAlpha = 1;
+  /* fora do limite da cena a cidade continua, mais escura: ali não se pisa */
+  if (ar.limite) { bx.beginPath(); bx.rect(0, 0, WA, HA); ar.limite.forEach((p, i) => { const q = paraPx(p[0], p[1]); if (i) bx.lineTo(q[0], q[1]); else bx.moveTo(q[0], q[1]); }); bx.closePath();
+    bx.fillStyle = 'rgba(22,22,26,0.46)'; bx.fill('evenodd'); }
+  /* o crédito das ruas, no canto direito de baixo (dono, 16/11/2026: "Crédito dos colaboradores do openstreetmap no canto
+     direito"); a licença do mapa (ODbL) pede que ele apareça */
+  if (!ar.padrao && ar.osm && ar.osm.ruas && ar.osm.ruas.length) { const txt = '© colaboradores do OpenStreetMap', px = Math.round(WA / 105); bx.font = '600 ' + px + 'px Arial, Helvetica, sans-serif'; const lw = bx.measureText(txt).width;
+    bx.fillStyle = 'rgba(16,16,20,0.62)'; bx.fillRect(WA - lw - px * 1.6, HA - px * 2.1, lw + px * 1.6, px * 2.1);
+    bx.fillStyle = 'rgba(244,243,236,0.95)'; bx.textAlign = 'right'; bx.textBaseline = 'middle'; bx.fillText(txt, WA - px * 0.8, HA - px * 1.02); }
+  const imagem = base.toDataURL('image/webp', 0.86);
+  tela(1280, 720);
+  const persp = new THREE.PerspectiveCamera(40, 1280 / 720, 1, 4000);
+  const olhar = (px, py, pz, ax, ay, az) => { persp.position.set(px, py, pz); persp.up.set(0, 1, 0); persp.lookAt(ax, ay, az); renderer.setClearColor(0xbcd7f0, 1); renderer.render(scene, persp); return pegar('image/jpeg', 0.86); };
+  const aerea = olhar(cu - ar.quadro.u * 1.25, ar.quadro.u * 0.95, -cq + ar.quadro.v * 1.7, cu, 0, -cq), aerea2 = olhar(cu + ar.quadro.u * 1.25, ar.quadro.u * 0.95, -cq - ar.quadro.v * 1.7, cu, 0, -cq);
+  const perto = ar.vista ? olhar(ar.vista[0], ar.vista[1], -ar.vista[2], ar.vista[3], ar.vista[4], -ar.vista[5]) : null;
+  return { id, largura: WA, altura: HA, escala: +s.toFixed(3), nome: ficha.nome, imagem, aerea, aerea2, perto, casas: fora.casas, falhas: fora.falhas, lotes: prep.lotes.length, soFora: !!ar.soFora,
+    mascara: mascaraArredores(prep, paraMetros, WA, HA, CEL), cena: Object.assign(marcadoresArredores(ficha, prep, paraPx), { assentos: assentosDe(ficha, paraPx, s) }) };
+};
+/* O PROTÓTIPO 3D DOS ARREDORES (dono, 17/11/2026: "eu quero fazer um protótipo 3d dos arredores e dos estádios pra ver se
+   fica legal"): a mesma cena que a foto de cima fotografa — o estádio, as ruas, as casas, os portões —, exportada em .glb
+   pra ser vista girando (ferramentas/estadios/exportar3d.js) */
+window.exportar3d = async function (id, parte, fatia, fatias) {
+  const ficha = FICHAS[id]; if (!ficha || !ficha.arredores) throw new Error('sem arredores: ' + id);
+  const ar = ficha.arredores, prep = preparar(ficha), casas = await import('/cenario3d/js/casas3d.js');
+  const { scene } = montar(Object.assign({}, ficha, { entorno: ar.entorno || [] }));
+  const fora = construirArredores(THREE, ficha, prep, casas); scene.add(fora.grupo);
+  /* (só o que tem forma: luzes e câmeras ficam de fora; o visualizador acende as dele) */
+  /* (`parte`: 'estadio' ou 'arredores', pra caber em arquivos menores; sem ela, os dois juntos) */
+  const raiz = new THREE.Group(); raiz.name = id + (parte ? '-' + parte : '');
+  const deFora = new Set(); fora.grupo.traverse(o => deFora.add(o));
+  scene.traverse(o => { if (o.isMesh && o.visible && (!parte || (parte === 'arredores') === deFora.has(o))) { const c = o.clone(); o.updateWorldMatrix(true, false);
+    /* (sem normais e sem coordenada de textura — o visualizador recalcula as normais —, o estádio cabe em menos da metade) */
+    if (!(o.material && o.material.map)) { c.geometry = o.geometry.clone(); c.geometry.deleteAttribute('normal'); c.geometry.deleteAttribute('uv'); } c.matrix.copy(o.matrixWorld); c.matrix.decompose(c.position, c.quaternion, c.scale); raiz.add(c); } });
+  const { GLTFExporter } = await import('/cenario3d/js/GLTFExporter.js');
+  /* (em fatias, em .gltf de texto com os dados dentro: é o que a página publicada serve, e cada fatia cabe no limite dela) */
+  if (fatias) {
+    /* (a arquibancada é um objeto só, de meio milhão de vértices: os objetos grandes sem índice viram pedaços de até 120 mil
+       vértices; as cores vão em 1 byte por canal; e os pedaços se repartem pelas fatias pelo tamanho) */
+    const todas = []; for (const c of raiz.children.slice()) { raiz.remove(c); const g = c.geometry, n = g.attributes.position.count;
+      const corB = gg => { const cor = gg.attributes.color; if (cor && !(cor.array instanceof Uint8Array)) { const a8 = new Uint8Array(cor.count * cor.itemSize); for (let i = 0; i < a8.length; i++) a8[i] = Math.round(Math.min(1, Math.max(0, cor.array[i])) * 255); gg.setAttribute('color', new THREE.BufferAttribute(a8, cor.itemSize, true)); } return gg; };
+      if (g.index || n <= 120000) { c.geometry = corB(g.clone()); todas.push(c); continue; }
+      for (let i0 = 0; i0 < n; i0 += 120000) { const i1 = Math.min(n, i0 + 120000), gg = new THREE.BufferGeometry();
+        for (const [k, at] of Object.entries(g.attributes)) gg.setAttribute(k, new THREE.BufferAttribute(at.array.slice(i0 * at.itemSize, i1 * at.itemSize), at.itemSize, at.normalized));
+        const p = c.clone(); p.geometry = corB(gg); todas.push(p); } }
+    const peso = c => c.geometry.attributes.position.count, cestos = Array.from({ length: fatias }, () => ({ n: 0, l: [] }));
+    for (const c of todas.sort((a, b) => peso(b) - peso(a))) { const k = cestos.reduce((m, x, i) => x.n < cestos[m].n ? i : m, 0); cestos[k].l.push(c); cestos[k].n += peso(c); }
+    for (const c of cestos[fatia].l) raiz.add(c);
+    const js = await new Promise((ok, erro) => new GLTFExporter().parse(raiz, ok, erro, { binary: false }));
+    return { gltf: JSON.stringify(js), malhas: raiz.children.length, quadro: ar.quadro, portoes: (ar.portoes || []).map(g => ({ n: g.n, nome: g.nome, u: g.u, v: g.v })) }; }
+  const bin = await new Promise((ok, erro) => new GLTFExporter().parse(raiz, ok, erro, { binary: true }));
+  let s = ''; const b = new Uint8Array(bin); for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode.apply(null, b.subarray(i, i + 32768));
+  return { glb: btoa(s), malhas: raiz.children.length, quadro: ar.quadro, portoes: (ar.portoes || []).map(g => ({ n: g.n, nome: g.nome, u: g.u, v: g.v })) };
+};
+window.FICHAS = Object.keys(FICHAS);
+window.COM_ARREDORES = Object.keys(FICHAS).filter(id => FICHAS[id].arredores);
+window.pronto = true;
+</script>
